@@ -83,6 +83,7 @@ const formSchema = z.object({
   cpf:    z.string().default(""),
   rg:     z.string().default(""),
   weight: z.coerce.number().min(0).default(0),
+  height: z.coerce.number().min(0).default(0),
 
   // contato
   phone:        z.string().default(""),
@@ -107,8 +108,10 @@ const formSchema = z.object({
     errorMap: () => ({ message: "Selecione o status de internação" }),
   }),
   nurse:     z.string().default(""),
-  bed:       z.string().default(""),
-  diagnosis: z.string().default(""),
+  bed:              z.string().default(""),
+  diagnosis:        z.string().default(""),
+  symptoms:         z.string().default(""),
+  symptomOnsetDate: z.string().default(""),
 
   // sinais vitais iniciais
   heartRate:        z.coerce.number().min(0).default(0),
@@ -147,6 +150,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       cpf:    patient?.cpf    ?? "",
       rg:     patient?.rg     ?? "",
       weight: patient?.weight ?? 0,
+      height: patient?.height ?? 0,
 
       phone:        patient?.phone        ?? "",
       email:        patient?.email        ?? "",
@@ -164,8 +168,10 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       sector:           patient?.sector ?? "",
       internmentStatus: (patient?.internmentStatus as FormValues["internmentStatus"]) ?? "nao_internado",
       nurse:     patient?.nurse     ?? "",
-      bed:       patient?.bed       ?? "",
-      diagnosis: patient?.diagnosis ?? "",
+      bed:              patient?.bed              ?? "",
+      diagnosis:        patient?.diagnosis        ?? "",
+      symptoms:         patient?.symptoms         ?? "",
+      symptomOnsetDate: patient?.symptomOnsetDate ?? "",
 
       heartRate:       patient?.heartRate       ?? 0,
       respiratoryRate: patient?.respiratoryRate ?? 0,
@@ -340,6 +346,16 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
 
+          <FormField control={form.control} name="height" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Altura (cm) <Opt /></FormLabel>
+              <FormControl>
+                <Input type="number" min={0} step={1} placeholder="Ex: 170" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
           {/* ── CONTATO ───────────────────────────────────────────────────── */}
           <SectionTitle>Contato</SectionTitle>
 
@@ -494,6 +510,22 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
               <FormControl>
                 <Input placeholder="Queixa principal ou hipótese diagnóstica" data-testid="input-diagnosis" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="symptomOnsetDate" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data Início dos Sintomas <Opt /></FormLabel>
+              <FormControl><Input type="date" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="symptoms" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sintomas <Opt /></FormLabel>
+              <FormControl><Input placeholder="Descreva os sintomas principais" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />

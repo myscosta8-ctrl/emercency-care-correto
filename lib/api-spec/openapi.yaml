@@ -578,6 +578,8 @@ components:
           type: string
         weight:
           type: number
+        height:
+          type: number
         phone:
           type: string
         email:
@@ -601,6 +603,10 @@ components:
         bed:
           type: string
         diagnosis:
+          type: string
+        symptoms:
+          type: string
+        symptomOnsetDate:
           type: string
         heartRate:
           type: integer
@@ -646,6 +652,7 @@ components:
         - cpf
         - rg
         - weight
+        - height
         - phone
         - email
         - guardianName
@@ -658,6 +665,8 @@ components:
         - zipCode
         - bed
         - diagnosis
+        - symptoms
+        - symptomOnsetDate
         - heartRate
         - respiratoryRate
         - glucose
@@ -696,6 +705,8 @@ components:
           type: string
         weight:
           type: number
+        height:
+          type: number
         phone:
           type: string
         email:
@@ -719,6 +730,10 @@ components:
         bed:
           type: string
         diagnosis:
+          type: string
+        symptoms:
+          type: string
+        symptomOnsetDate:
           type: string
         heartRate:
           type: integer

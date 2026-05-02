@@ -22,6 +22,10 @@ export interface PdfPatient {
   addressState?: string | null;
   zipCode?: string | null;
   weight?: number | null;
+  height?: number | null;
+  symptoms?: string | null;
+  symptomOnsetDate?: string | null;
+  triageStatus?: string | null;   // "red"|"orange"|"yellow"|"green"|"blue"
 }
 
 export interface PdfNotification {
@@ -90,6 +94,8 @@ const COORDS_DENGUE: FormCoords = {
   cep:                  { x: 470, y: 366, maxWidth: 100 },
   telefone:             { x: 68,  y: 343, maxWidth: 140 },
   email:                { x: 222, y: 343, maxWidth: 200 },
+  data_inicio_sintomas: { x: 68,  y: 305, maxWidth: 130 },  // [O] clinical section row 1
+  classificacao_risco:  { x: 220, y: 305, maxWidth: 200 },  // [O] right of data_inicio
 };
 
 // ─── TUBERCULOSE ─────────────────────────────────────────────────────────────
@@ -116,6 +122,8 @@ const COORDS_TUBERCULOSE: FormCoords = {
   cep:                  { x: 467, y: 420, maxWidth: 100 },
   telefone:             { x: 69,  y: 398, maxWidth: 140 },
   email:                { x: 223, y: 398, maxWidth: 200 },
+  data_inicio_sintomas: { x: 69,  y: 360, maxWidth: 130 },  // [O] clinical section row 1
+  classificacao_risco:  { x: 221, y: 360, maxWidth: 200 },  // [O] right of data_inicio
 };
 
 // ─── FEBRE-AMARELA ───────────────────────────────────────────────────────────
@@ -142,6 +150,8 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
   cep:                  { x: 468, y: 406, maxWidth: 100 },
   telefone:             { x: 66,  y: 383, maxWidth: 140 },
   email:                { x: 220, y: 383, maxWidth: 200 },
+  data_inicio_sintomas: { x: 66,  y: 345, maxWidth: 130 },  // [O] clinical section row 1
+  classificacao_risco:  { x: 218, y: 345, maxWidth: 200 },  // [O] right of data_inicio
 };
 
 // ─── MENINGITE ───────────────────────────────────────────────────────────────
@@ -168,6 +178,8 @@ const COORDS_MENINGITE: FormCoords = {
   cep:                  { x: 467, y: 402, maxWidth: 100 },
   telefone:             { x: 69,  y: 379, maxWidth: 140 },
   email:                { x: 223, y: 379, maxWidth: 200 },
+  data_inicio_sintomas: { x: 69,  y: 341, maxWidth: 130 },  // [O] clinical section row 1
+  classificacao_risco:  { x: 221, y: 341, maxWidth: 200 },  // [O] right of data_inicio
 };
 
 // ─── NOTIFICAÇÃO INDIVIDUAL (violência / outros) ──────────────────────────────
@@ -197,6 +209,8 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
   cep:                  { x: 468, y: 377, maxWidth: 100 },
   telefone:             { x: 66,  y: 354, maxWidth: 140 },
   email:                { x: 220, y: 354, maxWidth: 200 },
+  data_inicio_sintomas: { x: 66,  y: 316, maxWidth: 130 },  // [O] clinical section row 1
+  classificacao_risco:  { x: 218, y: 316, maxWidth: 200 },  // [O] right of data_inicio
 };
 
 // ─── FEBRE TIFOIDE ───────────────────────────────────────────────────────────
@@ -223,6 +237,8 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   cep:                  { x: 469, y: 389, maxWidth: 100 },
   telefone:             { x: 69,  y: 366, maxWidth: 140 },
   email:                { x: 223, y: 366, maxWidth: 200 },
+  data_inicio_sintomas: { x: 69,  y: 328, maxWidth: 130 },  // [O] clinical section row 1
+  classificacao_risco:  { x: 221, y: 328, maxWidth: 200 },  // [O] right of data_inicio
 };
 
 // ─── AIDS ADULTO ─────────────────────────────────────────────────────────────
@@ -252,6 +268,8 @@ const COORDS_AIDS_ADULTO: FormCoords = {
   cep:                  { x: 471, y: 393, maxWidth: 100 },
   telefone:             { x: 69,  y: 370, maxWidth: 140 },
   email:                { x: 223, y: 370, maxWidth: 200 },
+  data_inicio_sintomas: { x: 69,  y: 332, maxWidth: 130 },  // [O] clinical section row 1
+  classificacao_risco:  { x: 221, y: 332, maxWidth: 200 },  // [O] right of data_inicio
 };
 
 // ─── EXANTEMATICA ────────────────────────────────────────────────────────────
@@ -281,6 +299,8 @@ const COORDS_EXANTEMATICA: FormCoords = {
   cep:                  { x: 469, y: 351, maxWidth: 100 },
   telefone:             { x: 67,  y: 328, maxWidth: 140 },
   email:                { x: 221, y: 328, maxWidth: 200 },
+  data_inicio_sintomas: { x: 67,  y: 290, maxWidth: 130 },  // [O] clinical section row 1
+  classificacao_risco:  { x: 219, y: 290, maxWidth: 200 },  // [O] right of data_inicio
 };
 
 // ─── COVID-19 / SRAG ─────────────────────────────────────────────────────────
@@ -325,6 +345,15 @@ function sexLabel(sex?: string | null): string {
   return "I - Ignorado";
 }
 
+function riskLabel(status?: string | null): string {
+  if (status === "red")    return "Vermelho — Emergência";
+  if (status === "orange") return "Laranja — Muito Urgente";
+  if (status === "yellow") return "Amarelo — Urgente";
+  if (status === "green")  return "Verde — Pouco Urgente";
+  if (status === "blue")   return "Azul — Não Urgente";
+  return "";
+}
+
 // ── field value map ───────────────────────────────────────────────────────────
 // Keys use the 14 standardized field names shared by BOTH systems (overlay + AcroForm):
 //   nome_paciente  nome_mae     data_nascimento  cpf
@@ -355,12 +384,17 @@ function buildFieldValues(patient: PdfPatient): Record<string, string> {
     uf:                   patient.addressState   ?? "",
     cep:                  patient.zipCode        ?? "",
     peso:                 patient.weight != null ? `${patient.weight}` : "",
+    altura:               patient.height ? `${patient.height} cm` : "",
     // ── SINAN-context fields (have coord boxes on SINAN forms; not on Ficha ID)
     raca_cor:             patient.race           ?? "",
     idade:                patient.age ? `${patient.age} anos` : "",
     sexo:                 sexLabel(patient.sex),
     telefone:             patient.phone          ?? "",
     email:                patient.email          ?? "",
+    // ── clinical fields (coord boxes in SINAN clinical section; also on Ficha ID)
+    data_inicio_sintomas: fmtDate(patient.symptomOnsetDate),
+    sintomas:             patient.symptoms       ?? "",
+    classificacao_risco:  riskLabel(patient.triageStatus),
   };
 }
 
@@ -437,6 +471,11 @@ async function fillTemplate(
   draw("sexo");
   draw("telefone");
   draw("email");
+  // ── clinical fields — have coord boxes on SINAN forms; also on Ficha ID
+  draw("data_inicio_sintomas");
+  draw("classificacao_risco");
+  draw("altura");    // Ficha ID only; no-op on SINAN forms
+  draw("sintomas");  // Ficha ID only; no-op on SINAN forms
 
   return doc.save();
 }
@@ -517,13 +556,13 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
   const BORDER  = rgb(0.80, 0.82, 0.88);
   const LTBLUE  = rgb(0.72, 0.78, 0.96);
 
-  // ── layout (12 rows, ROW_H=38, GAP=6, STEP=44) ───────────────────────────
+  // ── layout (19 rows, ROW_H=29, GAP=6, STEP=35) ───────────────────────────
   const ML      = 40;
   const CW      = 515;
   const LBL_W   = 140;
   const VAL_W   = CW - LBL_W;
-  const ROW_H   = 38;
-  const STEP    = 44;           // ROW_H + 6 gap
+  const ROW_H   = 29;
+  const STEP    = 35;           // ROW_H + 6 gap
   const FIRST_Y = 752;          // y-top of first row
 
   // ── header (y 762 → 812) ──────────────────────────────────────────────────
@@ -545,24 +584,27 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
     font, size: 6.5, color: LTBLUE,
   });
 
-  // ── 16 standard field definitions ─────────────────────────────────────────
+  // ── 19 field definitions ──────────────────────────────────────────────────
   const fields: Array<{ key: string; label: string; value: string }> = [
-    { key: "nome_paciente",        label: "NOME DO PACIENTE",    value: patient.name },
-    { key: "nome_mae",             label: "NOME DA MÃE",         value: patient.motherName        ?? "" },
-    { key: "data_nascimento",      label: "DATA DE NASCIMENTO",  value: fmtDate(patient.birthDate) },
-    { key: "cpf",                  label: "CPF",                 value: patient.cpf               ?? "" },
-    { key: "rg",                   label: "RG",                  value: patient.rg                ?? "" },
-    { key: "cns",                  label: "CNS / CARTÃO SUS",    value: patient.cns               ?? "" },
-    { key: "endereco_rua",         label: "ENDEREÇO (RUA)",      value: patient.street            ?? "" },
-    { key: "endereco_numero",      label: "NÚMERO",              value: patient.addressNumber     ?? "" },
-    { key: "endereco_complemento", label: "COMPLEMENTO",         value: patient.addressComplement ?? "" },
-    { key: "bairro",               label: "BAIRRO",              value: patient.neighborhood      ?? "" },
-    { key: "cidade",               label: "MUNICÍPIO",           value: patient.city              ?? "" },
-    { key: "uf",                   label: "UF",                  value: patient.addressState      ?? "" },
-    { key: "cep",                  label: "CEP",                 value: patient.zipCode           ?? "" },
-    { key: "peso",                 label: "PESO (kg)",           value: patient.weight != null ? `${patient.weight}` : "" },
-    { key: "telefone",             label: "TELEFONE",            value: patient.phone             ?? "" },
-    { key: "email",                label: "E-MAIL",              value: patient.email             ?? "" },
+    { key: "nome_paciente",        label: "NOME DO PACIENTE",         value: patient.name },
+    { key: "nome_mae",             label: "NOME DA MÃE",              value: patient.motherName          ?? "" },
+    { key: "data_nascimento",      label: "DATA DE NASCIMENTO",       value: fmtDate(patient.birthDate)  },
+    { key: "cpf",                  label: "CPF",                      value: patient.cpf                 ?? "" },
+    { key: "rg",                   label: "RG",                       value: patient.rg                  ?? "" },
+    { key: "cns",                  label: "CNS / CARTÃO SUS",         value: patient.cns                 ?? "" },
+    { key: "endereco_rua",         label: "ENDEREÇO (RUA)",           value: patient.street              ?? "" },
+    { key: "endereco_numero",      label: "NÚMERO",                   value: patient.addressNumber       ?? "" },
+    { key: "endereco_complemento", label: "COMPLEMENTO",              value: patient.addressComplement   ?? "" },
+    { key: "bairro",               label: "BAIRRO",                   value: patient.neighborhood        ?? "" },
+    { key: "cidade",               label: "MUNICÍPIO",                value: patient.city                ?? "" },
+    { key: "uf",                   label: "UF",                       value: patient.addressState        ?? "" },
+    { key: "cep",                  label: "CEP",                      value: patient.zipCode             ?? "" },
+    { key: "peso",                 label: "PESO (kg)",                value: patient.weight   ? `${patient.weight}`  : "" },
+    { key: "altura",               label: "ALTURA (cm)",              value: patient.height   ? `${patient.height}`  : "" },
+    { key: "telefone",             label: "TELEFONE",                 value: patient.phone               ?? "" },
+    { key: "email",                label: "E-MAIL",                   value: patient.email               ?? "" },
+    { key: "data_inicio_sintomas", label: "INÍCIO DOS SINTOMAS",      value: fmtDate(patient.symptomOnsetDate) },
+    { key: "sintomas",             label: "SINTOMAS",                 value: patient.symptoms            ?? "" },
   ];
 
   // ── draw rows + AcroForm fields ───────────────────────────────────────────
@@ -661,12 +703,17 @@ export interface DadosPaciente {
   uf?:                   string | null;
   cep?:                  string | null;
   peso?:                 string | number | null;   // "75" | 75 | 75.5
+  altura?:               string | number | null;   // "170" | 170
   // ── SINAN-context fields (have coord boxes on SINAN forms; not on Ficha ID)
   raca_cor?:             string | null;            // "Branca"|"Preta"|"Amarela"|"Parda"|"Indígena"|"Ignorada"
   idade?:                string | number | null;   // "35" | 35
   sexo?:                 string | null;            // "M" | "F" | "I"
   telefone?:             string | null;
   email?:                string | null;
+  // ── clinical fields (Ficha ID + SINAN clinical section)
+  sintomas?:             string | null;
+  data_inicio_sintomas?: string | null;            // ISO "YYYY-MM-DD" or "DD/MM/YYYY"
+  classificacao_risco?:  string | null;            // "Vermelho — Emergência" etc., or raw "red"|…
 }
 
 function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
@@ -677,29 +724,50 @@ function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
     ? rawDate.split("/").reverse().join("-")   // "DD/MM/YYYY" → "YYYY-MM-DD"
     : rawDate;
 
-  const pesoNum = d.peso != null ? parseFloat(String(d.peso)) : null;
-  const idadeNum = d.idade != null ? parseInt(String(d.idade), 10) : null;
+  const pesoNum   = d.peso   != null ? parseFloat(String(d.peso))   : null;
+  const alturaNum = d.altura != null ? parseFloat(String(d.altura)) : null;
+  const idadeNum  = d.idade  != null ? parseInt(String(d.idade), 10) : null;
+
+  // data_inicio_sintomas: normalise to ISO
+  const rawOnset = d.data_inicio_sintomas ?? null;
+  const isoOnset = rawOnset && /^\d{2}\/\d{2}\/\d{4}$/.test(rawOnset)
+    ? rawOnset.split("/").reverse().join("-")
+    : rawOnset;
+
+  // classificacao_risco: accept raw "red"|… or already-formatted label
+  const rawRisco = d.classificacao_risco ?? null;
+  const risco = rawRisco
+    ? (["red","orange","yellow","green","blue"].includes(rawRisco)
+        ? riskLabel(rawRisco)
+        : rawRisco)
+    : null;
 
   return {
     name:               d.nome_paciente,
-    motherName:         d.nome_mae          ?? null,
+    motherName:         d.nome_mae             ?? null,
     birthDate:          isoDate,
-    cpf:                d.cpf               ?? null,
-    rg:                 d.rg                ?? null,
-    cns:                d.cns               ?? null,
-    street:             d.endereco_rua      ?? null,
-    addressNumber:      d.endereco_numero   ?? null,
+    cpf:                d.cpf                  ?? null,
+    rg:                 d.rg                   ?? null,
+    cns:                d.cns                  ?? null,
+    street:             d.endereco_rua         ?? null,
+    addressNumber:      d.endereco_numero      ?? null,
     addressComplement:  d.endereco_complemento ?? null,
-    neighborhood:       d.bairro            ?? null,
-    city:               d.cidade            ?? null,
-    addressState:       d.uf                ?? null,
-    zipCode:            d.cep               ?? null,
-    weight:             Number.isFinite(pesoNum) ? pesoNum : null,
-    age:                Number.isFinite(idadeNum) ? idadeNum : null,
-    sex:                d.sexo              ?? null,
-    race:               d.raca_cor          ?? null,
-    phone:              d.telefone          ?? null,
-    email:              d.email             ?? null,
+    neighborhood:       d.bairro               ?? null,
+    city:               d.cidade               ?? null,
+    addressState:       d.uf                   ?? null,
+    zipCode:            d.cep                  ?? null,
+    weight:             Number.isFinite(pesoNum)   ? pesoNum   : null,
+    height:             Number.isFinite(alturaNum)  ? alturaNum : null,
+    age:                Number.isFinite(idadeNum)   ? idadeNum  : null,
+    sex:                d.sexo                 ?? null,
+    race:               d.raca_cor             ?? null,
+    phone:              d.telefone             ?? null,
+    email:              d.email                ?? null,
+    symptoms:           d.sintomas             ?? null,
+    symptomOnsetDate:   isoOnset,
+    triageStatus:       ["red","orange","yellow","green","blue"].includes(rawRisco ?? "")
+                          ? rawRisco
+                          : null,              // pass raw status; buildFieldValues calls riskLabel()
   };
 }
 

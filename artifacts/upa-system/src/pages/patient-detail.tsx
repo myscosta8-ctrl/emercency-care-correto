@@ -316,6 +316,10 @@ export default function PatientDetail() {
                     addressState: patient.addressState,
                     zipCode: patient.zipCode,
                     weight: patient.weight,
+                    height: patient.height,
+                    symptoms: patient.symptoms,
+                    symptomOnsetDate: patient.symptomOnsetDate,
+                    triageStatus: patient.status,
                   });
                 } catch {
                   toast({ title: "Erro ao gerar ficha", variant: "destructive" });
@@ -376,12 +380,26 @@ export default function PatientDetail() {
                   </div>
                 </div>
               </CardHeader>
-              {patient.diagnosis && (
-                <CardContent>
-                  <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Hipótese Diagnóstica</p>
-                    <p className="text-base font-medium">{patient.diagnosis}</p>
-                  </div>
+              {(patient.diagnosis || patient.symptoms || patient.symptomOnsetDate) && (
+                <CardContent className="space-y-2">
+                  {patient.diagnosis && (
+                    <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Hipótese Diagnóstica</p>
+                      <p className="text-base font-medium">{patient.diagnosis}</p>
+                    </div>
+                  )}
+                  {(patient.symptoms || patient.symptomOnsetDate) && (
+                    <div className="bg-muted/30 p-3 rounded-lg border border-border/50 space-y-1">
+                      {patient.symptomOnsetDate && (
+                        <p className="text-xs text-muted-foreground">
+                          Início dos sintomas: <span className="font-medium text-foreground">{patient.symptomOnsetDate.split("-").reverse().join("/")}</span>
+                        </p>
+                      )}
+                      {patient.symptoms && (
+                        <p className="text-sm">{patient.symptoms}</p>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               )}
             </Card>
@@ -1018,6 +1036,12 @@ export default function PatientDetail() {
                         <div className="flex justify-between items-baseline">
                           <span className="text-xs text-muted-foreground">Peso</span>
                           <span className="text-xs font-medium">{patient.weight} kg</span>
+                        </div>
+                      )}
+                      {patient.height > 0 && (
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-muted-foreground">Altura</span>
+                          <span className="text-xs font-medium">{patient.height} cm</span>
                         </div>
                       )}
                     </div>

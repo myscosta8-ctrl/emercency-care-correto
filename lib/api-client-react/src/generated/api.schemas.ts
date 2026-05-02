@@ -46,6 +46,7 @@ export interface Patient {
   cpf: string;
   rg: string;
   weight: number;
+  height: number;
   phone: string;
   email: string;
   guardianName: string;
@@ -58,6 +59,8 @@ export interface Patient {
   zipCode: string;
   bed: string;
   diagnosis: string;
+  symptoms: string;
+  symptomOnsetDate: string;
   heartRate: number;
   respiratoryRate: number;
   glucose: number;
@@ -102,6 +105,7 @@ export interface CreatePatientBody {
   cpf?: string;
   rg?: string;
   weight?: number;
+  height?: number;
   phone?: string;
   email?: string;
   guardianName?: string;
@@ -114,6 +118,8 @@ export interface CreatePatientBody {
   zipCode?: string;
   bed?: string;
   diagnosis?: string;
+  symptoms?: string;
+  symptomOnsetDate?: string;
   heartRate?: number;
   respiratoryRate?: number;
   glucose?: number;

@@ -19,6 +19,7 @@ export const patientsTable = pgTable("patients", {
 
   // ── dados físicos ────────────────────────────────────────────────────────────
   weight:       real("weight").notNull().default(0),
+  height:       real("height").notNull().default(0),
 
   // ── contato ─────────────────────────────────────────────────────────────────
   phone:        text("phone").notNull().default(""),
@@ -35,8 +36,10 @@ export const patientsTable = pgTable("patients", {
   zipCode:        text("zip_code").notNull().default(""),
 
   // ── clínico ─────────────────────────────────────────────────────────────────
-  bed:              text("bed").notNull().default(""),
-  diagnosis:        text("diagnosis").notNull().default(""),
+  bed:                text("bed").notNull().default(""),
+  diagnosis:          text("diagnosis").notNull().default(""),
+  symptoms:           text("symptoms").notNull().default(""),
+  symptomOnsetDate:   text("symptom_onset_date").notNull().default(""),
   heartRate:        integer("heart_rate").notNull().default(0),
   respiratoryRate:  integer("respiratory_rate").notNull().default(0),
   glucose:          real("glucose").notNull().default(0),

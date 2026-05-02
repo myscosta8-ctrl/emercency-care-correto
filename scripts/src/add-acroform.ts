@@ -57,6 +57,8 @@ const COORDS_DENGUE: FormCoords = {
   cep:                  { x: 470, y: 366, maxWidth: 100 },
   telefone:             { x: 68,  y: 343, maxWidth: 140 },
   email:                { x: 222, y: 343, maxWidth: 200 },
+  data_inicio_sintomas: { x: 68,  y: 305, maxWidth: 130 },
+  classificacao_risco:  { x: 220, y: 305, maxWidth: 200 },
 };
 
 const COORDS_TUBERCULOSE: FormCoords = {
@@ -78,6 +80,8 @@ const COORDS_TUBERCULOSE: FormCoords = {
   cep:                  { x: 467, y: 420, maxWidth: 100 },
   telefone:             { x: 69,  y: 398, maxWidth: 140 },
   email:                { x: 223, y: 398, maxWidth: 200 },
+  data_inicio_sintomas: { x: 69,  y: 360, maxWidth: 130 },
+  classificacao_risco:  { x: 221, y: 360, maxWidth: 200 },
 };
 
 const COORDS_FEBRE_AMARELA: FormCoords = {
@@ -99,6 +103,8 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
   cep:                  { x: 468, y: 406, maxWidth: 100 },
   telefone:             { x: 66,  y: 383, maxWidth: 140 },
   email:                { x: 220, y: 383, maxWidth: 200 },
+  data_inicio_sintomas: { x: 66,  y: 345, maxWidth: 130 },
+  classificacao_risco:  { x: 218, y: 345, maxWidth: 200 },
 };
 
 const COORDS_MENINGITE: FormCoords = {
@@ -120,6 +126,8 @@ const COORDS_MENINGITE: FormCoords = {
   cep:                  { x: 467, y: 402, maxWidth: 100 },
   telefone:             { x: 69,  y: 379, maxWidth: 140 },
   email:                { x: 223, y: 379, maxWidth: 200 },
+  data_inicio_sintomas: { x: 69,  y: 341, maxWidth: 130 },
+  classificacao_risco:  { x: 221, y: 341, maxWidth: 200 },
 };
 
 const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
@@ -141,6 +149,8 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
   cep:                  { x: 468, y: 377, maxWidth: 100 },
   telefone:             { x: 66,  y: 354, maxWidth: 140 },
   email:                { x: 220, y: 354, maxWidth: 200 },
+  data_inicio_sintomas: { x: 66,  y: 316, maxWidth: 130 },
+  classificacao_risco:  { x: 218, y: 316, maxWidth: 200 },
 };
 
 const COORDS_FEBRE_TIFOIDE: FormCoords = {
@@ -162,6 +172,8 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   cep:                  { x: 469, y: 389, maxWidth: 100 },
   telefone:             { x: 69,  y: 366, maxWidth: 140 },
   email:                { x: 223, y: 366, maxWidth: 200 },
+  data_inicio_sintomas: { x: 69,  y: 328, maxWidth: 130 },
+  classificacao_risco:  { x: 221, y: 328, maxWidth: 200 },
 };
 
 const COORDS_AIDS_ADULTO: FormCoords = {
@@ -183,6 +195,8 @@ const COORDS_AIDS_ADULTO: FormCoords = {
   cep:                  { x: 471, y: 393, maxWidth: 100 },
   telefone:             { x: 69,  y: 370, maxWidth: 140 },
   email:                { x: 223, y: 370, maxWidth: 200 },
+  data_inicio_sintomas: { x: 69,  y: 332, maxWidth: 130 },
+  classificacao_risco:  { x: 221, y: 332, maxWidth: 200 },
 };
 
 const COORDS_EXANTEMATICA: FormCoords = {
@@ -204,6 +218,8 @@ const COORDS_EXANTEMATICA: FormCoords = {
   cep:                  { x: 469, y: 351, maxWidth: 100 },
   telefone:             { x: 67,  y: 328, maxWidth: 140 },
   email:                { x: 221, y: 328, maxWidth: 200 },
+  data_inicio_sintomas: { x: 67,  y: 290, maxWidth: 130 },
+  classificacao_risco:  { x: 219, y: 290, maxWidth: 200 },
 };
 
 const TEMPLATES: Array<{ file: string; coords: FormCoords }> = [
