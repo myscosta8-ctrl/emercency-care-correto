@@ -112,7 +112,7 @@ export default function PatientDetail() {
         <Activity className="h-16 w-16 text-muted-foreground mb-4" />
         <h2 className="text-2xl font-bold mb-2">Paciente não encontrado</h2>
         <p className="text-muted-foreground mb-6">O registro solicitado não pôde ser carregado.</p>
-        <Button asChild><Link href="/">Voltar ao Dashboard</Link></Button>
+        <Button asChild><Link href="/">Voltar ao Painel</Link></Button>
       </div>
     );
   }

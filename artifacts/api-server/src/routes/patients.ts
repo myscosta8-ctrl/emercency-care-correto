@@ -48,7 +48,7 @@ router.get("/summary", async (req, res) => {
 router.get("/:id", async (req, res) => {
   const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, id));
-  if (!patient) { res.status(404).json({ error: "Patient not found" }); return; }
+  if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
   res.json(serialize(patient));
 });
 
@@ -62,7 +62,7 @@ router.put("/:id", async (req, res) => {
   const { id } = UpdatePatientParams.parse({ id: Number(req.params.id) });
   const body = UpdatePatientBody.parse(req.body);
   const [patient] = await db.update(patientsTable).set({ ...body, updatedAt: new Date() }).where(eq(patientsTable.id, id)).returning();
-  if (!patient) { res.status(404).json({ error: "Patient not found" }); return; }
+  if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
   res.json(serialize(patient));
 });
 
@@ -70,7 +70,7 @@ router.patch("/:id/status", async (req, res) => {
   const { id } = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
   const { status } = UpdatePatientStatusBody.parse(req.body);
   const [patient] = await db.update(patientsTable).set({ status, updatedAt: new Date() }).where(eq(patientsTable.id, id)).returning();
-  if (!patient) { res.status(404).json({ error: "Patient not found" }); return; }
+  if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
   res.json(serialize(patient));
 });
 
