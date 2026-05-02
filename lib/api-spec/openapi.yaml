@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: patients
     description: Patient operations
+  - name: staff
+    description: Staff management operations
 paths:
   /healthz:
     get:
@@ -352,6 +354,99 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PatientEvolution"
+
+  /staff:
+    get:
+      operationId: listStaff
+      tags: [staff]
+      summary: List all staff members
+      responses:
+        "200":
+          description: List of staff
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffMember"
+    post:
+      operationId: createStaff
+      tags: [staff]
+      summary: Create a staff member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStaffBody"
+      responses:
+        "201":
+          description: Created staff member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+
+  /staff/{id}:
+    get:
+      operationId: getStaff
+      tags: [staff]
+      summary: Get a staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Staff member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "404":
+          description: Not found
+    put:
+      operationId: updateStaff
+      tags: [staff]
+      summary: Update a staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStaffBody"
+      responses:
+        "200":
+          description: Updated staff member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteStaff
+      tags: [staff]
+      summary: Delete a staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
 
 components:
   schemas:
@@ -709,3 +804,119 @@ components:
         - yellow
         - green
         - blue
+
+    StaffMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        category:
+          type: string
+          enum: [tecnico, enfermeiro, medico]
+        corenCrm:
+          type: string
+        sector:
+          type: string
+        login:
+          type: string
+        accessLevels:
+          type: string
+        signature:
+          type: string
+        stamp:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - fullName
+        - category
+        - corenCrm
+        - sector
+        - login
+        - accessLevels
+        - signature
+        - stamp
+        - createdAt
+        - updatedAt
+
+    CreateStaffBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        category:
+          type: string
+          enum: [tecnico, enfermeiro, medico]
+        corenCrm:
+          type: string
+        sector:
+          type: string
+        login:
+          type: string
+        password:
+          type: string
+        accessLevels:
+          type: string
+        signature:
+          type: string
+        stamp:
+          type: string
+      required:
+        - fullName
+        - category
+        - login
+        - password
+
+    UpdateStaffBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        category:
+          type: string
+          enum: [tecnico, enfermeiro, medico]
+        corenCrm:
+          type: string
+        sector:
+          type: string
+        login:
+          type: string
+        password:
+          type: string
+        accessLevels:
+          type: string
+        signature:
+          type: string
+        stamp:
+          type: string
+
+    GetStaffParams:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+        - id
+
+    UpdateStaffParams:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+        - id
+
+    DeleteStaffParams:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+        - id

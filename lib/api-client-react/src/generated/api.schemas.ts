@@ -227,3 +227,80 @@ export interface PatientsSummary {
   green: number;
   blue: number;
 }
+
+export type StaffMemberCategory =
+  (typeof StaffMemberCategory)[keyof typeof StaffMemberCategory];
+
+export const StaffMemberCategory = {
+  tecnico: "tecnico",
+  enfermeiro: "enfermeiro",
+  medico: "medico",
+} as const;
+
+export interface StaffMember {
+  id: number;
+  fullName: string;
+  category: StaffMemberCategory;
+  corenCrm: string;
+  sector: string;
+  login: string;
+  accessLevels: string;
+  signature: string;
+  stamp: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateStaffBodyCategory =
+  (typeof CreateStaffBodyCategory)[keyof typeof CreateStaffBodyCategory];
+
+export const CreateStaffBodyCategory = {
+  tecnico: "tecnico",
+  enfermeiro: "enfermeiro",
+  medico: "medico",
+} as const;
+
+export interface CreateStaffBody {
+  fullName: string;
+  category: CreateStaffBodyCategory;
+  corenCrm?: string;
+  sector?: string;
+  login: string;
+  password: string;
+  accessLevels?: string;
+  signature?: string;
+  stamp?: string;
+}
+
+export type UpdateStaffBodyCategory =
+  (typeof UpdateStaffBodyCategory)[keyof typeof UpdateStaffBodyCategory];
+
+export const UpdateStaffBodyCategory = {
+  tecnico: "tecnico",
+  enfermeiro: "enfermeiro",
+  medico: "medico",
+} as const;
+
+export interface UpdateStaffBody {
+  fullName?: string;
+  category?: UpdateStaffBodyCategory;
+  corenCrm?: string;
+  sector?: string;
+  login?: string;
+  password?: string;
+  accessLevels?: string;
+  signature?: string;
+  stamp?: string;
+}
+
+export interface GetStaffParams {
+  id: number;
+}
+
+export interface UpdateStaffParams {
+  id: number;
+}
+
+export interface DeleteStaffParams {
+  id: number;
+}

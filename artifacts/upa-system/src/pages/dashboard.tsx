@@ -262,6 +262,12 @@ export default function Dashboard() {
             <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate">UPA Breves — Gestão de Pacientes</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Link href="/funcionarios">
+              <Button variant="outline" className="shrink-0 gap-2">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Funcionários</span>
+              </Button>
+            </Link>
             <Link href="/passagem-plantao">
               <Button variant="outline" className="shrink-0 gap-2">
                 <ClipboardList className="h-4 w-4" />

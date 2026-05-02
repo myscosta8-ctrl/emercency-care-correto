@@ -380,3 +380,97 @@ export const GetPatientHistoryResponseItem = zod.object({
 export const GetPatientHistoryResponse = zod.array(
   GetPatientHistoryResponseItem,
 );
+
+/**
+ * @summary List all staff members
+ */
+export const ListStaffResponseItem = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  category: zod.enum(["tecnico", "enfermeiro", "medico"]),
+  corenCrm: zod.string(),
+  sector: zod.string(),
+  login: zod.string(),
+  accessLevels: zod.string(),
+  signature: zod.string(),
+  stamp: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListStaffResponse = zod.array(ListStaffResponseItem);
+
+/**
+ * @summary Create a staff member
+ */
+export const CreateStaffBody = zod.object({
+  fullName: zod.string(),
+  category: zod.enum(["tecnico", "enfermeiro", "medico"]),
+  corenCrm: zod.string().optional(),
+  sector: zod.string().optional(),
+  login: zod.string(),
+  password: zod.string(),
+  accessLevels: zod.string().optional(),
+  signature: zod.string().optional(),
+  stamp: zod.string().optional(),
+});
+
+/**
+ * @summary Get a staff member
+ */
+export const GetStaffParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetStaffResponse = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  category: zod.enum(["tecnico", "enfermeiro", "medico"]),
+  corenCrm: zod.string(),
+  sector: zod.string(),
+  login: zod.string(),
+  accessLevels: zod.string(),
+  signature: zod.string(),
+  stamp: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a staff member
+ */
+export const UpdateStaffParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateStaffBody = zod.object({
+  fullName: zod.string().optional(),
+  category: zod.enum(["tecnico", "enfermeiro", "medico"]).optional(),
+  corenCrm: zod.string().optional(),
+  sector: zod.string().optional(),
+  login: zod.string().optional(),
+  password: zod.string().optional(),
+  accessLevels: zod.string().optional(),
+  signature: zod.string().optional(),
+  stamp: zod.string().optional(),
+});
+
+export const UpdateStaffResponse = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  category: zod.enum(["tecnico", "enfermeiro", "medico"]),
+  corenCrm: zod.string(),
+  sector: zod.string(),
+  login: zod.string(),
+  accessLevels: zod.string(),
+  signature: zod.string(),
+  stamp: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a staff member
+ */
+export const DeleteStaffParams = zod.object({
+  id: zod.coerce.number(),
+});

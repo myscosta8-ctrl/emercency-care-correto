@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const PatientDetail = lazy(() => import("@/pages/patient-detail"));
 const ShiftHandover = lazy(() => import("@/pages/shift-handover"));
+const StaffPage = lazy(() => import("@/pages/staff"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -43,6 +44,7 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/patients/:id" component={PatientDetail} />
         <Route path="/passagem-plantao" component={ShiftHandover} />
+        <Route path="/funcionarios" component={StaffPage} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
