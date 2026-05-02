@@ -67,16 +67,18 @@ function templatePath(type: string): string {
 // [D] nome label y=578→fill 564; data_nasc y=579→565; sexo/idade y=549→535
 //     cns/mae y=488→474; municipio y=457→443; bairro/logradouro y=432/431→418/417
 //     numero y=408→394; cep y=380→366; telefone y=357→343
+//     uf: estimated right of cidade (x≈430, same y)
 const COORDS_DENGUE: FormCoords = {
-  nome_completo:   { x: 62,  y: 564, maxWidth: 386 },
+  nome_paciente:   { x: 62,  y: 564, maxWidth: 386 },
   data_nascimento: { x: 459, y: 565, maxWidth: 110 },
   idade:           { x: 65,  y: 535, maxWidth: 88  },
   sexo:            { x: 162, y: 535, maxWidth: 88  },
   cns:             { x: 68,  y: 474, maxWidth: 170 },
   nome_mae:        { x: 247, y: 474, maxWidth: 290 },
-  municipio:       { x: 97,  y: 443, maxWidth: 320 },
+  cidade:          { x: 97,  y: 443, maxWidth: 310 },
+  uf:              { x: 430, y: 443, maxWidth: 30  },
   bairro:          { x: 68,  y: 418, maxWidth: 130 },
-  logradouro:      { x: 208, y: 417, maxWidth: 200 },
+  endereco:        { x: 208, y: 417, maxWidth: 200 },
   numero_end:      { x: 68,  y: 394, maxWidth: 100 },
   cep:             { x: 470, y: 366, maxWidth: 100 },
   telefone:        { x: 68,  y: 343, maxWidth: 140 },
@@ -86,16 +88,18 @@ const COORDS_DENGUE: FormCoords = {
 // [D] nome label y=632→618; data_nasc y=633→619; sexo/idade y=603→589
 //     cns y=542→528; mae y=541→527; municipio y=511→497; bairro y=487→473
 //     logradouro y=486→472; numero y=462→448; cep y=434→420; telefone y=412→398
+//     uf: estimated right of cidade
 const COORDS_TUBERCULOSE: FormCoords = {
-  nome_completo:   { x: 67,  y: 618, maxWidth: 375 },
+  nome_paciente:   { x: 67,  y: 618, maxWidth: 375 },
   data_nascimento: { x: 455, y: 619, maxWidth: 110 },
   idade:           { x: 66,  y: 589, maxWidth: 88  },
   sexo:            { x: 165, y: 589, maxWidth: 88  },
   cns:             { x: 69,  y: 528, maxWidth: 162 },
   nome_mae:        { x: 243, y: 527, maxWidth: 295 },
-  municipio:       { x: 98,  y: 497, maxWidth: 315 },
+  cidade:          { x: 98,  y: 497, maxWidth: 305 },
+  uf:              { x: 426, y: 497, maxWidth: 30  },
   bairro:          { x: 68,  y: 473, maxWidth: 130 },
-  logradouro:      { x: 209, y: 472, maxWidth: 200 },
+  endereco:        { x: 209, y: 472, maxWidth: 200 },
   numero_end:      { x: 68,  y: 448, maxWidth: 100 },
   cep:             { x: 467, y: 420, maxWidth: 100 },
   telefone:        { x: 69,  y: 398, maxWidth: 140 },
@@ -105,16 +109,18 @@ const COORDS_TUBERCULOSE: FormCoords = {
 // [D] nome label y=618→604; data_nasc y=618→604; sexo/idade y=589→575
 //     cns y=528→514; mae y=527→513; municipio y=497→483; bairro y=473→459
 //     logradouro y=472→458; numero y=448→434; cep y=420→406; telefone y=397→383
+//     uf: estimated right of cidade
 const COORDS_FEBRE_AMARELA: FormCoords = {
-  nome_completo:   { x: 65,  y: 604, maxWidth: 382 },
+  nome_paciente:   { x: 65,  y: 604, maxWidth: 382 },
   data_nascimento: { x: 458, y: 604, maxWidth: 110 },
   idade:           { x: 65,  y: 575, maxWidth: 88  },
   sexo:            { x: 163, y: 575, maxWidth: 88  },
   cns:             { x: 68,  y: 514, maxWidth: 168 },
   nome_mae:        { x: 243, y: 513, maxWidth: 292 },
-  municipio:       { x: 95,  y: 483, maxWidth: 318 },
+  cidade:          { x: 95,  y: 483, maxWidth: 308 },
+  uf:              { x: 426, y: 483, maxWidth: 30  },
   bairro:          { x: 64,  y: 459, maxWidth: 132 },
-  logradouro:      { x: 207, y: 458, maxWidth: 200 },
+  endereco:        { x: 207, y: 458, maxWidth: 200 },
   numero_end:      { x: 66,  y: 434, maxWidth: 100 },
   cep:             { x: 468, y: 406, maxWidth: 100 },
   telefone:        { x: 66,  y: 383, maxWidth: 140 },
@@ -123,17 +129,19 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
 // ─── MENINGITE ───────────────────────────────────────────────────────────────
 // [F] nome label pdf_y=614,x=71→fill y=600; data_nasc pdf_y=614,x=461→fill y=600
 //     sexo/idade pdf_y=585→fill y=571
-// [O] cns/mae/municipio/bairro/logradouro/numero/cep/telefone: −90/−135/−159/−184/−212/−235 from nome
+// [O] cns/mae/municipio/bairro/logradouro/numero/cep/telefone: consistent offsets
+//     uf: estimated right of cidade
 const COORDS_MENINGITE: FormCoords = {
-  nome_completo:   { x: 71,  y: 600, maxWidth: 380 },
+  nome_paciente:   { x: 71,  y: 600, maxWidth: 380 },
   data_nascimento: { x: 461, y: 600, maxWidth: 110 },
   idade:           { x: 70,  y: 571, maxWidth: 88  },
   sexo:            { x: 166, y: 571, maxWidth: 88  },
   cns:             { x: 69,  y: 510, maxWidth: 168 },
   nome_mae:        { x: 243, y: 509, maxWidth: 292 },
-  municipio:       { x: 97,  y: 479, maxWidth: 318 },
+  cidade:          { x: 97,  y: 479, maxWidth: 308 },
+  uf:              { x: 428, y: 479, maxWidth: 30  },
   bairro:          { x: 68,  y: 455, maxWidth: 130 },
-  logradouro:      { x: 209, y: 454, maxWidth: 200 },
+  endereco:        { x: 209, y: 454, maxWidth: 200 },
   numero_end:      { x: 68,  y: 430, maxWidth: 100 },
   cep:             { x: 467, y: 402, maxWidth: 100 },
   telefone:        { x: 69,  y: 379, maxWidth: 140 },
@@ -146,16 +154,18 @@ const COORDS_MENINGITE: FormCoords = {
 //     bairro pdf_y=443,x=65→fill y=429; logradouro pdf_y=443,x=207→fill y=429 (same row)
 //     numero pdf_y=419,x=65→fill y=405; cep pdf_y=391,x=468→fill y=377
 //     telefone pdf_y=368,x=66→fill y=354
+//     uf: estimated right of cidade
 const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
-  nome_completo:   { x: 68,  y: 641, maxWidth: 380 },
+  nome_paciente:   { x: 68,  y: 641, maxWidth: 380 },
   data_nascimento: { x: 458, y: 641, maxWidth: 110 },
   idade:           { x: 67,  y: 612, maxWidth: 88  },
   sexo:            { x: 163, y: 612, maxWidth: 88  },
   cns:             { x: 70,  y: 551, maxWidth: 168 },
   nome_mae:        { x: 245, y: 550, maxWidth: 292 },
-  municipio:       { x: 93,  y: 454, maxWidth: 318 },
+  cidade:          { x: 93,  y: 454, maxWidth: 308 },
+  uf:              { x: 424, y: 454, maxWidth: 30  },
   bairro:          { x: 65,  y: 429, maxWidth: 130 },
-  logradouro:      { x: 207, y: 429, maxWidth: 200 },
+  endereco:        { x: 207, y: 429, maxWidth: 200 },
   numero_end:      { x: 65,  y: 405, maxWidth: 100 },
   cep:             { x: 468, y: 377, maxWidth: 100 },
   telefone:        { x: 66,  y: 354, maxWidth: 140 },
@@ -165,16 +175,18 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
 // [F] nome pdf_y=603,x=66→fill y=589; data_nasc pdf_y=604,x=456→fill y=590
 //     cep pdf_y=403→fill y=389 (explicit); telefone pdf_y=380→fill y=366 (explicit)
 // [O] sexo/idade/cns/mae/municipio/bairro/logradouro/numero: consistent offsets
+//     uf: estimated right of cidade
 const COORDS_FEBRE_TIFOIDE: FormCoords = {
-  nome_completo:   { x: 66,  y: 589, maxWidth: 382 },
+  nome_paciente:   { x: 66,  y: 589, maxWidth: 382 },
   data_nascimento: { x: 456, y: 590, maxWidth: 110 },
   idade:           { x: 66,  y: 560, maxWidth: 88  },
   sexo:            { x: 165, y: 560, maxWidth: 88  },
   cns:             { x: 69,  y: 499, maxWidth: 168 },
   nome_mae:        { x: 243, y: 498, maxWidth: 292 },
-  municipio:       { x: 97,  y: 468, maxWidth: 318 },
+  cidade:          { x: 97,  y: 468, maxWidth: 308 },
+  uf:              { x: 428, y: 468, maxWidth: 30  },
   bairro:          { x: 68,  y: 444, maxWidth: 130 },
-  logradouro:      { x: 209, y: 443, maxWidth: 200 },
+  endereco:        { x: 209, y: 443, maxWidth: 200 },
   numero_end:      { x: 68,  y: 419, maxWidth: 100 },
   cep:             { x: 469, y: 389, maxWidth: 100 },
   telefone:        { x: 69,  y: 366, maxWidth: 140 },
@@ -187,16 +199,18 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
 //     bairro pdf_y=459,x=67→fill y=445; logradouro pdf_y=458,x=207→fill y=444
 //     numero pdf_y=435,x=68→fill y=421; cep pdf_y=407,x=471→fill y=393
 //     telefone pdf_y=384,x=69→fill y=370
+//     uf: estimated right of cidade
 const COORDS_AIDS_ADULTO: FormCoords = {
-  nome_completo:   { x: 68,  y: 593, maxWidth: 380 },
+  nome_paciente:   { x: 68,  y: 593, maxWidth: 380 },
   data_nascimento: { x: 457, y: 593, maxWidth: 110 },
   idade:           { x: 65,  y: 564, maxWidth: 88  },
   sexo:            { x: 163, y: 564, maxWidth: 88  },
   cns:             { x: 71,  y: 503, maxWidth: 165 },
   nome_mae:        { x: 245, y: 502, maxWidth: 290 },
-  municipio:       { x: 95,  y: 470, maxWidth: 250 },
+  cidade:          { x: 95,  y: 470, maxWidth: 240 },
+  uf:              { x: 358, y: 470, maxWidth: 30  },
   bairro:          { x: 67,  y: 445, maxWidth: 130 },
-  logradouro:      { x: 207, y: 444, maxWidth: 200 },
+  endereco:        { x: 207, y: 444, maxWidth: 200 },
   numero_end:      { x: 68,  y: 421, maxWidth: 100 },
   cep:             { x: 471, y: 393, maxWidth: 100 },
   telefone:        { x: 69,  y: 370, maxWidth: 140 },
@@ -209,16 +223,18 @@ const COORDS_AIDS_ADULTO: FormCoords = {
 //     bairro pdf_y=417,x=66→fill y=403; logradouro pdf_y=416,x=205→fill y=402
 //     numero pdf_y=393,x=66→fill y=379; cep pdf_y=365,x=469→fill y=351
 //     telefone pdf_y=342,x=67→fill y=328
+//     uf: estimated right of cidade
 const COORDS_EXANTEMATICA: FormCoords = {
-  nome_completo:   { x: 67,  y: 550, maxWidth: 380 },
+  nome_paciente:   { x: 67,  y: 550, maxWidth: 380 },
   data_nascimento: { x: 457, y: 550, maxWidth: 110 },
   idade:           { x: 65,  y: 521, maxWidth: 88  },
   sexo:            { x: 162, y: 521, maxWidth: 88  },
   cns:             { x: 69,  y: 460, maxWidth: 168 },
   nome_mae:        { x: 244, y: 459, maxWidth: 292 },
-  municipio:       { x: 94,  y: 428, maxWidth: 318 },
+  cidade:          { x: 94,  y: 428, maxWidth: 308 },
+  uf:              { x: 425, y: 428, maxWidth: 30  },
   bairro:          { x: 66,  y: 403, maxWidth: 130 },
-  logradouro:      { x: 205, y: 402, maxWidth: 200 },
+  endereco:        { x: 205, y: 402, maxWidth: 200 },
   numero_end:      { x: 66,  y: 379, maxWidth: 100 },
   cep:             { x: 469, y: 351, maxWidth: 100 },
   telefone:        { x: 67,  y: 328, maxWidth: 140 },
@@ -267,20 +283,31 @@ function sexLabel(sex?: string | null): string {
 }
 
 // ── field value map ───────────────────────────────────────────────────────────
+// Keys match the 12 standardized patient field names.
+// Extra SINAN-only keys (idade, sexo, telefone, numero_end) are included for
+// the text-overlay draw pass; they are not AcroForm field names.
 
 function buildFieldValues(patient: PdfPatient): Record<string, string> {
+  const addrWithNum = [patient.street, patient.addressNumber && `nº ${patient.addressNumber}`]
+    .filter(Boolean).join(", ");
   return {
-    nome_completo:   patient.name,
+    // ── 12 standard patient fields ────────────────────────────────────────
+    nome_paciente:   patient.name,
+    nome_mae:        patient.motherName   ?? "",
     data_nascimento: fmtDate(patient.birthDate),
+    cpf:             patient.cpf          ?? "",
+    rg:              patient.rg           ?? "",
+    cns:             patient.cns          ?? "",
+    endereco:        addrWithNum,
+    bairro:          patient.neighborhood ?? "",
+    cidade:          patient.city         ?? "",
+    uf:              patient.addressState ?? "",
+    cep:             patient.zipCode      ?? "",
+    peso:            patient.weight != null ? `${patient.weight}` : "",
+    // ── SINAN overlay-only fields (not AcroForm field names) ─────────────
     idade:           patient.age ? `${patient.age} anos` : "",
     sexo:            sexLabel(patient.sex),
-    cns:             patient.cns          ?? "",
-    nome_mae:        patient.motherName   ?? "",
-    municipio:       patient.city         ?? "",
-    bairro:          patient.neighborhood ?? "",
-    logradouro:      patient.street       ?? "",
     numero_end:      patient.addressNumber ?? "",
-    cep:             patient.zipCode      ?? "",
     telefone:        patient.phone        ?? "",
   };
 }
@@ -337,17 +364,20 @@ async function fillTemplate(
     page.drawText(text, { x: pos.x, y: pos.y, font: f, size: SIZE, color: INK });
   }
 
-  draw("nome_completo",   true);
+  // 12 standard fields
+  draw("nome_paciente",   true);
+  draw("nome_mae");
   draw("data_nascimento");
+  draw("cns");
+  draw("endereco");
+  draw("bairro");
+  draw("cidade");
+  draw("uf");
+  draw("cep");
+  // SINAN-only overlay fields (not AcroForm names)
   draw("idade");
   draw("sexo");
-  draw("cns");
-  draw("nome_mae");
-  draw("municipio");
-  draw("bairro");
-  draw("logradouro");
   draw("numero_end");
-  draw("cep");
   draw("telefone");
 
   return doc.save();
@@ -406,13 +436,14 @@ export async function downloadSinanPdf(
 }
 
 // ── Ficha de Identificação do Paciente ────────────────────────────────────────
-// Generates a patient identification card with 8 fields:
-//   field_00 nome  field_01 cpf  field_02 rg   field_03 cns
-//   field_04 endereço  field_05 município  field_06 telefone  field_07 peso
+// Generates a patient identification card with the 12 standardized fields:
+//   nome_paciente  nome_mae     data_nascimento  cpf
+//   rg             cns          endereco         bairro
+//   cidade         uf           cep              peso
 
 export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<void> {
   const doc  = await PDFDocument.create();
-  const page = doc.addPage([595, 842]);                   // A4 portrait
+  const page = doc.addPage([595, 842]);
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 
@@ -427,21 +458,21 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
   const BORDER  = rgb(0.80, 0.82, 0.88);
   const LTBLUE  = rgb(0.72, 0.78, 0.96);
 
-  // ── layout constants ───────────────────────────────────────────────────────
-  const ML      = 40;           // left margin
-  const CW      = 515;          // content width  (595 - 40 - 40)
-  const LBL_W   = 135;          // label column width
-  const VAL_W   = CW - LBL_W;  // value column width
-  const ROW_H   = 48;           // row height
-  const GAP     = 8;            // gap between rows
-  const STEP    = ROW_H + GAP;
-  const FIRST_Y = 752;          // y-top of first field row (below header)
+  // ── layout (12 rows, ROW_H=38, GAP=6, STEP=44) ───────────────────────────
+  const ML      = 40;
+  const CW      = 515;
+  const LBL_W   = 140;
+  const VAL_W   = CW - LBL_W;
+  const ROW_H   = 38;
+  const STEP    = 44;           // ROW_H + 6 gap
+  const FIRST_Y = 752;          // y-top of first row
 
-  // ── header block (y 762 → 812) ────────────────────────────────────────────
+  // ── header (y 762 → 812) ──────────────────────────────────────────────────
   const HDR_BOT = 762;
   const HDR_H   = 50;
-  page.drawRectangle({ x: ML,      y: HDR_BOT, width: CW,   height: HDR_H, color: NAVY   });
-  page.drawRectangle({ x: ML,      y: HDR_BOT, width: 5,    height: HDR_H, color: ACCENT });
+  page.drawRectangle({ x: ML, y: HDR_BOT, width: CW,  height: HDR_H, color: NAVY   });
+  page.drawRectangle({ x: ML, y: HDR_BOT, width: 5,   height: HDR_H, color: ACCENT });
+  page.drawRectangle({ x: ML, y: HDR_BOT, width: CW,  height: HDR_H, borderColor: BORDER, borderWidth: 0.5 });
 
   page.drawText("UPA BREVES — GESTÃO DE PACIENTES", {
     x: ML + 14, y: HDR_BOT + 30, font: bold, size: 12.5, color: WHITE,
@@ -449,79 +480,68 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
   page.drawText("FICHA DE IDENTIFICAÇÃO DO PACIENTE", {
     x: ML + 14, y: HDR_BOT + 11, font, size: 8, color: LTBLUE,
   });
-
   const emitida = `Emitida em: ${new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}`;
   page.drawText(emitida, {
     x: ML + CW - font.widthOfTextAtSize(emitida, 6.5) - 4, y: HDR_BOT + 5,
     font, size: 6.5, color: LTBLUE,
   });
 
-  // outer border of header
-  page.drawRectangle({ x: ML, y: HDR_BOT, width: CW, height: HDR_H, borderColor: BORDER, borderWidth: 0.5 });
-
-  // ── field definitions ──────────────────────────────────────────────────────
-  const addrParts = [patient.street, patient.addressNumber && `nº ${patient.addressNumber}`, patient.neighborhood]
+  // ── 12 standard field definitions ─────────────────────────────────────────
+  const addrWithNum = [patient.street, patient.addressNumber && `nº ${patient.addressNumber}`]
     .filter(Boolean).join(", ");
-  const cityUF = [patient.city, patient.addressState].filter(Boolean).join(" — ");
 
-  const fields: Array<{ num: string; label: string; value: string }> = [
-    { num: "00", label: "NOME COMPLETO",    value: patient.name },
-    { num: "01", label: "CPF",              value: patient.cpf        ?? "" },
-    { num: "02", label: "RG",               value: patient.rg         ?? "" },
-    { num: "03", label: "CNS / CARTÃO SUS", value: patient.cns        ?? "" },
-    { num: "04", label: "ENDEREÇO",         value: addrParts },
-    { num: "05", label: "MUNICÍPIO / UF",   value: cityUF },
-    { num: "06", label: "TELEFONE",         value: patient.phone      ?? "" },
-    { num: "07", label: "PESO",             value: patient.weight != null ? `${patient.weight} kg` : "" },
+  const fields: Array<{ key: string; label: string; value: string }> = [
+    { key: "nome_paciente",   label: "NOME DO PACIENTE",   value: patient.name },
+    { key: "nome_mae",        label: "NOME DA MÃE",        value: patient.motherName   ?? "" },
+    { key: "data_nascimento", label: "DATA DE NASCIMENTO", value: fmtDate(patient.birthDate) },
+    { key: "cpf",             label: "CPF",                value: patient.cpf          ?? "" },
+    { key: "rg",              label: "RG",                 value: patient.rg           ?? "" },
+    { key: "cns",             label: "CNS / CARTÃO SUS",   value: patient.cns          ?? "" },
+    { key: "endereco",        label: "ENDEREÇO",           value: addrWithNum },
+    { key: "bairro",          label: "BAIRRO",             value: patient.neighborhood ?? "" },
+    { key: "cidade",          label: "MUNICÍPIO",          value: patient.city         ?? "" },
+    { key: "uf",              label: "UF",                 value: patient.addressState ?? "" },
+    { key: "cep",             label: "CEP",                value: patient.zipCode      ?? "" },
+    { key: "peso",            label: "PESO (kg)",          value: patient.weight != null ? `${patient.weight}` : "" },
   ];
 
   // ── draw rows ──────────────────────────────────────────────────────────────
-  fields.forEach(({ num, label, value }, i) => {
+  fields.forEach(({ key, label, value }, i) => {
     const yBot = FIRST_Y - i * STEP - ROW_H;
     const yTop = yBot + ROW_H;
 
-    // backgrounds
-    page.drawRectangle({ x: ML,            y: yBot, width: LBL_W, height: ROW_H, color: LBLBG });
-    page.drawRectangle({ x: ML + LBL_W,    y: yBot, width: VAL_W, height: ROW_H, color: VALBG });
-
-    // outer border
+    page.drawRectangle({ x: ML,          y: yBot, width: LBL_W, height: ROW_H, color: LBLBG });
+    page.drawRectangle({ x: ML + LBL_W,  y: yBot, width: VAL_W, height: ROW_H, color: VALBG });
     page.drawRectangle({ x: ML, y: yBot, width: CW, height: ROW_H, borderColor: BORDER, borderWidth: 0.5 });
+    page.drawLine({ start: { x: ML + LBL_W, y: yBot }, end: { x: ML + LBL_W, y: yTop }, thickness: 0.5, color: BORDER });
 
-    // label/value divider
-    page.drawLine({
-      start: { x: ML + LBL_W, y: yBot },
-      end:   { x: ML + LBL_W, y: yTop },
-      thickness: 0.5, color: BORDER,
-    });
+    // field key badge (small, top-left of label column)
+    const badgeLabel = key.replace(/_/g, " ");
+    page.drawRectangle({ x: ML + 4, y: yTop - 13, width: bold.widthOfTextAtSize(badgeLabel, 5.5) + 6, height: 10, color: ACCENT });
+    page.drawText(badgeLabel, { x: ML + 7, y: yTop - 12, font: bold, size: 5.5, color: WHITE });
 
-    // field number badge
-    page.drawRectangle({ x: ML + 5, y: yTop - 15, width: 20, height: 13, color: ACCENT });
-    page.drawText(num, { x: ML + 8, y: yTop - 13, font: bold, size: 7, color: WHITE });
-
-    // label
-    page.drawText(label, { x: ML + 30, y: yTop - 13, font: bold, size: 6.5, color: MUTED });
+    // display label (bottom of label column)
+    page.drawText(label, { x: ML + 6, y: yBot + 8, font: bold, size: 6.5, color: MUTED });
 
     // value
     let txt = value || "—";
-    const maxW = VAL_W - 16;
-    while (txt.length > 1 && bold.widthOfTextAtSize(txt, 10) > maxW) txt = txt.slice(0, -1);
+    const maxW = VAL_W - 14;
+    while (txt.length > 1 && bold.widthOfTextAtSize(txt, 9.5) > maxW) txt = txt.slice(0, -1);
     page.drawText(txt, {
-      x: ML + LBL_W + 10, y: yBot + 16,
+      x: ML + LBL_W + 8, y: yBot + (ROW_H / 2 - 4),
       font: value ? bold : font,
-      size: value ? 10 : 9,
+      size: value ? 9.5 : 8.5,
       color: value ? DARK : MUTED,
     });
   });
 
   // ── signature block ────────────────────────────────────────────────────────
-  const SIG_Y = FIRST_Y - fields.length * STEP - ROW_H + 4;   // a bit below last field
-
-  // two signature lines
-  const lineY = SIG_Y - 30;
-  page.drawLine({ start: { x: ML,         y: lineY }, end: { x: ML + 230, y: lineY }, thickness: 0.5, color: BORDER });
-  page.drawLine({ start: { x: ML + 270,   y: lineY }, end: { x: ML + CW,  y: lineY }, thickness: 0.5, color: BORDER });
-  page.drawText("Assinatura / Carimbo do Profissional", { x: ML, y: lineY - 11, font, size: 7, color: MUTED });
-  page.drawText("Data / Hora", { x: ML + 270, y: lineY - 11, font, size: 7, color: MUTED });
+  const lastBot = FIRST_Y - 11 * STEP - ROW_H;   // bottom of last row (i=11)
+  const sigY    = lastBot - 36;
+  page.drawLine({ start: { x: ML,       y: sigY }, end: { x: ML + 235, y: sigY }, thickness: 0.5, color: BORDER });
+  page.drawLine({ start: { x: ML + 275, y: sigY }, end: { x: ML + CW,  y: sigY }, thickness: 0.5, color: BORDER });
+  page.drawText("Assinatura / Carimbo do Profissional", { x: ML, y: sigY - 10, font, size: 7, color: MUTED });
+  page.drawText("Data / Hora", { x: ML + 275, y: sigY - 10, font, size: 7, color: MUTED });
 
   // ── footer ─────────────────────────────────────────────────────────────────
   page.drawLine({ start: { x: ML, y: 38 }, end: { x: ML + CW, y: 38 }, thickness: 0.4, color: BORDER });
