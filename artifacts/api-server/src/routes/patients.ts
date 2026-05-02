@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable } from "@workspace/db";
+import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable } from "@workspace/db";
 import { eq, sql, desc } from "drizzle-orm";
 import {
   CreatePatientBody,
@@ -15,6 +15,10 @@ import {
   CreatePatientPrescriptionBody,
   UpdatePrescriptionStatusParams,
   UpdatePrescriptionStatusBody,
+  CreatePatientTaskParams,
+  CreatePatientTaskBody,
+  UpdateTaskStatusParams,
+  UpdateTaskStatusBody,
 } from "@workspace/api-zod";
 
 const router = Router();
@@ -222,6 +226,55 @@ router.patch("/:id/prescriptions/:prescriptionId", async (req, res) => {
     ...prescription,
     createdAt: prescription.createdAt.toISOString(),
     updatedAt: prescription.updatedAt.toISOString(),
+  });
+});
+
+router.get("/:id/tasks", async (req, res) => {
+  const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
+  const tasks = await db.select()
+    .from(patientTasksTable)
+    .where(eq(patientTasksTable.patientId, id))
+    .orderBy(desc(patientTasksTable.createdAt));
+  res.json(tasks.map(t => ({
+    ...t,
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
+  })));
+});
+
+router.post("/:id/tasks", async (req, res) => {
+  const { id } = CreatePatientTaskParams.parse({ id: Number(req.params.id) });
+  const body = CreatePatientTaskBody.parse(req.body);
+  const [task] = await db.insert(patientTasksTable).values({
+    patientId: id,
+    items: body.items,
+    status: body.status ?? "pendente",
+    responsible: body.responsible,
+    notes: body.notes ?? "",
+    updatedAt: new Date(),
+  }).returning();
+  res.status(201).json({
+    ...task,
+    createdAt: task.createdAt.toISOString(),
+    updatedAt: task.updatedAt.toISOString(),
+  });
+});
+
+router.patch("/:id/tasks/:taskId", async (req, res) => {
+  const { id, taskId } = UpdateTaskStatusParams.parse({
+    id: Number(req.params.id),
+    taskId: Number(req.params.taskId),
+  });
+  const body = UpdateTaskStatusBody.parse(req.body);
+  const [task] = await db.update(patientTasksTable)
+    .set({ status: body.status, updatedAt: new Date() })
+    .where(eq(patientTasksTable.id, taskId))
+    .returning();
+  if (!task) { res.status(404).json({ error: "Pendência não encontrada" }); return; }
+  res.json({
+    ...task,
+    createdAt: task.createdAt.toISOString(),
+    updatedAt: task.updatedAt.toISOString(),
   });
 });
 

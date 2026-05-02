@@ -10,17 +10,20 @@ import {
   useGetPatientHistory,
   useGetPatientPrescriptions,
   useUpdatePrescriptionStatus,
+  useGetPatientTasks,
+  useUpdateTaskStatus,
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
   getGetPatientHistoryQueryKey,
   getGetPatientPrescriptionsQueryKey,
+  getGetPatientTasksQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity, ArrowLeft, Edit, Trash2, HeartPulse,
   Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
   UserCheck, ClipboardList, Stethoscope, Thermometer,
-  Gauge, ClipboardCheck, CheckSquare, Square,
+  Gauge, ClipboardCheck, CheckSquare, Square, ListTodo,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -40,6 +43,7 @@ import { PatientForm } from "@/components/patient-form";
 import { VitalsUpdateForm } from "@/components/vitals-update-form";
 import { VitalsRecordForm } from "@/components/vitals-record-form";
 import { PrescriptionForm } from "@/components/prescription-form";
+import { TasksForm } from "@/components/tasks-form";
 import { cn } from "@/lib/utils";
 
 const TRIAGE_CONFIG = {
@@ -108,17 +112,22 @@ export default function PatientDetail() {
   const { data: prescriptions, isLoading: isLoadingPrescriptions } = useGetPatientPrescriptions(id, {
     query: { enabled: !!id, queryKey: getGetPatientPrescriptionsQueryKey(id) },
   });
+  const { data: tasks, isLoading: isLoadingTasks } = useGetPatientTasks(id, {
+    query: { enabled: !!id, queryKey: getGetPatientTasksQueryKey(id) },
+  });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isVitalsOpen, setIsVitalsOpen] = useState(false);
   const [isVitalsRecordOpen, setIsVitalsRecordOpen] = useState(false);
   const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
+  const [isTasksOpen, setIsTasksOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
+  const updateTaskStatus = useUpdateTaskStatus();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -515,6 +524,95 @@ export default function PatientDetail() {
               )}
             </div>
 
+            {/* Tasks / Pendências Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <ListTodo className="h-4 w-4 text-primary" /> Pendências
+                </h3>
+                <Button
+                  size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                  onClick={() => setIsTasksOpen(true)}
+                >
+                  <ListTodo className="h-3.5 w-3.5" />
+                  Nova Pendência
+                </Button>
+              </div>
+
+              {isLoadingTasks ? (
+                <div className="space-y-2">
+                  {[1].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                </div>
+              ) : !tasks || tasks.length === 0 ? (
+                <div className="text-center py-6 bg-card rounded-lg border border-border/50">
+                  <p className="text-sm text-muted-foreground">Nenhuma pendência registrada ainda.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {tasks.map(task => {
+                    type TaskItem = { text: string; time?: string };
+                    const items: TaskItem[] = (() => { try { return JSON.parse(task.items); } catch { return []; } })();
+                    const statusCfg = ({
+                      pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                      em_andamento: { label: "Em andamento", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+                      concluido:    { label: "Concluído",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
+                    } as const)[task.status as "pendente" | "em_andamento" | "concluido"] ?? { label: task.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
+                    return (
+                      <div key={task.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
+                          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", statusCfg.color)}>
+                            {statusCfg.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(task.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                          </span>
+                        </div>
+                        <div className="px-4 py-3">
+                          <ul className="space-y-1.5 mb-3">
+                            {items.map((item, idx) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm">
+                                {task.status === "concluido"
+                                  ? <CheckSquare className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
+                                  : <Square className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />}
+                                <span className={cn(task.status === "concluido" && "line-through text-muted-foreground")}>
+                                  {item.text}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                            <span className="text-xs text-muted-foreground">— {task.responsible}</span>
+                            {task.status !== "concluido" && (
+                              <div className="flex gap-1.5">
+                                {task.status === "pendente" && (
+                                  <Button size="sm" variant="outline"
+                                    className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                    onClick={() => updateTaskStatus.mutate(
+                                      { id, taskId: task.id, data: { status: "em_andamento" } },
+                                      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientTasksQueryKey(id) }),
+                                        onError: () => toast({ title: "Erro ao atualizar pendência", variant: "destructive" }) }
+                                    )}
+                                  >Iniciar</Button>
+                                )}
+                                <Button size="sm" variant="outline"
+                                  className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                                  onClick={() => updateTaskStatus.mutate(
+                                    { id, taskId: task.id, data: { status: "concluido" } },
+                                    { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientTasksQueryKey(id) }),
+                                      onError: () => toast({ title: "Erro ao atualizar pendência", variant: "destructive" }) }
+                                  )}
+                                >Concluir</Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* Right column: 1/3 width */}
@@ -649,6 +747,22 @@ export default function PatientDetail() {
             patientName={patient.name}
             onSuccess={() => setIsPrescriptionOpen(false)}
             onCancel={() => setIsPrescriptionOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isTasksOpen} onOpenChange={setIsTasksOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nova Pendência</DialogTitle>
+            <DialogDescription>Registre tarefas pendentes para este paciente.</DialogDescription>
+          </DialogHeader>
+          <TasksForm
+            patientId={id}
+            patientName={patient.name}
+            defaultResponsible={patient.nurse ?? ""}
+            onSuccess={() => setIsTasksOpen(false)}
+            onCancel={() => setIsTasksOpen(false)}
           />
         </DialogContent>
       </Dialog>

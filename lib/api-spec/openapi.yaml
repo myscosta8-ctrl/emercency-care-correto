@@ -258,6 +258,80 @@ paths:
               schema:
                 $ref: "#/components/schemas/PatientPrescription"
 
+  /patients/{id}/tasks:
+    get:
+      operationId: getPatientTasks
+      tags: [patients]
+      summary: Get patient pending tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientTask"
+    post:
+      operationId: createPatientTask
+      tags: [patients]
+      summary: Create a pending task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskBody"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientTask"
+
+  /patients/{id}/tasks/{taskId}:
+    patch:
+      operationId: updateTaskStatus
+      tags: [patients]
+      summary: Update task status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskStatusBody"
+      responses:
+        "200":
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientTask"
+
   /patients/{id}/history:
     get:
       operationId: getPatientHistory
@@ -545,6 +619,63 @@ components:
           type: string
         scheduledTime:
           type: string
+      required:
+        - status
+
+    PatientTask:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        items:
+          type: string
+        status:
+          type: string
+          enum: [pendente, em_andamento, concluido]
+        responsible:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - items
+        - status
+        - responsible
+        - notes
+        - createdAt
+        - updatedAt
+
+    CreateTaskBody:
+      type: object
+      properties:
+        items:
+          type: string
+        status:
+          type: string
+          enum: [pendente, em_andamento, concluido]
+        responsible:
+          type: string
+        notes:
+          type: string
+      required:
+        - items
+        - responsible
+
+    UpdateTaskStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pendente, em_andamento, concluido]
       required:
         - status
 

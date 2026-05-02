@@ -288,6 +288,62 @@ export const UpdatePrescriptionStatusResponse = zod.object({
 });
 
 /**
+ * @summary Get patient pending tasks
+ */
+export const GetPatientTasksParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientTasksResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  items: zod.string(),
+  status: zod.enum(["pendente", "em_andamento", "concluido"]),
+  responsible: zod.string(),
+  notes: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const GetPatientTasksResponse = zod.array(GetPatientTasksResponseItem);
+
+/**
+ * @summary Create a pending task
+ */
+export const CreatePatientTaskParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreatePatientTaskBody = zod.object({
+  items: zod.string(),
+  status: zod.enum(["pendente", "em_andamento", "concluido"]).optional(),
+  responsible: zod.string(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update task status
+ */
+export const UpdateTaskStatusParams = zod.object({
+  id: zod.coerce.number(),
+  taskId: zod.coerce.number(),
+});
+
+export const UpdateTaskStatusBody = zod.object({
+  status: zod.enum(["pendente", "em_andamento", "concluido"]),
+});
+
+export const UpdateTaskStatusResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  items: zod.string(),
+  status: zod.enum(["pendente", "em_andamento", "concluido"]),
+  responsible: zod.string(),
+  notes: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Get patient evolution history
  */
 export const GetPatientHistoryParams = zod.object({
