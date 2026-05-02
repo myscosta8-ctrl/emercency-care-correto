@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "UPA Patient Management"
+version = "1.0.0"
+id = "artifacts/upa-system"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23662
+
+[services.development]
+run = "pnpm --filter @workspace/upa-system run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/upa-system", "run", "build" ]
+publicDir = "artifacts/upa-system/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23662"
+BASE_PATH = "/"
