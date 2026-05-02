@@ -98,20 +98,20 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientQueryKey(patient.id) });
-          toast({ title: "Paciente atualizado" });
+          toast({ title: "Prontuário atualizado com sucesso" });
           onSuccess();
         },
-        onError: () => toast({ title: "Erro ao atualizar paciente", variant: "destructive" }),
+        onError: () => toast({ title: "Não foi possível atualizar o prontuário", variant: "destructive" }),
       });
     } else {
       createPatient.mutate({ data }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
-          toast({ title: "Paciente admitido" });
+          toast({ title: "Admissão registrada com sucesso" });
           onSuccess();
         },
-        onError: () => toast({ title: "Erro ao admitir paciente", variant: "destructive" }),
+        onError: () => toast({ title: "Não foi possível registrar a admissão", variant: "destructive" }),
       });
     }
   }
@@ -163,7 +163,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger data-testid="select-sector">
-                      <SelectValue placeholder="Selecionar setor" />
+                      <SelectValue placeholder="Selecione o setor" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -186,7 +186,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger data-testid="select-status">
-                      <SelectValue placeholder="Nível de triagem" />
+                      <SelectValue placeholder="Selecione a classificação" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -217,8 +217,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             name="diagnosis"
             render={({ field }) => (
               <FormItem className="col-span-2">
-                <FormLabel>Diagnóstico</FormLabel>
-                <FormControl><Input placeholder="Hipótese diagnóstica inicial..." data-testid="input-diagnosis" {...field} /></FormControl>
+                <FormLabel>Hipótese Diagnóstica</FormLabel>
+                <FormControl><Input placeholder="Queixa principal ou hipótese diagnóstica..." data-testid="input-diagnosis" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}

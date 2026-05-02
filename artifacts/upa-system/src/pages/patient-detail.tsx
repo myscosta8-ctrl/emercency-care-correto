@@ -91,7 +91,7 @@ export default function PatientDetail() {
         toast({ title: "Triagem atualizada" });
         setPendingStatus(null);
       },
-      onError: () => toast({ title: "Erro ao atualizar triagem", variant: "destructive" }),
+      onError: () => toast({ title: "Não foi possível reclassificar a triagem", variant: "destructive" }),
     });
   };
 
@@ -234,9 +234,9 @@ export default function PatientDetail() {
                 <div className="flex items-start gap-3">
                   <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Admitido em</p>
+                    <p className="text-xs text-muted-foreground">Data/Hora de Entrada</p>
                     <p className="font-medium">{format(new Date(patient.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
-                    <p className="text-sm text-muted-foreground">{format(new Date(patient.createdAt), "HH:mm", { locale: ptBR })}</p>
+                    <p className="text-sm text-muted-foreground">{format(new Date(patient.createdAt), "HH:mm 'h'", { locale: ptBR })}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">

@@ -221,7 +221,7 @@ export default function Dashboard() {
                     </CardContent>
                     <CardFooter className="text-xs text-muted-foreground border-t border-border/50 mt-1 pt-2 flex justify-between">
                       <span className="font-medium">{patient.sector}</span>
-                      <span>Admitido: {format(new Date(patient.createdAt), "dd/MM HH:mm", { locale: ptBR })}</span>
+                      <span>Entrada: {format(new Date(patient.createdAt), "dd/MM HH:mm", { locale: ptBR })}</span>
                     </CardFooter>
                   </Card>
                 </Link>
