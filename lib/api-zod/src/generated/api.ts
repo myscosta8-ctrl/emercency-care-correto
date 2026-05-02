@@ -40,14 +40,14 @@ export const ListPatientsResponse = zod.array(ListPatientsResponseItem);
 export const CreatePatientBody = zod.object({
   name: zod.string(),
   age: zod.number(),
-  bed: zod.string(),
-  diagnosis: zod.string(),
-  heartRate: zod.number(),
-  respiratoryRate: zod.number(),
-  glucose: zod.number(),
+  bed: zod.string().optional(),
+  diagnosis: zod.string().optional(),
+  heartRate: zod.number().optional(),
+  respiratoryRate: zod.number().optional(),
+  glucose: zod.number().optional(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
-  nurse: zod.string(),
+  nurse: zod.string().optional(),
 });
 
 /**
@@ -95,14 +95,14 @@ export const UpdatePatientParams = zod.object({
 export const UpdatePatientBody = zod.object({
   name: zod.string(),
   age: zod.number(),
-  bed: zod.string(),
-  diagnosis: zod.string(),
-  heartRate: zod.number(),
-  respiratoryRate: zod.number(),
-  glucose: zod.number(),
+  bed: zod.string().optional(),
+  diagnosis: zod.string().optional(),
+  heartRate: zod.number().optional(),
+  respiratoryRate: zod.number().optional(),
+  glucose: zod.number().optional(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
-  nurse: zod.string(),
+  nurse: zod.string().optional(),
 });
 
 export const UpdatePatientResponse = zod.object({
@@ -154,3 +154,55 @@ export const UpdatePatientStatusResponse = zod.object({
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
+
+/**
+ * @summary Update patient vitals and log evolution entry
+ */
+export const AddVitalsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddVitalsBody = zod.object({
+  heartRate: zod.number().optional(),
+  respiratoryRate: zod.number().optional(),
+  glucose: zod.number().optional(),
+  responsible: zod.string(),
+  note: zod.string().optional(),
+});
+
+export const AddVitalsResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  age: zod.number(),
+  bed: zod.string(),
+  diagnosis: zod.string(),
+  heartRate: zod.number(),
+  respiratoryRate: zod.number(),
+  glucose: zod.number(),
+  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+  sector: zod.string(),
+  nurse: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get patient evolution history
+ */
+export const GetPatientHistoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientHistoryResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  heartRate: zod.number().optional(),
+  respiratoryRate: zod.number().optional(),
+  glucose: zod.number().optional(),
+  responsible: zod.string(),
+  note: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const GetPatientHistoryResponse = zod.array(
+  GetPatientHistoryResponseItem,
+);

@@ -38,18 +38,37 @@ export interface Patient {
 export interface CreatePatientBody {
   name: string;
   age: number;
-  bed: string;
-  diagnosis: string;
-  heartRate: number;
-  respiratoryRate: number;
-  glucose: number;
+  bed?: string;
+  diagnosis?: string;
+  heartRate?: number;
+  respiratoryRate?: number;
+  glucose?: number;
   status: TriageStatus;
   sector: string;
-  nurse: string;
+  nurse?: string;
 }
 
 export interface UpdatePatientStatusBody {
   status: TriageStatus;
+}
+
+export interface VitalsUpdateBody {
+  heartRate?: number;
+  respiratoryRate?: number;
+  glucose?: number;
+  responsible: string;
+  note?: string;
+}
+
+export interface PatientEvolution {
+  id: number;
+  patientId: number;
+  heartRate?: number;
+  respiratoryRate?: number;
+  glucose?: number;
+  responsible: string;
+  note: string;
+  createdAt: string;
 }
 
 export interface PatientsSummary {

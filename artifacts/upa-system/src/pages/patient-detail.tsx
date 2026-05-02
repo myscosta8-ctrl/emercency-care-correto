@@ -1,19 +1,22 @@
 import { useState } from "react";
 import { useRoute, useLocation, Link } from "wouter";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   useGetPatient,
   getGetPatientQueryKey,
   useDeletePatient,
   useUpdatePatientStatus,
+  useGetPatientHistory,
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
+  getGetPatientHistoryQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity, ArrowLeft, Edit, Trash2, HeartPulse,
-  Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw, UserCheck,
+  Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
+  UserCheck, ClipboardList, Stethoscope,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -30,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { PatientForm } from "@/components/patient-form";
+import { VitalsUpdateForm } from "@/components/vitals-update-form";
 
 const TRIAGE_CONFIG = {
   red:    { label: "Vermelho",  sublabel: "Emergência",     colorClass: "text-triage-red",    borderClass: "border-triage-red/40",    bgClass: "bg-triage-red/10",    dotClass: "bg-triage-red" },
@@ -57,9 +61,13 @@ export default function PatientDetail() {
   const { data: patient, isLoading, isError } = useGetPatient(id, {
     query: { enabled: !!id, queryKey: getGetPatientQueryKey(id) },
   });
+  const { data: history, isLoading: isLoadingHistory } = useGetPatientHistory(id, {
+    query: { enabled: !!id, queryKey: getGetPatientHistoryQueryKey(id) },
+  });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isVitalsOpen, setIsVitalsOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
   const deletePatient = useDeletePatient();
@@ -146,8 +154,10 @@ export default function PatientDetail() {
       <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-          {/* Left: Main Info */}
+          {/* Left: Main Info + Vitals */}
           <div className="md:col-span-2 space-y-5">
+
+            {/* Patient Info Card */}
             <Card className={`border-l-4 ${cfg.borderClass} border-t-border/50 border-r-border/50 border-b-border/50`}>
               <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-3">
@@ -157,8 +167,12 @@ export default function PatientDetail() {
                       <span>{patient.age} anos</span>
                       <span>&bull;</span>
                       <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{patient.sector}</span>
-                      <span>&bull;</span>
-                      <span className="flex items-center gap-1"><BedDouble className="h-3 w-3" />Leito {patient.bed}</span>
+                      {patient.bed && (
+                        <>
+                          <span>&bull;</span>
+                          <span className="flex items-center gap-1"><BedDouble className="h-3 w-3" />Leito {patient.bed}</span>
+                        </>
+                      )}
                     </p>
                   </div>
                   <div className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg ${cfg.bgClass} border ${cfg.borderClass}`}>
@@ -170,19 +184,33 @@ export default function PatientDetail() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Hipótese Diagnóstica</p>
-                  <p className="text-base font-medium">{patient.diagnosis}</p>
-                </div>
-              </CardContent>
+              {patient.diagnosis && (
+                <CardContent>
+                  <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Hipótese Diagnóstica</p>
+                    <p className="text-base font-medium">{patient.diagnosis}</p>
+                  </div>
+                </CardContent>
+              )}
             </Card>
 
             {/* Vitals */}
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary" /> Sinais Vitais
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" /> Sinais Vitais
+                </h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => setIsVitalsOpen(true)}
+                  data-testid="button-update-vitals"
+                >
+                  <Stethoscope className="h-3.5 w-3.5" />
+                  Atualizar Sinais Vitais
+                </Button>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card className="border-border/50 bg-card/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -191,8 +219,10 @@ export default function PatientDetail() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-mono font-bold" data-testid="text-heartRate">{patient.heartRate}</span>
-                      <span className="text-sm text-muted-foreground">bpm</span>
+                      <span className="text-4xl font-mono font-bold" data-testid="text-heartRate">
+                        {patient.heartRate > 0 ? patient.heartRate : "—"}
+                      </span>
+                      {patient.heartRate > 0 && <span className="text-sm text-muted-foreground">bpm</span>}
                     </div>
                   </CardContent>
                 </Card>
@@ -203,8 +233,10 @@ export default function PatientDetail() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-mono font-bold" data-testid="text-respiratoryRate">{patient.respiratoryRate}</span>
-                      <span className="text-sm text-muted-foreground">irpm</span>
+                      <span className="text-4xl font-mono font-bold" data-testid="text-respiratoryRate">
+                        {patient.respiratoryRate > 0 ? patient.respiratoryRate : "—"}
+                      </span>
+                      {patient.respiratoryRate > 0 && <span className="text-sm text-muted-foreground">irpm</span>}
                     </div>
                   </CardContent>
                 </Card>
@@ -215,16 +247,62 @@ export default function PatientDetail() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-mono font-bold" data-testid="text-glucose">{patient.glucose}</span>
-                      <span className="text-sm text-muted-foreground">mg/dL</span>
+                      <span className="text-4xl font-mono font-bold" data-testid="text-glucose">
+                        {patient.glucose > 0 ? patient.glucose : "—"}
+                      </span>
+                      {patient.glucose > 0 && <span className="text-sm text-muted-foreground">mg/dL</span>}
                     </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
+
+            {/* Evolution History */}
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-primary" /> Histórico de Evolução
+              </h3>
+              {isLoadingHistory ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+                </div>
+              ) : !history || history.length === 0 ? (
+                <div className="text-center py-6 bg-card rounded-lg border border-border/50">
+                  <p className="text-sm text-muted-foreground">Nenhuma evolução registrada ainda.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {history.map(entry => (
+                    <div key={entry.id} className="flex gap-3 p-3 bg-card rounded-lg border border-border/50">
+                      <div className="shrink-0 w-0.5 self-stretch rounded-full bg-border/70" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-xs font-semibold text-foreground">
+                            {entry.responsible || "Sistema"}
+                          </span>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {format(new Date(entry.createdAt), "dd/MM HH:mm", { locale: ptBR })}
+                          </span>
+                        </div>
+                        {(entry.heartRate || entry.respiratoryRate || entry.glucose) && (
+                          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-1">
+                            {entry.heartRate ? <span>FC: <strong className="text-foreground">{entry.heartRate}</strong> bpm</span> : null}
+                            {entry.respiratoryRate ? <span>FR: <strong className="text-foreground">{entry.respiratoryRate}</strong> irpm</span> : null}
+                            {entry.glucose ? <span>Gli: <strong className="text-foreground">{entry.glucose}</strong> mg/dL</span> : null}
+                          </div>
+                        )}
+                        {entry.note && (
+                          <p className="text-xs text-muted-foreground italic">{entry.note}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Right: Details + Quick Status */}
+          {/* Right: Admission Data + Quick Reclassification */}
           <div className="space-y-5">
             <Card className="border-border/50">
               <CardHeader className="pb-2">
@@ -240,30 +318,41 @@ export default function PatientDetail() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
+                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0 opacity-50" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Última Atualização</p>
+                    <p className="text-sm font-medium">
+                      {formatDistanceToNow(new Date(patient.updatedAt), { locale: ptBR, addSuffix: true })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground">Setor</p>
                     <p className="font-medium">{patient.sector}</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <BedDouble className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Leito</p>
-                    <p className="font-medium">{patient.bed}</p>
+                {patient.bed && (
+                  <div className="flex items-start gap-3">
+                    <BedDouble className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Leito</p>
+                      <p className="font-medium">{patient.bed}</p>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="flex items-start gap-3">
                   <UserCheck className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Enfermeiro(a) Responsável</p>
+                    <p className="text-xs text-muted-foreground">Responsável</p>
                     <p className="font-medium">{patient.nurse || "—"}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Quick Status Update */}
+            {/* Quick Reclassification */}
             <Card className="border-border/50">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -299,6 +388,7 @@ export default function PatientDetail() {
         </div>
       </main>
 
+      {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -309,6 +399,24 @@ export default function PatientDetail() {
         </DialogContent>
       </Dialog>
 
+      {/* Quick Vitals Update Dialog */}
+      <Dialog open={isVitalsOpen} onOpenChange={setIsVitalsOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Atualizar Sinais Vitais</DialogTitle>
+            <DialogDescription>
+              Informe os valores atuais e o responsável pela aferição.
+            </DialogDescription>
+          </DialogHeader>
+          <VitalsUpdateForm
+            patient={patient}
+            onSuccess={() => setIsVitalsOpen(false)}
+            onCancel={() => setIsVitalsOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Alta AlertDialog */}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

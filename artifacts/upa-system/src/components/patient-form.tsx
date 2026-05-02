@@ -49,14 +49,16 @@ const SECTOR_OPTIONS = [
 const formSchema = z.object({
   name: z.string().min(1, "Informe o nome completo do paciente"),
   age: z.coerce.number().min(0, "Informe uma idade válida"),
-  bed: z.string().min(1, "Informe o número do leito"),
-  diagnosis: z.string().min(1, "Informe a hipótese diagnóstica"),
-  heartRate: z.coerce.number().min(0, "Informe a frequência cardíaca"),
-  respiratoryRate: z.coerce.number().min(0, "Informe a frequência respiratória"),
-  glucose: z.coerce.number().min(0, "Informe o valor da glicemia"),
-  status: z.enum(["red", "orange", "yellow", "green", "blue"]),
+  status: z.enum(["red", "orange", "yellow", "green", "blue"], {
+    errorMap: () => ({ message: "Selecione a classificação de triagem" }),
+  }),
   sector: z.string().min(1, "Selecione o setor de atendimento"),
-  nurse: z.string().min(1, "Informe o enfermeiro(a) responsável"),
+  nurse: z.string().default(""),
+  bed: z.string().default(""),
+  diagnosis: z.string().default(""),
+  heartRate: z.coerce.number().min(0).default(0),
+  respiratoryRate: z.coerce.number().min(0).default(0),
+  glucose: z.coerce.number().min(0).default(0),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -76,14 +78,14 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
     defaultValues: {
       name: patient?.name ?? "",
       age: patient?.age ?? 0,
+      status: (patient?.status as FormValues["status"]) ?? "yellow",
+      sector: patient?.sector ?? "",
+      nurse: patient?.nurse ?? "",
       bed: patient?.bed ?? "",
       diagnosis: patient?.diagnosis ?? "",
       heartRate: patient?.heartRate ?? 0,
       respiratoryRate: patient?.respiratoryRate ?? 0,
       glucose: patient?.glucose ?? 0,
-      status: (patient?.status as FormValues["status"]) ?? "yellow",
-      sector: patient?.sector ?? "",
-      nurse: patient?.nurse ?? "",
     },
   });
 
@@ -116,10 +118,16 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
     }
   }
 
+  const OptLabel = () => (
+    <span className="text-[11px] text-muted-foreground font-normal ml-1">(opcional)</span>
+  );
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
+
+          {/* Nome — required, full width */}
           <FormField
             control={form.control}
             name="name"
@@ -131,6 +139,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
               </FormItem>
             )}
           />
+
+          {/* Idade — required */}
           <FormField
             control={form.control}
             name="age"
@@ -142,18 +152,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="bed"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Leito</FormLabel>
-                <FormControl><Input placeholder="A1, B3..." data-testid="input-bed" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
+          {/* Setor — required */}
           <FormField
             control={form.control}
             name="sector"
@@ -177,11 +177,12 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             )}
           />
 
+          {/* Triagem Manchester — required, full width */}
           <FormField
             control={form.control}
             name="status"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="col-span-2">
                 <FormLabel>Triagem Manchester</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
@@ -200,32 +201,61 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             )}
           />
 
+          {/* Separator */}
+          <div className="col-span-2 pt-1 border-t border-border/50">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-2">
+              Informações Adicionais <OptLabel />
+            </p>
+          </div>
+
+          {/* Responsável — optional but prominent */}
           <FormField
             control={form.control}
             name="nurse"
             render={({ field }) => (
               <FormItem className="col-span-2">
-                <FormLabel>Enfermeiro(a) Responsável</FormLabel>
-                <FormControl><Input placeholder="Nome do enfermeiro(a)" data-testid="input-nurse" {...field} /></FormControl>
+                <FormLabel>Responsável <OptLabel /></FormLabel>
+                <FormControl>
+                  <Input placeholder="Técnico(a) ou Enfermeiro(a) responsável" data-testid="input-nurse" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
+          {/* Leito — optional */}
+          <FormField
+            control={form.control}
+            name="bed"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Leito <OptLabel /></FormLabel>
+                <FormControl><Input placeholder="A1, B3..." data-testid="input-bed" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Hipótese Diagnóstica — optional */}
           <FormField
             control={form.control}
             name="diagnosis"
             render={({ field }) => (
-              <FormItem className="col-span-2">
-                <FormLabel>Hipótese Diagnóstica</FormLabel>
-                <FormControl><Input placeholder="Queixa principal ou hipótese diagnóstica..." data-testid="input-diagnosis" {...field} /></FormControl>
+              <FormItem>
+                <FormLabel>Hipótese Diagnóstica <OptLabel /></FormLabel>
+                <FormControl>
+                  <Input placeholder="Queixa principal ou hipótese..." data-testid="input-diagnosis" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <div className="col-span-2 pt-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sinais Vitais</p>
+          {/* Vitals separator */}
+          <div className="col-span-2 pt-1 border-t border-border/50">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-2">
+              Sinais Vitais <OptLabel />
+            </p>
           </div>
 
           <FormField
@@ -233,8 +263,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             name="heartRate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Freq. Cardíaca (bpm)</FormLabel>
-                <FormControl><Input type="number" data-testid="input-heartRate" {...field} /></FormControl>
+                <FormLabel>FC (bpm)</FormLabel>
+                <FormControl><Input type="number" min={0} data-testid="input-heartRate" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -244,8 +274,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             name="respiratoryRate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Freq. Respiratória (irpm)</FormLabel>
-                <FormControl><Input type="number" data-testid="input-respiratoryRate" {...field} /></FormControl>
+                <FormLabel>FR (irpm)</FormLabel>
+                <FormControl><Input type="number" min={0} data-testid="input-respiratoryRate" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -256,7 +286,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Glicemia (mg/dL)</FormLabel>
-                <FormControl><Input type="number" data-testid="input-glucose" {...field} /></FormControl>
+                <FormControl><Input type="number" min={0} step="0.1" data-testid="input-glucose" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}

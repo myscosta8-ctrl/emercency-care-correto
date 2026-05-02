@@ -20,8 +20,10 @@ import type {
   CreatePatientBody,
   HealthStatus,
   Patient,
+  PatientEvolution,
   PatientsSummary,
   UpdatePatientStatusBody,
+  VitalsUpdateBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -688,3 +690,177 @@ export const useUpdatePatientStatus = <
 > => {
   return useMutation(getUpdatePatientStatusMutationOptions(options));
 };
+
+/**
+ * @summary Update patient vitals and log evolution entry
+ */
+export const getAddVitalsUrl = (id: number) => {
+  return `/api/patients/${id}/vitals`;
+};
+
+export const addVitals = async (
+  id: number,
+  vitalsUpdateBody: VitalsUpdateBody,
+  options?: RequestInit,
+): Promise<Patient> => {
+  return customFetch<Patient>(getAddVitalsUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(vitalsUpdateBody),
+  });
+};
+
+export const getAddVitalsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addVitals>>,
+    TError,
+    { id: number; data: BodyType<VitalsUpdateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addVitals>>,
+  TError,
+  { id: number; data: BodyType<VitalsUpdateBody> },
+  TContext
+> => {
+  const mutationKey = ["addVitals"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addVitals>>,
+    { id: number; data: BodyType<VitalsUpdateBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addVitals(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddVitalsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addVitals>>
+>;
+export type AddVitalsMutationBody = BodyType<VitalsUpdateBody>;
+export type AddVitalsMutationError = ErrorType<void>;
+
+/**
+ * @summary Update patient vitals and log evolution entry
+ */
+export const useAddVitals = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addVitals>>,
+    TError,
+    { id: number; data: BodyType<VitalsUpdateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addVitals>>,
+  TError,
+  { id: number; data: BodyType<VitalsUpdateBody> },
+  TContext
+> => {
+  return useMutation(getAddVitalsMutationOptions(options));
+};
+
+/**
+ * @summary Get patient evolution history
+ */
+export const getGetPatientHistoryUrl = (id: number) => {
+  return `/api/patients/${id}/history`;
+};
+
+export const getPatientHistory = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PatientEvolution[]> => {
+  return customFetch<PatientEvolution[]>(getGetPatientHistoryUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatientHistoryQueryKey = (id: number) => {
+  return [`/api/patients/${id}/history`] as const;
+};
+
+export const getGetPatientHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPatientHistoryQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientHistory>>
+  > = ({ signal }) => getPatientHistory(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientHistory>>
+>;
+export type GetPatientHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get patient evolution history
+ */
+
+export function useGetPatientHistory<
+  TData = Awaited<ReturnType<typeof getPatientHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientHistoryQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

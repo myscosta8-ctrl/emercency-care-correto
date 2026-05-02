@@ -157,6 +157,54 @@ paths:
         "404":
           description: Not found
 
+  /patients/{id}/vitals:
+    post:
+      operationId: addVitals
+      tags: [patients]
+      summary: Update patient vitals and log evolution entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VitalsUpdateBody"
+      responses:
+        "200":
+          description: Updated patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not found
+
+  /patients/{id}/history:
+    get:
+      operationId: getPatientHistory
+      tags: [patients]
+      summary: Get patient evolution history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Evolution history entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientEvolution"
+
 components:
   schemas:
     HealthStatus:
@@ -243,14 +291,8 @@ components:
       required:
         - name
         - age
-        - bed
-        - diagnosis
-        - heartRate
-        - respiratoryRate
-        - glucose
         - status
         - sector
-        - nurse
 
     UpdatePatientStatusBody:
       type: object
@@ -259,6 +301,49 @@ components:
           $ref: "#/components/schemas/TriageStatus"
       required:
         - status
+
+    VitalsUpdateBody:
+      type: object
+      properties:
+        heartRate:
+          type: integer
+        respiratoryRate:
+          type: integer
+        glucose:
+          type: number
+        responsible:
+          type: string
+        note:
+          type: string
+      required:
+        - responsible
+
+    PatientEvolution:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        heartRate:
+          type: integer
+        respiratoryRate:
+          type: integer
+        glucose:
+          type: number
+        responsible:
+          type: string
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - responsible
+        - note
+        - createdAt
 
     PatientsSummary:
       type: object
