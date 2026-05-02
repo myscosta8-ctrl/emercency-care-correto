@@ -266,7 +266,33 @@ function sexLabel(sex?: string | null): string {
   return "I - Ignorado";
 }
 
+// ── field value map ───────────────────────────────────────────────────────────
+
+function buildFieldValues(patient: PdfPatient): Record<string, string> {
+  return {
+    nome_completo:   patient.name,
+    data_nascimento: fmtDate(patient.birthDate),
+    idade:           patient.age ? `${patient.age} anos` : "",
+    sexo:            sexLabel(patient.sex),
+    cns:             patient.cns          ?? "",
+    nome_mae:        patient.motherName   ?? "",
+    municipio:       patient.city         ?? "",
+    bairro:          patient.neighborhood ?? "",
+    logradouro:      patient.street       ?? "",
+    numero_end:      patient.addressNumber ?? "",
+    cep:             patient.zipCode      ?? "",
+    telefone:        patient.phone        ?? "",
+  };
+}
+
 // ── core fill function ────────────────────────────────────────────────────────
+// Strategy:
+//   1. Fill AcroForm fields (if present) — enables manual editing in
+//      Adobe Reader / browser PDF viewer before printing.
+//   2. Draw text overlay at the same coordinates — fallback for viewers that
+//      ignore form data, and so the printed copy always looks correct.
+//   3. Save with updateFieldAppearances() so filled AcroForm values are
+//      visible immediately without the viewer needing to re-render them.
 
 async function fillTemplate(
   templateBytes: ArrayBuffer,
@@ -276,13 +302,30 @@ async function fillTemplate(
   const doc    = await PDFDocument.load(templateBytes);
   const font   = await doc.embedFont(StandardFonts.Helvetica);
   const bold   = await doc.embedFont(StandardFonts.HelveticaBold);
-  const INK    = rgb(0.04, 0.08, 0.22);  // near-black navy
+  const INK    = rgb(0.04, 0.08, 0.22);
   const SIZE   = 8;
   const coords = COORDS[type] ?? COORDS_NOTIF_INDIVIDUAL;
   const page   = doc.getPages()[0];
 
-  function draw(key: string, value: string, useBold = false) {
-    const pos = coords[key];
+  const values = buildFieldValues(patient);
+
+  // ── 1. Fill AcroForm fields ───────────────────────────────────────────────
+  const form = doc.getForm();
+  for (const [fieldName, value] of Object.entries(values)) {
+    if (!value.trim()) continue;
+    try {
+      const field = form.getTextField(fieldName);
+      field.setText(value);
+      field.enableReadOnly(); // lock so staff can't accidentally clear it
+    } catch {
+      // field not present in this template — text overlay will handle it
+    }
+  }
+
+  // ── 2. Draw text overlay (fallback + raster-image PDFs) ──────────────────
+  function draw(key: string, useBold = false) {
+    const pos   = coords[key];
+    const value = values[key] ?? "";
     if (!pos || !value.trim()) return;
     const f = useBold ? bold : font;
     let text = value;
@@ -294,18 +337,18 @@ async function fillTemplate(
     page.drawText(text, { x: pos.x, y: pos.y, font: f, size: SIZE, color: INK });
   }
 
-  draw("nome_completo",   patient.name,                     true);
-  draw("data_nascimento", fmtDate(patient.birthDate));
-  draw("idade",           patient.age ? `${patient.age} anos` : "");
-  draw("sexo",            sexLabel(patient.sex));
-  draw("cns",             patient.cns         ?? "");
-  draw("nome_mae",        patient.motherName   ?? "");
-  draw("municipio",       patient.city         ?? "");
-  draw("bairro",          patient.neighborhood ?? "");
-  draw("logradouro",      patient.street       ?? "");
-  draw("numero_end",      patient.addressNumber ?? "");
-  draw("cep",             patient.zipCode      ?? "");
-  draw("telefone",        patient.phone        ?? "");
+  draw("nome_completo",   true);
+  draw("data_nascimento");
+  draw("idade");
+  draw("sexo");
+  draw("cns");
+  draw("nome_mae");
+  draw("municipio");
+  draw("bairro");
+  draw("logradouro");
+  draw("numero_end");
+  draw("cep");
+  draw("telefone");
 
   return doc.save();
 }

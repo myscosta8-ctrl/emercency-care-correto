@@ -7,7 +7,11 @@
     "hello": "tsx ./src/hello.ts",
     "extract-pdf-coords": "tsx ./src/extract-pdf-coords.ts",
     "extract-formax-coords": "tsx ./src/extract-formax-coords.ts",
+    "add-acroform": "tsx ./src/add-acroform.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@types/node": "catalog:",
