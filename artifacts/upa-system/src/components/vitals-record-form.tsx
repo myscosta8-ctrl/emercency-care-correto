@@ -127,7 +127,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
             <FormField control={form.control} name="systolicBp" render={({ field }) => (
               <FormItem className="flex-1">
                 <FormControl>
-                  <Input type="number" min={0} placeholder="Sistólica" className="text-center font-mono" {...field} />
+                  <Input type="number" min={0} inputMode="numeric" placeholder="Sistólica" className="text-center font-mono h-12 text-base" {...field} />
                 </FormControl>
               </FormItem>
             )} />
@@ -135,7 +135,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
             <FormField control={form.control} name="diastolicBp" render={({ field }) => (
               <FormItem className="flex-1">
                 <FormControl>
-                  <Input type="number" min={0} placeholder="Diastólica" className="text-center font-mono" {...field} />
+                  <Input type="number" min={0} inputMode="numeric" placeholder="Diastólica" className="text-center font-mono h-12 text-base" {...field} />
                 </FormControl>
               </FormItem>
             )} />
@@ -149,7 +149,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
             <FormItem>
               <FormLabel className="text-xs">FC <span className="text-muted-foreground font-normal">(bpm)</span></FormLabel>
               <FormControl>
-                <Input type="number" min={0} placeholder="—" className="font-mono" {...field} />
+                <Input type="number" min={0} inputMode="numeric" placeholder="—" className="font-mono h-12 text-base" {...field} />
               </FormControl>
             </FormItem>
           )} />
@@ -157,7 +157,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
             <FormItem>
               <FormLabel className="text-xs">FR <span className="text-muted-foreground font-normal">(irpm)</span></FormLabel>
               <FormControl>
-                <Input type="number" min={0} placeholder="—" className="font-mono" {...field} />
+                <Input type="number" min={0} inputMode="numeric" placeholder="—" className="font-mono h-12 text-base" {...field} />
               </FormControl>
             </FormItem>
           )} />
@@ -169,7 +169,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
             <FormItem>
               <FormLabel className="text-xs">SpO₂ <span className="text-muted-foreground font-normal">(%)</span></FormLabel>
               <FormControl>
-                <Input type="number" min={0} max={100} placeholder="—" className="font-mono" {...field} />
+                <Input type="number" min={0} max={100} inputMode="numeric" placeholder="—" className="font-mono h-12 text-base" {...field} />
               </FormControl>
             </FormItem>
           )} />
@@ -177,7 +177,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
             <FormItem>
               <FormLabel className="text-xs">Temp <span className="text-muted-foreground font-normal">(°C)</span></FormLabel>
               <FormControl>
-                <Input type="number" min={0} step="0.1" placeholder="—" className="font-mono" {...field} />
+                <Input type="number" min={0} step="0.1" inputMode="decimal" placeholder="—" className="font-mono h-12 text-base" {...field} />
               </FormControl>
             </FormItem>
           )} />
@@ -188,7 +188,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
           <FormItem>
             <FormLabel className="text-xs">HGT <span className="text-muted-foreground font-normal">(mg/dL)</span></FormLabel>
             <FormControl>
-              <Input type="number" min={0} placeholder="—" className="font-mono" {...field} />
+              <Input type="number" min={0} inputMode="numeric" placeholder="—" className="font-mono h-12 text-base" {...field} />
             </FormControl>
           </FormItem>
         )} />
@@ -222,11 +222,11 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
 
         {/* Actions */}
         <div className="flex gap-3 pt-1">
-          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11">
             Cancelar
           </Button>
-          <Button type="submit" className="flex-1" disabled={addVitals.isPending}>
-            {addVitals.isPending ? "Registrando..." : "Registrar Sinais Vitais"}
+          <Button type="submit" className="flex-1 h-11 text-sm font-semibold" disabled={addVitals.isPending}>
+            {addVitals.isPending ? "Registrando..." : "✓ Registrar"}
           </Button>
         </div>
       </form>

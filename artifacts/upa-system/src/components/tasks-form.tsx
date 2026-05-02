@@ -162,12 +162,12 @@ export function TasksForm({ patientId, patientName, defaultResponsible = "", onS
           <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tarefas</Label>
           <div className="space-y-2 border border-border/50 rounded-lg p-3 bg-card/30">
             {STANDARD_ITEMS.map(item => (
-              <div key={item.id} className="flex items-center gap-3 min-h-[32px]">
+              <div key={item.id} className="flex items-center gap-3 min-h-[44px] py-1">
                 <Checkbox
                   id={`task-${item.id}`}
                   checked={checkedItems.has(item.id)}
                   onCheckedChange={() => toggleItem(item.id)}
-                  className="shrink-0"
+                  className="shrink-0 h-5 w-5"
                 />
                 <label
                   htmlFor={`task-${item.id}`}

@@ -189,13 +189,13 @@ export function VitalsUpdateForm({ patient, onSuccess, onCancel }: VitalsUpdateF
                   <div className="flex items-center gap-1.5">
                     <FormField control={form.control} name="systolicBp" render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormControl><Input type="number" min={0} placeholder="120" className="text-center" {...field} /></FormControl>
+                        <FormControl><Input type="number" min={0} inputMode="numeric" placeholder="120" className="text-center h-11 text-base" {...field} /></FormControl>
                       </FormItem>
                     )} />
                     <span className="text-muted-foreground font-mono">/</span>
                     <FormField control={form.control} name="diastolicBp" render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormControl><Input type="number" min={0} placeholder="80" className="text-center" {...field} /></FormControl>
+                        <FormControl><Input type="number" min={0} inputMode="numeric" placeholder="80" className="text-center h-11 text-base" {...field} /></FormControl>
                       </FormItem>
                     )} />
                   </div>

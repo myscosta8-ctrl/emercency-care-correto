@@ -166,12 +166,12 @@ export function PrescriptionForm({ patientId, patientName, onSuccess, onCancel }
           <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Intervenções</Label>
           <div className="space-y-1.5 border border-border/50 rounded-lg p-3 bg-card/30">
             {STANDARD_ITEMS.map(item => (
-              <div key={item.id} className="flex items-center gap-3">
+              <div key={item.id} className="flex items-center gap-3 min-h-[44px] py-1">
                 <Checkbox
                   id={`item-${item.id}`}
                   checked={checkedItems.has(item.id)}
                   onCheckedChange={() => toggleItem(item.id)}
-                  className="shrink-0"
+                  className="shrink-0 h-5 w-5"
                 />
                 <label
                   htmlFor={`item-${item.id}`}

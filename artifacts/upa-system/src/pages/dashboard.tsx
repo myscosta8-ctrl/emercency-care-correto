@@ -224,11 +224,11 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight">UPA Breves — Gestão de Pacientes</h1>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate">UPA Breves — Gestão de Pacientes</h1>
           </div>
-          <Button onClick={() => setIsNewPatientOpen(true)} data-testid="button-new-patient">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Nova Admissão
+          <Button onClick={() => setIsNewPatientOpen(true)} data-testid="button-new-patient" className="shrink-0">
+            <UserPlus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Nova Admissão</span>
           </Button>
         </div>
       </header>

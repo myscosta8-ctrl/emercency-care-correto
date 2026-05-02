@@ -229,12 +229,12 @@ export default function PatientDetail() {
               <button
                 type="button"
                 onClick={() => { setNurseInput(nurseName); setIsEditingNurse(true); }}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground border border-border/40 bg-muted/20 hover:bg-muted/40 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground border border-border/40 bg-muted/20 hover:bg-muted/40 transition-colors min-h-[36px]"
                 title="Clique para alterar o profissional"
               >
-                <UserCircle className="h-3.5 w-3.5" />
-                <span>{nurseName || "Definir profissional"}</span>
-                <Pencil className="h-3 w-3 opacity-50" />
+                <UserCircle className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline max-w-[120px] truncate">{nurseName || "Profissional"}</span>
+                <Pencil className="h-3 w-3 opacity-50 shrink-0" />
               </button>
             )}
             <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
@@ -247,7 +247,7 @@ export default function PatientDetail() {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
+      <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl pb-28 md:pb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* Left column: 2/3 width */}
@@ -647,7 +647,7 @@ export default function PatientDetail() {
                               <div className="flex gap-1.5">
                                 {task.status === "pendente" && (
                                   <Button size="sm" variant="outline"
-                                    className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                    className="h-8 text-xs px-3 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
                                     onClick={() => updateTaskStatus.mutate(
                                       { id, taskId: task.id, data: { status: "em_andamento" } },
                                       { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientTasksQueryKey(id) }),
@@ -656,7 +656,7 @@ export default function PatientDetail() {
                                   >Iniciar</Button>
                                 )}
                                 <Button size="sm" variant="outline"
-                                  className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                                  className="h-8 text-xs px-3 border-green-500/30 text-green-400 hover:bg-green-500/10"
                                   onClick={() => updateTaskStatus.mutate(
                                     { id, taskId: task.id, data: { status: "concluido" } },
                                     { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientTasksQueryKey(id) }),
@@ -770,7 +770,7 @@ export default function PatientDetail() {
       </Dialog>
 
       <Dialog open={isVitalsRecordOpen} onOpenChange={setIsVitalsRecordOpen}>
-        <DialogContent className="sm:max-w-[420px]">
+        <DialogContent className="sm:max-w-[420px] max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registro de Sinais Vitais</DialogTitle>
             <DialogDescription>Registre os sinais vitais aferidos agora.</DialogDescription>
@@ -784,7 +784,7 @@ export default function PatientDetail() {
       </Dialog>
 
       <Dialog open={isVitalsOpen} onOpenChange={setIsVitalsOpen}>
-        <DialogContent className="sm:max-w-[560px]">
+        <DialogContent className="sm:max-w-[560px] max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Evolução de Enfermagem</DialogTitle>
             <DialogDescription>Preencha o SOAP e registre a evolução do paciente.</DialogDescription>
@@ -827,6 +827,28 @@ export default function PatientDetail() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Mobile sticky bottom action bar */}
+      <div className="fixed bottom-0 left-0 right-0 md:hidden bg-card/95 backdrop-blur-sm border-t border-border z-30">
+        <div className="grid grid-cols-4 gap-0 pb-safe">
+          {([
+            { icon: <Activity className="h-5 w-5" />, label: "SVs",        action: () => setIsVitalsRecordOpen(true) },
+            { icon: <ClipboardList className="h-5 w-5" />, label: "SOAP",  action: () => setIsVitalsOpen(true) },
+            { icon: <ClipboardCheck className="h-5 w-5" />, label: "Prescrição", action: () => setIsPrescriptionOpen(true) },
+            { icon: <ListTodo className="h-5 w-5" />, label: "Pendência",  action: () => setIsTasksOpen(true) },
+          ] as const).map((item, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={item.action}
+              className="flex flex-col items-center justify-center gap-1 py-3 hover:bg-muted/40 active:bg-muted/60 transition-colors text-primary"
+            >
+              {item.icon}
+              <span className="text-[10px] font-medium text-muted-foreground leading-none">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
