@@ -79,9 +79,10 @@ const formSchema = z.object({
   motherName: z.string().default(""),
 
   // documentos
-  cns: z.string().default(""),
-  cpf: z.string().default(""),
-  rg:  z.string().default(""),
+  cns:    z.string().default(""),
+  cpf:    z.string().default(""),
+  rg:     z.string().default(""),
+  weight: z.coerce.number().min(0).default(0),
 
   // contato
   phone:        z.string().default(""),
@@ -140,9 +141,10 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       sex:        (patient?.sex as FormValues["sex"]) ?? "O",
       motherName: patient?.motherName ?? "",
 
-      cns: patient?.cns ?? "",
-      cpf: patient?.cpf ?? "",
-      rg:  patient?.rg  ?? "",
+      cns:    patient?.cns    ?? "",
+      cpf:    patient?.cpf    ?? "",
+      rg:     patient?.rg     ?? "",
+      weight: patient?.weight ?? 0,
 
       phone:        patient?.phone        ?? "",
       guardianName: patient?.guardianName ?? "",
@@ -320,6 +322,16 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             <FormItem>
               <FormLabel>RG <Opt /></FormLabel>
               <FormControl><Input placeholder="0.000.000" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="weight" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Peso (kg) <Opt /></FormLabel>
+              <FormControl>
+                <Input type="number" min={0} step={0.1} placeholder="Ex: 72.5" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />

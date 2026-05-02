@@ -576,6 +576,8 @@ components:
           type: string
         rg:
           type: string
+        weight:
+          type: number
         phone:
           type: string
         guardianName:
@@ -639,6 +641,7 @@ components:
         - cns
         - cpf
         - rg
+        - weight
         - phone
         - guardianName
         - street
@@ -685,6 +688,8 @@ components:
           type: string
         rg:
           type: string
+        weight:
+          type: number
         phone:
           type: string
         guardianName:

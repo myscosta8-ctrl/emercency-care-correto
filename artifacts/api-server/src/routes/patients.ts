@@ -60,6 +60,7 @@ function buildPatientData(body: typeof CreatePatientBody._type) {
     cns:             body.cns ?? "",
     cpf:             body.cpf ?? "",
     rg:              body.rg ?? "",
+    weight:          body.weight ?? 0,
     phone:           body.phone ?? "",
     guardianName:    body.guardianName ?? "",
     street:          body.street ?? "",

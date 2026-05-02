@@ -17,6 +17,9 @@ export const patientsTable = pgTable("patients", {
   cpf:          text("cpf").notNull().default(""),
   rg:           text("rg").notNull().default(""),
 
+  // ── dados físicos ────────────────────────────────────────────────────────────
+  weight:       real("weight").notNull().default(0),
+
   // ── contato ─────────────────────────────────────────────────────────────────
   phone:        text("phone").notNull().default(""),
   guardianName: text("guardian_name").notNull().default(""),

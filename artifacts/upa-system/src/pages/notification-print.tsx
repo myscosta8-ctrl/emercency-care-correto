@@ -6,9 +6,11 @@ import {
   getGetPatientNotificationsQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient, PatientNotification } from "@workspace/api-client-react";
-import { Printer, ArrowLeft } from "lucide-react";
+import { Printer, ArrowLeft, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import { downloadSinanPdf } from "@/lib/pdf-fill";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -847,6 +849,8 @@ export default function NotificationPrintPage() {
     return <div className="p-8 text-center text-muted-foreground">Notificação não encontrada.</div>;
   }
 
+  const [downloading, setDownloading] = useState(false);
+
   const types        = parseTypes(notif.types);
   const primaryType  = types[0] ?? "outros";
   const meta         = FORM_META[primaryType] ?? FORM_META.outros;
@@ -862,6 +866,20 @@ export default function NotificationPrintPage() {
         </Button>
         <Button size="sm" onClick={() => window.print()} className="gap-1.5">
           <Printer className="h-4 w-4" /> Imprimir / Salvar PDF
+        </Button>
+        <Button
+          size="sm" variant="outline"
+          className="gap-1.5 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
+          disabled={downloading}
+          onClick={async () => {
+            setDownloading(true);
+            try { await downloadSinanPdf(patient, notif, import.meta.env.BASE_URL); }
+            catch (e) { alert(String(e)); }
+            finally { setDownloading(false); }
+          }}
+        >
+          <Download className="h-4 w-4" />
+          {downloading ? "Gerando…" : "Baixar PDF Preenchido"}
         </Button>
         <span className="text-xs text-gray-400 ml-2">
           Dica: use Ctrl+P → "Salvar como PDF" para exportar o formulário preenchido.

@@ -28,8 +28,9 @@ import {
   Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
   UserCheck, ClipboardList, Stethoscope, Thermometer,
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
-  Bell, Trash,
+  Bell, Trash, Download,
 } from "lucide-react";
+import { downloadSinanPdf } from "@/lib/pdf-fill";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -844,6 +845,14 @@ export default function PatientDetail() {
                                 onClick={() => window.open(`${import.meta.env.BASE_URL}patients/${id}/notifications/${notif.id}/print`, "_blank")}
                               ><Printer className="h-3 w-3" /></Button>
                               <Button size="sm" variant="outline"
+                                className="h-6 text-[10px] px-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                                title="Baixar PDF Preenchido"
+                                onClick={async () => {
+                                  try { await downloadSinanPdf(patient, notif, import.meta.env.BASE_URL); }
+                                  catch (e) { toast({ title: "Erro ao gerar PDF", description: String(e), variant: "destructive" }); }
+                                }}
+                              ><Download className="h-3 w-3" /></Button>
+                              <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-muted-foreground/20 text-muted-foreground hover:bg-muted/30"
                                 onClick={() => { setEditingNotification(notif); setIsNotificationOpen(true); }}
                               ><Pencil className="h-3 w-3" /></Button>
@@ -944,9 +953,9 @@ export default function PatientDetail() {
                     </div>
                   )}
 
-                  {(patient.cns || patient.cpf || patient.rg) && (
+                  {(patient.cns || patient.cpf || patient.rg || patient.weight > 0) && (
                     <div className="space-y-1.5 pt-1 border-t border-border/40">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Documentos</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Documentos e Dados Físicos</p>
                       {patient.cns && (
                         <div className="flex justify-between items-baseline">
                           <span className="text-xs text-muted-foreground">CNS</span>
@@ -963,6 +972,12 @@ export default function PatientDetail() {
                         <div className="flex justify-between items-baseline">
                           <span className="text-xs text-muted-foreground">RG</span>
                           <span className="text-xs font-mono font-medium">{patient.rg}</span>
+                        </div>
+                      )}
+                      {patient.weight > 0 && (
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-muted-foreground">Peso</span>
+                          <span className="text-xs font-medium">{patient.weight} kg</span>
                         </div>
                       )}
                     </div>
