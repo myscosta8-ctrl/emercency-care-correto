@@ -514,38 +514,50 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
     { key: "peso",                 label: "PESO (kg)",           value: patient.weight != null ? `${patient.weight}` : "" },
   ];
 
-  // ── draw rows ──────────────────────────────────────────────────────────────
-  fields.forEach(({ key, label, value }, i) => {
-    const yBot = FIRST_Y - i * STEP - ROW_H;
-    const yTop = yBot + ROW_H;
+  // ── draw rows + AcroForm fields ───────────────────────────────────────────
+  // Each value cell becomes a fillable text field so external code can do:
+  //   form.getTextField('nome_paciente').setText(paciente.nome)
+  //   form.getTextField('cpf').setText(paciente.cpf)
+  //   form.getTextField('peso').setText(paciente.peso.toString())
+  const form = doc.getForm();
 
-    page.drawRectangle({ x: ML,          y: yBot, width: LBL_W, height: ROW_H, color: LBLBG });
-    page.drawRectangle({ x: ML + LBL_W,  y: yBot, width: VAL_W, height: ROW_H, color: VALBG });
+  fields.forEach(({ key, label, value }, i) => {
+    const yBot  = FIRST_Y - i * STEP - ROW_H;
+    const yTop  = yBot + ROW_H;
+
+    // ── label side ───────────────────────────────────────────────────────
+    page.drawRectangle({ x: ML,         y: yBot, width: LBL_W, height: ROW_H, color: LBLBG });
+    page.drawRectangle({ x: ML + LBL_W, y: yBot, width: VAL_W, height: ROW_H, color: VALBG });
     page.drawRectangle({ x: ML, y: yBot, width: CW, height: ROW_H, borderColor: BORDER, borderWidth: 0.5 });
     page.drawLine({ start: { x: ML + LBL_W, y: yBot }, end: { x: ML + LBL_W, y: yTop }, thickness: 0.5, color: BORDER });
 
-    // field key badge (small, top-left of label column)
+    // field key badge
     const badgeLabel = key.replace(/_/g, " ");
     page.drawRectangle({ x: ML + 4, y: yTop - 13, width: bold.widthOfTextAtSize(badgeLabel, 5.5) + 6, height: 10, color: ACCENT });
     page.drawText(badgeLabel, { x: ML + 7, y: yTop - 12, font: bold, size: 5.5, color: WHITE });
 
-    // display label (bottom of label column)
+    // display label
     page.drawText(label, { x: ML + 6, y: yBot + 8, font: bold, size: 6.5, color: MUTED });
 
-    // value
-    let txt = value || "—";
-    const maxW = VAL_W - 14;
-    while (txt.length > 1 && bold.widthOfTextAtSize(txt, 9.5) > maxW) txt = txt.slice(0, -1);
-    page.drawText(txt, {
-      x: ML + LBL_W + 8, y: yBot + (ROW_H / 2 - 4),
-      font: value ? bold : font,
-      size: value ? 9.5 : 8.5,
-      color: value ? DARK : MUTED,
+    // ── value side: AcroForm text field ──────────────────────────────────
+    // Positioned to fill the value column with 6pt horizontal padding.
+    const FIELD_PAD = 6;
+    const field = form.createTextField(key);
+    if (value) field.setText(value);
+    field.addToPage(page, {
+      x:               ML + LBL_W + FIELD_PAD,
+      y:               yBot + 2,
+      width:           VAL_W - FIELD_PAD * 2,
+      height:          ROW_H - 4,
+      borderWidth:     0,
+      backgroundColor: VALBG,
     });
+    field.setFontSize(9.5);
+    // Pre-filled values are editable so staff can correct on-screen before printing.
   });
 
   // ── signature block ────────────────────────────────────────────────────────
-  const lastBot = FIRST_Y - 11 * STEP - ROW_H;   // bottom of last row (i=11)
+  const lastBot = FIRST_Y - (fields.length - 1) * STEP - ROW_H;  // bottom of last row
   const sigY    = lastBot - 36;
   page.drawLine({ start: { x: ML,       y: sigY }, end: { x: ML + 235, y: sigY }, thickness: 0.5, color: BORDER });
   page.drawLine({ start: { x: ML + 275, y: sigY }, end: { x: ML + CW,  y: sigY }, thickness: 0.5, color: BORDER });
