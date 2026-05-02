@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, patientsTable, patientEvolutionsTable } from "@workspace/db";
+import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable } from "@workspace/db";
 import { eq, sql, desc } from "drizzle-orm";
 import {
   CreatePatientBody,
@@ -11,6 +11,10 @@ import {
   UpdatePatientStatusBody,
   AddVitalsParams,
   AddVitalsBody,
+  CreatePatientPrescriptionParams,
+  CreatePatientPrescriptionBody,
+  UpdatePrescriptionStatusParams,
+  UpdatePrescriptionStatusBody,
 } from "@workspace/api-zod";
 
 const router = Router();
@@ -164,6 +168,61 @@ router.post("/:id/vitals", async (req, res) => {
   });
 
   res.json(serialize(patient));
+});
+
+router.get("/:id/prescriptions", async (req, res) => {
+  const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
+  const prescriptions = await db.select()
+    .from(patientPrescriptionsTable)
+    .where(eq(patientPrescriptionsTable.patientId, id))
+    .orderBy(desc(patientPrescriptionsTable.createdAt));
+  res.json(prescriptions.map(p => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  })));
+});
+
+router.post("/:id/prescriptions", async (req, res) => {
+  const { id } = CreatePatientPrescriptionParams.parse({ id: Number(req.params.id) });
+  const body = CreatePatientPrescriptionBody.parse(req.body);
+  const [prescription] = await db.insert(patientPrescriptionsTable).values({
+    patientId: id,
+    items: body.items,
+    status: body.status ?? "pendente",
+    responsible: body.responsible,
+    scheduledTime: body.scheduledTime ?? "",
+    notes: body.notes ?? "",
+    updatedAt: new Date(),
+  }).returning();
+  res.status(201).json({
+    ...prescription,
+    createdAt: prescription.createdAt.toISOString(),
+    updatedAt: prescription.updatedAt.toISOString(),
+  });
+});
+
+router.patch("/:id/prescriptions/:prescriptionId", async (req, res) => {
+  const { id, prescriptionId } = UpdatePrescriptionStatusParams.parse({
+    id: Number(req.params.id),
+    prescriptionId: Number(req.params.prescriptionId),
+  });
+  const body = UpdatePrescriptionStatusBody.parse(req.body);
+  const [prescription] = await db.update(patientPrescriptionsTable)
+    .set({
+      status: body.status,
+      ...(body.responsible ? { responsible: body.responsible } : {}),
+      ...(body.scheduledTime ? { scheduledTime: body.scheduledTime } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(patientPrescriptionsTable.id, prescriptionId))
+    .returning();
+  if (!prescription) { res.status(404).json({ error: "Prescrição não encontrada" }); return; }
+  res.json({
+    ...prescription,
+    createdAt: prescription.createdAt.toISOString(),
+    updatedAt: prescription.updatedAt.toISOString(),
+  });
 });
 
 router.get("/:id/history", async (req, res) => {

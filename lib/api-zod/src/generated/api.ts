@@ -225,6 +225,69 @@ export const AddVitalsResponse = zod.object({
 });
 
 /**
+ * @summary Get patient prescriptions
+ */
+export const GetPatientPrescriptionsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientPrescriptionsResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  items: zod.string(),
+  status: zod.enum(["pendente", "em_andamento", "concluido"]),
+  responsible: zod.string(),
+  scheduledTime: zod.string(),
+  notes: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const GetPatientPrescriptionsResponse = zod.array(
+  GetPatientPrescriptionsResponseItem,
+);
+
+/**
+ * @summary Create a nursing prescription
+ */
+export const CreatePatientPrescriptionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreatePatientPrescriptionBody = zod.object({
+  items: zod.string(),
+  status: zod.enum(["pendente", "em_andamento", "concluido"]).optional(),
+  responsible: zod.string(),
+  scheduledTime: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update prescription status
+ */
+export const UpdatePrescriptionStatusParams = zod.object({
+  id: zod.coerce.number(),
+  prescriptionId: zod.coerce.number(),
+});
+
+export const UpdatePrescriptionStatusBody = zod.object({
+  status: zod.enum(["pendente", "em_andamento", "concluido"]),
+  responsible: zod.string().optional(),
+  scheduledTime: zod.string().optional(),
+});
+
+export const UpdatePrescriptionStatusResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  items: zod.string(),
+  status: zod.enum(["pendente", "em_andamento", "concluido"]),
+  responsible: zod.string(),
+  scheduledTime: zod.string(),
+  notes: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Get patient evolution history
  */
 export const GetPatientHistoryParams = zod.object({

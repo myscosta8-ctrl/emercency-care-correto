@@ -8,16 +8,19 @@ import {
   useDeletePatient,
   useUpdatePatientStatus,
   useGetPatientHistory,
+  useGetPatientPrescriptions,
+  useUpdatePrescriptionStatus,
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
   getGetPatientHistoryQueryKey,
+  getGetPatientPrescriptionsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity, ArrowLeft, Edit, Trash2, HeartPulse,
   Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
   UserCheck, ClipboardList, Stethoscope, Thermometer,
-  Gauge,
+  Gauge, ClipboardCheck, CheckSquare, Square,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +38,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PatientForm } from "@/components/patient-form";
 import { VitalsUpdateForm } from "@/components/vitals-update-form";
+import { PrescriptionForm } from "@/components/prescription-form";
 import { cn } from "@/lib/utils";
 
 const TRIAGE_CONFIG = {
@@ -100,14 +104,19 @@ export default function PatientDetail() {
   const { data: history, isLoading: isLoadingHistory } = useGetPatientHistory(id, {
     query: { enabled: !!id, queryKey: getGetPatientHistoryQueryKey(id) },
   });
+  const { data: prescriptions, isLoading: isLoadingPrescriptions } = useGetPatientPrescriptions(id, {
+    query: { enabled: !!id, queryKey: getGetPatientPrescriptionsQueryKey(id) },
+  });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isVitalsOpen, setIsVitalsOpen] = useState(false);
+  const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
+  const updatePrescriptionStatus = useUpdatePrescriptionStatus();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -405,6 +414,96 @@ export default function PatientDetail() {
                 </div>
               )}
             </div>
+
+            {/* Prescription Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 text-primary" /> Prescrição de Enfermagem
+                </h3>
+                <Button
+                  size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                  onClick={() => setIsPrescriptionOpen(true)}
+                >
+                  <ClipboardCheck className="h-3.5 w-3.5" />
+                  Nova Prescrição
+                </Button>
+              </div>
+
+              {isLoadingPrescriptions ? (
+                <div className="space-y-2">
+                  {[1].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                </div>
+              ) : !prescriptions || prescriptions.length === 0 ? (
+                <div className="text-center py-6 bg-card rounded-lg border border-border/50">
+                  <p className="text-sm text-muted-foreground">Nenhuma prescrição registrada ainda.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {prescriptions.map(rx => {
+                    const items: string[] = (() => { try { return JSON.parse(rx.items); } catch { return []; } })();
+                    const statusCfg = ({
+                      pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                      em_andamento: { label: "Em andamento", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+                      concluido:    { label: "Concluído",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
+                    } as const)[rx.status as "pendente" | "em_andamento" | "concluido"] ?? { label: rx.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
+                    return (
+                      <div key={rx.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
+                          <div className="flex items-center gap-2">
+                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", statusCfg.color)}>
+                              {statusCfg.label}
+                            </span>
+                            {rx.scheduledTime && <span className="text-xs text-muted-foreground">{rx.scheduledTime}</span>}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(rx.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                          </span>
+                        </div>
+                        <div className="px-4 py-3">
+                          <ul className="space-y-1.5 mb-3">
+                            {items.map((item, idx) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm">
+                                {rx.status === "concluido"
+                                  ? <CheckSquare className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
+                                  : <Square className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />}
+                                <span className={cn(rx.status === "concluido" && "line-through text-muted-foreground")}>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                            <span className="text-xs text-muted-foreground">— {rx.responsible}</span>
+                            {rx.status !== "concluido" && (
+                              <div className="flex gap-1.5">
+                                {rx.status === "pendente" && (
+                                  <Button size="sm" variant="outline"
+                                    className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                    onClick={() => updatePrescriptionStatus.mutate(
+                                      { id, prescriptionId: rx.id, data: { status: "em_andamento" } },
+                                      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(id) }),
+                                        onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) }
+                                    )}
+                                  >Iniciar</Button>
+                                )}
+                                <Button size="sm" variant="outline"
+                                  className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                                  onClick={() => updatePrescriptionStatus.mutate(
+                                    { id, prescriptionId: rx.id, data: { status: "concluido" } },
+                                    { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(id) }),
+                                      onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) }
+                                  )}
+                                >Concluir</Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* Right column: 1/3 width */}
@@ -510,6 +609,21 @@ export default function PatientDetail() {
             patient={patient}
             onSuccess={() => setIsVitalsOpen(false)}
             onCancel={() => setIsVitalsOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPrescriptionOpen} onOpenChange={setIsPrescriptionOpen}>
+        <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nova Prescrição de Enfermagem</DialogTitle>
+            <DialogDescription>Selecione as intervenções e defina o status desta prescrição.</DialogDescription>
+          </DialogHeader>
+          <PrescriptionForm
+            patientId={id}
+            patientName={patient.name}
+            onSuccess={() => setIsPrescriptionOpen(false)}
+            onCancel={() => setIsPrescriptionOpen(false)}
           />
         </DialogContent>
       </Dialog>

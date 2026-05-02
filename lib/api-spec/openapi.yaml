@@ -184,6 +184,80 @@ paths:
         "404":
           description: Not found
 
+  /patients/{id}/prescriptions:
+    get:
+      operationId: getPatientPrescriptions
+      tags: [patients]
+      summary: Get patient prescriptions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Prescription list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientPrescription"
+    post:
+      operationId: createPatientPrescription
+      tags: [patients]
+      summary: Create a nursing prescription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePrescriptionBody"
+      responses:
+        "201":
+          description: Prescription created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientPrescription"
+
+  /patients/{id}/prescriptions/{prescriptionId}:
+    patch:
+      operationId: updatePrescriptionStatus
+      tags: [patients]
+      summary: Update prescription status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: prescriptionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePrescriptionStatusBody"
+      responses:
+        "200":
+          description: Prescription updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientPrescription"
+
   /patients/{id}/history:
     get:
       operationId: getPatientHistory
@@ -407,6 +481,72 @@ components:
         - assessment
         - plan
         - createdAt
+
+    PatientPrescription:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        items:
+          type: string
+        status:
+          type: string
+          enum: [pendente, em_andamento, concluido]
+        responsible:
+          type: string
+        scheduledTime:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - items
+        - status
+        - responsible
+        - scheduledTime
+        - notes
+        - createdAt
+        - updatedAt
+
+    CreatePrescriptionBody:
+      type: object
+      properties:
+        items:
+          type: string
+        status:
+          type: string
+          enum: [pendente, em_andamento, concluido]
+        responsible:
+          type: string
+        scheduledTime:
+          type: string
+        notes:
+          type: string
+      required:
+        - items
+        - responsible
+
+    UpdatePrescriptionStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pendente, em_andamento, concluido]
+        responsible:
+          type: string
+        scheduledTime:
+          type: string
+      required:
+        - status
 
     PatientsSummary:
       type: object

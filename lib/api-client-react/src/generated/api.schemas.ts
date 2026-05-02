@@ -99,6 +99,59 @@ export interface PatientEvolution {
   createdAt: string;
 }
 
+export type PatientPrescriptionStatus =
+  (typeof PatientPrescriptionStatus)[keyof typeof PatientPrescriptionStatus];
+
+export const PatientPrescriptionStatus = {
+  pendente: "pendente",
+  em_andamento: "em_andamento",
+  concluido: "concluido",
+} as const;
+
+export interface PatientPrescription {
+  id: number;
+  patientId: number;
+  items: string;
+  status: PatientPrescriptionStatus;
+  responsible: string;
+  scheduledTime: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreatePrescriptionBodyStatus =
+  (typeof CreatePrescriptionBodyStatus)[keyof typeof CreatePrescriptionBodyStatus];
+
+export const CreatePrescriptionBodyStatus = {
+  pendente: "pendente",
+  em_andamento: "em_andamento",
+  concluido: "concluido",
+} as const;
+
+export interface CreatePrescriptionBody {
+  items: string;
+  status?: CreatePrescriptionBodyStatus;
+  responsible: string;
+  scheduledTime?: string;
+  notes?: string;
+}
+
+export type UpdatePrescriptionStatusBodyStatus =
+  (typeof UpdatePrescriptionStatusBodyStatus)[keyof typeof UpdatePrescriptionStatusBodyStatus];
+
+export const UpdatePrescriptionStatusBodyStatus = {
+  pendente: "pendente",
+  em_andamento: "em_andamento",
+  concluido: "concluido",
+} as const;
+
+export interface UpdatePrescriptionStatusBody {
+  status: UpdatePrescriptionStatusBodyStatus;
+  responsible?: string;
+  scheduledTime?: string;
+}
+
 export interface PatientsSummary {
   total: number;
   red: number;
