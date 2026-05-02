@@ -469,8 +469,37 @@ components:
           type: integer
         name:
           type: string
+        birthDate:
+          type: string
         age:
           type: integer
+        sex:
+          type: string
+          enum: [M, F, O]
+        motherName:
+          type: string
+        cns:
+          type: string
+        cpf:
+          type: string
+        rg:
+          type: string
+        phone:
+          type: string
+        guardianName:
+          type: string
+        street:
+          type: string
+        addressNumber:
+          type: string
+        neighborhood:
+          type: string
+        city:
+          type: string
+        addressState:
+          type: string
+        zipCode:
+          type: string
         bed:
           type: string
         diagnosis:
@@ -511,7 +540,21 @@ components:
       required:
         - id
         - name
+        - birthDate
         - age
+        - sex
+        - motherName
+        - cns
+        - cpf
+        - rg
+        - phone
+        - guardianName
+        - street
+        - addressNumber
+        - neighborhood
+        - city
+        - addressState
+        - zipCode
         - bed
         - diagnosis
         - heartRate
@@ -535,8 +578,37 @@ components:
       properties:
         name:
           type: string
+        birthDate:
+          type: string
         age:
           type: integer
+        sex:
+          type: string
+          enum: [M, F, O]
+        motherName:
+          type: string
+        cns:
+          type: string
+        cpf:
+          type: string
+        rg:
+          type: string
+        phone:
+          type: string
+        guardianName:
+          type: string
+        street:
+          type: string
+        addressNumber:
+          type: string
+        neighborhood:
+          type: string
+        city:
+          type: string
+        addressState:
+          type: string
+        zipCode:
+          type: string
         bed:
           type: string
         diagnosis:
@@ -566,7 +638,6 @@ components:
           type: string
       required:
         - name
-        - age
         - status
         - sector
         - internmentStatus

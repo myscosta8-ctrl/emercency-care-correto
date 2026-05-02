@@ -42,18 +42,35 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - **Dashboard**: Patient list by sector (Sala Vermelha / Obs. Adulto / Obs. Pediátrica / Obs. Pré-Adulto), triage summary, search/filter
 - **Patient Detail**: Full SOAP evolution history, vital signs, prescriptions, pending tasks, reclassification
   - Print button (Imprimir Evolução) generates clean A4 report with patient info, vitals, all SOAP entries, signature line
+  - Right column shows demographics card (documentos, contato, endereço) when data is present
 - **Shift Handover** (`/passagem-plantao`): Compact table format per sector, meta fields (date/shift/responsible), Resumo Geral; improved print CSS (A4 landscape, 8.5pt, tight padding)
 - **Staff Management** (`/funcionarios`): Full CRUD with login/password hash, digital signature canvas, stamp generator
   - Roles: **Admin** / **Coordenação de Enfermagem** / **Profissional Assistencial**
   - Role gating: only Admin or Coordenação can add/edit/delete staff (via "Acessando como:" selector in header)
 - **Audit fields**: `createdBy`/`updatedBy` on `patients` table; `createdBy` on `evolutions` table — populated from responsible nurse on every create/update
 
-### DB Schema
-- `patients`: id, name, age, bed, diagnosis, vitals×7, status (triage), sector, internmentStatus, nurse, **createdBy**, **updatedBy**, createdAt, updatedAt
-- `evolutions`: vitals snapshot, SOAP fields, responsible, note, **createdBy**, createdAt
+### DB Schema — patients table
+Full demographics model:
+- **Identificação**: id, name, birthDate, age (auto-computed from birthDate), sex (M/F/O), motherName
+- **Documentos**: cns (Cartão SUS), cpf, rg
+- **Contato**: phone, guardianName (nome do responsável)
+- **Endereço**: street, addressNumber, neighborhood, city, addressState, zipCode
+- **Clínico**: bed, diagnosis, heartRate, respiratoryRate, glucose, spO2, temperature, systolicBp, diastolicBp, status (triage), sector, internmentStatus, nurse
+- **Auditoria**: createdBy, updatedBy, createdAt, updatedAt
+
+### Other tables
+- `evolutions`: vitals snapshot, SOAP fields, responsible, note, createdBy, createdAt
 - `prescriptions`: items (JSON), status, responsible, scheduledTime, notes
 - `tasks`: description, status, responsible, dueDate
 - `staff`: fullName, category, corenCrm, sector, login, passwordHash, accessLevels (comma-sep), signature (dataURL), stamp (text)
+
+### Patient Form Sections (admission + edit)
+1. **Dados do Paciente** — nome, data de nascimento, idade (auto), sexo, nome da mãe
+2. **Documentos** — CNS, CPF, RG
+3. **Contato** — telefone, nome do responsável
+4. **Endereço** — rua, número, bairro, cidade, estado (UF dropdown), CEP
+5. **Dados Clínicos** — triagem, setor, leito, diagnóstico, internação, responsável
+6. **Sinais Vitais Iniciais** — PA, FC, FR, SpO₂, temperatura, HGT
 
 ### Sector Order
 1. Sala Vermelha (🔴)

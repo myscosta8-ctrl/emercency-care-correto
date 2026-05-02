@@ -23,6 +23,8 @@ import {
 
 const router = Router();
 
+// ── helpers ───────────────────────────────────────────────────────────────────
+
 const serialize = (p: typeof patientsTable.$inferSelect) => ({
   ...p,
   createdAt: p.createdAt.toISOString(),
@@ -33,6 +35,56 @@ const serializeEvolution = (e: typeof patientEvolutionsTable.$inferSelect) => ({
   ...e,
   createdAt: e.createdAt.toISOString(),
 });
+
+/** Compute age in years from an ISO date string (YYYY-MM-DD). Returns 0 if invalid. */
+function ageFromBirthDate(birthDate: string): number {
+  if (!birthDate) return 0;
+  const birth = new Date(birthDate);
+  if (isNaN(birth.getTime())) return 0;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return Math.max(0, age);
+}
+
+/** Build the insert/update data object from a CreatePatientBody (or UpdatePatientBody) */
+function buildPatientData(body: typeof CreatePatientBody._type) {
+  const age = body.birthDate ? ageFromBirthDate(body.birthDate) : (body.age ?? 0);
+  return {
+    name:            body.name,
+    birthDate:       body.birthDate ?? "",
+    age,
+    sex:             (body.sex ?? "O") as "M" | "F" | "O",
+    motherName:      body.motherName ?? "",
+    cns:             body.cns ?? "",
+    cpf:             body.cpf ?? "",
+    rg:              body.rg ?? "",
+    phone:           body.phone ?? "",
+    guardianName:    body.guardianName ?? "",
+    street:          body.street ?? "",
+    addressNumber:   body.addressNumber ?? "",
+    neighborhood:    body.neighborhood ?? "",
+    city:            body.city ?? "",
+    addressState:    body.addressState ?? "",
+    zipCode:         body.zipCode ?? "",
+    status:          body.status,
+    sector:          body.sector,
+    internmentStatus: body.internmentStatus,
+    bed:             body.bed ?? "",
+    diagnosis:       body.diagnosis ?? "",
+    heartRate:       body.heartRate ?? 0,
+    respiratoryRate: body.respiratoryRate ?? 0,
+    glucose:         body.glucose ?? 0,
+    spO2:            body.spO2 ?? 0,
+    temperature:     body.temperature ?? 0,
+    systolicBp:      body.systolicBp ?? 0,
+    diastolicBp:     body.diastolicBp ?? 0,
+    nurse:           body.nurse ?? "",
+  };
+}
+
+// ── routes ────────────────────────────────────────────────────────────────────
 
 router.get("/", async (req, res) => {
   const patients = await db.select().from(patientsTable).orderBy(patientsTable.createdAt);
@@ -48,11 +100,11 @@ router.get("/summary", async (req, res) => {
   const summary = { total: 0, red: 0, orange: 0, yellow: 0, green: 0, blue: 0 };
   for (const row of rows) {
     summary.total += row.count;
-    if (row.status === "red") summary.red = row.count;
+    if (row.status === "red")         summary.red    = row.count;
     else if (row.status === "orange") summary.orange = row.count;
     else if (row.status === "yellow") summary.yellow = row.count;
-    else if (row.status === "green") summary.green = row.count;
-    else if (row.status === "blue") summary.blue = row.count;
+    else if (row.status === "green")  summary.green  = row.count;
+    else if (row.status === "blue")   summary.blue   = row.count;
   }
   res.json(summary);
 });
@@ -66,41 +118,29 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const body = CreatePatientBody.parse(req.body);
+  const data = buildPatientData(body);
+
   const [patient] = await db.insert(patientsTable).values({
-    name: body.name,
-    age: body.age,
-    status: body.status,
-    sector: body.sector,
-    internmentStatus: body.internmentStatus,
-    bed: body.bed ?? "",
-    diagnosis: body.diagnosis ?? "",
-    heartRate: body.heartRate ?? 0,
-    respiratoryRate: body.respiratoryRate ?? 0,
-    glucose: body.glucose ?? 0,
-    spO2: body.spO2 ?? 0,
-    temperature: body.temperature ?? 0,
-    systolicBp: body.systolicBp ?? 0,
-    diastolicBp: body.diastolicBp ?? 0,
-    nurse: body.nurse ?? "",
-    createdBy: body.nurse ?? "",
-    updatedBy: body.nurse ?? "",
+    ...data,
+    createdBy: data.nurse,
+    updatedBy: data.nurse,
     updatedAt: new Date(),
   }).returning();
 
   await db.insert(patientEvolutionsTable).values({
-    patientId: patient.id,
-    heartRate: body.heartRate ?? null,
+    patientId:      patient.id,
+    heartRate:      body.heartRate ?? null,
     respiratoryRate: body.respiratoryRate ?? null,
-    glucose: body.glucose ?? null,
-    spO2: body.spO2 ?? null,
-    temperature: body.temperature ?? null,
-    systolicBp: body.systolicBp ?? null,
-    diastolicBp: body.diastolicBp ?? null,
-    responsible: body.nurse ?? "",
-    note: "Admissão inicial",
-    subjective: "",
-    assessment: "",
-    plan: "",
+    glucose:        body.glucose ?? null,
+    spO2:           body.spO2 ?? null,
+    temperature:    body.temperature ?? null,
+    systolicBp:     body.systolicBp ?? null,
+    diastolicBp:    body.diastolicBp ?? null,
+    responsible:    body.nurse ?? "",
+    note:           "Admissão inicial",
+    subjective:     "",
+    assessment:     "",
+    plan:           "",
   });
 
   res.status(201).json(serialize(patient));
@@ -108,73 +148,64 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const { id } = UpdatePatientParams.parse({ id: Number(req.params.id) });
-  const body = UpdatePatientBody.parse(req.body);
+  const body    = UpdatePatientBody.parse(req.body);
+  const data    = buildPatientData(body);
+
   const [patient] = await db.update(patientsTable).set({
-    name: body.name,
-    age: body.age,
-    status: body.status,
-    sector: body.sector,
-    internmentStatus: body.internmentStatus,
-    bed: body.bed ?? "",
-    diagnosis: body.diagnosis ?? "",
-    heartRate: body.heartRate ?? 0,
-    respiratoryRate: body.respiratoryRate ?? 0,
-    glucose: body.glucose ?? 0,
-    spO2: body.spO2 ?? 0,
-    temperature: body.temperature ?? 0,
-    systolicBp: body.systolicBp ?? 0,
-    diastolicBp: body.diastolicBp ?? 0,
-    nurse: body.nurse ?? "",
-    updatedBy: body.nurse ?? "",
+    ...data,
+    updatedBy: data.nurse,
     updatedAt: new Date(),
   }).where(eq(patientsTable.id, id)).returning();
+
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
   res.json(serialize(patient));
 });
 
 router.patch("/:id/status", async (req, res) => {
-  const { id } = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
+  const { id }   = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
   const { status } = UpdatePatientStatusBody.parse(req.body);
-  const [patient] = await db.update(patientsTable).set({ status, updatedAt: new Date() }).where(eq(patientsTable.id, id)).returning();
+  const [patient] = await db.update(patientsTable)
+    .set({ status, updatedAt: new Date() })
+    .where(eq(patientsTable.id, id)).returning();
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
   res.json(serialize(patient));
 });
 
 router.post("/:id/vitals", async (req, res) => {
   const { id } = AddVitalsParams.parse({ id: Number(req.params.id) });
-  const body = AddVitalsBody.parse(req.body);
+  const body   = AddVitalsBody.parse(req.body);
 
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
-  if (body.heartRate !== undefined) updateData.heartRate = body.heartRate;
+  if (body.heartRate      !== undefined) updateData.heartRate      = body.heartRate;
   if (body.respiratoryRate !== undefined) updateData.respiratoryRate = body.respiratoryRate;
-  if (body.glucose !== undefined) updateData.glucose = body.glucose;
-  if (body.spO2 !== undefined) updateData.spO2 = body.spO2;
-  if (body.temperature !== undefined) updateData.temperature = body.temperature;
-  if (body.systolicBp !== undefined) updateData.systolicBp = body.systolicBp;
-  if (body.diastolicBp !== undefined) updateData.diastolicBp = body.diastolicBp;
-  if (body.responsible) updateData.nurse = body.responsible;
+  if (body.glucose        !== undefined) updateData.glucose        = body.glucose;
+  if (body.spO2           !== undefined) updateData.spO2           = body.spO2;
+  if (body.temperature    !== undefined) updateData.temperature    = body.temperature;
+  if (body.systolicBp     !== undefined) updateData.systolicBp     = body.systolicBp;
+  if (body.diastolicBp    !== undefined) updateData.diastolicBp    = body.diastolicBp;
+  if (body.responsible)                  updateData.nurse          = body.responsible;
 
   const [patient] = await db.update(patientsTable).set(updateData).where(eq(patientsTable.id, id)).returning();
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
   await db.insert(patientEvolutionsTable).values({
-    patientId: id,
-    heartRate: body.heartRate ?? null,
-    respiratoryRate: body.respiratoryRate ?? null,
-    glucose: body.glucose ?? null,
-    spO2: body.spO2 ?? null,
-    temperature: body.temperature ?? null,
-    systolicBp: body.systolicBp ?? null,
-    diastolicBp: body.diastolicBp ?? null,
-    painScale: body.painScale ?? null,
+    patientId:         id,
+    heartRate:         body.heartRate ?? null,
+    respiratoryRate:   body.respiratoryRate ?? null,
+    glucose:           body.glucose ?? null,
+    spO2:              body.spO2 ?? null,
+    temperature:       body.temperature ?? null,
+    systolicBp:        body.systolicBp ?? null,
+    diastolicBp:       body.diastolicBp ?? null,
+    painScale:         body.painScale ?? null,
     consciousnessLevel: body.consciousnessLevel ?? null,
-    generalCondition: body.generalCondition ?? null,
-    subjective: body.subjective ?? "",
-    assessment: body.assessment ?? "",
-    plan: body.plan ?? "",
-    responsible: body.responsible,
-    note: body.note ?? "",
-    createdBy: body.responsible,
+    generalCondition:  body.generalCondition ?? null,
+    subjective:        body.subjective ?? "",
+    assessment:        body.assessment ?? "",
+    plan:              body.plan ?? "",
+    responsible:       body.responsible,
+    note:              body.note ?? "",
+    createdBy:         body.responsible,
   });
 
   res.json(serialize(patient));
@@ -195,15 +226,15 @@ router.get("/:id/prescriptions", async (req, res) => {
 
 router.post("/:id/prescriptions", async (req, res) => {
   const { id } = CreatePatientPrescriptionParams.parse({ id: Number(req.params.id) });
-  const body = CreatePatientPrescriptionBody.parse(req.body);
+  const body   = CreatePatientPrescriptionBody.parse(req.body);
   const [prescription] = await db.insert(patientPrescriptionsTable).values({
-    patientId: id,
-    items: body.items,
-    status: body.status ?? "pendente",
-    responsible: body.responsible,
+    patientId:     id,
+    items:         body.items,
+    status:        body.status ?? "pendente",
+    responsible:   body.responsible,
     scheduledTime: body.scheduledTime ?? "",
-    notes: body.notes ?? "",
-    updatedAt: new Date(),
+    notes:         body.notes ?? "",
+    updatedAt:     new Date(),
   }).returning();
   res.status(201).json({
     ...prescription,
@@ -221,7 +252,7 @@ router.patch("/:id/prescriptions/:prescriptionId", async (req, res) => {
   const [prescription] = await db.update(patientPrescriptionsTable)
     .set({
       status: body.status,
-      ...(body.responsible ? { responsible: body.responsible } : {}),
+      ...(body.responsible  ? { responsible:  body.responsible  } : {}),
       ...(body.scheduledTime ? { scheduledTime: body.scheduledTime } : {}),
       updatedAt: new Date(),
     })
@@ -237,7 +268,7 @@ router.patch("/:id/prescriptions/:prescriptionId", async (req, res) => {
 
 router.get("/:id/tasks", async (req, res) => {
   const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
-  const tasks = await db.select()
+  const tasks  = await db.select()
     .from(patientTasksTable)
     .where(eq(patientTasksTable.patientId, id))
     .orderBy(desc(patientTasksTable.createdAt));
@@ -250,14 +281,14 @@ router.get("/:id/tasks", async (req, res) => {
 
 router.post("/:id/tasks", async (req, res) => {
   const { id } = CreatePatientTaskParams.parse({ id: Number(req.params.id) });
-  const body = CreatePatientTaskBody.parse(req.body);
+  const body   = CreatePatientTaskBody.parse(req.body);
   const [task] = await db.insert(patientTasksTable).values({
-    patientId: id,
-    items: body.items,
-    status: body.status ?? "pendente",
+    patientId:  id,
+    items:      body.items,
+    status:     body.status ?? "pendente",
     responsible: body.responsible,
-    notes: body.notes ?? "",
-    updatedAt: new Date(),
+    notes:      body.notes ?? "",
+    updatedAt:  new Date(),
   }).returning();
   res.status(201).json({
     ...task,
@@ -271,7 +302,7 @@ router.patch("/:id/tasks/:taskId", async (req, res) => {
     id: Number(req.params.id),
     taskId: Number(req.params.taskId),
   });
-  const body = UpdateTaskStatusBody.parse(req.body);
+  const body   = UpdateTaskStatusBody.parse(req.body);
   const [task] = await db.update(patientTasksTable)
     .set({ status: body.status, updatedAt: new Date() })
     .where(eq(patientTasksTable.id, taskId))

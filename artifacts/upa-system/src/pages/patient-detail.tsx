@@ -298,6 +298,12 @@ export default function PatientDetail() {
                     <h2 className="text-3xl font-bold tracking-tight text-primary">{patient.name}</h2>
                     <p className="text-sm mt-1 text-muted-foreground flex flex-wrap items-center gap-2">
                       <span>{patient.age} anos</span>
+                      {patient.sex && patient.sex !== "O" && (
+                        <><span>&bull;</span><span>{patient.sex === "M" ? "Masculino" : "Feminino"}</span></>
+                      )}
+                      {patient.birthDate && (
+                        <><span>&bull;</span><span>{patient.birthDate.split("-").reverse().join("/")}</span></>
+                      )}
                       <span>&bull;</span>
                       <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{patient.sector}</span>
                       {patient.bed && (
@@ -798,6 +804,85 @@ export default function PatientDetail() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Patient Demographics */}
+            {(patient.cns || patient.cpf || patient.rg || patient.phone || patient.guardianName || patient.motherName || patient.street) && (
+              <Card className="border-border/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <UserCircle className="h-3.5 w-3.5" /> Dados do Paciente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {patient.motherName && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Nome da Mãe</p>
+                      <p className="text-sm font-medium">{patient.motherName}</p>
+                    </div>
+                  )}
+
+                  {(patient.cns || patient.cpf || patient.rg) && (
+                    <div className="space-y-1.5 pt-1 border-t border-border/40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Documentos</p>
+                      {patient.cns && (
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-muted-foreground">CNS</span>
+                          <span className="text-xs font-mono font-medium">{patient.cns}</span>
+                        </div>
+                      )}
+                      {patient.cpf && (
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-muted-foreground">CPF</span>
+                          <span className="text-xs font-mono font-medium">{patient.cpf}</span>
+                        </div>
+                      )}
+                      {patient.rg && (
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-muted-foreground">RG</span>
+                          <span className="text-xs font-mono font-medium">{patient.rg}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {(patient.phone || patient.guardianName) && (
+                    <div className="space-y-1.5 pt-1 border-t border-border/40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Contato</p>
+                      {patient.phone && (
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-muted-foreground">Telefone</span>
+                          <span className="text-sm font-medium">{patient.phone}</span>
+                        </div>
+                      )}
+                      {patient.guardianName && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Responsável</p>
+                          <p className="text-sm font-medium">{patient.guardianName}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {patient.street && (
+                    <div className="space-y-1 pt-1 border-t border-border/40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Endereço</p>
+                      <p className="text-xs text-foreground leading-relaxed">
+                        {[
+                          patient.street && patient.addressNumber
+                            ? `${patient.street}, ${patient.addressNumber}`
+                            : patient.street,
+                          patient.neighborhood,
+                          patient.city && patient.addressState
+                            ? `${patient.city} — ${patient.addressState}`
+                            : patient.city || patient.addressState,
+                          patient.zipCode ? `CEP ${patient.zipCode}` : "",
+                        ].filter(Boolean).join("\n")}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Reclassification */}
             <Card className="border-border/50">

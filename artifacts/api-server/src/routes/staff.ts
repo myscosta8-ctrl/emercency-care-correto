@@ -73,7 +73,7 @@ router.get("/:id", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const id = Number(req.params["id"]);
-  const { password, ...rest } = req.body as {
+  const { password, category: categoryRaw, ...rest } = req.body as {
     fullName?: string;
     category?: string;
     corenCrm?: string;
@@ -87,7 +87,7 @@ router.put("/:id", async (req, res) => {
 
   const patch: Partial<typeof staffTable.$inferInsert> = {
     ...rest,
-    ...(rest.category ? { category: rest.category as "tecnico" | "enfermeiro" | "medico" } : {}),
+    ...(categoryRaw ? { category: categoryRaw as "tecnico" | "enfermeiro" | "medico" } : {}),
     ...(password ? { passwordHash: hashPassword(password) } : {}),
     updatedAt: new Date(),
   };

@@ -19,6 +19,14 @@ export const TriageStatus = {
   blue: "blue",
 } as const;
 
+export type PatientSex = (typeof PatientSex)[keyof typeof PatientSex];
+
+export const PatientSex = {
+  M: "M",
+  F: "F",
+  O: "O",
+} as const;
+
 export type PatientInternmentStatus =
   (typeof PatientInternmentStatus)[keyof typeof PatientInternmentStatus];
 
@@ -30,7 +38,21 @@ export const PatientInternmentStatus = {
 export interface Patient {
   id: number;
   name: string;
+  birthDate: string;
   age: number;
+  sex: PatientSex;
+  motherName: string;
+  cns: string;
+  cpf: string;
+  rg: string;
+  phone: string;
+  guardianName: string;
+  street: string;
+  addressNumber: string;
+  neighborhood: string;
+  city: string;
+  addressState: string;
+  zipCode: string;
   bed: string;
   diagnosis: string;
   heartRate: number;
@@ -50,6 +72,15 @@ export interface Patient {
   updatedAt: string;
 }
 
+export type CreatePatientBodySex =
+  (typeof CreatePatientBodySex)[keyof typeof CreatePatientBodySex];
+
+export const CreatePatientBodySex = {
+  M: "M",
+  F: "F",
+  O: "O",
+} as const;
+
 export type CreatePatientBodyInternmentStatus =
   (typeof CreatePatientBodyInternmentStatus)[keyof typeof CreatePatientBodyInternmentStatus];
 
@@ -60,7 +91,21 @@ export const CreatePatientBodyInternmentStatus = {
 
 export interface CreatePatientBody {
   name: string;
-  age: number;
+  birthDate?: string;
+  age?: number;
+  sex?: CreatePatientBodySex;
+  motherName?: string;
+  cns?: string;
+  cpf?: string;
+  rg?: string;
+  phone?: string;
+  guardianName?: string;
+  street?: string;
+  addressNumber?: string;
+  neighborhood?: string;
+  city?: string;
+  addressState?: string;
+  zipCode?: string;
   bed?: string;
   diagnosis?: string;
   heartRate?: number;
