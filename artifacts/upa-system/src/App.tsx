@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const PatientDetail = lazy(() => import("@/pages/patient-detail"));
+const NotificationPrint = lazy(() => import("@/pages/notification-print"));
 const ShiftHandover = lazy(() => import("@/pages/shift-handover"));
 const StaffPage = lazy(() => import("@/pages/staff"));
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -42,6 +43,7 @@ function Router() {
     <Suspense fallback={<PageLoader />}>
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/patients/:id/notifications/:notificationId/print" component={NotificationPrint} />
         <Route path="/patients/:id" component={PatientDetail} />
         <Route path="/passagem-plantao" component={ShiftHandover} />
         <Route path="/funcionarios" component={StaffPage} />

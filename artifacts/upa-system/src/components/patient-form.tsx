@@ -518,7 +518,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           <SectionTitle>Sinais Vitais Iniciais <Opt /></SectionTitle>
 
           <div className="col-span-2 space-y-1">
-            <FormLabel className="text-xs text-muted-foreground">PA (mmHg)</FormLabel>
+            <p className="text-xs text-muted-foreground">PA (mmHg)</p>
             <div className="flex items-center gap-2">
               <FormField control={form.control} name="systolicBp" render={({ field }) => (
                 <FormItem className="flex-1">

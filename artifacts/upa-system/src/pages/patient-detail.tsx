@@ -839,6 +839,11 @@ export default function PatientDetail() {
                             <span className="text-xs text-muted-foreground">— {notif.responsible}</span>
                             <div className="flex gap-1.5">
                               <Button size="sm" variant="outline"
+                                className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                title="Imprimir / Gerar PDF SINAN"
+                                onClick={() => window.open(`${import.meta.env.BASE_URL}patients/${id}/notifications/${notif.id}/print`, "_blank")}
+                              ><Printer className="h-3 w-3" /></Button>
+                              <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-muted-foreground/20 text-muted-foreground hover:bg-muted/30"
                                 onClick={() => { setEditingNotification(notif); setIsNotificationOpen(true); }}
                               ><Pencil className="h-3 w-3" /></Button>
