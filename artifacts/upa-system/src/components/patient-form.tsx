@@ -42,6 +42,7 @@ const SECTOR_OPTIONS = [
   "Sala Vermelha",
   "Observação Adulto",
   "Observação Pediátrica",
+  "Observação Pré-Adulto",
 ];
 
 const INTERNMENT_OPTIONS = [

@@ -66,6 +66,13 @@ const SECTOR_CONFIG = [
     countCls: "bg-green-700/30 text-green-200",
     emptyBorder: "border-green-900/30",
   },
+  {
+    name: "Observação Pré-Adulto",
+    emoji: "🔵",
+    headerCls: "bg-blue-950/40 border-blue-700/40 text-blue-300",
+    countCls: "bg-blue-700/30 text-blue-200",
+    emptyBorder: "border-blue-900/30",
+  },
 ] as const;
 
 const SECTOR_FILTERS = [
@@ -73,6 +80,7 @@ const SECTOR_FILTERS = [
   "Sala Vermelha",
   "Observação Adulto",
   "Observação Pediátrica",
+  "Observação Pré-Adulto",
 ];
 
 function useDebounce<T>(value: T, delay: number): T {
