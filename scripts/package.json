@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "extract-pdf-coords": "tsx ./src/extract-pdf-coords.ts",
+    "extract-formax-coords": "tsx ./src/extract-formax-coords.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
