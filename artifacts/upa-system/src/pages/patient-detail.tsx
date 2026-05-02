@@ -38,6 +38,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PatientForm } from "@/components/patient-form";
 import { VitalsUpdateForm } from "@/components/vitals-update-form";
+import { VitalsRecordForm } from "@/components/vitals-record-form";
 import { PrescriptionForm } from "@/components/prescription-form";
 import { cn } from "@/lib/utils";
 
@@ -111,6 +112,7 @@ export default function PatientDetail() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isVitalsOpen, setIsVitalsOpen] = useState(false);
+  const [isVitalsRecordOpen, setIsVitalsRecordOpen] = useState(false);
   const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
@@ -245,14 +247,23 @@ export default function PatientDetail() {
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                   <Activity className="h-4 w-4 text-primary" /> Sinais Vitais
                 </h3>
-                <Button
-                  size="sm" variant="outline" className="h-8 text-xs gap-1.5"
-                  onClick={() => setIsVitalsOpen(true)}
-                  data-testid="button-update-vitals"
-                >
-                  <Stethoscope className="h-3.5 w-3.5" />
-                  Registrar Evolução
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                    onClick={() => setIsVitalsRecordOpen(true)}
+                  >
+                    <Activity className="h-3.5 w-3.5" />
+                    Registrar SVs
+                  </Button>
+                  <Button
+                    size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                    onClick={() => setIsVitalsOpen(true)}
+                    data-testid="button-update-vitals"
+                  >
+                    <Stethoscope className="h-3.5 w-3.5" />
+                    Registrar Evolução
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -596,6 +607,20 @@ export default function PatientDetail() {
             <DialogDescription>Atualize os dados clínicos do paciente.</DialogDescription>
           </DialogHeader>
           <PatientForm patient={patient} onSuccess={() => setIsEditOpen(false)} onCancel={() => setIsEditOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isVitalsRecordOpen} onOpenChange={setIsVitalsRecordOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Registro de Sinais Vitais</DialogTitle>
+            <DialogDescription>Registre os sinais vitais aferidos agora.</DialogDescription>
+          </DialogHeader>
+          <VitalsRecordForm
+            patient={patient}
+            onSuccess={() => setIsVitalsRecordOpen(false)}
+            onCancel={() => setIsVitalsRecordOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
