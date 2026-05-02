@@ -66,27 +66,37 @@ const TRIAGE_OPTIONS = [
   { value: "blue",   label: "Azul — Não Urgente" },
 ] as const;
 
-function VitalCard({ label, value, unit, icon, showZero = false }: {
+function VitalCard({ label, value, unit, icon, showZero = false, alertClass = "" }: {
   label: string;
   value?: number | null;
   unit: string;
   icon: React.ReactNode;
   showZero?: boolean;
+  alertClass?: string;
 }) {
   const hasValue = showZero ? value != null : (value != null && value > 0);
+  const isAlert  = hasValue && alertClass !== "";
   return (
-    <Card className="border-border/50 bg-card/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-3 px-4">
+    <Card className={cn(
+      "border-border/50 bg-card/50 transition-colors",
+      isAlert && alertClass.includes("red")    ? "border-red-500/50 bg-red-950/20"    : "",
+      isAlert && alertClass.includes("orange") ? "border-orange-500/40 bg-orange-950/10" : "",
+      isAlert && alertClass.includes("yellow") ? "border-yellow-500/30" : "",
+    )}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4">
         <CardTitle className="text-xs font-medium text-muted-foreground">{label}</CardTitle>
         {icon}
       </CardHeader>
       <CardContent className="pb-3 px-4">
         <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-mono font-bold">
+          <span className={cn("text-3xl font-mono font-bold", isAlert ? alertClass : "")}>
             {hasValue ? value : "—"}
           </span>
           {hasValue && <span className="text-xs text-muted-foreground">{unit}</span>}
         </div>
+        {isAlert && alertClass.includes("red") && (
+          <span className="text-[10px] font-bold text-red-400 uppercase tracking-wide">Atenção</span>
+        )}
       </CardContent>
     </Card>
   );
@@ -350,7 +360,11 @@ export default function PatientDetail() {
                     <CardContent className="py-3 px-4">
                       <div className="flex items-center gap-1.5">
                         <Gauge className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-2xl font-mono font-bold">
+                        <span className={cn(
+                          "text-2xl font-mono font-bold",
+                          patient.systolicBp > 0 && (patient.systolicBp > 180 || patient.systolicBp < 80) ? "text-red-400" :
+                          patient.systolicBp > 0 && (patient.systolicBp > 160 || patient.systolicBp < 90) ? "text-orange-400" : ""
+                        )}>
                           {patient.systolicBp > 0 && patient.diastolicBp > 0
                             ? <>{patient.systolicBp}<span className="text-muted-foreground text-lg">/</span>{patient.diastolicBp}</>
                             : "—"}
@@ -365,30 +379,53 @@ export default function PatientDetail() {
                   value={patient.heartRate}
                   unit="bpm"
                   icon={<HeartPulse className="h-4 w-4 text-triage-red" />}
+                  alertClass={
+                    patient.heartRate > 120 || patient.heartRate < 50 ? "text-red-400" :
+                    patient.heartRate > 100 || patient.heartRate < 60 ? "text-orange-400" : ""
+                  }
                 />
                 <VitalCard
                   label="Freq. Respiratória"
                   value={patient.respiratoryRate}
                   unit="irpm"
                   icon={<Wind className="h-4 w-4 text-triage-blue" />}
+                  alertClass={
+                    patient.respiratoryRate > 25 || patient.respiratoryRate < 10 ? "text-red-400" :
+                    patient.respiratoryRate > 20 || patient.respiratoryRate < 12 ? "text-orange-400" : ""
+                  }
                 />
                 <VitalCard
                   label="SpO₂"
                   value={patient.spO2}
                   unit="%"
                   icon={<span className="text-xs font-bold text-sky-400">O₂</span>}
+                  alertClass={
+                    patient.spO2 < 90 ? "text-red-400" :
+                    patient.spO2 < 94 ? "text-orange-400" :
+                    patient.spO2 < 97 ? "text-yellow-400" : ""
+                  }
                 />
                 <VitalCard
                   label="Temperatura"
                   value={patient.temperature}
                   unit="°C"
                   icon={<Thermometer className="h-4 w-4 text-triage-orange" />}
+                  alertClass={
+                    patient.temperature >= 39   ? "text-red-400" :
+                    patient.temperature >= 38   ? "text-orange-400" :
+                    patient.temperature > 37.5  ? "text-yellow-400" :
+                    patient.temperature > 0 && patient.temperature < 36 ? "text-blue-400" : ""
+                  }
                 />
                 <VitalCard
                   label="Glicemia"
                   value={patient.glucose}
                   unit="mg/dL"
                   icon={<Droplet className="h-4 w-4 text-triage-yellow" />}
+                  alertClass={
+                    patient.glucose > 400 || patient.glucose < 60 ? "text-red-400" :
+                    patient.glucose > 250 || patient.glucose < 70 ? "text-orange-400" : ""
+                  }
                 />
               </div>
             </div>

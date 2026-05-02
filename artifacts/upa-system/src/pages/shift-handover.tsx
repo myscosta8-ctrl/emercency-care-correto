@@ -210,17 +210,41 @@ export default function ShiftHandover() {
     <>
       <style>{`
         @media print {
-          @page { margin: 8mm 7mm; size: A4 landscape; }
-          body { background: white !important; color: black !important; font-size: 9pt; }
+          @page { margin: 7mm 8mm; size: A4 landscape; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { background: white !important; color: black !important; font-size: 8.5pt !important; line-height: 1.3; }
           .print-hide { display: none !important; }
-          table { border-collapse: collapse; width: 100%; page-break-inside: auto; }
+
+          /* tables */
+          table { border-collapse: collapse; width: 100%; page-break-inside: auto; font-size: 8pt; }
           thead { display: table-header-group; }
           tr { page-break-inside: avoid; }
-          th, td { border: 1px solid #9ca3af; padding: 2px 4px !important; font-size: 8.5pt; }
-          th { background: #e5e7eb !important; font-weight: 700; color: black !important; }
-          .print-sector-block { page-break-inside: avoid; margin-bottom: 6pt; }
-          .print-sector-title { font-size: 10pt; font-weight: 700; margin-bottom: 2pt; padding: 1px 4px; border-left: 3px solid #374151; }
-          .print-summary { page-break-before: auto; }
+          th { background: #e5e7eb !important; font-weight: 700; color: #111 !important; font-size: 7.5pt !important; text-transform: uppercase; letter-spacing: 0.03em; }
+          th, td { border: 1px solid #9ca3af; padding: 2px 5px !important; }
+
+          /* sector blocks */
+          .print-sector-block { page-break-inside: avoid; margin-bottom: 5pt; }
+          .print-sector-header {
+            font-size: 9pt !important; font-weight: 700;
+            padding: 2px 6px !important;
+            page-break-after: avoid;
+          }
+          /* empty sector: hide full table, show 1-line stub */
+          .print-sector-empty-table { display: none !important; }
+          .print-sector-empty-stub { display: block !important; font-size: 7.5pt; color: #6b7280; padding: 1px 6px; border: 1px solid #d1d5db; border-top: 0; font-style: italic; }
+
+          /* meta row */
+          .print-meta { padding: 3px 6px !important; margin-bottom: 4pt !important; font-size: 8.5pt; }
+
+          /* summary block */
+          .print-summary { margin-top: 6pt !important; padding: 4px 6px !important; }
+          .print-summary h2 { font-size: 8.5pt !important; margin-bottom: 4pt !important; }
+          .print-summary-counters { gap: 16pt !important; margin-bottom: 4pt !important; }
+          .print-summary-counter-val { font-size: 14pt !important; }
+
+          /* document title */
+          .print-doc-title { margin-bottom: 4pt !important; padding-bottom: 3pt !important; }
+          .print-doc-title h1 { font-size: 11pt !important; }
         }
       `}</style>
 
@@ -248,14 +272,14 @@ export default function ShiftHandover() {
         <main className="container mx-auto px-4 py-5 max-w-6xl print:px-0 print:py-0 print:max-w-none">
 
           {/* ── document title (print only) ────────────────────────────── */}
-          <div className="hidden print:block text-center mb-3 pb-2 border-b-2 border-gray-400">
+          <div className="print-doc-title hidden print:block text-center mb-3 pb-2 border-b-2 border-gray-400">
             <h1 className="text-lg font-bold text-black uppercase tracking-wide">
               PASSAGEM DE PLANTÃO — UPA BREVES
             </h1>
           </div>
 
           {/* ── meta row ────────────────────────────────────────────────── */}
-          <div className="flex flex-wrap gap-4 mb-5 p-4 rounded-xl border border-border/40 bg-card/50 print:border print:border-gray-400 print:rounded-none print:bg-white print:p-2 print:mb-3">
+          <div className="print-meta flex flex-wrap gap-4 mb-5 p-4 rounded-xl border border-border/40 bg-card/50 print:border print:border-gray-400 print:rounded-none print:bg-white print:p-2 print:mb-3">
 
             {/* Data */}
             <div className="flex items-center gap-2">
@@ -316,7 +340,7 @@ export default function ShiftHandover() {
 
                   {/* sector header */}
                   <div className={cn(
-                    "flex items-center gap-3 px-4 py-2 rounded-t-lg border-b-0 border",
+                    "print-sector-header flex items-center gap-3 px-4 py-2 rounded-t-lg border-b-0 border",
                     sector.headerCls,
                     "print:rounded-none"
                   )}
@@ -327,33 +351,45 @@ export default function ShiftHandover() {
                       <span className="font-bold text-sm tracking-wide">{sector.label}</span>
                       {sector.sub && <span className="ml-2 text-xs opacity-70">({sector.sub})</span>}
                     </div>
-                    <span className="ml-auto text-xs font-semibold opacity-80">
+                    <span className="ml-auto text-xs font-semibold opacity-80 tabular-nums">
                       {sector.patients.length} {sector.patients.length === 1 ? "paciente" : "pacientes"}
                     </span>
                   </div>
 
-                  {/* table */}
-                  <div className="overflow-x-auto rounded-b-lg border border-border/30 print:border print:border-gray-300 print:rounded-none">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border/30 print:border-gray-300 bg-muted/20 print:bg-gray-100">
-                          <th className="px-3 py-2 print:px-2 print:py-1.5 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-600 w-[20%]">Paciente</th>
-                          <th className="px-3 py-2 print:px-2 print:py-1.5 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-600 w-[7%]">Leito</th>
-                          <th className="px-3 py-2 print:px-2 print:py-1.5 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-600 w-[22%]">Diagnóstico</th>
-                          <th className="px-3 py-2 print:px-2 print:py-1.5 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-600 w-[12%]">Estado</th>
-                          <th className="px-3 py-2 print:px-2 print:py-1.5 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-600 w-[27%]">Pendências</th>
-                          <th className="px-3 py-2 print:px-2 print:py-1.5 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-600 w-[12%]">Notificação</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sector.patients.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="px-4 py-4 text-center text-sm text-muted-foreground print:text-gray-400 italic">
-                              Nenhum paciente neste setor
-                            </td>
+                  {/* empty sector — compact stub for print, full empty row for screen */}
+                  {sector.patients.length === 0 ? (
+                    <>
+                      <div className="print-sector-empty-stub hidden text-gray-500 italic text-xs py-1 px-2 border border-t-0 border-gray-300">
+                        Setor vazio
+                      </div>
+                      <div className="print-sector-empty-table overflow-x-auto rounded-b-lg border border-border/30 print:border print:border-gray-300 print:rounded-none">
+                        <table className="w-full text-sm">
+                          <tbody>
+                            <tr>
+                              <td colSpan={6} className="px-4 py-4 text-center text-sm text-muted-foreground italic">
+                                Nenhum paciente neste setor
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : (
+                    /* table with patients */
+                    <div className="overflow-x-auto rounded-b-lg border border-border/30 print:border print:border-gray-300 print:rounded-none">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border/30 print:border-gray-300 bg-muted/20 print:bg-gray-100">
+                            <th className="px-3 py-2 print:px-2 print:py-1 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[20%]">Paciente</th>
+                            <th className="px-3 py-2 print:px-2 print:py-1 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[7%]">Leito</th>
+                            <th className="px-3 py-2 print:px-2 print:py-1 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[22%]">Diagnóstico</th>
+                            <th className="px-3 py-2 print:px-2 print:py-1 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[12%]">Estado</th>
+                            <th className="px-3 py-2 print:px-2 print:py-1 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[27%]">Pendências</th>
+                            <th className="px-3 py-2 print:px-2 print:py-1 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[12%]">Notificação</th>
                           </tr>
-                        ) : (
-                          sector.patients.map((p, idx) => (
+                        </thead>
+                        <tbody>
+                          {sector.patients.map((p, idx) => (
                             <PatientRow
                               key={p.id}
                               patient={p}
@@ -362,11 +398,11 @@ export default function ShiftHandover() {
                               state={getRow(p.id)}
                               onChange={patch => updateRow(p.id, patch)}
                             />
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
                 </div>
               ))}
