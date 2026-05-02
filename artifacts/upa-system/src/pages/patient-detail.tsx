@@ -28,7 +28,7 @@ import {
   Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
   UserCheck, ClipboardList, Stethoscope, Thermometer,
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
-  Bell, Trash, Download, FileDown,
+  Bell, Trash, Download, FileDown, Calendar, Building2,
 } from "lucide-react";
 import { downloadSinanPdf, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 
@@ -320,6 +320,10 @@ export default function PatientDetail() {
                     symptoms: patient.symptoms,
                     symptomOnsetDate: patient.symptomOnsetDate,
                     triageStatus: patient.status,
+                    attendanceDate: patient.attendanceDate,
+                    attendanceTime: patient.attendanceTime,
+                    healthUnit: patient.healthUnit,
+                    responsibleProfessional: patient.responsibleProfessional,
                   });
                 } catch {
                   toast({ title: "Erro ao gerar ficha", variant: "destructive" });
@@ -992,6 +996,36 @@ export default function PatientDetail() {
                     <p className="font-medium">{patient.nurse || "—"}</p>
                   </div>
                 </div>
+                {patient.attendanceDate && (
+                  <div className="flex items-start gap-3">
+                    <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Data do Atendimento</p>
+                      <p className="font-medium">
+                        {patient.attendanceDate.split("-").reverse().join("/")}
+                        {patient.attendanceTime && <span className="ml-2 text-muted-foreground">às {patient.attendanceTime}</span>}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {patient.healthUnit && (
+                  <div className="flex items-start gap-3">
+                    <Building2 className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Unidade de Saúde</p>
+                      <p className="font-medium">{patient.healthUnit}</p>
+                    </div>
+                  </div>
+                )}
+                {patient.responsibleProfessional && (
+                  <div className="flex items-start gap-3">
+                    <Stethoscope className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Profissional Responsável</p>
+                      <p className="font-medium">{patient.responsibleProfessional}</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

@@ -72,6 +72,10 @@ export interface Patient {
   sector: string;
   internmentStatus: PatientInternmentStatus;
   nurse: string;
+  attendanceDate: string;
+  attendanceTime: string;
+  healthUnit: string;
+  responsibleProfessional: string;
   createdBy: string;
   updatedBy: string;
   createdAt: string;
@@ -131,6 +135,10 @@ export interface CreatePatientBody {
   sector: string;
   internmentStatus: CreatePatientBodyInternmentStatus;
   nurse?: string;
+  attendanceDate?: string;
+  attendanceTime?: string;
+  healthUnit?: string;
+  responsibleProfessional?: string;
 }
 
 export interface UpdatePatientStatusBody {

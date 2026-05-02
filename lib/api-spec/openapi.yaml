@@ -631,6 +631,14 @@ components:
           enum: [internado, nao_internado]
         nurse:
           type: string
+        attendanceDate:
+          type: string
+        attendanceTime:
+          type: string
+        healthUnit:
+          type: string
+        responsibleProfessional:
+          type: string
         createdBy:
           type: string
         updatedBy:
@@ -678,6 +686,10 @@ components:
         - sector
         - internmentStatus
         - nurse
+        - attendanceDate
+        - attendanceTime
+        - healthUnit
+        - responsibleProfessional
         - createdBy
         - updatedBy
         - createdAt
@@ -757,6 +769,14 @@ components:
           type: string
           enum: [internado, nao_internado]
         nurse:
+          type: string
+        attendanceDate:
+          type: string
+        attendanceTime:
+          type: string
+        healthUnit:
+          type: string
+        responsibleProfessional:
           type: string
       required:
         - name

@@ -52,6 +52,12 @@ export const patientsTable = pgTable("patients", {
   internmentStatus: text("internment_status", { enum: ["internado", "nao_internado"] }).notNull().default("nao_internado"),
   nurse:            text("nurse").notNull().default(""),
 
+  // ── atendimento ─────────────────────────────────────────────────────────────
+  attendanceDate:          text("attendance_date").notNull().default(""),
+  attendanceTime:          text("attendance_time").notNull().default(""),
+  healthUnit:              text("health_unit").notNull().default("UPA Breves - Breves/PA"),
+  responsibleProfessional: text("responsible_professional").notNull().default(""),
+
   // ── auditoria ───────────────────────────────────────────────────────────────
   createdBy: text("created_by").notNull().default(""),
   updatedBy: text("updated_by").notNull().default(""),

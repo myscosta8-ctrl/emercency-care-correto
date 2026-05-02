@@ -59,6 +59,10 @@ const COORDS_DENGUE: FormCoords = {
   email:                { x: 222, y: 343, maxWidth: 200 },
   data_inicio_sintomas: { x: 68,  y: 305, maxWidth: 130 },
   classificacao_risco:  { x: 220, y: 305, maxWidth: 200 },
+  unidade_saude:           { x: 68,  y: 620, maxWidth: 290 },
+  data_atendimento:        { x: 380, y: 620, maxWidth: 100 },
+  hora_atendimento:        { x: 490, y: 620, maxWidth: 80  },
+  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },
 };
 
 const COORDS_TUBERCULOSE: FormCoords = {
@@ -82,6 +86,10 @@ const COORDS_TUBERCULOSE: FormCoords = {
   email:                { x: 223, y: 398, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 360, maxWidth: 130 },
   classificacao_risco:  { x: 221, y: 360, maxWidth: 200 },
+  unidade_saude:           { x: 67,  y: 674, maxWidth: 290 },
+  data_atendimento:        { x: 380, y: 674, maxWidth: 100 },
+  hora_atendimento:        { x: 490, y: 674, maxWidth: 80  },
+  profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },
 };
 
 const COORDS_FEBRE_AMARELA: FormCoords = {
@@ -105,6 +113,10 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
   email:                { x: 220, y: 383, maxWidth: 200 },
   data_inicio_sintomas: { x: 66,  y: 345, maxWidth: 130 },
   classificacao_risco:  { x: 218, y: 345, maxWidth: 200 },
+  unidade_saude:           { x: 65,  y: 660, maxWidth: 290 },
+  data_atendimento:        { x: 380, y: 660, maxWidth: 100 },
+  hora_atendimento:        { x: 490, y: 660, maxWidth: 80  },
+  profissional_responsavel:{ x: 65,  y: 90,  maxWidth: 460 },
 };
 
 const COORDS_MENINGITE: FormCoords = {
@@ -128,6 +140,10 @@ const COORDS_MENINGITE: FormCoords = {
   email:                { x: 223, y: 379, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 341, maxWidth: 130 },
   classificacao_risco:  { x: 221, y: 341, maxWidth: 200 },
+  unidade_saude:           { x: 71,  y: 656, maxWidth: 290 },
+  data_atendimento:        { x: 380, y: 656, maxWidth: 100 },
+  hora_atendimento:        { x: 490, y: 656, maxWidth: 80  },
+  profissional_responsavel:{ x: 71,  y: 90,  maxWidth: 460 },
 };
 
 const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
@@ -151,6 +167,10 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
   email:                { x: 220, y: 354, maxWidth: 200 },
   data_inicio_sintomas: { x: 66,  y: 316, maxWidth: 130 },
   classificacao_risco:  { x: 218, y: 316, maxWidth: 200 },
+  unidade_saude:           { x: 68,  y: 697, maxWidth: 290 },
+  data_atendimento:        { x: 380, y: 697, maxWidth: 100 },
+  hora_atendimento:        { x: 490, y: 697, maxWidth: 80  },
+  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },
 };
 
 const COORDS_FEBRE_TIFOIDE: FormCoords = {
@@ -174,6 +194,10 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   email:                { x: 223, y: 366, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 328, maxWidth: 130 },
   classificacao_risco:  { x: 221, y: 328, maxWidth: 200 },
+  unidade_saude:           { x: 66,  y: 645, maxWidth: 290 },
+  data_atendimento:        { x: 380, y: 645, maxWidth: 100 },
+  hora_atendimento:        { x: 490, y: 645, maxWidth: 80  },
+  profissional_responsavel:{ x: 66,  y: 90,  maxWidth: 460 },
 };
 
 const COORDS_AIDS_ADULTO: FormCoords = {
@@ -197,6 +221,10 @@ const COORDS_AIDS_ADULTO: FormCoords = {
   email:                { x: 223, y: 370, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 332, maxWidth: 130 },
   classificacao_risco:  { x: 221, y: 332, maxWidth: 200 },
+  unidade_saude:           { x: 68,  y: 649, maxWidth: 290 },
+  data_atendimento:        { x: 380, y: 649, maxWidth: 100 },
+  hora_atendimento:        { x: 490, y: 649, maxWidth: 80  },
+  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },
 };
 
 const COORDS_EXANTEMATICA: FormCoords = {
@@ -220,6 +248,10 @@ const COORDS_EXANTEMATICA: FormCoords = {
   email:                { x: 221, y: 328, maxWidth: 200 },
   data_inicio_sintomas: { x: 67,  y: 290, maxWidth: 130 },
   classificacao_risco:  { x: 219, y: 290, maxWidth: 200 },
+  unidade_saude:           { x: 67,  y: 606, maxWidth: 290 },
+  data_atendimento:        { x: 380, y: 606, maxWidth: 100 },
+  hora_atendimento:        { x: 490, y: 606, maxWidth: 80  },
+  profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },
 };
 
 const TEMPLATES: Array<{ file: string; coords: FormCoords }> = [

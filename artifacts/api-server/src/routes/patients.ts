@@ -87,6 +87,10 @@ function buildPatientData(body: typeof CreatePatientBody._type) {
     systolicBp:      body.systolicBp ?? 0,
     diastolicBp:     body.diastolicBp ?? 0,
     nurse:           body.nurse ?? "",
+    attendanceDate:          body.attendanceDate          ?? "",
+    attendanceTime:          body.attendanceTime          ?? "",
+    healthUnit:              body.healthUnit              ?? "UPA Breves - Breves/PA",
+    responsibleProfessional: body.responsibleProfessional ?? "",
   };
 }
 

@@ -26,6 +26,10 @@ export interface PdfPatient {
   symptoms?: string | null;
   symptomOnsetDate?: string | null;
   triageStatus?: string | null;   // "red"|"orange"|"yellow"|"green"|"blue"
+  attendanceDate?: string | null;
+  attendanceTime?: string | null;
+  healthUnit?: string | null;
+  responsibleProfessional?: string | null;
 }
 
 export interface PdfNotification {
@@ -96,6 +100,10 @@ const COORDS_DENGUE: FormCoords = {
   email:                { x: 222, y: 343, maxWidth: 200 },
   data_inicio_sintomas: { x: 68,  y: 305, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 220, y: 305, maxWidth: 200 },  // [O] right of data_inicio
+  unidade_saude:           { x: 68,  y: 620, maxWidth: 290 },  // [O] notification header
+  data_atendimento:        { x: 380, y: 620, maxWidth: 100 },  // [O] right of unidade_saude
+  hora_atendimento:        { x: 490, y: 620, maxWidth: 80  },  // [O] right of data_atendimento
+  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },  // [O] footer notifier
 };
 
 // ─── TUBERCULOSE ─────────────────────────────────────────────────────────────
@@ -124,6 +132,10 @@ const COORDS_TUBERCULOSE: FormCoords = {
   email:                { x: 223, y: 398, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 360, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 221, y: 360, maxWidth: 200 },  // [O] right of data_inicio
+  unidade_saude:           { x: 67,  y: 674, maxWidth: 290 },  // [O] notification header
+  data_atendimento:        { x: 380, y: 674, maxWidth: 100 },  // [O] right of unidade_saude
+  hora_atendimento:        { x: 490, y: 674, maxWidth: 80  },  // [O] right of data_atendimento
+  profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },  // [O] footer notifier
 };
 
 // ─── FEBRE-AMARELA ───────────────────────────────────────────────────────────
@@ -152,6 +164,10 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
   email:                { x: 220, y: 383, maxWidth: 200 },
   data_inicio_sintomas: { x: 66,  y: 345, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 218, y: 345, maxWidth: 200 },  // [O] right of data_inicio
+  unidade_saude:           { x: 65,  y: 660, maxWidth: 290 },  // [O] notification header
+  data_atendimento:        { x: 380, y: 660, maxWidth: 100 },  // [O] right of unidade_saude
+  hora_atendimento:        { x: 490, y: 660, maxWidth: 80  },  // [O] right of data_atendimento
+  profissional_responsavel:{ x: 65,  y: 90,  maxWidth: 460 },  // [O] footer notifier
 };
 
 // ─── MENINGITE ───────────────────────────────────────────────────────────────
@@ -180,6 +196,10 @@ const COORDS_MENINGITE: FormCoords = {
   email:                { x: 223, y: 379, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 341, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 221, y: 341, maxWidth: 200 },  // [O] right of data_inicio
+  unidade_saude:           { x: 71,  y: 656, maxWidth: 290 },  // [O] notification header
+  data_atendimento:        { x: 380, y: 656, maxWidth: 100 },  // [O] right of unidade_saude
+  hora_atendimento:        { x: 490, y: 656, maxWidth: 80  },  // [O] right of data_atendimento
+  profissional_responsavel:{ x: 71,  y: 90,  maxWidth: 460 },  // [O] footer notifier
 };
 
 // ─── NOTIFICAÇÃO INDIVIDUAL (violência / outros) ──────────────────────────────
@@ -211,6 +231,10 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
   email:                { x: 220, y: 354, maxWidth: 200 },
   data_inicio_sintomas: { x: 66,  y: 316, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 218, y: 316, maxWidth: 200 },  // [O] right of data_inicio
+  unidade_saude:           { x: 68,  y: 697, maxWidth: 290 },  // [O] notification header
+  data_atendimento:        { x: 380, y: 697, maxWidth: 100 },  // [O] right of unidade_saude
+  hora_atendimento:        { x: 490, y: 697, maxWidth: 80  },  // [O] right of data_atendimento
+  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },  // [O] footer notifier
 };
 
 // ─── FEBRE TIFOIDE ───────────────────────────────────────────────────────────
@@ -239,6 +263,10 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   email:                { x: 223, y: 366, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 328, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 221, y: 328, maxWidth: 200 },  // [O] right of data_inicio
+  unidade_saude:           { x: 66,  y: 645, maxWidth: 290 },  // [O] notification header
+  data_atendimento:        { x: 380, y: 645, maxWidth: 100 },  // [O] right of unidade_saude
+  hora_atendimento:        { x: 490, y: 645, maxWidth: 80  },  // [O] right of data_atendimento
+  profissional_responsavel:{ x: 66,  y: 90,  maxWidth: 460 },  // [O] footer notifier
 };
 
 // ─── AIDS ADULTO ─────────────────────────────────────────────────────────────
@@ -270,6 +298,10 @@ const COORDS_AIDS_ADULTO: FormCoords = {
   email:                { x: 223, y: 370, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 332, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 221, y: 332, maxWidth: 200 },  // [O] right of data_inicio
+  unidade_saude:           { x: 68,  y: 649, maxWidth: 290 },  // [O] notification header
+  data_atendimento:        { x: 380, y: 649, maxWidth: 100 },  // [O] right of unidade_saude
+  hora_atendimento:        { x: 490, y: 649, maxWidth: 80  },  // [O] right of data_atendimento
+  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },  // [O] footer notifier
 };
 
 // ─── EXANTEMATICA ────────────────────────────────────────────────────────────
@@ -301,6 +333,10 @@ const COORDS_EXANTEMATICA: FormCoords = {
   email:                { x: 221, y: 328, maxWidth: 200 },
   data_inicio_sintomas: { x: 67,  y: 290, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 219, y: 290, maxWidth: 200 },  // [O] right of data_inicio
+  unidade_saude:           { x: 67,  y: 606, maxWidth: 290 },  // [O] notification header
+  data_atendimento:        { x: 380, y: 606, maxWidth: 100 },  // [O] right of unidade_saude
+  hora_atendimento:        { x: 490, y: 606, maxWidth: 80  },  // [O] right of data_atendimento
+  profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },  // [O] footer notifier
 };
 
 // ─── COVID-19 / SRAG ─────────────────────────────────────────────────────────
@@ -395,6 +431,11 @@ function buildFieldValues(patient: PdfPatient): Record<string, string> {
     data_inicio_sintomas: fmtDate(patient.symptomOnsetDate),
     sintomas:             patient.symptoms       ?? "",
     classificacao_risco:  riskLabel(patient.triageStatus),
+    // ── atendimento fields (header + footer of SINAN forms; also on Ficha ID)
+    unidade_saude:           patient.healthUnit             ?? "",
+    data_atendimento:        fmtDate(patient.attendanceDate),
+    hora_atendimento:        patient.attendanceTime          ?? "",
+    profissional_responsavel: patient.responsibleProfessional ?? "",
   };
 }
 
@@ -476,6 +517,11 @@ async function fillTemplate(
   draw("classificacao_risco");
   draw("altura");    // Ficha ID only; no-op on SINAN forms
   draw("sintomas");  // Ficha ID only; no-op on SINAN forms
+  // ── atendimento fields — SINAN header/footer + Ficha ID
+  draw("unidade_saude");
+  draw("data_atendimento");
+  draw("hora_atendimento");
+  draw("profissional_responsavel");
 
   return doc.save();
 }
@@ -556,13 +602,13 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
   const BORDER  = rgb(0.80, 0.82, 0.88);
   const LTBLUE  = rgb(0.72, 0.78, 0.96);
 
-  // ── layout (19 rows, ROW_H=29, GAP=6, STEP=35) ───────────────────────────
+  // ── layout (23 rows, ROW_H=24, GAP=6, STEP=30) ───────────────────────────
   const ML      = 40;
   const CW      = 515;
   const LBL_W   = 140;
   const VAL_W   = CW - LBL_W;
-  const ROW_H   = 29;
-  const STEP    = 35;           // ROW_H + 6 gap
+  const ROW_H   = 24;
+  const STEP    = 30;           // ROW_H + 6 gap
   const FIRST_Y = 752;          // y-top of first row
 
   // ── header (y 762 → 812) ──────────────────────────────────────────────────
@@ -603,8 +649,12 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
     { key: "altura",               label: "ALTURA (cm)",              value: patient.height   ? `${patient.height}`  : "" },
     { key: "telefone",             label: "TELEFONE",                 value: patient.phone               ?? "" },
     { key: "email",                label: "E-MAIL",                   value: patient.email               ?? "" },
-    { key: "data_inicio_sintomas", label: "INÍCIO DOS SINTOMAS",      value: fmtDate(patient.symptomOnsetDate) },
-    { key: "sintomas",             label: "SINTOMAS",                 value: patient.symptoms            ?? "" },
+    { key: "data_inicio_sintomas",    label: "INÍCIO DOS SINTOMAS",    value: fmtDate(patient.symptomOnsetDate) },
+    { key: "sintomas",                label: "SINTOMAS",               value: patient.symptoms                    ?? "" },
+    { key: "data_atendimento",        label: "DATA DO ATENDIMENTO",    value: fmtDate(patient.attendanceDate) },
+    { key: "hora_atendimento",        label: "HORA DO ATENDIMENTO",    value: patient.attendanceTime              ?? "" },
+    { key: "unidade_saude",           label: "UNIDADE DE SAÚDE",       value: patient.healthUnit                  ?? "" },
+    { key: "profissional_responsavel",label: "PROFISSIONAL RESP.",     value: patient.responsibleProfessional     ?? "" },
   ];
 
   // ── draw rows + AcroForm fields ───────────────────────────────────────────
@@ -648,14 +698,6 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
     field.setFontSize(9.5);
     // Pre-filled values are editable so staff can correct on-screen before printing.
   });
-
-  // ── signature block ────────────────────────────────────────────────────────
-  const lastBot = FIRST_Y - (fields.length - 1) * STEP - ROW_H;  // bottom of last row
-  const sigY    = lastBot - 36;
-  page.drawLine({ start: { x: ML,       y: sigY }, end: { x: ML + 235, y: sigY }, thickness: 0.5, color: BORDER });
-  page.drawLine({ start: { x: ML + 275, y: sigY }, end: { x: ML + CW,  y: sigY }, thickness: 0.5, color: BORDER });
-  page.drawText("Assinatura / Carimbo do Profissional", { x: ML, y: sigY - 10, font, size: 7, color: MUTED });
-  page.drawText("Data / Hora", { x: ML + 275, y: sigY - 10, font, size: 7, color: MUTED });
 
   // ── footer ─────────────────────────────────────────────────────────────────
   page.drawLine({ start: { x: ML, y: 38 }, end: { x: ML + CW, y: 38 }, thickness: 0.4, color: BORDER });
@@ -714,6 +756,11 @@ export interface DadosPaciente {
   sintomas?:             string | null;
   data_inicio_sintomas?: string | null;            // ISO "YYYY-MM-DD" or "DD/MM/YYYY"
   classificacao_risco?:  string | null;            // "Vermelho — Emergência" etc., or raw "red"|…
+  // ── atendimento fields (SINAN header/footer + Ficha ID)
+  unidade_saude?:           string | null;
+  data_atendimento?:        string | null;         // ISO "YYYY-MM-DD" or "DD/MM/YYYY"
+  hora_atendimento?:        string | null;         // "HH:MM"
+  profissional_responsavel?: string | null;
 }
 
 function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
@@ -768,6 +815,10 @@ function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
     triageStatus:       ["red","orange","yellow","green","blue"].includes(rawRisco ?? "")
                           ? rawRisco
                           : null,              // pass raw status; buildFieldValues calls riskLabel()
+    attendanceDate:          d.data_atendimento        ?? null,
+    attendanceTime:          d.hora_atendimento        ?? null,
+    healthUnit:              d.unidade_saude           ?? null,
+    responsibleProfessional: d.profissional_responsavel ?? null,
   };
 }
 

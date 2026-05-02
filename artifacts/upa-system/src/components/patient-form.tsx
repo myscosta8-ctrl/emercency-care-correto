@@ -112,6 +112,10 @@ const formSchema = z.object({
   diagnosis:        z.string().default(""),
   symptoms:         z.string().default(""),
   symptomOnsetDate: z.string().default(""),
+  attendanceDate:          z.string().default(""),
+  attendanceTime:          z.string().default(""),
+  healthUnit:              z.string().default("UPA Breves - Breves/PA"),
+  responsibleProfessional: z.string().default(""),
 
   // sinais vitais iniciais
   heartRate:        z.coerce.number().min(0).default(0),
@@ -172,6 +176,10 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       diagnosis:        patient?.diagnosis        ?? "",
       symptoms:         patient?.symptoms         ?? "",
       symptomOnsetDate: patient?.symptomOnsetDate ?? "",
+      attendanceDate:          patient?.attendanceDate          ?? new Date().toISOString().slice(0, 10),
+      attendanceTime:          patient?.attendanceTime          ?? "",
+      healthUnit:              patient?.healthUnit              ?? "UPA Breves - Breves/PA",
+      responsibleProfessional: patient?.responsibleProfessional ?? "",
 
       heartRate:       patient?.heartRate       ?? 0,
       respiratoryRate: patient?.respiratoryRate ?? 0,
@@ -449,6 +457,41 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             <FormItem>
               <FormLabel>CEP <Opt /></FormLabel>
               <FormControl><Input placeholder="00000-000" maxLength={9} {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          {/* ── DADOS DO ATENDIMENTO ──────────────────────────────────────── */}
+          <SectionTitle>Dados do Atendimento</SectionTitle>
+
+          <FormField control={form.control} name="attendanceDate" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data do Atendimento</FormLabel>
+              <FormControl><Input type="date" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="attendanceTime" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Hora do Atendimento <Opt /></FormLabel>
+              <FormControl><Input type="time" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="healthUnit" render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel>Unidade de Saúde <Opt /></FormLabel>
+              <FormControl><Input placeholder="Nome da unidade de saúde" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="responsibleProfessional" render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel>Profissional Responsável <Opt /></FormLabel>
+              <FormControl><Input placeholder="Nome do médico ou profissional responsável" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
