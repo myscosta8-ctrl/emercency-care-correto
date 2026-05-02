@@ -28,6 +28,10 @@ export interface Patient {
   heartRate: number;
   respiratoryRate: number;
   glucose: number;
+  spO2: number;
+  temperature: number;
+  systolicBp: number;
+  diastolicBp: number;
   status: TriageStatus;
   sector: string;
   nurse: string;
@@ -43,6 +47,10 @@ export interface CreatePatientBody {
   heartRate?: number;
   respiratoryRate?: number;
   glucose?: number;
+  spO2?: number;
+  temperature?: number;
+  systolicBp?: number;
+  diastolicBp?: number;
   status: TriageStatus;
   sector: string;
   nurse?: string;
@@ -56,6 +64,16 @@ export interface VitalsUpdateBody {
   heartRate?: number;
   respiratoryRate?: number;
   glucose?: number;
+  systolicBp?: number;
+  diastolicBp?: number;
+  spO2?: number;
+  temperature?: number;
+  painScale?: number;
+  consciousnessLevel?: string;
+  generalCondition?: string;
+  subjective?: string;
+  assessment?: string;
+  plan?: string;
   responsible: string;
   note?: string;
 }
@@ -66,6 +84,16 @@ export interface PatientEvolution {
   heartRate?: number;
   respiratoryRate?: number;
   glucose?: number;
+  systolicBp?: number;
+  diastolicBp?: number;
+  spO2?: number;
+  temperature?: number;
+  painScale?: number;
+  consciousnessLevel?: string;
+  generalCondition?: string;
+  subjective: string;
+  assessment: string;
+  plan: string;
   responsible: string;
   note: string;
   createdAt: string;

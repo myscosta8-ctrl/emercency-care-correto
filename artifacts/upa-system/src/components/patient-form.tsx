@@ -59,6 +59,10 @@ const formSchema = z.object({
   heartRate: z.coerce.number().min(0).default(0),
   respiratoryRate: z.coerce.number().min(0).default(0),
   glucose: z.coerce.number().min(0).default(0),
+  spO2: z.coerce.number().min(0).max(100).default(0),
+  temperature: z.coerce.number().min(0).default(0),
+  systolicBp: z.coerce.number().min(0).default(0),
+  diastolicBp: z.coerce.number().min(0).default(0),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -86,6 +90,10 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       heartRate: patient?.heartRate ?? 0,
       respiratoryRate: patient?.respiratoryRate ?? 0,
       glucose: patient?.glucose ?? 0,
+      spO2: patient?.spO2 ?? 0,
+      temperature: patient?.temperature ?? 0,
+      systolicBp: patient?.systolicBp ?? 0,
+      diastolicBp: patient?.diastolicBp ?? 0,
     },
   });
 
@@ -254,8 +262,25 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           {/* Vitals separator */}
           <div className="col-span-2 pt-1 border-t border-border/50">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-2">
-              Sinais Vitais <OptLabel />
+              Sinais Vitais Iniciais <OptLabel />
             </p>
+          </div>
+
+          <div className="col-span-2 space-y-1">
+            <FormLabel className="text-xs text-muted-foreground">PA (mmHg)</FormLabel>
+            <div className="flex items-center gap-2">
+              <FormField control={form.control} name="systolicBp" render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormControl><Input type="number" min={0} placeholder="Sistólica" data-testid="input-systolicBp" {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <span className="text-muted-foreground">/</span>
+              <FormField control={form.control} name="diastolicBp" render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormControl><Input type="number" min={0} placeholder="Diastólica" data-testid="input-diastolicBp" {...field} /></FormControl>
+                </FormItem>
+              )} />
+            </div>
           </div>
 
           <FormField
@@ -282,10 +307,32 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           />
           <FormField
             control={form.control}
+            name="spO2"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>SpO₂ (%)</FormLabel>
+                <FormControl><Input type="number" min={0} max={100} data-testid="input-spO2" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="temperature"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Temperatura (°C)</FormLabel>
+                <FormControl><Input type="number" min={0} step="0.1" data-testid="input-temperature" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
             name="glucose"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Glicemia (mg/dL)</FormLabel>
+                <FormLabel>HGT (mg/dL)</FormLabel>
                 <FormControl><Input type="number" min={0} step="0.1" data-testid="input-glucose" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>

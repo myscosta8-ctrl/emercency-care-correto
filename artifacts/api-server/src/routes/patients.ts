@@ -22,13 +22,7 @@ const serialize = (p: typeof patientsTable.$inferSelect) => ({
 });
 
 const serializeEvolution = (e: typeof patientEvolutionsTable.$inferSelect) => ({
-  id: e.id,
-  patientId: e.patientId,
-  ...(e.heartRate != null ? { heartRate: e.heartRate } : {}),
-  ...(e.respiratoryRate != null ? { respiratoryRate: e.respiratoryRate } : {}),
-  ...(e.glucose != null ? { glucose: e.glucose } : {}),
-  responsible: e.responsible,
-  note: e.note,
+  ...e,
   createdAt: e.createdAt.toISOString(),
 });
 
@@ -74,6 +68,10 @@ router.post("/", async (req, res) => {
     heartRate: body.heartRate ?? 0,
     respiratoryRate: body.respiratoryRate ?? 0,
     glucose: body.glucose ?? 0,
+    spO2: body.spO2 ?? 0,
+    temperature: body.temperature ?? 0,
+    systolicBp: body.systolicBp ?? 0,
+    diastolicBp: body.diastolicBp ?? 0,
     nurse: body.nurse ?? "",
     updatedAt: new Date(),
   }).returning();
@@ -83,8 +81,15 @@ router.post("/", async (req, res) => {
     heartRate: body.heartRate ?? null,
     respiratoryRate: body.respiratoryRate ?? null,
     glucose: body.glucose ?? null,
+    spO2: body.spO2 ?? null,
+    temperature: body.temperature ?? null,
+    systolicBp: body.systolicBp ?? null,
+    diastolicBp: body.diastolicBp ?? null,
     responsible: body.nurse ?? "",
     note: "Admissão inicial",
+    subjective: "",
+    assessment: "",
+    plan: "",
   });
 
   res.status(201).json(serialize(patient));
@@ -103,6 +108,10 @@ router.put("/:id", async (req, res) => {
     heartRate: body.heartRate ?? 0,
     respiratoryRate: body.respiratoryRate ?? 0,
     glucose: body.glucose ?? 0,
+    spO2: body.spO2 ?? 0,
+    temperature: body.temperature ?? 0,
+    systolicBp: body.systolicBp ?? 0,
+    diastolicBp: body.diastolicBp ?? 0,
     nurse: body.nurse ?? "",
     updatedAt: new Date(),
   }).where(eq(patientsTable.id, id)).returning();
@@ -126,6 +135,10 @@ router.post("/:id/vitals", async (req, res) => {
   if (body.heartRate !== undefined) updateData.heartRate = body.heartRate;
   if (body.respiratoryRate !== undefined) updateData.respiratoryRate = body.respiratoryRate;
   if (body.glucose !== undefined) updateData.glucose = body.glucose;
+  if (body.spO2 !== undefined) updateData.spO2 = body.spO2;
+  if (body.temperature !== undefined) updateData.temperature = body.temperature;
+  if (body.systolicBp !== undefined) updateData.systolicBp = body.systolicBp;
+  if (body.diastolicBp !== undefined) updateData.diastolicBp = body.diastolicBp;
   if (body.responsible) updateData.nurse = body.responsible;
 
   const [patient] = await db.update(patientsTable).set(updateData).where(eq(patientsTable.id, id)).returning();
@@ -136,6 +149,16 @@ router.post("/:id/vitals", async (req, res) => {
     heartRate: body.heartRate ?? null,
     respiratoryRate: body.respiratoryRate ?? null,
     glucose: body.glucose ?? null,
+    spO2: body.spO2 ?? null,
+    temperature: body.temperature ?? null,
+    systolicBp: body.systolicBp ?? null,
+    diastolicBp: body.diastolicBp ?? null,
+    painScale: body.painScale ?? null,
+    consciousnessLevel: body.consciousnessLevel ?? null,
+    generalCondition: body.generalCondition ?? null,
+    subjective: body.subjective ?? "",
+    assessment: body.assessment ?? "",
+    plan: body.plan ?? "",
     responsible: body.responsible,
     note: body.note ?? "",
   });

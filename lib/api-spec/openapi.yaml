@@ -238,6 +238,14 @@ components:
           type: integer
         glucose:
           type: number
+        spO2:
+          type: integer
+        temperature:
+          type: number
+        systolicBp:
+          type: integer
+        diastolicBp:
+          type: integer
         status:
           $ref: "#/components/schemas/TriageStatus"
         sector:
@@ -259,6 +267,10 @@ components:
         - heartRate
         - respiratoryRate
         - glucose
+        - spO2
+        - temperature
+        - systolicBp
+        - diastolicBp
         - status
         - sector
         - nurse
@@ -282,6 +294,14 @@ components:
           type: integer
         glucose:
           type: number
+        spO2:
+          type: integer
+        temperature:
+          type: number
+        systolicBp:
+          type: integer
+        diastolicBp:
+          type: integer
         status:
           $ref: "#/components/schemas/TriageStatus"
         sector:
@@ -311,6 +331,26 @@ components:
           type: integer
         glucose:
           type: number
+        systolicBp:
+          type: integer
+        diastolicBp:
+          type: integer
+        spO2:
+          type: integer
+        temperature:
+          type: number
+        painScale:
+          type: integer
+        consciousnessLevel:
+          type: string
+        generalCondition:
+          type: string
+        subjective:
+          type: string
+        assessment:
+          type: string
+        plan:
+          type: string
         responsible:
           type: string
         note:
@@ -331,6 +371,26 @@ components:
           type: integer
         glucose:
           type: number
+        systolicBp:
+          type: integer
+        diastolicBp:
+          type: integer
+        spO2:
+          type: integer
+        temperature:
+          type: number
+        painScale:
+          type: integer
+        consciousnessLevel:
+          type: string
+        generalCondition:
+          type: string
+        subjective:
+          type: string
+        assessment:
+          type: string
+        plan:
+          type: string
         responsible:
           type: string
         note:
@@ -343,6 +403,9 @@ components:
         - patientId
         - responsible
         - note
+        - subjective
+        - assessment
+        - plan
         - createdAt
 
     PatientsSummary:
