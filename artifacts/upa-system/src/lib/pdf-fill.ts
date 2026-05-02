@@ -14,6 +14,7 @@ export interface PdfPatient {
   phone?: string | null;
   street?: string | null;
   addressNumber?: string | null;
+  addressComplement?: string | null;
   neighborhood?: string | null;
   city?: string | null;
   addressState?: string | null;
@@ -69,19 +70,20 @@ function templatePath(type: string): string {
 //     numero y=408→394; cep y=380→366; telefone y=357→343
 //     uf: estimated right of cidade (x≈430, same y)
 const COORDS_DENGUE: FormCoords = {
-  nome_paciente:   { x: 62,  y: 564, maxWidth: 386 },
-  data_nascimento: { x: 459, y: 565, maxWidth: 110 },
-  idade:           { x: 65,  y: 535, maxWidth: 88  },
-  sexo:            { x: 162, y: 535, maxWidth: 88  },
-  cns:             { x: 68,  y: 474, maxWidth: 170 },
-  nome_mae:        { x: 247, y: 474, maxWidth: 290 },
-  cidade:          { x: 97,  y: 443, maxWidth: 310 },
-  uf:              { x: 430, y: 443, maxWidth: 30  },
-  bairro:          { x: 68,  y: 418, maxWidth: 130 },
-  endereco:        { x: 208, y: 417, maxWidth: 200 },
-  numero_end:      { x: 68,  y: 394, maxWidth: 100 },
-  cep:             { x: 470, y: 366, maxWidth: 100 },
-  telefone:        { x: 68,  y: 343, maxWidth: 140 },
+  nome_paciente:        { x: 62,  y: 564, maxWidth: 386 },
+  data_nascimento:      { x: 459, y: 565, maxWidth: 110 },
+  idade:                { x: 65,  y: 535, maxWidth: 88  },
+  sexo:                 { x: 162, y: 535, maxWidth: 88  },
+  cns:                  { x: 68,  y: 474, maxWidth: 170 },
+  nome_mae:             { x: 247, y: 474, maxWidth: 290 },
+  cidade:               { x: 97,  y: 443, maxWidth: 310 },
+  uf:                   { x: 430, y: 443, maxWidth: 30  },
+  bairro:               { x: 68,  y: 418, maxWidth: 130 },
+  endereco_rua:         { x: 208, y: 417, maxWidth: 200 },
+  endereco_numero:      { x: 68,  y: 394, maxWidth: 90  },
+  endereco_complemento: { x: 170, y: 394, maxWidth: 110 },
+  cep:                  { x: 470, y: 366, maxWidth: 100 },
+  telefone:             { x: 68,  y: 343, maxWidth: 140 },
 };
 
 // ─── TUBERCULOSE ─────────────────────────────────────────────────────────────
@@ -90,19 +92,20 @@ const COORDS_DENGUE: FormCoords = {
 //     logradouro y=486→472; numero y=462→448; cep y=434→420; telefone y=412→398
 //     uf: estimated right of cidade
 const COORDS_TUBERCULOSE: FormCoords = {
-  nome_paciente:   { x: 67,  y: 618, maxWidth: 375 },
-  data_nascimento: { x: 455, y: 619, maxWidth: 110 },
-  idade:           { x: 66,  y: 589, maxWidth: 88  },
-  sexo:            { x: 165, y: 589, maxWidth: 88  },
-  cns:             { x: 69,  y: 528, maxWidth: 162 },
-  nome_mae:        { x: 243, y: 527, maxWidth: 295 },
-  cidade:          { x: 98,  y: 497, maxWidth: 305 },
-  uf:              { x: 426, y: 497, maxWidth: 30  },
-  bairro:          { x: 68,  y: 473, maxWidth: 130 },
-  endereco:        { x: 209, y: 472, maxWidth: 200 },
-  numero_end:      { x: 68,  y: 448, maxWidth: 100 },
-  cep:             { x: 467, y: 420, maxWidth: 100 },
-  telefone:        { x: 69,  y: 398, maxWidth: 140 },
+  nome_paciente:        { x: 67,  y: 618, maxWidth: 375 },
+  data_nascimento:      { x: 455, y: 619, maxWidth: 110 },
+  idade:                { x: 66,  y: 589, maxWidth: 88  },
+  sexo:                 { x: 165, y: 589, maxWidth: 88  },
+  cns:                  { x: 69,  y: 528, maxWidth: 162 },
+  nome_mae:             { x: 243, y: 527, maxWidth: 295 },
+  cidade:               { x: 98,  y: 497, maxWidth: 305 },
+  uf:                   { x: 426, y: 497, maxWidth: 30  },
+  bairro:               { x: 68,  y: 473, maxWidth: 130 },
+  endereco_rua:         { x: 209, y: 472, maxWidth: 200 },
+  endereco_numero:      { x: 68,  y: 448, maxWidth: 90  },
+  endereco_complemento: { x: 170, y: 448, maxWidth: 110 },
+  cep:                  { x: 467, y: 420, maxWidth: 100 },
+  telefone:             { x: 69,  y: 398, maxWidth: 140 },
 };
 
 // ─── FEBRE-AMARELA ───────────────────────────────────────────────────────────
@@ -111,19 +114,20 @@ const COORDS_TUBERCULOSE: FormCoords = {
 //     logradouro y=472→458; numero y=448→434; cep y=420→406; telefone y=397→383
 //     uf: estimated right of cidade
 const COORDS_FEBRE_AMARELA: FormCoords = {
-  nome_paciente:   { x: 65,  y: 604, maxWidth: 382 },
-  data_nascimento: { x: 458, y: 604, maxWidth: 110 },
-  idade:           { x: 65,  y: 575, maxWidth: 88  },
-  sexo:            { x: 163, y: 575, maxWidth: 88  },
-  cns:             { x: 68,  y: 514, maxWidth: 168 },
-  nome_mae:        { x: 243, y: 513, maxWidth: 292 },
-  cidade:          { x: 95,  y: 483, maxWidth: 308 },
-  uf:              { x: 426, y: 483, maxWidth: 30  },
-  bairro:          { x: 64,  y: 459, maxWidth: 132 },
-  endereco:        { x: 207, y: 458, maxWidth: 200 },
-  numero_end:      { x: 66,  y: 434, maxWidth: 100 },
-  cep:             { x: 468, y: 406, maxWidth: 100 },
-  telefone:        { x: 66,  y: 383, maxWidth: 140 },
+  nome_paciente:        { x: 65,  y: 604, maxWidth: 382 },
+  data_nascimento:      { x: 458, y: 604, maxWidth: 110 },
+  idade:                { x: 65,  y: 575, maxWidth: 88  },
+  sexo:                 { x: 163, y: 575, maxWidth: 88  },
+  cns:                  { x: 68,  y: 514, maxWidth: 168 },
+  nome_mae:             { x: 243, y: 513, maxWidth: 292 },
+  cidade:               { x: 95,  y: 483, maxWidth: 308 },
+  uf:                   { x: 426, y: 483, maxWidth: 30  },
+  bairro:               { x: 64,  y: 459, maxWidth: 132 },
+  endereco_rua:         { x: 207, y: 458, maxWidth: 200 },
+  endereco_numero:      { x: 66,  y: 434, maxWidth: 90  },
+  endereco_complemento: { x: 168, y: 434, maxWidth: 110 },
+  cep:                  { x: 468, y: 406, maxWidth: 100 },
+  telefone:             { x: 66,  y: 383, maxWidth: 140 },
 };
 
 // ─── MENINGITE ───────────────────────────────────────────────────────────────
@@ -132,19 +136,20 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
 // [O] cns/mae/municipio/bairro/logradouro/numero/cep/telefone: consistent offsets
 //     uf: estimated right of cidade
 const COORDS_MENINGITE: FormCoords = {
-  nome_paciente:   { x: 71,  y: 600, maxWidth: 380 },
-  data_nascimento: { x: 461, y: 600, maxWidth: 110 },
-  idade:           { x: 70,  y: 571, maxWidth: 88  },
-  sexo:            { x: 166, y: 571, maxWidth: 88  },
-  cns:             { x: 69,  y: 510, maxWidth: 168 },
-  nome_mae:        { x: 243, y: 509, maxWidth: 292 },
-  cidade:          { x: 97,  y: 479, maxWidth: 308 },
-  uf:              { x: 428, y: 479, maxWidth: 30  },
-  bairro:          { x: 68,  y: 455, maxWidth: 130 },
-  endereco:        { x: 209, y: 454, maxWidth: 200 },
-  numero_end:      { x: 68,  y: 430, maxWidth: 100 },
-  cep:             { x: 467, y: 402, maxWidth: 100 },
-  telefone:        { x: 69,  y: 379, maxWidth: 140 },
+  nome_paciente:        { x: 71,  y: 600, maxWidth: 380 },
+  data_nascimento:      { x: 461, y: 600, maxWidth: 110 },
+  idade:                { x: 70,  y: 571, maxWidth: 88  },
+  sexo:                 { x: 166, y: 571, maxWidth: 88  },
+  cns:                  { x: 69,  y: 510, maxWidth: 168 },
+  nome_mae:             { x: 243, y: 509, maxWidth: 292 },
+  cidade:               { x: 97,  y: 479, maxWidth: 308 },
+  uf:                   { x: 428, y: 479, maxWidth: 30  },
+  bairro:               { x: 68,  y: 455, maxWidth: 130 },
+  endereco_rua:         { x: 209, y: 454, maxWidth: 200 },
+  endereco_numero:      { x: 68,  y: 430, maxWidth: 90  },
+  endereco_complemento: { x: 170, y: 430, maxWidth: 110 },
+  cep:                  { x: 467, y: 402, maxWidth: 100 },
+  telefone:             { x: 69,  y: 379, maxWidth: 140 },
 };
 
 // ─── NOTIFICAÇÃO INDIVIDUAL (violência / outros) ──────────────────────────────
@@ -156,19 +161,20 @@ const COORDS_MENINGITE: FormCoords = {
 //     telefone pdf_y=368,x=66→fill y=354
 //     uf: estimated right of cidade
 const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
-  nome_paciente:   { x: 68,  y: 641, maxWidth: 380 },
-  data_nascimento: { x: 458, y: 641, maxWidth: 110 },
-  idade:           { x: 67,  y: 612, maxWidth: 88  },
-  sexo:            { x: 163, y: 612, maxWidth: 88  },
-  cns:             { x: 70,  y: 551, maxWidth: 168 },
-  nome_mae:        { x: 245, y: 550, maxWidth: 292 },
-  cidade:          { x: 93,  y: 454, maxWidth: 308 },
-  uf:              { x: 424, y: 454, maxWidth: 30  },
-  bairro:          { x: 65,  y: 429, maxWidth: 130 },
-  endereco:        { x: 207, y: 429, maxWidth: 200 },
-  numero_end:      { x: 65,  y: 405, maxWidth: 100 },
-  cep:             { x: 468, y: 377, maxWidth: 100 },
-  telefone:        { x: 66,  y: 354, maxWidth: 140 },
+  nome_paciente:        { x: 68,  y: 641, maxWidth: 380 },
+  data_nascimento:      { x: 458, y: 641, maxWidth: 110 },
+  idade:                { x: 67,  y: 612, maxWidth: 88  },
+  sexo:                 { x: 163, y: 612, maxWidth: 88  },
+  cns:                  { x: 70,  y: 551, maxWidth: 168 },
+  nome_mae:             { x: 245, y: 550, maxWidth: 292 },
+  cidade:               { x: 93,  y: 454, maxWidth: 308 },
+  uf:                   { x: 424, y: 454, maxWidth: 30  },
+  bairro:               { x: 65,  y: 429, maxWidth: 130 },
+  endereco_rua:         { x: 207, y: 429, maxWidth: 200 },
+  endereco_numero:      { x: 65,  y: 405, maxWidth: 90  },
+  endereco_complemento: { x: 167, y: 405, maxWidth: 110 },
+  cep:                  { x: 468, y: 377, maxWidth: 100 },
+  telefone:             { x: 66,  y: 354, maxWidth: 140 },
 };
 
 // ─── FEBRE TIFOIDE ───────────────────────────────────────────────────────────
@@ -177,19 +183,20 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
 // [O] sexo/idade/cns/mae/municipio/bairro/logradouro/numero: consistent offsets
 //     uf: estimated right of cidade
 const COORDS_FEBRE_TIFOIDE: FormCoords = {
-  nome_paciente:   { x: 66,  y: 589, maxWidth: 382 },
-  data_nascimento: { x: 456, y: 590, maxWidth: 110 },
-  idade:           { x: 66,  y: 560, maxWidth: 88  },
-  sexo:            { x: 165, y: 560, maxWidth: 88  },
-  cns:             { x: 69,  y: 499, maxWidth: 168 },
-  nome_mae:        { x: 243, y: 498, maxWidth: 292 },
-  cidade:          { x: 97,  y: 468, maxWidth: 308 },
-  uf:              { x: 428, y: 468, maxWidth: 30  },
-  bairro:          { x: 68,  y: 444, maxWidth: 130 },
-  endereco:        { x: 209, y: 443, maxWidth: 200 },
-  numero_end:      { x: 68,  y: 419, maxWidth: 100 },
-  cep:             { x: 469, y: 389, maxWidth: 100 },
-  telefone:        { x: 69,  y: 366, maxWidth: 140 },
+  nome_paciente:        { x: 66,  y: 589, maxWidth: 382 },
+  data_nascimento:      { x: 456, y: 590, maxWidth: 110 },
+  idade:                { x: 66,  y: 560, maxWidth: 88  },
+  sexo:                 { x: 165, y: 560, maxWidth: 88  },
+  cns:                  { x: 69,  y: 499, maxWidth: 168 },
+  nome_mae:             { x: 243, y: 498, maxWidth: 292 },
+  cidade:               { x: 97,  y: 468, maxWidth: 308 },
+  uf:                   { x: 428, y: 468, maxWidth: 30  },
+  bairro:               { x: 68,  y: 444, maxWidth: 130 },
+  endereco_rua:         { x: 209, y: 443, maxWidth: 200 },
+  endereco_numero:      { x: 68,  y: 419, maxWidth: 90  },
+  endereco_complemento: { x: 170, y: 419, maxWidth: 110 },
+  cep:                  { x: 469, y: 389, maxWidth: 100 },
+  telefone:             { x: 69,  y: 366, maxWidth: 140 },
 };
 
 // ─── AIDS ADULTO ─────────────────────────────────────────────────────────────
@@ -201,19 +208,20 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
 //     telefone pdf_y=384,x=69→fill y=370
 //     uf: estimated right of cidade
 const COORDS_AIDS_ADULTO: FormCoords = {
-  nome_paciente:   { x: 68,  y: 593, maxWidth: 380 },
-  data_nascimento: { x: 457, y: 593, maxWidth: 110 },
-  idade:           { x: 65,  y: 564, maxWidth: 88  },
-  sexo:            { x: 163, y: 564, maxWidth: 88  },
-  cns:             { x: 71,  y: 503, maxWidth: 165 },
-  nome_mae:        { x: 245, y: 502, maxWidth: 290 },
-  cidade:          { x: 95,  y: 470, maxWidth: 240 },
-  uf:              { x: 358, y: 470, maxWidth: 30  },
-  bairro:          { x: 67,  y: 445, maxWidth: 130 },
-  endereco:        { x: 207, y: 444, maxWidth: 200 },
-  numero_end:      { x: 68,  y: 421, maxWidth: 100 },
-  cep:             { x: 471, y: 393, maxWidth: 100 },
-  telefone:        { x: 69,  y: 370, maxWidth: 140 },
+  nome_paciente:        { x: 68,  y: 593, maxWidth: 380 },
+  data_nascimento:      { x: 457, y: 593, maxWidth: 110 },
+  idade:                { x: 65,  y: 564, maxWidth: 88  },
+  sexo:                 { x: 163, y: 564, maxWidth: 88  },
+  cns:                  { x: 71,  y: 503, maxWidth: 165 },
+  nome_mae:             { x: 245, y: 502, maxWidth: 290 },
+  cidade:               { x: 95,  y: 470, maxWidth: 240 },
+  uf:                   { x: 358, y: 470, maxWidth: 30  },
+  bairro:               { x: 67,  y: 445, maxWidth: 130 },
+  endereco_rua:         { x: 207, y: 444, maxWidth: 200 },
+  endereco_numero:      { x: 68,  y: 421, maxWidth: 90  },
+  endereco_complemento: { x: 170, y: 421, maxWidth: 110 },
+  cep:                  { x: 471, y: 393, maxWidth: 100 },
+  telefone:             { x: 69,  y: 370, maxWidth: 140 },
 };
 
 // ─── EXANTEMATICA ────────────────────────────────────────────────────────────
@@ -225,19 +233,20 @@ const COORDS_AIDS_ADULTO: FormCoords = {
 //     telefone pdf_y=342,x=67→fill y=328
 //     uf: estimated right of cidade
 const COORDS_EXANTEMATICA: FormCoords = {
-  nome_paciente:   { x: 67,  y: 550, maxWidth: 380 },
-  data_nascimento: { x: 457, y: 550, maxWidth: 110 },
-  idade:           { x: 65,  y: 521, maxWidth: 88  },
-  sexo:            { x: 162, y: 521, maxWidth: 88  },
-  cns:             { x: 69,  y: 460, maxWidth: 168 },
-  nome_mae:        { x: 244, y: 459, maxWidth: 292 },
-  cidade:          { x: 94,  y: 428, maxWidth: 308 },
-  uf:              { x: 425, y: 428, maxWidth: 30  },
-  bairro:          { x: 66,  y: 403, maxWidth: 130 },
-  endereco:        { x: 205, y: 402, maxWidth: 200 },
-  numero_end:      { x: 66,  y: 379, maxWidth: 100 },
-  cep:             { x: 469, y: 351, maxWidth: 100 },
-  telefone:        { x: 67,  y: 328, maxWidth: 140 },
+  nome_paciente:        { x: 67,  y: 550, maxWidth: 380 },
+  data_nascimento:      { x: 457, y: 550, maxWidth: 110 },
+  idade:                { x: 65,  y: 521, maxWidth: 88  },
+  sexo:                 { x: 162, y: 521, maxWidth: 88  },
+  cns:                  { x: 69,  y: 460, maxWidth: 168 },
+  nome_mae:             { x: 244, y: 459, maxWidth: 292 },
+  cidade:               { x: 94,  y: 428, maxWidth: 308 },
+  uf:                   { x: 425, y: 428, maxWidth: 30  },
+  bairro:               { x: 66,  y: 403, maxWidth: 130 },
+  endereco_rua:         { x: 205, y: 402, maxWidth: 200 },
+  endereco_numero:      { x: 66,  y: 379, maxWidth: 90  },
+  endereco_complemento: { x: 168, y: 379, maxWidth: 110 },
+  cep:                  { x: 469, y: 351, maxWidth: 100 },
+  telefone:             { x: 67,  y: 328, maxWidth: 140 },
 };
 
 // ─── COVID-19 / SRAG ─────────────────────────────────────────────────────────
@@ -288,27 +297,26 @@ function sexLabel(sex?: string | null): string {
 // the text-overlay draw pass; they are not AcroForm field names.
 
 function buildFieldValues(patient: PdfPatient): Record<string, string> {
-  const addrWithNum = [patient.street, patient.addressNumber && `nº ${patient.addressNumber}`]
-    .filter(Boolean).join(", ");
   return {
-    // ── 12 standard patient fields ────────────────────────────────────────
-    nome_paciente:   patient.name,
-    nome_mae:        patient.motherName   ?? "",
-    data_nascimento: fmtDate(patient.birthDate),
-    cpf:             patient.cpf          ?? "",
-    rg:              patient.rg           ?? "",
-    cns:             patient.cns          ?? "",
-    endereco:        addrWithNum,
-    bairro:          patient.neighborhood ?? "",
-    cidade:          patient.city         ?? "",
-    uf:              patient.addressState ?? "",
-    cep:             patient.zipCode      ?? "",
-    peso:            patient.weight != null ? `${patient.weight}` : "",
+    // ── 14 standard patient fields ────────────────────────────────────────
+    nome_paciente:        patient.name,
+    nome_mae:             patient.motherName     ?? "",
+    data_nascimento:      fmtDate(patient.birthDate),
+    cpf:                  patient.cpf            ?? "",
+    rg:                   patient.rg             ?? "",
+    cns:                  patient.cns            ?? "",
+    endereco_rua:         patient.street         ?? "",
+    endereco_numero:      patient.addressNumber  ?? "",
+    endereco_complemento: patient.addressComplement ?? "",
+    bairro:               patient.neighborhood   ?? "",
+    cidade:               patient.city           ?? "",
+    uf:                   patient.addressState   ?? "",
+    cep:                  patient.zipCode        ?? "",
+    peso:                 patient.weight != null ? `${patient.weight}` : "",
     // ── SINAN overlay-only fields (not AcroForm field names) ─────────────
-    idade:           patient.age ? `${patient.age} anos` : "",
-    sexo:            sexLabel(patient.sex),
-    numero_end:      patient.addressNumber ?? "",
-    telefone:        patient.phone        ?? "",
+    idade:                patient.age ? `${patient.age} anos` : "",
+    sexo:                 sexLabel(patient.sex),
+    telefone:             patient.phone          ?? "",
   };
 }
 
@@ -364,12 +372,14 @@ async function fillTemplate(
     page.drawText(text, { x: pos.x, y: pos.y, font: f, size: SIZE, color: INK });
   }
 
-  // 12 standard fields
-  draw("nome_paciente",   true);
+  // 14 standard fields
+  draw("nome_paciente",        true);
   draw("nome_mae");
   draw("data_nascimento");
   draw("cns");
-  draw("endereco");
+  draw("endereco_rua");
+  draw("endereco_numero");
+  draw("endereco_complemento");
   draw("bairro");
   draw("cidade");
   draw("uf");
@@ -377,7 +387,6 @@ async function fillTemplate(
   // SINAN-only overlay fields (not AcroForm names)
   draw("idade");
   draw("sexo");
-  draw("numero_end");
   draw("telefone");
 
   return doc.save();
@@ -436,10 +445,11 @@ export async function downloadSinanPdf(
 }
 
 // ── Ficha de Identificação do Paciente ────────────────────────────────────────
-// Generates a patient identification card with the 12 standardized fields:
-//   nome_paciente  nome_mae     data_nascimento  cpf
-//   rg             cns          endereco         bairro
-//   cidade         uf           cep              peso
+// Generates a patient identification card with the 14 standardized fields:
+//   nome_paciente  nome_mae          data_nascimento  cpf
+//   rg             cns               endereco_rua     endereco_numero
+//   endereco_complemento  bairro     cidade           uf
+//   cep            peso
 
 export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<void> {
   const doc  = await PDFDocument.create();
@@ -486,23 +496,22 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
     font, size: 6.5, color: LTBLUE,
   });
 
-  // ── 12 standard field definitions ─────────────────────────────────────────
-  const addrWithNum = [patient.street, patient.addressNumber && `nº ${patient.addressNumber}`]
-    .filter(Boolean).join(", ");
-
+  // ── 14 standard field definitions ─────────────────────────────────────────
   const fields: Array<{ key: string; label: string; value: string }> = [
-    { key: "nome_paciente",   label: "NOME DO PACIENTE",   value: patient.name },
-    { key: "nome_mae",        label: "NOME DA MÃE",        value: patient.motherName   ?? "" },
-    { key: "data_nascimento", label: "DATA DE NASCIMENTO", value: fmtDate(patient.birthDate) },
-    { key: "cpf",             label: "CPF",                value: patient.cpf          ?? "" },
-    { key: "rg",              label: "RG",                 value: patient.rg           ?? "" },
-    { key: "cns",             label: "CNS / CARTÃO SUS",   value: patient.cns          ?? "" },
-    { key: "endereco",        label: "ENDEREÇO",           value: addrWithNum },
-    { key: "bairro",          label: "BAIRRO",             value: patient.neighborhood ?? "" },
-    { key: "cidade",          label: "MUNICÍPIO",          value: patient.city         ?? "" },
-    { key: "uf",              label: "UF",                 value: patient.addressState ?? "" },
-    { key: "cep",             label: "CEP",                value: patient.zipCode      ?? "" },
-    { key: "peso",            label: "PESO (kg)",          value: patient.weight != null ? `${patient.weight}` : "" },
+    { key: "nome_paciente",        label: "NOME DO PACIENTE",    value: patient.name },
+    { key: "nome_mae",             label: "NOME DA MÃE",         value: patient.motherName        ?? "" },
+    { key: "data_nascimento",      label: "DATA DE NASCIMENTO",  value: fmtDate(patient.birthDate) },
+    { key: "cpf",                  label: "CPF",                 value: patient.cpf               ?? "" },
+    { key: "rg",                   label: "RG",                  value: patient.rg                ?? "" },
+    { key: "cns",                  label: "CNS / CARTÃO SUS",    value: patient.cns               ?? "" },
+    { key: "endereco_rua",         label: "ENDEREÇO (RUA)",      value: patient.street            ?? "" },
+    { key: "endereco_numero",      label: "NÚMERO",              value: patient.addressNumber     ?? "" },
+    { key: "endereco_complemento", label: "COMPLEMENTO",         value: patient.addressComplement ?? "" },
+    { key: "bairro",               label: "BAIRRO",              value: patient.neighborhood      ?? "" },
+    { key: "cidade",               label: "MUNICÍPIO",           value: patient.city              ?? "" },
+    { key: "uf",                   label: "UF",                  value: patient.addressState      ?? "" },
+    { key: "cep",                  label: "CEP",                 value: patient.zipCode           ?? "" },
+    { key: "peso",                 label: "PESO (kg)",           value: patient.weight != null ? `${patient.weight}` : "" },
   ];
 
   // ── draw rows ──────────────────────────────────────────────────────────────
