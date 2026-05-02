@@ -44,6 +44,30 @@ const TRIAGE_SEVERITY: Record<string, number> = {
   red: 1, orange: 2, yellow: 3, green: 4, blue: 5,
 };
 
+const SECTOR_CONFIG = [
+  {
+    name: "Sala Vermelha",
+    emoji: "🔴",
+    headerCls: "bg-red-950/60 border-red-700/50 text-red-300",
+    countCls: "bg-red-700/40 text-red-200",
+    emptyBorder: "border-red-900/30",
+  },
+  {
+    name: "Observação Adulto",
+    emoji: "🟡",
+    headerCls: "bg-yellow-950/40 border-yellow-700/40 text-yellow-300",
+    countCls: "bg-yellow-700/30 text-yellow-200",
+    emptyBorder: "border-yellow-900/30",
+  },
+  {
+    name: "Observação Pediátrica",
+    emoji: "🟢",
+    headerCls: "bg-green-950/40 border-green-700/40 text-green-300",
+    countCls: "bg-green-700/30 text-green-200",
+    emptyBorder: "border-green-900/30",
+  },
+] as const;
+
 const SECTOR_FILTERS = [
   "Todos",
   "Sala Vermelha",
@@ -177,18 +201,24 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const filtered = useMemo(() => {
-    if (!patients) return [];
+  const grouped = useMemo(() => {
+    if (!patients) return null;
     const q = debouncedSearch.toLowerCase();
-    return patients
-      .filter(p => {
-        const matchesSearch = !q || p.name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
-        const matchesSector = sectorFilter === "Todos" || p.sector === sectorFilter;
-        const matchesTriage = triageFilter === "all" || p.status === triageFilter;
-        return matchesSearch && matchesSector && matchesTriage;
-      })
-      .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99));
+    const base = patients.filter(p => {
+      const matchesSearch = !q || p.name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
+      const matchesSector = sectorFilter === "Todos" || p.sector === sectorFilter;
+      const matchesTriage = triageFilter === "all" || p.status === triageFilter;
+      return matchesSearch && matchesSector && matchesTriage;
+    });
+    return SECTOR_CONFIG.map(cfg => ({
+      ...cfg,
+      patients: base
+        .filter(p => p.sector === cfg.name)
+        .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99)),
+    }));
   }, [patients, debouncedSearch, sectorFilter, triageFilter]);
+
+  const totalFiltered = grouped ? grouped.reduce((n, g) => n + g.patients.length, 0) : 0;
 
   const handleEdit = useCallback((p: Patient) => setEditingPatient(p), []);
   const handleAlta = useCallback((p: Patient) => setAltaPatient(p), []);
@@ -296,41 +326,71 @@ export default function Dashboard() {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Pacientes Ativos
-            {filtered.length > 0 && <span className="ml-2 text-foreground font-bold">{filtered.length}</span>}
+            {totalFiltered > 0 && <span className="ml-2 text-foreground font-bold">{totalFiltered}</span>}
           </h2>
           <span className="text-xs text-muted-foreground">Ordenado por gravidade</span>
         </div>
 
         {isLoadingPatients ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="border-border/50 overflow-hidden">
-                <Skeleton className="h-10 w-full rounded-none" />
-                <CardHeader className="pb-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2 mt-1" /></CardHeader>
-                <CardContent><Skeleton className="h-14 w-full" /></CardContent>
-              </Card>
+          <div className="space-y-6">
+            {[0, 1, 2].map(si => (
+              <div key={si}>
+                <Skeleton className="h-10 w-full rounded-lg mb-3" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <Card key={i} className="border-border/50 overflow-hidden">
+                      <Skeleton className="h-10 w-full rounded-none" />
+                      <CardHeader className="pb-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2 mt-1" /></CardHeader>
+                      <CardContent><Skeleton className="h-14 w-full" /></CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16 bg-card rounded-lg border border-border/50">
-            <Activity className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-            <h3 className="text-base font-medium">Nenhum paciente encontrado</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {search || sectorFilter !== "Todos" || triageFilter !== "all"
-                ? "Tente ajustar os filtros de busca."
-                : "Clique em 'Nova Admissão' para registrar um paciente."}
-            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map(patient => (
-              <PatientCard
-                key={patient.id}
-                patient={patient}
-                onEdit={handleEdit}
-                onAlta={handleAlta}
-              />
+          <div className="space-y-5">
+            {grouped!.map(sector => (
+              <div key={sector.name}>
+                {/* Sector header */}
+                <div className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border mb-3 ${sector.headerCls}`}>
+                  <span className="text-base leading-none">{sector.emoji}</span>
+                  <span className="font-semibold text-sm tracking-wide">{sector.name}</span>
+                  <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${sector.countCls}`}>
+                    {sector.patients.length} {sector.patients.length === 1 ? "paciente" : "pacientes"}
+                  </span>
+                </div>
+
+                {sector.patients.length === 0 ? (
+                  <div className={`rounded-lg border border-dashed ${sector.emptyBorder} py-6 text-center text-sm text-muted-foreground`}>
+                    Nenhum paciente neste setor
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sector.patients.map(patient => (
+                      <PatientCard
+                        key={patient.id}
+                        patient={patient}
+                        onEdit={handleEdit}
+                        onAlta={handleAlta}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
+
+            {totalFiltered === 0 && !isLoadingPatients && (
+              <div className="text-center py-16 bg-card rounded-lg border border-border/50">
+                <Activity className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                <h3 className="text-base font-medium">Nenhum paciente encontrado</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {search || sectorFilter !== "Todos" || triageFilter !== "all"
+                    ? "Tente ajustar os filtros de busca."
+                    : "Clique em 'Nova Admissão' para registrar um paciente."}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </main>
