@@ -588,6 +588,8 @@ components:
           type: string
         addressNumber:
           type: string
+        addressComplement:
+          type: string
         neighborhood:
           type: string
         city:
@@ -649,6 +651,7 @@ components:
         - guardianName
         - street
         - addressNumber
+        - addressComplement
         - neighborhood
         - city
         - addressState
@@ -702,6 +705,8 @@ components:
         street:
           type: string
         addressNumber:
+          type: string
+        addressComplement:
           type: string
         neighborhood:
           type: string

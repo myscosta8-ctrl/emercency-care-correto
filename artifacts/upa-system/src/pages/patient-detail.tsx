@@ -310,6 +310,7 @@ export default function PatientDetail() {
                     email: patient.email,
                     street: patient.street,
                     addressNumber: patient.addressNumber,
+                    addressComplement: patient.addressComplement,
                     neighborhood: patient.neighborhood,
                     city: patient.city,
                     addressState: patient.addressState,
@@ -1054,6 +1055,7 @@ export default function PatientDetail() {
                           patient.street && patient.addressNumber
                             ? `${patient.street}, ${patient.addressNumber}`
                             : patient.street,
+                          patient.addressComplement,
                           patient.neighborhood,
                           patient.city && patient.addressState
                             ? `${patient.city} — ${patient.addressState}`

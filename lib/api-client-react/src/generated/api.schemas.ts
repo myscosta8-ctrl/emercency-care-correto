@@ -51,6 +51,7 @@ export interface Patient {
   guardianName: string;
   street: string;
   addressNumber: string;
+  addressComplement: string;
   neighborhood: string;
   city: string;
   addressState: string;
@@ -106,6 +107,7 @@ export interface CreatePatientBody {
   guardianName?: string;
   street?: string;
   addressNumber?: string;
+  addressComplement?: string;
   neighborhood?: string;
   city?: string;
   addressState?: string;

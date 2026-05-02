@@ -26,9 +26,10 @@ export const patientsTable = pgTable("patients", {
   guardianName: text("guardian_name").notNull().default(""),
 
   // ── endereço ────────────────────────────────────────────────────────────────
-  street:         text("street").notNull().default(""),
-  addressNumber:  text("address_number").notNull().default(""),
-  neighborhood:   text("neighborhood").notNull().default(""),
+  street:             text("street").notNull().default(""),
+  addressNumber:      text("address_number").notNull().default(""),
+  addressComplement:  text("address_complement").notNull().default(""),
+  neighborhood:       text("neighborhood").notNull().default(""),
   city:           text("city").notNull().default(""),
   addressState:   text("address_state").notNull().default(""),
   zipCode:        text("zip_code").notNull().default(""),

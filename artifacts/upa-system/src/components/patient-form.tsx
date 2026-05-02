@@ -90,9 +90,10 @@ const formSchema = z.object({
   guardianName: z.string().default(""),
 
   // endereço
-  street:       z.string().default(""),
-  addressNumber:z.string().default(""),
-  neighborhood: z.string().default(""),
+  street:            z.string().default(""),
+  addressNumber:     z.string().default(""),
+  addressComplement: z.string().default(""),
+  neighborhood:      z.string().default(""),
   city:         z.string().default(""),
   addressState: z.string().default(""),
   zipCode:      z.string().default(""),
@@ -151,9 +152,10 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       email:        patient?.email        ?? "",
       guardianName: patient?.guardianName ?? "",
 
-      street:        patient?.street        ?? "",
-      addressNumber: patient?.addressNumber ?? "",
-      neighborhood:  patient?.neighborhood  ?? "",
+      street:             patient?.street             ?? "",
+      addressNumber:      patient?.addressNumber      ?? "",
+      addressComplement:  patient?.addressComplement  ?? "",
+      neighborhood:       patient?.neighborhood       ?? "",
       city:          patient?.city          ?? "",
       addressState:  patient?.addressState  ?? "",
       zipCode:       patient?.zipCode       ?? "",
@@ -380,6 +382,14 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             <FormItem>
               <FormLabel>Número <Opt /></FormLabel>
               <FormControl><Input placeholder="Nº / S/N" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="addressComplement" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Complemento <Opt /></FormLabel>
+              <FormControl><Input placeholder="Apto, Bloco, Casa…" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
