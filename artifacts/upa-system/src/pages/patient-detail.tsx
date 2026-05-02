@@ -88,7 +88,7 @@ export default function PatientDetail() {
         queryClient.invalidateQueries({ queryKey: getGetPatientQueryKey(id) });
         queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
-        toast({ title: "Triagem atualizada" });
+        toast({ title: "Reclassificação salva com sucesso" });
         setPendingStatus(null);
       },
       onError: () => toast({ title: "Não foi possível reclassificar a triagem", variant: "destructive" }),
@@ -267,7 +267,7 @@ export default function PatientDetail() {
             <Card className="border-border/50">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <RefreshCw className="h-3.5 w-3.5" /> Atualizar Triagem
+                  <RefreshCw className="h-3.5 w-3.5" /> Reclassificação
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -290,7 +290,7 @@ export default function PatientDetail() {
                   onClick={() => pendingStatus && handleStatusChange(pendingStatus)}
                   data-testid="button-update-status"
                 >
-                  {updateStatus.isPending ? "Atualizando..." : "Confirmar Triagem"}
+                  {updateStatus.isPending ? "Salvando..." : "Confirmar Reclassificação"}
                 </Button>
               </CardContent>
             </Card>

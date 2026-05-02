@@ -268,7 +268,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             Cancelar
           </Button>
           <Button type="submit" disabled={isPending} data-testid="button-submit">
-            {isPending ? "Salvando..." : patient ? "Atualizar" : "Admitir Paciente"}
+            {isPending ? "Salvando..." : patient ? "Salvar Alterações" : "Registrar Admissão"}
           </Button>
         </div>
       </form>

@@ -234,8 +234,8 @@ export default function Dashboard() {
       <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
         <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Admitir Novo Paciente</DialogTitle>
-            <DialogDescription>Preencha os dados, triagem Manchester e enfermeiro(a) responsável.</DialogDescription>
+            <DialogTitle>Nova Admissão</DialogTitle>
+            <DialogDescription>Preencha os dados do paciente, a Triagem de Manchester e o enfermeiro(a) responsável.</DialogDescription>
           </DialogHeader>
           <PatientForm onSuccess={() => setIsNewPatientOpen(false)} onCancel={() => setIsNewPatientOpen(false)} />
         </DialogContent>
