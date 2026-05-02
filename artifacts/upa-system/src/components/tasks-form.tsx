@@ -15,6 +15,7 @@ import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useNurse } from "@/hooks/use-nurse";
 import {
   useCreatePatientTask,
   getGetPatientTasksQueryKey,
@@ -62,6 +63,7 @@ export function TasksForm({ patientId, patientName, defaultResponsible = "", onS
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createTask = useCreatePatientTask();
+  const { nurseName, setNurseName } = useNurse();
 
   const now = new Date();
   const dateLabel = format(now, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
@@ -74,7 +76,7 @@ export function TasksForm({ patientId, patientName, defaultResponsible = "", onS
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { responsible: defaultResponsible, status: "pendente" },
+    defaultValues: { responsible: nurseName || defaultResponsible, status: "pendente" },
   });
 
   const toggleItem = (id: string) => {
@@ -133,6 +135,7 @@ export function TasksForm({ patientId, patientName, defaultResponsible = "", onS
       },
       {
         onSuccess: () => {
+          setNurseName(data.responsible);
           queryClient.invalidateQueries({ queryKey: getGetPatientTasksQueryKey(patientId) });
           toast({ title: "Pendências registradas com sucesso" });
           onSuccess();

@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useNurse } from "@/hooks/use-nurse";
 import { Activity } from "lucide-react";
 
 const schema = z.object({
@@ -45,6 +46,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const addVitals = useAddVitals();
+  const { nurseName, setNurseName } = useNurse();
 
   const now = new Date();
   const dateLabel = format(now, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
@@ -60,7 +62,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
       temperature:    patient.temperature ?? 0,
       glucose:        patient.glucose ?? 0,
       note:           "",
-      responsible:    patient.nurse ?? "",
+      responsible:    nurseName || (patient.nurse ?? ""),
     },
   });
 
@@ -85,6 +87,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
       },
       {
         onSuccess: () => {
+          setNurseName(data.responsible);
           queryClient.invalidateQueries({ queryKey: getGetPatientQueryKey(patient.id) });
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patient.id) });

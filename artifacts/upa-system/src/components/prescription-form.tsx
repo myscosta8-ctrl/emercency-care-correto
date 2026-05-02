@@ -15,6 +15,7 @@ import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useNurse } from "@/hooks/use-nurse";
 import {
   useCreatePatientPrescription,
   getGetPatientPrescriptionsQueryKey,
@@ -65,6 +66,7 @@ export function PrescriptionForm({ patientId, patientName, onSuccess, onCancel }
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createPrescription = useCreatePatientPrescription();
+  const { nurseName, setNurseName } = useNurse();
 
   const now = new Date();
   const dateLabel = format(now, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
@@ -77,7 +79,7 @@ export function PrescriptionForm({ patientId, patientName, onSuccess, onCancel }
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      responsible: "",
+      responsible: nurseName,
       scheduledTime: format(now, "HH:mm"),
       status: "pendente",
     },
@@ -135,6 +137,7 @@ export function PrescriptionForm({ patientId, patientName, onSuccess, onCancel }
       },
       {
         onSuccess: () => {
+          setNurseName(data.responsible);
           queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(patientId) });
           toast({ title: "Prescrição registrada com sucesso" });
           onSuccess();

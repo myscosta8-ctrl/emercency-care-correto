@@ -23,10 +23,11 @@ import {
   Activity, ArrowLeft, Edit, Trash2, HeartPulse,
   Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
   UserCheck, ClipboardList, Stethoscope, Thermometer,
-  Gauge, ClipboardCheck, CheckSquare, Square, ListTodo,
+  Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -39,6 +40,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useNurse } from "@/hooks/use-nurse";
 import { PatientForm } from "@/components/patient-form";
 import { VitalsUpdateForm } from "@/components/vitals-update-form";
 import { VitalsRecordForm } from "@/components/vitals-record-form";
@@ -124,6 +126,10 @@ export default function PatientDetail() {
   const [isTasksOpen, setIsTasksOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
+  const { nurseName, setNurseName } = useNurse();
+  const [isEditingNurse, setIsEditingNurse] = useState(false);
+  const [nurseInput, setNurseInput] = useState("");
+
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
@@ -197,6 +203,40 @@ export default function PatientDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {isEditingNurse ? (
+              <form
+                className="flex items-center gap-1.5"
+                onSubmit={e => {
+                  e.preventDefault();
+                  if (nurseInput.trim()) setNurseName(nurseInput.trim());
+                  setIsEditingNurse(false);
+                }}
+              >
+                <Input
+                  autoFocus
+                  value={nurseInput}
+                  onChange={e => setNurseInput(e.target.value)}
+                  placeholder="Seu nome"
+                  className="h-8 w-40 text-sm"
+                  onBlur={() => {
+                    if (nurseInput.trim()) setNurseName(nurseInput.trim());
+                    setIsEditingNurse(false);
+                  }}
+                  onKeyDown={e => e.key === "Escape" && setIsEditingNurse(false)}
+                />
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setNurseInput(nurseName); setIsEditingNurse(true); }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground border border-border/40 bg-muted/20 hover:bg-muted/40 transition-colors"
+                title="Clique para alterar o profissional"
+              >
+                <UserCircle className="h-3.5 w-3.5" />
+                <span>{nurseName || "Definir profissional"}</span>
+                <Pencil className="h-3 w-3 opacity-50" />
+              </button>
+            )}
             <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
               <Edit className="h-4 w-4 mr-1.5" /> Editar
             </Button>
@@ -328,9 +368,16 @@ export default function PatientDetail() {
 
             {/* Evolution History */}
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-primary" /> Histórico de Evolução de Enfermagem
-              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-primary" /> Histórico de Evolução de Enfermagem
+                </h3>
+                {history && history.filter(e => e.note !== "Admissão inicial").length > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
+                    {history.filter(e => e.note !== "Admissão inicial").length}
+                  </span>
+                )}
+              </div>
               {isLoadingHistory ? (
                 <div className="space-y-2">
                   {[1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}
@@ -438,9 +485,16 @@ export default function PatientDetail() {
             {/* Prescription Section */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4 text-primary" /> Prescrição de Enfermagem
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <ClipboardCheck className="h-4 w-4 text-primary" /> Prescrição de Enfermagem
+                  </h3>
+                  {prescriptions && prescriptions.filter(p => p.status !== "concluido").length > 0 && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                      {prescriptions.filter(p => p.status !== "concluido").length}
+                    </span>
+                  )}
+                </div>
                 <Button
                   size="sm" variant="outline" className="h-8 text-xs gap-1.5"
                   onClick={() => setIsPrescriptionOpen(true)}
@@ -527,9 +581,16 @@ export default function PatientDetail() {
             {/* Tasks / Pendências Section */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <ListTodo className="h-4 w-4 text-primary" /> Pendências
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <ListTodo className="h-4 w-4 text-primary" /> Pendências
+                  </h3>
+                  {tasks && tasks.filter(t => t.status !== "concluido").length > 0 && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+                      {tasks.filter(t => t.status !== "concluido").length}
+                    </span>
+                  )}
+                </div>
                 <Button
                   size="sm" variant="outline" className="h-8 text-xs gap-1.5"
                   onClick={() => setIsTasksOpen(true)}

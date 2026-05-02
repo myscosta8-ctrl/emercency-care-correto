@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useNurse } from "@/hooks/use-nurse";
 
 const DEFAULT_PLAN =
   `- Manter monitorização\n- Administrar medicação conforme prescrição\n- Reavaliar em ___ minutos\n- Comunicado equipe médica`;
@@ -96,6 +97,7 @@ function ToggleGroup({ options, value, onChange, colorActive = "bg-primary text-
 export function VitalsUpdateForm({ patient, onSuccess, onCancel }: VitalsUpdateFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { nurseName, setNurseName } = useNurse();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -113,7 +115,7 @@ export function VitalsUpdateForm({ patient, onSuccess, onCancel }: VitalsUpdateF
       painScale: 0,
       assessment: "",
       plan: DEFAULT_PLAN,
-      responsible: patient.nurse || "",
+      responsible: nurseName || patient.nurse || "",
       note: "",
     },
   });
@@ -123,6 +125,7 @@ export function VitalsUpdateForm({ patient, onSuccess, onCancel }: VitalsUpdateF
   function onSubmit(data: FormValues) {
     addVitals.mutate({ id: patient.id, data }, {
       onSuccess: () => {
+        setNurseName(data.responsible);
         queryClient.invalidateQueries({ queryKey: getGetPatientQueryKey(patient.id) });
         queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patient.id) });
