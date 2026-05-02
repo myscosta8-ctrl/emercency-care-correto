@@ -352,3 +352,66 @@ export interface UpdateStaffParams {
 export interface DeleteStaffParams {
   id: number;
 }
+
+export type PatientNotificationSituation =
+  (typeof PatientNotificationSituation)[keyof typeof PatientNotificationSituation];
+
+export const PatientNotificationSituation = {
+  notificado: "notificado",
+  pendente: "pendente",
+} as const;
+
+export interface PatientNotification {
+  id: number;
+  patientId: number;
+  types: string;
+  otherType: string;
+  diagnosis: string;
+  symptomOnsetDate: string;
+  situation: PatientNotificationSituation;
+  responsible: string;
+  notifiedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateNotificationBodySituation =
+  (typeof CreateNotificationBodySituation)[keyof typeof CreateNotificationBodySituation];
+
+export const CreateNotificationBodySituation = {
+  notificado: "notificado",
+  pendente: "pendente",
+} as const;
+
+export interface CreateNotificationBody {
+  types: string;
+  otherType?: string;
+  diagnosis?: string;
+  symptomOnsetDate?: string;
+  situation: CreateNotificationBodySituation;
+  responsible: string;
+  notifiedAt?: string;
+}
+
+export type UpdateNotificationBodySituation =
+  (typeof UpdateNotificationBodySituation)[keyof typeof UpdateNotificationBodySituation];
+
+export const UpdateNotificationBodySituation = {
+  notificado: "notificado",
+  pendente: "pendente",
+} as const;
+
+export interface UpdateNotificationBody {
+  types?: string;
+  otherType?: string;
+  diagnosis?: string;
+  symptomOnsetDate?: string;
+  situation?: UpdateNotificationBodySituation;
+  responsible?: string;
+  notifiedAt?: string;
+}
+
+export interface GetNotificationParams {
+  id: number;
+  notificationId: number;
+}

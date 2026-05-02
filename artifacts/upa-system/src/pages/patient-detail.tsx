@@ -12,18 +12,23 @@ import {
   useUpdatePrescriptionStatus,
   useGetPatientTasks,
   useUpdateTaskStatus,
+  useGetPatientNotifications,
+  useDeletePatientNotification,
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
   getGetPatientHistoryQueryKey,
   getGetPatientPrescriptionsQueryKey,
   getGetPatientTasksQueryKey,
+  getGetPatientNotificationsQueryKey,
 } from "@workspace/api-client-react";
+import type { PatientNotification } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity, ArrowLeft, Edit, Trash2, HeartPulse,
   Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
   UserCheck, ClipboardList, Stethoscope, Thermometer,
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
+  Bell, Trash,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,6 +51,7 @@ import { VitalsUpdateForm } from "@/components/vitals-update-form";
 import { VitalsRecordForm } from "@/components/vitals-record-form";
 import { PrescriptionForm } from "@/components/prescription-form";
 import { TasksForm } from "@/components/tasks-form";
+import { NotificationForm } from "@/components/notification-form";
 import { cn } from "@/lib/utils";
 
 const TRIAGE_CONFIG = {
@@ -127,6 +133,9 @@ export default function PatientDetail() {
   const { data: tasks, isLoading: isLoadingTasks } = useGetPatientTasks(id, {
     query: { enabled: !!id, queryKey: getGetPatientTasksQueryKey(id) },
   });
+  const { data: notifications, isLoading: isLoadingNotifications } = useGetPatientNotifications(id, {
+    query: { enabled: !!id, queryKey: getGetPatientNotificationsQueryKey(id) },
+  });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -134,6 +143,8 @@ export default function PatientDetail() {
   const [isVitalsRecordOpen, setIsVitalsRecordOpen] = useState(false);
   const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
   const [isTasksOpen, setIsTasksOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [editingNotification, setEditingNotification] = useState<PatientNotification | null>(null);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
   const { nurseName, setNurseName } = useNurse();
@@ -143,6 +154,7 @@ export default function PatientDetail() {
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
+  const deleteNotification = useDeletePatientNotification();
   const updateTaskStatus = useUpdateTaskStatus();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -744,6 +756,112 @@ export default function PatientDetail() {
               )}
             </div>
 
+            {/* Notificações Compulsórias */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-amber-400" /> Notificações Compulsórias
+                  </h3>
+                  {notifications && notifications.filter(n => n.situation === "pendente").length > 0 && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      {notifications.filter(n => n.situation === "pendente").length} pendente{notifications.filter(n => n.situation === "pendente").length > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                  onClick={() => { setEditingNotification(null); setIsNotificationOpen(true); }}
+                >
+                  <Bell className="h-3.5 w-3.5" />
+                  Nova Notificação
+                </Button>
+              </div>
+
+              {isLoadingNotifications ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-20 w-full" />
+                </div>
+              ) : !notifications || notifications.length === 0 ? (
+                <div className="text-center py-6 bg-card rounded-lg border border-border/50">
+                  <Bell className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhuma notificação compulsória registrada.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.map(notif => {
+                    const types: string[] = (() => { try { return JSON.parse(notif.types); } catch { return []; } })();
+                    const typeLabels: Record<string, string> = {
+                      dengue: "Dengue", covid19: "COVID-19", tuberculose: "Tuberculose",
+                      violencia: "Violência", outros: notif.otherType || "Outros",
+                    };
+                    const isPendente = notif.situation === "pendente";
+                    return (
+                      <div key={notif.id} className={cn(
+                        "bg-card rounded-lg border overflow-hidden",
+                        isPendente ? "border-amber-500/40" : "border-border/50"
+                      )}>
+                        <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={cn(
+                              "text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider",
+                              isPendente
+                                ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                            )}>
+                              {isPendente ? "Pendente" : "Notificado"}
+                            </span>
+                            {types.map(t => (
+                              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground border border-border/40">
+                                {typeLabels[t] ?? t}
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {format(new Date(notif.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                          </span>
+                        </div>
+                        <div className="px-4 py-3 space-y-1.5">
+                          {notif.diagnosis && (
+                            <p className="text-sm"><span className="text-muted-foreground text-xs">Diagnóstico: </span>{notif.diagnosis}</p>
+                          )}
+                          {notif.symptomOnsetDate && (
+                            <p className="text-xs text-muted-foreground">
+                              Início dos sintomas: <strong className="text-foreground">{notif.symptomOnsetDate.split("-").reverse().join("/")}</strong>
+                            </p>
+                          )}
+                          {notif.notifiedAt && (
+                            <p className="text-xs text-muted-foreground">
+                              Data/Hora: <strong className="text-foreground">{notif.notifiedAt.replace("T", " ").slice(0, 16)}</strong>
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between pt-1.5 border-t border-border/40 mt-1.5">
+                            <span className="text-xs text-muted-foreground">— {notif.responsible}</span>
+                            <div className="flex gap-1.5">
+                              <Button size="sm" variant="outline"
+                                className="h-6 text-[10px] px-2 border-muted-foreground/20 text-muted-foreground hover:bg-muted/30"
+                                onClick={() => { setEditingNotification(notif); setIsNotificationOpen(true); }}
+                              ><Pencil className="h-3 w-3" /></Button>
+                              <Button size="sm" variant="outline"
+                                className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                onClick={() => deleteNotification.mutate(
+                                  { id, notificationId: notif.id },
+                                  {
+                                    onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientNotificationsQueryKey(id) }),
+                                    onError: () => toast({ title: "Erro ao remover notificação", variant: "destructive" }),
+                                  }
+                                )}
+                              ><Trash className="h-3 w-3" /></Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* Right column: 1/3 width */}
@@ -986,14 +1104,38 @@ export default function PatientDetail() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isNotificationOpen} onOpenChange={(open) => {
+        setIsNotificationOpen(open);
+        if (!open) setEditingNotification(null);
+      }}>
+        <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-amber-400" />
+              {editingNotification ? "Editar Notificação Compulsória" : "Nova Notificação Compulsória"}
+            </DialogTitle>
+            <DialogDescription>
+              Registre o agravo de notificação obrigatória conforme a legislação sanitária vigente.
+            </DialogDescription>
+          </DialogHeader>
+          <NotificationForm
+            patient={patient}
+            notification={editingNotification ?? undefined}
+            onSuccess={() => { setIsNotificationOpen(false); setEditingNotification(null); }}
+            onCancel={() => { setIsNotificationOpen(false); setEditingNotification(null); }}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Mobile sticky bottom action bar */}
       <div className="no-print fixed bottom-0 left-0 right-0 md:hidden bg-card/95 backdrop-blur-sm border-t border-border z-30">
-        <div className="grid grid-cols-4 gap-0 pb-safe">
+        <div className="grid grid-cols-5 gap-0 pb-safe">
           {([
             { icon: <Activity className="h-5 w-5" />, label: "SVs",        action: () => setIsVitalsRecordOpen(true) },
             { icon: <ClipboardList className="h-5 w-5" />, label: "SOAP",  action: () => setIsVitalsOpen(true) },
             { icon: <ClipboardCheck className="h-5 w-5" />, label: "Prescrição", action: () => setIsPrescriptionOpen(true) },
             { icon: <ListTodo className="h-5 w-5" />, label: "Pendência",  action: () => setIsTasksOpen(true) },
+            { icon: <Bell className="h-5 w-5" />, label: "Notif.",  action: () => { setEditingNotification(null); setIsNotificationOpen(true); } },
           ] as const).map((item, i) => (
             <button
               key={i}

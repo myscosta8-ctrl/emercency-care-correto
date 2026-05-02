@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  CreateNotificationBody,
   CreatePatientBody,
   CreatePrescriptionBody,
   CreateStaffBody,
@@ -24,10 +25,12 @@ import type {
   HealthStatus,
   Patient,
   PatientEvolution,
+  PatientNotification,
   PatientPrescription,
   PatientTask,
   PatientsSummary,
   StaffMember,
+  UpdateNotificationBody,
   UpdatePatientStatusBody,
   UpdatePrescriptionStatusBody,
   UpdateStaffBody,
@@ -1339,6 +1342,389 @@ export const useUpdateTaskStatus = <
   TContext
 > => {
   return useMutation(getUpdateTaskStatusMutationOptions(options));
+};
+
+/**
+ * @summary List compulsory notifications for a patient
+ */
+export const getGetPatientNotificationsUrl = (id: number) => {
+  return `/api/patients/${id}/notifications`;
+};
+
+export const getPatientNotifications = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PatientNotification[]> => {
+  return customFetch<PatientNotification[]>(getGetPatientNotificationsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatientNotificationsQueryKey = (id: number) => {
+  return [`/api/patients/${id}/notifications`] as const;
+};
+
+export const getGetPatientNotificationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientNotifications>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientNotifications>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPatientNotificationsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientNotifications>>
+  > = ({ signal }) =>
+    getPatientNotifications(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientNotifications>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientNotificationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientNotifications>>
+>;
+export type GetPatientNotificationsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List compulsory notifications for a patient
+ */
+
+export function useGetPatientNotifications<
+  TData = Awaited<ReturnType<typeof getPatientNotifications>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientNotifications>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientNotificationsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a compulsory notification
+ */
+export const getCreatePatientNotificationUrl = (id: number) => {
+  return `/api/patients/${id}/notifications`;
+};
+
+export const createPatientNotification = async (
+  id: number,
+  createNotificationBody: CreateNotificationBody,
+  options?: RequestInit,
+): Promise<PatientNotification> => {
+  return customFetch<PatientNotification>(getCreatePatientNotificationUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createNotificationBody),
+  });
+};
+
+export const getCreatePatientNotificationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPatientNotification>>,
+    TError,
+    { id: number; data: BodyType<CreateNotificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPatientNotification>>,
+  TError,
+  { id: number; data: BodyType<CreateNotificationBody> },
+  TContext
+> => {
+  const mutationKey = ["createPatientNotification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPatientNotification>>,
+    { id: number; data: BodyType<CreateNotificationBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createPatientNotification(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePatientNotificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPatientNotification>>
+>;
+export type CreatePatientNotificationMutationBody =
+  BodyType<CreateNotificationBody>;
+export type CreatePatientNotificationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a compulsory notification
+ */
+export const useCreatePatientNotification = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPatientNotification>>,
+    TError,
+    { id: number; data: BodyType<CreateNotificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPatientNotification>>,
+  TError,
+  { id: number; data: BodyType<CreateNotificationBody> },
+  TContext
+> => {
+  return useMutation(getCreatePatientNotificationMutationOptions(options));
+};
+
+/**
+ * @summary Update a compulsory notification
+ */
+export const getUpdatePatientNotificationUrl = (
+  id: number,
+  notificationId: number,
+) => {
+  return `/api/patients/${id}/notifications/${notificationId}`;
+};
+
+export const updatePatientNotification = async (
+  id: number,
+  notificationId: number,
+  updateNotificationBody: UpdateNotificationBody,
+  options?: RequestInit,
+): Promise<PatientNotification> => {
+  return customFetch<PatientNotification>(
+    getUpdatePatientNotificationUrl(id, notificationId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateNotificationBody),
+    },
+  );
+};
+
+export const getUpdatePatientNotificationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePatientNotification>>,
+    TError,
+    {
+      id: number;
+      notificationId: number;
+      data: BodyType<UpdateNotificationBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePatientNotification>>,
+  TError,
+  {
+    id: number;
+    notificationId: number;
+    data: BodyType<UpdateNotificationBody>;
+  },
+  TContext
+> => {
+  const mutationKey = ["updatePatientNotification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePatientNotification>>,
+    {
+      id: number;
+      notificationId: number;
+      data: BodyType<UpdateNotificationBody>;
+    }
+  > = (props) => {
+    const { id, notificationId, data } = props ?? {};
+
+    return updatePatientNotification(id, notificationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePatientNotificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePatientNotification>>
+>;
+export type UpdatePatientNotificationMutationBody =
+  BodyType<UpdateNotificationBody>;
+export type UpdatePatientNotificationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a compulsory notification
+ */
+export const useUpdatePatientNotification = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePatientNotification>>,
+    TError,
+    {
+      id: number;
+      notificationId: number;
+      data: BodyType<UpdateNotificationBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePatientNotification>>,
+  TError,
+  {
+    id: number;
+    notificationId: number;
+    data: BodyType<UpdateNotificationBody>;
+  },
+  TContext
+> => {
+  return useMutation(getUpdatePatientNotificationMutationOptions(options));
+};
+
+/**
+ * @summary Delete a compulsory notification
+ */
+export const getDeletePatientNotificationUrl = (
+  id: number,
+  notificationId: number,
+) => {
+  return `/api/patients/${id}/notifications/${notificationId}`;
+};
+
+export const deletePatientNotification = async (
+  id: number,
+  notificationId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(
+    getDeletePatientNotificationUrl(id, notificationId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeletePatientNotificationMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePatientNotification>>,
+    TError,
+    { id: number; notificationId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePatientNotification>>,
+  TError,
+  { id: number; notificationId: number },
+  TContext
+> => {
+  const mutationKey = ["deletePatientNotification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePatientNotification>>,
+    { id: number; notificationId: number }
+  > = (props) => {
+    const { id, notificationId } = props ?? {};
+
+    return deletePatientNotification(id, notificationId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePatientNotificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePatientNotification>>
+>;
+
+export type DeletePatientNotificationMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a compulsory notification
+ */
+export const useDeletePatientNotification = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePatientNotification>>,
+    TError,
+    { id: number; notificationId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePatientNotification>>,
+  TError,
+  { id: number; notificationId: number },
+  TContext
+> => {
+  return useMutation(getDeletePatientNotificationMutationOptions(options));
 };
 
 /**

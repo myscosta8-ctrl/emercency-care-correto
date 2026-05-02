@@ -334,6 +334,98 @@ paths:
               schema:
                 $ref: "#/components/schemas/PatientTask"
 
+  /patients/{id}/notifications:
+    get:
+      operationId: getPatientNotifications
+      tags: [patients]
+      summary: List compulsory notifications for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientNotification"
+    post:
+      operationId: createPatientNotification
+      tags: [patients]
+      summary: Create a compulsory notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNotificationBody"
+      responses:
+        "201":
+          description: Notification created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientNotification"
+
+  /patients/{id}/notifications/{notificationId}:
+    patch:
+      operationId: updatePatientNotification
+      tags: [patients]
+      summary: Update a compulsory notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNotificationBody"
+      responses:
+        "200":
+          description: Notification updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientNotification"
+    delete:
+      operationId: deletePatientNotification
+      tags: [patients]
+      summary: Delete a compulsory notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   /patients/{id}/history:
     get:
       operationId: getPatientHistory
@@ -1000,3 +1092,97 @@ components:
           type: integer
       required:
         - id
+
+    PatientNotification:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        types:
+          type: string
+        otherType:
+          type: string
+        diagnosis:
+          type: string
+        symptomOnsetDate:
+          type: string
+        situation:
+          type: string
+          enum: [notificado, pendente]
+        responsible:
+          type: string
+        notifiedAt:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - types
+        - otherType
+        - diagnosis
+        - symptomOnsetDate
+        - situation
+        - responsible
+        - notifiedAt
+        - createdAt
+        - updatedAt
+
+    CreateNotificationBody:
+      type: object
+      properties:
+        types:
+          type: string
+        otherType:
+          type: string
+        diagnosis:
+          type: string
+        symptomOnsetDate:
+          type: string
+        situation:
+          type: string
+          enum: [notificado, pendente]
+        responsible:
+          type: string
+        notifiedAt:
+          type: string
+      required:
+        - types
+        - situation
+        - responsible
+
+    UpdateNotificationBody:
+      type: object
+      properties:
+        types:
+          type: string
+        otherType:
+          type: string
+        diagnosis:
+          type: string
+        symptomOnsetDate:
+          type: string
+        situation:
+          type: string
+          enum: [notificado, pendente]
+        responsible:
+          type: string
+        notifiedAt:
+          type: string
+
+    GetNotificationParams:
+      type: object
+      properties:
+        id:
+          type: integer
+        notificationId:
+          type: integer
+      required:
+        - id
+        - notificationId

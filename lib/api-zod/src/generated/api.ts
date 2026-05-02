@@ -459,6 +459,87 @@ export const UpdateTaskStatusResponse = zod.object({
 });
 
 /**
+ * @summary List compulsory notifications for a patient
+ */
+export const GetPatientNotificationsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientNotificationsResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  types: zod.string(),
+  otherType: zod.string(),
+  diagnosis: zod.string(),
+  symptomOnsetDate: zod.string(),
+  situation: zod.enum(["notificado", "pendente"]),
+  responsible: zod.string(),
+  notifiedAt: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const GetPatientNotificationsResponse = zod.array(
+  GetPatientNotificationsResponseItem,
+);
+
+/**
+ * @summary Create a compulsory notification
+ */
+export const CreatePatientNotificationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreatePatientNotificationBody = zod.object({
+  types: zod.string(),
+  otherType: zod.string().optional(),
+  diagnosis: zod.string().optional(),
+  symptomOnsetDate: zod.string().optional(),
+  situation: zod.enum(["notificado", "pendente"]),
+  responsible: zod.string(),
+  notifiedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Update a compulsory notification
+ */
+export const UpdatePatientNotificationParams = zod.object({
+  id: zod.coerce.number(),
+  notificationId: zod.coerce.number(),
+});
+
+export const UpdatePatientNotificationBody = zod.object({
+  types: zod.string().optional(),
+  otherType: zod.string().optional(),
+  diagnosis: zod.string().optional(),
+  symptomOnsetDate: zod.string().optional(),
+  situation: zod.enum(["notificado", "pendente"]).optional(),
+  responsible: zod.string().optional(),
+  notifiedAt: zod.string().optional(),
+});
+
+export const UpdatePatientNotificationResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  types: zod.string(),
+  otherType: zod.string(),
+  diagnosis: zod.string(),
+  symptomOnsetDate: zod.string(),
+  situation: zod.enum(["notificado", "pendente"]),
+  responsible: zod.string(),
+  notifiedAt: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a compulsory notification
+ */
+export const DeletePatientNotificationParams = zod.object({
+  id: zod.coerce.number(),
+  notificationId: zod.coerce.number(),
+});
+
+/**
  * @summary Get patient evolution history
  */
 export const GetPatientHistoryParams = zod.object({

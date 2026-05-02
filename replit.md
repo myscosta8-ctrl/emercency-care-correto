@@ -48,6 +48,7 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
   - Roles: **Admin** / **Coordenação de Enfermagem** / **Profissional Assistencial**
   - Role gating: only Admin or Coordenação can add/edit/delete staff (via "Acessando como:" selector in header)
 - **Audit fields**: `createdBy`/`updatedBy` on `patients` table; `createdBy` on `evolutions` table — populated from responsible nurse on every create/update
+- **Notificações Compulsórias**: full CRUD per patient — types (dengue/covid19/tuberculose/violencia/outros), diagnosis, symptom onset date, situation (pendente/notificado), responsible, date/time. Shown as a section in patient detail below Pendências. Pending count badge shown. Amber color theme. Also accessible from mobile action bar.
 
 ### DB Schema — patients table
 Full demographics model:
@@ -62,7 +63,14 @@ Full demographics model:
 - `evolutions`: vitals snapshot, SOAP fields, responsible, note, createdBy, createdAt
 - `prescriptions`: items (JSON), status, responsible, scheduledTime, notes
 - `tasks`: description, status, responsible, dueDate
+- `patient_notifications`: patientId, types (JSON array), otherType, diagnosis, symptomOnsetDate, situation (notificado|pendente), responsible, notifiedAt, createdAt, updatedAt
 - `staff`: fullName, category, corenCrm, sector, login, passwordHash, accessLevels (comma-sep), signature (dataURL), stamp (text)
+
+### API routes for notifications
+- `GET  /api/patients/:id/notifications` — list notifications for patient
+- `POST /api/patients/:id/notifications` — create notification
+- `PATCH /api/patients/:id/notifications/:notificationId` — update notification
+- `DELETE /api/patients/:id/notifications/:notificationId` — delete notification
 
 ### Patient Form Sections (admission + edit)
 1. **Dados do Paciente** — nome, data de nascimento, idade (auto), sexo, nome da mãe
