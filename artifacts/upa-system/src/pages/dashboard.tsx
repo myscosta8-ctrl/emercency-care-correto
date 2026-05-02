@@ -7,7 +7,7 @@ import {
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
-import type { Patient } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Patient } from "@workspace/api-client-react";
 import { Activity, HeartPulse, UserPlus, Users, Search, Filter, Pencil, LogOut, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";

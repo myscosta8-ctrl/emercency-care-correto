@@ -19,6 +19,7 @@ export const patientEvolutionsTable = pgTable("patient_evolutions", {
   plan: text("plan").notNull().default(""),
   responsible: text("responsible").notNull().default(""),
   note: text("note").notNull().default(""),
+  createdBy: text("created_by").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

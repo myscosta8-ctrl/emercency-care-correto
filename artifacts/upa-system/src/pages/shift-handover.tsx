@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ArrowLeft, Printer, ClipboardList } from "lucide-react";
 import { useListPatients } from "@workspace/api-client-react";
-import type { Patient } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Patient } from "@workspace/api-client-react";
 import { useNurse } from "@/hooks/use-nurse";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -180,7 +180,7 @@ function PatientRow({ patient, idx, evenCls, state, onChange }: PatientRowProps)
 // ── main page ─────────────────────────────────────────────────────────────────
 
 export default function ShiftHandover() {
-  const { nurse } = useNurse();
+  const { nurseName: nurse } = useNurse();
   const today = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
 
   const [date, setDate]        = useState(today);
@@ -210,11 +210,17 @@ export default function ShiftHandover() {
     <>
       <style>{`
         @media print {
-          @page { margin: 12mm 10mm; size: A4 landscape; }
-          body { background: white !important; color: black !important; font-size: 11px; }
+          @page { margin: 8mm 7mm; size: A4 landscape; }
+          body { background: white !important; color: black !important; font-size: 9pt; }
           .print-hide { display: none !important; }
-          table { border-collapse: collapse; width: 100%; }
-          th, td { border: 1px solid #d1d5db; }
+          table { border-collapse: collapse; width: 100%; page-break-inside: auto; }
+          thead { display: table-header-group; }
+          tr { page-break-inside: avoid; }
+          th, td { border: 1px solid #9ca3af; padding: 2px 4px !important; font-size: 8.5pt; }
+          th { background: #e5e7eb !important; font-weight: 700; color: black !important; }
+          .print-sector-block { page-break-inside: avoid; margin-bottom: 6pt; }
+          .print-sector-title { font-size: 10pt; font-weight: 700; margin-bottom: 2pt; padding: 1px 4px; border-left: 3px solid #374151; }
+          .print-summary { page-break-before: auto; }
         }
       `}</style>
 
@@ -306,7 +312,7 @@ export default function ShiftHandover() {
           {!isLoading && (
             <div className="space-y-6 print:space-y-4">
               {grouped.map(sector => (
-                <div key={sector.name}>
+                <div key={sector.name} className="print-sector-block">
 
                   {/* sector header */}
                   <div className={cn(

@@ -8,7 +8,7 @@ import {
   getListPatientsQueryKey,
   getGetPatientHistoryQueryKey,
 } from "@workspace/api-client-react";
-import type { Patient } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Patient } from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";

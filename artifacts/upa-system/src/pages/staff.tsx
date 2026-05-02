@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle } from "lucide-react";
 import { useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from "@workspace/api-client-react";
-import type { StaffMember } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { StaffMember } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +19,12 @@ const CATEGORIES = [
 ] as const;
 
 const ACCESS_LEVELS = [
-  { value: "administrativo", label: "Administrativo" },
-  { value: "coordenacao",    label: "Coordenação" },
-  { value: "assistencial",   label: "Assistencial" },
+  { value: "admin",                   label: "Admin" },
+  { value: "coordenacao_enfermagem",  label: "Coordenação de Enfermagem" },
+  { value: "assistencial",            label: "Profissional Assistencial" },
 ] as const;
+
+const EDITOR_ROLES = new Set(["admin", "coordenacao_enfermagem"]);
 
 const SECTORS = [
   "Sala Vermelha",
@@ -436,9 +438,10 @@ interface StaffCardProps {
   member: StaffMember;
   onEdit: () => void;
   onDelete: () => void;
+  canEdit: boolean;
 }
 
-function StaffCard({ member, onEdit, onDelete }: StaffCardProps) {
+function StaffCard({ member, onEdit, onDelete, canEdit }: StaffCardProps) {
   const levels = member.accessLevels ? member.accessLevels.split(",").filter(Boolean) : [];
   const [showStamp, setShowStamp] = useState(false);
   const [showSig, setShowSig] = useState(false);
@@ -477,12 +480,18 @@ function StaffCard({ member, onEdit, onDelete }: StaffCardProps) {
 
         {/* actions */}
         <div className="flex gap-1 shrink-0">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={onDelete}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {canEdit ? (
+            <>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={onDelete}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          ) : (
+            <span className="text-[10px] text-muted-foreground/60 px-1">🔒</span>
+          )}
         </div>
       </div>
 
@@ -533,6 +542,18 @@ export default function StaffPage() {
   const [editing, setEditing] = useState<StaffMember | null>(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("todos");
+  const [activeLogin, setActiveLogin] = useState<string>(
+    () => localStorage.getItem("upa_active_staff") ?? ""
+  );
+
+  const activeUser = (staff ?? []).find(m => m.login === activeLogin) ?? null;
+  const activeRoles = activeUser?.accessLevels?.split(",").filter(Boolean) ?? [];
+  const canEdit = activeRoles.some(r => EDITOR_ROLES.has(r));
+
+  const handleSetActive = (login: string) => {
+    setActiveLogin(login);
+    localStorage.setItem("upa_active_staff", login);
+  };
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/staff"] });
 
@@ -565,10 +586,35 @@ export default function StaffPage() {
             <Users className="h-4 w-4 text-primary" />
             <h1 className="text-base font-bold tracking-tight">Funcionários</h1>
           </div>
-          <Button size="sm" className="gap-2" onClick={() => { setEditing(null); setShowForm(true); }}>
-            <Plus className="h-3.5 w-3.5" />
-            Novo Funcionário
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative hidden sm:flex items-center gap-1.5">
+              <UserCircle className="h-4 w-4 text-muted-foreground" />
+              <select
+                value={activeLogin}
+                onChange={e => handleSetActive(e.target.value)}
+                className="h-8 text-xs bg-background border border-input rounded-md px-2 pr-6 text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-ring max-w-[140px]"
+              >
+                <option value="">Selecionar acesso</option>
+                {(staff ?? []).map(m => (
+                  <option key={m.id} value={m.login}>{m.fullName}</option>
+                ))}
+              </select>
+              {activeUser && (
+                <span className={cn(
+                  "text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wide",
+                  canEdit ? "bg-primary/20 border-primary/40 text-primary" : "bg-muted/30 border-border/40 text-muted-foreground"
+                )}>
+                  {canEdit ? "✓ Editor" : "🔒 Leitura"}
+                </span>
+              )}
+            </div>
+            {(canEdit || !staff?.length) && (
+              <Button size="sm" className="gap-2" onClick={() => { setEditing(null); setShowForm(true); }}>
+                <Plus className="h-3.5 w-3.5" />
+                Novo Funcionário
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -638,6 +684,7 @@ export default function StaffPage() {
               <StaffCard
                 key={m.id}
                 member={m}
+                canEdit={canEdit}
                 onEdit={() => { setEditing(m); setShowForm(true); }}
                 onDelete={() => handleDelete(m)}
               />

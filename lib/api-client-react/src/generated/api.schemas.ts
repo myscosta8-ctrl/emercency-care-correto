@@ -44,6 +44,8 @@ export interface Patient {
   sector: string;
   internmentStatus: PatientInternmentStatus;
   nurse: string;
+  createdBy: string;
+  updatedBy: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -114,6 +116,7 @@ export interface PatientEvolution {
   plan: string;
   responsible: string;
   note: string;
+  createdBy: string;
   createdAt: string;
 }
 

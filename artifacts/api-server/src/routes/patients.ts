@@ -82,6 +82,8 @@ router.post("/", async (req, res) => {
     systolicBp: body.systolicBp ?? 0,
     diastolicBp: body.diastolicBp ?? 0,
     nurse: body.nurse ?? "",
+    createdBy: body.nurse ?? "",
+    updatedBy: body.nurse ?? "",
     updatedAt: new Date(),
   }).returning();
 
@@ -123,6 +125,7 @@ router.put("/:id", async (req, res) => {
     systolicBp: body.systolicBp ?? 0,
     diastolicBp: body.diastolicBp ?? 0,
     nurse: body.nurse ?? "",
+    updatedBy: body.nurse ?? "",
     updatedAt: new Date(),
   }).where(eq(patientsTable.id, id)).returning();
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
@@ -171,6 +174,7 @@ router.post("/:id/vitals", async (req, res) => {
     plan: body.plan ?? "",
     responsible: body.responsible,
     note: body.note ?? "",
+    createdBy: body.responsible,
   });
 
   res.json(serialize(patient));

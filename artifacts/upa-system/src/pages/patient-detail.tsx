@@ -23,7 +23,7 @@ import {
   Activity, ArrowLeft, Edit, Trash2, HeartPulse,
   Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
   UserCheck, ClipboardList, Stethoscope, Thermometer,
-  Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle,
+  Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -191,7 +191,31 @@ export default function PatientDetail() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="border-b border-border bg-card sticky top-0 z-10">
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 12mm; }
+          body { background: white !important; color: black !important; font-size: 10pt; }
+          .print-hide { display: none !important; }
+          .print-only { display: block !important; }
+          .no-print { display: none !important; }
+          .print-section { margin-bottom: 8pt; padding-bottom: 6pt; border-bottom: 1px solid #d1d5db; }
+          .print-table { width: 100%; border-collapse: collapse; margin-bottom: 6pt; }
+          .print-table th, .print-table td { border: 1px solid #9ca3af; padding: 3px 6px; font-size: 9pt; }
+          .print-table th { background: #e5e7eb; font-weight: 700; }
+          .soap-entry { margin-bottom: 8pt; padding: 6pt; border: 1px solid #d1d5db; page-break-inside: avoid; }
+          .soap-entry-header { background: #f3f4f6; padding: 3px 6px; margin-bottom: 4pt; border-bottom: 1px solid #d1d5db; }
+          .soap-badge { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 3px; font-size: 9pt; font-weight: 700; margin-right: 4px; }
+          .badge-s { background: #dbeafe; color: #1e40af; }
+          .badge-o { background: #dcfce7; color: #166534; }
+          .badge-a { background: #ffedd5; color: #9a3412; }
+          .badge-p { background: #f3e8ff; color: #6b21a8; }
+          .print-sig-area { margin-top: 20pt; border-top: 1px solid #9ca3af; padding-top: 8pt; display: flex; justify-content: flex-end; }
+          .print-sig-box { text-align: center; border-top: 1px solid black; min-width: 200px; padding-top: 4pt; font-size: 9pt; }
+        }
+        .print-only { display: none; }
+      `}</style>
+
+      <header className="print-hide border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
@@ -237,6 +261,9 @@ export default function PatientDetail() {
                 <Pencil className="h-3 w-3 opacity-50 shrink-0" />
               </button>
             )}
+            <Button variant="outline" size="sm" onClick={() => window.print()} className="print-hide hidden sm:flex">
+              <Printer className="h-4 w-4 mr-1.5" /> Imprimir Evolução
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
               <Edit className="h-4 w-4 mr-1.5" /> Editar
             </Button>
@@ -247,7 +274,7 @@ export default function PatientDetail() {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl pb-28 md:pb-8">
+      <main className="no-print flex-1 container mx-auto px-4 py-8 max-w-5xl pb-28 md:pb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* Left column: 2/3 width */}
@@ -838,7 +865,7 @@ export default function PatientDetail() {
       </Dialog>
 
       {/* Mobile sticky bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 md:hidden bg-card/95 backdrop-blur-sm border-t border-border z-30">
+      <div className="no-print fixed bottom-0 left-0 right-0 md:hidden bg-card/95 backdrop-blur-sm border-t border-border z-30">
         <div className="grid grid-cols-4 gap-0 pb-safe">
           {([
             { icon: <Activity className="h-5 w-5" />, label: "SVs",        action: () => setIsVitalsRecordOpen(true) },
@@ -860,7 +887,7 @@ export default function PatientDetail() {
       </div>
 
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="no-print">
           <AlertDialogHeader>
             <AlertDialogTitle>Alta / Remoção do Paciente</AlertDialogTitle>
             <AlertDialogDescription>
@@ -879,6 +906,172 @@ export default function PatientDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── PRINT-ONLY EVOLUTION REPORT ─────────────────────────────── */}
+      <div className="print-only" style={{ fontFamily: "Arial, sans-serif", color: "#000", background: "#fff" }}>
+        {/* Hospital header */}
+        <div className="print-section" style={{ textAlign: "center", borderBottom: "2px solid #374151", paddingBottom: "8pt" }}>
+          <div style={{ fontSize: "14pt", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+            UPA Breves — Gestão de Pacientes
+          </div>
+          <div style={{ fontSize: "12pt", fontWeight: 600, marginTop: "2pt" }}>
+            Relatório de Evolução de Enfermagem
+          </div>
+          <div style={{ fontSize: "9pt", color: "#6b7280", marginTop: "3pt" }}>
+            Emitido em: {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            {nurseName ? ` | Profissional: ${nurseName}` : ""}
+          </div>
+        </div>
+
+        {/* Patient info */}
+        <div className="print-section">
+          <table className="print-table">
+            <tbody>
+              <tr>
+                <th style={{ width: "15%", textAlign: "left" }}>Paciente</th>
+                <td style={{ width: "35%" }}><strong>{patient.name}</strong></td>
+                <th style={{ width: "10%", textAlign: "left" }}>Idade</th>
+                <td style={{ width: "10%" }}>{patient.age} anos</td>
+                <th style={{ width: "10%", textAlign: "left" }}>Leito</th>
+                <td style={{ width: "20%" }}>{patient.bed || "—"}</td>
+              </tr>
+              <tr>
+                <th style={{ textAlign: "left" }}>Setor</th>
+                <td>{patient.sector}</td>
+                <th style={{ textAlign: "left" }}>Triagem</th>
+                <td>
+                  <span style={{
+                    fontWeight: 700,
+                    color: patient.status === "red" ? "#dc2626" : patient.status === "orange" ? "#ea580c" :
+                           patient.status === "yellow" ? "#ca8a04" : patient.status === "green" ? "#16a34a" : "#2563eb"
+                  }}>
+                    {cfg.label}
+                  </span>
+                </td>
+                <th style={{ textAlign: "left" }}>Responsável</th>
+                <td>{patient.nurse || "—"}</td>
+              </tr>
+              {patient.diagnosis && (
+                <tr>
+                  <th style={{ textAlign: "left" }}>Diagnóstico</th>
+                  <td colSpan={5}>{patient.diagnosis}</td>
+                </tr>
+              )}
+              {(patient.internmentStatus === "internado") && (
+                <tr>
+                  <th style={{ textAlign: "left" }}>Status</th>
+                  <td colSpan={5}>Internado</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Current vitals */}
+        <div className="print-section">
+          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "4pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            Sinais Vitais Atuais
+          </div>
+          <table className="print-table">
+            <thead>
+              <tr>
+                <th>PA (mmHg)</th>
+                <th>FC (bpm)</th>
+                <th>FR (irpm)</th>
+                <th>SpO₂ (%)</th>
+                <th>Temp. (°C)</th>
+                <th>HGT (mg/dL)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style={{ textAlign: "center" }}>
+                <td><strong>{patient.systolicBp > 0 && patient.diastolicBp > 0 ? `${patient.systolicBp}/${patient.diastolicBp}` : "—"}</strong></td>
+                <td><strong>{patient.heartRate > 0 ? patient.heartRate : "—"}</strong></td>
+                <td><strong>{patient.respiratoryRate > 0 ? patient.respiratoryRate : "—"}</strong></td>
+                <td><strong>{patient.spO2 > 0 ? `${patient.spO2}%` : "—"}</strong></td>
+                <td><strong>{patient.temperature > 0 ? `${patient.temperature}°C` : "—"}</strong></td>
+                <td><strong>{patient.glucose > 0 ? `${patient.glucose}` : "—"}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Evolution history */}
+        <div className="print-section">
+          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "6pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            Histórico de Evoluções ({history ? history.filter(e => e.note !== "Admissão inicial").length : 0} registros)
+          </div>
+          {history && history.map(entry => {
+            const isInitial = entry.note === "Admissão inicial";
+            const hasVitals = entry.heartRate || entry.respiratoryRate || entry.spO2 || entry.temperature || entry.glucose || (entry.systolicBp && entry.diastolicBp);
+            return (
+              <div key={entry.id} className="soap-entry">
+                <div className="soap-entry-header" style={{ display: "flex", justifyContent: "space-between" }}>
+                  <strong>{isInitial ? "📋 Admissão Inicial" : entry.responsible || "Sistema"}</strong>
+                  <span style={{ color: "#6b7280" }}>
+                    {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </span>
+                </div>
+                <div style={{ padding: "4pt 0 0" }}>
+                  {entry.subjective && (
+                    <div style={{ marginBottom: "3pt" }}>
+                      <span className="soap-badge badge-s">S</span>
+                      <em style={{ color: "#374151" }}>"{entry.subjective}"</em>
+                    </div>
+                  )}
+                  {hasVitals && (
+                    <div style={{ marginBottom: "3pt" }}>
+                      <span className="soap-badge badge-o">O</span>
+                      <span style={{ color: "#374151", fontSize: "9pt" }}>
+                        {entry.systolicBp && entry.diastolicBp ? `PA: ${entry.systolicBp}/${entry.diastolicBp} mmHg  ` : ""}
+                        {entry.heartRate ? `FC: ${entry.heartRate} bpm  ` : ""}
+                        {entry.respiratoryRate ? `FR: ${entry.respiratoryRate} irpm  ` : ""}
+                        {entry.spO2 ? `SpO₂: ${entry.spO2}%  ` : ""}
+                        {entry.temperature ? `Temp: ${entry.temperature}°C  ` : ""}
+                        {entry.glucose ? `HGT: ${entry.glucose} mg/dL  ` : ""}
+                        {entry.generalCondition ? `| Estado: ${entry.generalCondition}  ` : ""}
+                        {entry.consciousnessLevel ? `| Consciência: ${entry.consciousnessLevel}  ` : ""}
+                        {entry.painScale != null && entry.painScale > 0 ? `| Dor: ${entry.painScale}/10` : ""}
+                      </span>
+                    </div>
+                  )}
+                  {entry.assessment && (
+                    <div style={{ marginBottom: "3pt" }}>
+                      <span className="soap-badge badge-a">A</span>
+                      <span style={{ color: "#374151" }}>{entry.assessment}</span>
+                    </div>
+                  )}
+                  {entry.plan && !isInitial && (
+                    <div style={{ marginBottom: "3pt" }}>
+                      <span className="soap-badge badge-p">P</span>
+                      <span style={{ color: "#374151", fontFamily: "monospace", fontSize: "8.5pt", whiteSpace: "pre-wrap" }}>{entry.plan}</span>
+                    </div>
+                  )}
+                  {entry.note && !isInitial && (
+                    <div style={{ color: "#6b7280", fontStyle: "italic", fontSize: "9pt", marginLeft: "22px" }}>{entry.note}</div>
+                  )}
+                  {!isInitial && entry.responsible && (
+                    <div style={{ color: "#6b7280", fontSize: "9pt", marginLeft: "22px" }}>— {entry.responsible}</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {(!history || history.length === 0) && (
+            <p style={{ color: "#6b7280", fontStyle: "italic" }}>Nenhuma evolução registrada.</p>
+          )}
+        </div>
+
+        {/* Signature */}
+        <div className="print-sig-area">
+          <div className="print-sig-box">
+            <div>{nurseName || "___________________________________"}</div>
+            <div style={{ marginTop: "2pt" }}>Profissional Responsável</div>
+            {patient.nurse && <div style={{ color: "#6b7280" }}>{patient.nurse}</div>}
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

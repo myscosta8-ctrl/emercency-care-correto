@@ -498,6 +498,10 @@ components:
           enum: [internado, nao_internado]
         nurse:
           type: string
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -521,6 +525,8 @@ components:
         - sector
         - internmentStatus
         - nurse
+        - createdBy
+        - updatedBy
         - createdAt
         - updatedAt
 
@@ -646,6 +652,8 @@ components:
           type: string
         note:
           type: string
+        createdBy:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -657,6 +665,7 @@ components:
         - subjective
         - assessment
         - plan
+        - createdBy
         - createdAt
 
     PatientPrescription:

@@ -19,6 +19,8 @@ export const patientsTable = pgTable("patients", {
   sector: text("sector").notNull(),
   internmentStatus: text("internment_status", { enum: ["internado", "nao_internado"] }).notNull().default("nao_internado"),
   nurse: text("nurse").notNull().default(""),
+  createdBy: text("created_by").notNull().default(""),
+  updatedBy: text("updated_by").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

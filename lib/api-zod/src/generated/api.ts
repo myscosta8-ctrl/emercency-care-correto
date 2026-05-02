@@ -34,6 +34,8 @@ export const ListPatientsResponseItem = zod.object({
   sector: zod.string(),
   internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
+  createdBy: zod.string(),
+  updatedBy: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -96,6 +98,8 @@ export const GetPatientResponse = zod.object({
   sector: zod.string(),
   internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
+  createdBy: zod.string(),
+  updatedBy: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -142,6 +146,8 @@ export const UpdatePatientResponse = zod.object({
   sector: zod.string(),
   internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
+  createdBy: zod.string(),
+  updatedBy: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -181,6 +187,8 @@ export const UpdatePatientStatusResponse = zod.object({
   sector: zod.string(),
   internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
+  createdBy: zod.string(),
+  updatedBy: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -227,6 +235,8 @@ export const AddVitalsResponse = zod.object({
   sector: zod.string(),
   internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
+  createdBy: zod.string(),
+  updatedBy: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -375,6 +385,7 @@ export const GetPatientHistoryResponseItem = zod.object({
   plan: zod.string(),
   responsible: zod.string(),
   note: zod.string(),
+  createdBy: zod.string(),
   createdAt: zod.coerce.date(),
 });
 export const GetPatientHistoryResponse = zod.array(
