@@ -8,7 +8,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react/src/generated/api.schemas";
-import { Activity, HeartPulse, UserPlus, Users, Search, Filter, Pencil, LogOut } from "lucide-react";
+import { Activity, HeartPulse, UserPlus, Users, Search, Filter, Pencil, LogOut, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
@@ -253,10 +253,18 @@ export default function Dashboard() {
             <Activity className="h-6 w-6 text-primary" />
             <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate">UPA Breves — Gestão de Pacientes</h1>
           </div>
-          <Button onClick={() => setIsNewPatientOpen(true)} data-testid="button-new-patient" className="shrink-0">
-            <UserPlus className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Nova Admissão</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link href="/passagem-plantao">
+              <Button variant="outline" className="shrink-0 gap-2">
+                <ClipboardList className="h-4 w-4" />
+                <span className="hidden sm:inline">Passagem de Plantão</span>
+              </Button>
+            </Link>
+            <Button onClick={() => setIsNewPatientOpen(true)} data-testid="button-new-patient" className="shrink-0">
+              <UserPlus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Nova Admissão</span>
+            </Button>
+          </div>
         </div>
       </header>
 
