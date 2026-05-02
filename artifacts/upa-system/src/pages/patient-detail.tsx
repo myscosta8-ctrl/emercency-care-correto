@@ -28,9 +28,9 @@ import {
   Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
   UserCheck, ClipboardList, Stethoscope, Thermometer,
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
-  Bell, Trash, Download,
+  Bell, Trash, Download, FileDown,
 } from "lucide-react";
-import { downloadSinanPdf } from "@/lib/pdf-fill";
+import { downloadSinanPdf, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,6 +151,7 @@ export default function PatientDetail() {
   const { nurseName, setNurseName } = useNurse();
   const [isEditingNurse, setIsEditingNurse] = useState(false);
   const [nurseInput, setNurseInput] = useState("");
+  const [downloadingFicha, setDownloadingFicha] = useState(false);
 
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
@@ -286,6 +287,43 @@ export default function PatientDetail() {
             )}
             <Button variant="outline" size="sm" onClick={() => window.print()} className="print-hide hidden sm:flex">
               <Printer className="h-4 w-4 mr-1.5" /> Imprimir Evolução
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="print-hide hidden sm:flex"
+              disabled={downloadingFicha || !patient}
+              onClick={async () => {
+                if (!patient) return;
+                setDownloadingFicha(true);
+                try {
+                  await downloadIdentificacaoPdf({
+                    name: patient.name,
+                    birthDate: patient.birthDate,
+                    age: patient.age,
+                    sex: patient.sex,
+                    motherName: patient.motherName,
+                    cns: patient.cns,
+                    cpf: patient.cpf,
+                    rg: patient.rg,
+                    phone: patient.phone,
+                    street: patient.street,
+                    addressNumber: patient.addressNumber,
+                    neighborhood: patient.neighborhood,
+                    city: patient.city,
+                    addressState: patient.addressState,
+                    zipCode: patient.zipCode,
+                    weight: patient.weight,
+                  });
+                } catch {
+                  toast({ title: "Erro ao gerar ficha", variant: "destructive" });
+                } finally {
+                  setDownloadingFicha(false);
+                }
+              }}
+            >
+              <FileDown className="h-4 w-4 mr-1.5" />
+              {downloadingFicha ? "Gerando…" : "Ficha ID"}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
               <Edit className="h-4 w-4 mr-1.5" /> Editar

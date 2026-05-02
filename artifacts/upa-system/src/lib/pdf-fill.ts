@@ -361,3 +361,142 @@ export async function downloadSinanPdf(
   document.body.removeChild(a);
   URL.revokeObjectURL(href);
 }
+
+// ── Ficha de Identificação do Paciente ────────────────────────────────────────
+// Generates a patient identification card with 8 fields:
+//   field_00 nome  field_01 cpf  field_02 rg   field_03 cns
+//   field_04 endereço  field_05 município  field_06 telefone  field_07 peso
+
+export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<void> {
+  const doc  = await PDFDocument.create();
+  const page = doc.addPage([595, 842]);                   // A4 portrait
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  // ── palette ────────────────────────────────────────────────────────────────
+  const NAVY    = rgb(0.06, 0.09, 0.18);
+  const ACCENT  = rgb(0.15, 0.35, 0.78);
+  const LBLBG   = rgb(0.93, 0.95, 0.97);
+  const VALBG   = rgb(0.97, 0.97, 1.00);
+  const DARK    = rgb(0.06, 0.07, 0.12);
+  const MUTED   = rgb(0.42, 0.44, 0.54);
+  const WHITE   = rgb(1, 1, 1);
+  const BORDER  = rgb(0.80, 0.82, 0.88);
+  const LTBLUE  = rgb(0.72, 0.78, 0.96);
+
+  // ── layout constants ───────────────────────────────────────────────────────
+  const ML      = 40;           // left margin
+  const CW      = 515;          // content width  (595 - 40 - 40)
+  const LBL_W   = 135;          // label column width
+  const VAL_W   = CW - LBL_W;  // value column width
+  const ROW_H   = 48;           // row height
+  const GAP     = 8;            // gap between rows
+  const STEP    = ROW_H + GAP;
+  const FIRST_Y = 752;          // y-top of first field row (below header)
+
+  // ── header block (y 762 → 812) ────────────────────────────────────────────
+  const HDR_BOT = 762;
+  const HDR_H   = 50;
+  page.drawRectangle({ x: ML,      y: HDR_BOT, width: CW,   height: HDR_H, color: NAVY   });
+  page.drawRectangle({ x: ML,      y: HDR_BOT, width: 5,    height: HDR_H, color: ACCENT });
+
+  page.drawText("UPA BREVES — GESTÃO DE PACIENTES", {
+    x: ML + 14, y: HDR_BOT + 30, font: bold, size: 12.5, color: WHITE,
+  });
+  page.drawText("FICHA DE IDENTIFICAÇÃO DO PACIENTE", {
+    x: ML + 14, y: HDR_BOT + 11, font, size: 8, color: LTBLUE,
+  });
+
+  const emitida = `Emitida em: ${new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}`;
+  page.drawText(emitida, {
+    x: ML + CW - font.widthOfTextAtSize(emitida, 6.5) - 4, y: HDR_BOT + 5,
+    font, size: 6.5, color: LTBLUE,
+  });
+
+  // outer border of header
+  page.drawRectangle({ x: ML, y: HDR_BOT, width: CW, height: HDR_H, borderColor: BORDER, borderWidth: 0.5 });
+
+  // ── field definitions ──────────────────────────────────────────────────────
+  const addrParts = [patient.street, patient.addressNumber && `nº ${patient.addressNumber}`, patient.neighborhood]
+    .filter(Boolean).join(", ");
+  const cityUF = [patient.city, patient.addressState].filter(Boolean).join(" — ");
+
+  const fields: Array<{ num: string; label: string; value: string }> = [
+    { num: "00", label: "NOME COMPLETO",    value: patient.name },
+    { num: "01", label: "CPF",              value: patient.cpf        ?? "" },
+    { num: "02", label: "RG",               value: patient.rg         ?? "" },
+    { num: "03", label: "CNS / CARTÃO SUS", value: patient.cns        ?? "" },
+    { num: "04", label: "ENDEREÇO",         value: addrParts },
+    { num: "05", label: "MUNICÍPIO / UF",   value: cityUF },
+    { num: "06", label: "TELEFONE",         value: patient.phone      ?? "" },
+    { num: "07", label: "PESO",             value: patient.weight != null ? `${patient.weight} kg` : "" },
+  ];
+
+  // ── draw rows ──────────────────────────────────────────────────────────────
+  fields.forEach(({ num, label, value }, i) => {
+    const yBot = FIRST_Y - i * STEP - ROW_H;
+    const yTop = yBot + ROW_H;
+
+    // backgrounds
+    page.drawRectangle({ x: ML,            y: yBot, width: LBL_W, height: ROW_H, color: LBLBG });
+    page.drawRectangle({ x: ML + LBL_W,    y: yBot, width: VAL_W, height: ROW_H, color: VALBG });
+
+    // outer border
+    page.drawRectangle({ x: ML, y: yBot, width: CW, height: ROW_H, borderColor: BORDER, borderWidth: 0.5 });
+
+    // label/value divider
+    page.drawLine({
+      start: { x: ML + LBL_W, y: yBot },
+      end:   { x: ML + LBL_W, y: yTop },
+      thickness: 0.5, color: BORDER,
+    });
+
+    // field number badge
+    page.drawRectangle({ x: ML + 5, y: yTop - 15, width: 20, height: 13, color: ACCENT });
+    page.drawText(num, { x: ML + 8, y: yTop - 13, font: bold, size: 7, color: WHITE });
+
+    // label
+    page.drawText(label, { x: ML + 30, y: yTop - 13, font: bold, size: 6.5, color: MUTED });
+
+    // value
+    let txt = value || "—";
+    const maxW = VAL_W - 16;
+    while (txt.length > 1 && bold.widthOfTextAtSize(txt, 10) > maxW) txt = txt.slice(0, -1);
+    page.drawText(txt, {
+      x: ML + LBL_W + 10, y: yBot + 16,
+      font: value ? bold : font,
+      size: value ? 10 : 9,
+      color: value ? DARK : MUTED,
+    });
+  });
+
+  // ── signature block ────────────────────────────────────────────────────────
+  const SIG_Y = FIRST_Y - fields.length * STEP - ROW_H + 4;   // a bit below last field
+
+  // two signature lines
+  const lineY = SIG_Y - 30;
+  page.drawLine({ start: { x: ML,         y: lineY }, end: { x: ML + 230, y: lineY }, thickness: 0.5, color: BORDER });
+  page.drawLine({ start: { x: ML + 270,   y: lineY }, end: { x: ML + CW,  y: lineY }, thickness: 0.5, color: BORDER });
+  page.drawText("Assinatura / Carimbo do Profissional", { x: ML, y: lineY - 11, font, size: 7, color: MUTED });
+  page.drawText("Data / Hora", { x: ML + 270, y: lineY - 11, font, size: 7, color: MUTED });
+
+  // ── footer ─────────────────────────────────────────────────────────────────
+  page.drawLine({ start: { x: ML, y: 38 }, end: { x: ML + CW, y: 38 }, thickness: 0.4, color: BORDER });
+  page.drawText(
+    "UPA Breves — Gestão de Pacientes  |  Documento gerado automaticamente pelo sistema",
+    { x: ML, y: 26, font, size: 6.5, color: MUTED },
+  );
+
+  // ── save & download ────────────────────────────────────────────────────────
+  const bytes = await doc.save();
+  const blob  = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+  const href  = URL.createObjectURL(blob);
+  const link  = Object.assign(document.createElement("a"), {
+    href,
+    download: `Identificacao_${patient.name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`,
+  });
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(href);
+}
