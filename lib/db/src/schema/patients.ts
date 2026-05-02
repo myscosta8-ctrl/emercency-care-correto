@@ -22,6 +22,7 @@ export const patientsTable = pgTable("patients", {
 
   // ── contato ─────────────────────────────────────────────────────────────────
   phone:        text("phone").notNull().default(""),
+  email:        text("email").notNull().default(""),
   guardianName: text("guardian_name").notNull().default(""),
 
   // ── endereço ────────────────────────────────────────────────────────────────

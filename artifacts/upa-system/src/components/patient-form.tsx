@@ -86,6 +86,7 @@ const formSchema = z.object({
 
   // contato
   phone:        z.string().default(""),
+  email:        z.string().default(""),
   guardianName: z.string().default(""),
 
   // endereço
@@ -147,6 +148,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       weight: patient?.weight ?? 0,
 
       phone:        patient?.phone        ?? "",
+      email:        patient?.email        ?? "",
       guardianName: patient?.guardianName ?? "",
 
       street:        patient?.street        ?? "",
@@ -343,6 +345,14 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             <FormItem>
               <FormLabel>Telefone <Opt /></FormLabel>
               <FormControl><Input placeholder="(00) 00000-0000" maxLength={15} {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="email" render={({ field }) => (
+            <FormItem>
+              <FormLabel>E-mail <Opt /></FormLabel>
+              <FormControl><Input placeholder="paciente@exemplo.com" type="email" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />

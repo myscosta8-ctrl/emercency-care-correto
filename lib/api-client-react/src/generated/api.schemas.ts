@@ -47,6 +47,7 @@ export interface Patient {
   rg: string;
   weight: number;
   phone: string;
+  email: string;
   guardianName: string;
   street: string;
   addressNumber: string;
@@ -101,6 +102,7 @@ export interface CreatePatientBody {
   rg?: string;
   weight?: number;
   phone?: string;
+  email?: string;
   guardianName?: string;
   street?: string;
   addressNumber?: string;

@@ -307,6 +307,7 @@ export default function PatientDetail() {
                     cpf: patient.cpf,
                     rg: patient.rg,
                     phone: patient.phone,
+                    email: patient.email,
                     street: patient.street,
                     addressNumber: patient.addressNumber,
                     neighborhood: patient.neighborhood,
@@ -976,7 +977,7 @@ export default function PatientDetail() {
             </Card>
 
             {/* Patient Demographics */}
-            {(patient.cns || patient.cpf || patient.rg || patient.phone || patient.guardianName || patient.motherName || patient.street) && (
+            {(patient.cns || patient.cpf || patient.rg || patient.phone || patient.email || patient.guardianName || patient.motherName || patient.street) && (
               <Card className="border-border/50">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -1021,13 +1022,19 @@ export default function PatientDetail() {
                     </div>
                   )}
 
-                  {(patient.phone || patient.guardianName) && (
+                  {(patient.phone || patient.email || patient.guardianName) && (
                     <div className="space-y-1.5 pt-1 border-t border-border/40">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Contato</p>
                       {patient.phone && (
                         <div className="flex justify-between items-baseline">
                           <span className="text-xs text-muted-foreground">Telefone</span>
                           <span className="text-sm font-medium">{patient.phone}</span>
+                        </div>
+                      )}
+                      {patient.email && (
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-muted-foreground">E-mail</span>
+                          <span className="text-sm font-medium">{patient.email}</span>
                         </div>
                       )}
                       {patient.guardianName && (

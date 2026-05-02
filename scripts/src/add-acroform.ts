@@ -56,6 +56,7 @@ const COORDS_DENGUE: FormCoords = {
   endereco_complemento: { x: 170, y: 394, maxWidth: 110 },
   cep:                  { x: 470, y: 366, maxWidth: 100 },
   telefone:             { x: 68,  y: 343, maxWidth: 140 },
+  email:                { x: 222, y: 343, maxWidth: 200 },
 };
 
 const COORDS_TUBERCULOSE: FormCoords = {
@@ -76,6 +77,7 @@ const COORDS_TUBERCULOSE: FormCoords = {
   endereco_complemento: { x: 170, y: 448, maxWidth: 110 },
   cep:                  { x: 467, y: 420, maxWidth: 100 },
   telefone:             { x: 69,  y: 398, maxWidth: 140 },
+  email:                { x: 223, y: 398, maxWidth: 200 },
 };
 
 const COORDS_FEBRE_AMARELA: FormCoords = {
@@ -96,6 +98,7 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
   endereco_complemento: { x: 168, y: 434, maxWidth: 110 },
   cep:                  { x: 468, y: 406, maxWidth: 100 },
   telefone:             { x: 66,  y: 383, maxWidth: 140 },
+  email:                { x: 220, y: 383, maxWidth: 200 },
 };
 
 const COORDS_MENINGITE: FormCoords = {
@@ -116,6 +119,7 @@ const COORDS_MENINGITE: FormCoords = {
   endereco_complemento: { x: 170, y: 430, maxWidth: 110 },
   cep:                  { x: 467, y: 402, maxWidth: 100 },
   telefone:             { x: 69,  y: 379, maxWidth: 140 },
+  email:                { x: 223, y: 379, maxWidth: 200 },
 };
 
 const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
@@ -136,6 +140,7 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
   endereco_complemento: { x: 167, y: 405, maxWidth: 110 },
   cep:                  { x: 468, y: 377, maxWidth: 100 },
   telefone:             { x: 66,  y: 354, maxWidth: 140 },
+  email:                { x: 220, y: 354, maxWidth: 200 },
 };
 
 const COORDS_FEBRE_TIFOIDE: FormCoords = {
@@ -156,6 +161,7 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   endereco_complemento: { x: 170, y: 419, maxWidth: 110 },
   cep:                  { x: 469, y: 389, maxWidth: 100 },
   telefone:             { x: 69,  y: 366, maxWidth: 140 },
+  email:                { x: 223, y: 366, maxWidth: 200 },
 };
 
 const COORDS_AIDS_ADULTO: FormCoords = {
@@ -176,6 +182,7 @@ const COORDS_AIDS_ADULTO: FormCoords = {
   endereco_complemento: { x: 170, y: 421, maxWidth: 110 },
   cep:                  { x: 471, y: 393, maxWidth: 100 },
   telefone:             { x: 69,  y: 370, maxWidth: 140 },
+  email:                { x: 223, y: 370, maxWidth: 200 },
 };
 
 const COORDS_EXANTEMATICA: FormCoords = {
@@ -196,6 +203,7 @@ const COORDS_EXANTEMATICA: FormCoords = {
   endereco_complemento: { x: 168, y: 379, maxWidth: 110 },
   cep:                  { x: 469, y: 351, maxWidth: 100 },
   telefone:             { x: 67,  y: 328, maxWidth: 140 },
+  email:                { x: 221, y: 328, maxWidth: 200 },
 };
 
 const TEMPLATES: Array<{ file: string; coords: FormCoords }> = [

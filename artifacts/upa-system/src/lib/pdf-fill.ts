@@ -13,6 +13,7 @@ export interface PdfPatient {
   cpf?: string | null;
   rg?: string | null;
   phone?: string | null;
+  email?: string | null;
   street?: string | null;
   addressNumber?: string | null;
   addressComplement?: string | null;
@@ -88,6 +89,7 @@ const COORDS_DENGUE: FormCoords = {
   endereco_complemento: { x: 170, y: 394, maxWidth: 110 },
   cep:                  { x: 470, y: 366, maxWidth: 100 },
   telefone:             { x: 68,  y: 343, maxWidth: 140 },
+  email:                { x: 222, y: 343, maxWidth: 200 },
 };
 
 // ─── TUBERCULOSE ─────────────────────────────────────────────────────────────
@@ -113,6 +115,7 @@ const COORDS_TUBERCULOSE: FormCoords = {
   endereco_complemento: { x: 170, y: 448, maxWidth: 110 },
   cep:                  { x: 467, y: 420, maxWidth: 100 },
   telefone:             { x: 69,  y: 398, maxWidth: 140 },
+  email:                { x: 223, y: 398, maxWidth: 200 },
 };
 
 // ─── FEBRE-AMARELA ───────────────────────────────────────────────────────────
@@ -138,6 +141,7 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
   endereco_complemento: { x: 168, y: 434, maxWidth: 110 },
   cep:                  { x: 468, y: 406, maxWidth: 100 },
   telefone:             { x: 66,  y: 383, maxWidth: 140 },
+  email:                { x: 220, y: 383, maxWidth: 200 },
 };
 
 // ─── MENINGITE ───────────────────────────────────────────────────────────────
@@ -163,6 +167,7 @@ const COORDS_MENINGITE: FormCoords = {
   endereco_complemento: { x: 170, y: 430, maxWidth: 110 },
   cep:                  { x: 467, y: 402, maxWidth: 100 },
   telefone:             { x: 69,  y: 379, maxWidth: 140 },
+  email:                { x: 223, y: 379, maxWidth: 200 },
 };
 
 // ─── NOTIFICAÇÃO INDIVIDUAL (violência / outros) ──────────────────────────────
@@ -191,6 +196,7 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
   endereco_complemento: { x: 167, y: 405, maxWidth: 110 },
   cep:                  { x: 468, y: 377, maxWidth: 100 },
   telefone:             { x: 66,  y: 354, maxWidth: 140 },
+  email:                { x: 220, y: 354, maxWidth: 200 },
 };
 
 // ─── FEBRE TIFOIDE ───────────────────────────────────────────────────────────
@@ -216,6 +222,7 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   endereco_complemento: { x: 170, y: 419, maxWidth: 110 },
   cep:                  { x: 469, y: 389, maxWidth: 100 },
   telefone:             { x: 69,  y: 366, maxWidth: 140 },
+  email:                { x: 223, y: 366, maxWidth: 200 },
 };
 
 // ─── AIDS ADULTO ─────────────────────────────────────────────────────────────
@@ -244,6 +251,7 @@ const COORDS_AIDS_ADULTO: FormCoords = {
   endereco_complemento: { x: 170, y: 421, maxWidth: 110 },
   cep:                  { x: 471, y: 393, maxWidth: 100 },
   telefone:             { x: 69,  y: 370, maxWidth: 140 },
+  email:                { x: 223, y: 370, maxWidth: 200 },
 };
 
 // ─── EXANTEMATICA ────────────────────────────────────────────────────────────
@@ -272,6 +280,7 @@ const COORDS_EXANTEMATICA: FormCoords = {
   endereco_complemento: { x: 168, y: 379, maxWidth: 110 },
   cep:                  { x: 469, y: 351, maxWidth: 100 },
   telefone:             { x: 67,  y: 328, maxWidth: 140 },
+  email:                { x: 221, y: 328, maxWidth: 200 },
 };
 
 // ─── COVID-19 / SRAG ─────────────────────────────────────────────────────────
@@ -351,6 +360,7 @@ function buildFieldValues(patient: PdfPatient): Record<string, string> {
     idade:                patient.age ? `${patient.age} anos` : "",
     sexo:                 sexLabel(patient.sex),
     telefone:             patient.phone          ?? "",
+    email:                patient.email          ?? "",
   };
 }
 
@@ -426,6 +436,7 @@ async function fillTemplate(
   draw("idade");
   draw("sexo");
   draw("telefone");
+  draw("email");
 
   return doc.save();
 }
@@ -534,7 +545,7 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
     font, size: 6.5, color: LTBLUE,
   });
 
-  // ── 14 standard field definitions ─────────────────────────────────────────
+  // ── 16 standard field definitions ─────────────────────────────────────────
   const fields: Array<{ key: string; label: string; value: string }> = [
     { key: "nome_paciente",        label: "NOME DO PACIENTE",    value: patient.name },
     { key: "nome_mae",             label: "NOME DA MÃE",         value: patient.motherName        ?? "" },
@@ -550,6 +561,8 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
     { key: "uf",                   label: "UF",                  value: patient.addressState      ?? "" },
     { key: "cep",                  label: "CEP",                 value: patient.zipCode           ?? "" },
     { key: "peso",                 label: "PESO (kg)",           value: patient.weight != null ? `${patient.weight}` : "" },
+    { key: "telefone",             label: "TELEFONE",            value: patient.phone             ?? "" },
+    { key: "email",                label: "E-MAIL",              value: patient.email             ?? "" },
   ];
 
   // ── draw rows + AcroForm fields ───────────────────────────────────────────
@@ -653,6 +666,7 @@ export interface DadosPaciente {
   idade?:                string | number | null;   // "35" | 35
   sexo?:                 string | null;            // "M" | "F" | "I"
   telefone?:             string | null;
+  email?:                string | null;
 }
 
 function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
@@ -685,6 +699,7 @@ function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
     sex:                d.sexo              ?? null,
     race:               d.raca_cor          ?? null,
     phone:              d.telefone          ?? null,
+    email:              d.email             ?? null,
   };
 }
 
