@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, memo } from "react";
 import { Link } from "wouter";
 import {
   useListPatients,
@@ -31,11 +31,11 @@ import { PatientForm } from "@/components/patient-form";
 import { useToast } from "@/hooks/use-toast";
 
 const TRIAGE_CONFIG = {
-  red:    { label: "Vermelho",  sublabel: "Emergência",     bg: "bg-triage-red",    text: "text-triage-red",    border: "border-triage-red/40" },
-  orange: { label: "Laranja",   sublabel: "Muito Urgente",  bg: "bg-triage-orange", text: "text-triage-orange", border: "border-triage-orange/40" },
-  yellow: { label: "Amarelo",   sublabel: "Urgente",        bg: "bg-triage-yellow", text: "text-triage-yellow", border: "border-triage-yellow/40" },
-  green:  { label: "Verde",     sublabel: "Pouco Urgente",  bg: "bg-triage-green",  text: "text-triage-green",  border: "border-triage-green/40" },
-  blue:   { label: "Azul",      sublabel: "Não Urgente",    bg: "bg-triage-blue",   text: "text-triage-blue",   border: "border-triage-blue/40" },
+  red:    { label: "Vermelho",  sublabel: "Emergência",     bg: "bg-triage-red",    },
+  orange: { label: "Laranja",   sublabel: "Muito Urgente",  bg: "bg-triage-orange", },
+  yellow: { label: "Amarelo",   sublabel: "Urgente",        bg: "bg-triage-yellow", },
+  green:  { label: "Verde",     sublabel: "Pouco Urgente",  bg: "bg-triage-green",  },
+  blue:   { label: "Azul",      sublabel: "Não Urgente",    bg: "bg-triage-blue",   },
 } as const;
 
 type TriageKey = keyof typeof TRIAGE_CONFIG;
@@ -54,6 +54,116 @@ const SECTOR_FILTERS = [
   "Medicação",
 ];
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
+interface PatientCardProps {
+  patient: Patient;
+  onEdit: (p: Patient) => void;
+  onAlta: (p: Patient) => void;
+}
+
+const PatientCard = memo(function PatientCard({ patient, onEdit, onAlta }: PatientCardProps) {
+  const cfg = TRIAGE_CONFIG[patient.status as TriageKey] ?? TRIAGE_CONFIG.blue;
+  const hasVitals = patient.heartRate > 0 || patient.respiratoryRate > 0 || patient.glucose > 0;
+
+  return (
+    <Card className="h-full flex flex-col overflow-hidden border-border/50">
+      <Link href={`/patients/${patient.id}`} className="block">
+        <div className={`${cfg.bg} px-3 py-2 flex items-center justify-between`}>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-white/70" />
+            <span className="text-xs font-bold text-white/95 tracking-wider uppercase">
+              {cfg.label} — {cfg.sublabel}
+            </span>
+          </div>
+          <span className="text-[11px] text-white/70">
+            {format(new Date(patient.createdAt), "dd/MM HH:mm", { locale: ptBR })}
+          </span>
+        </div>
+      </Link>
+
+      <Link href={`/patients/${patient.id}`} className="flex-1 block">
+        <CardHeader className="pb-2 pt-3">
+          <div className="flex justify-between items-start gap-2">
+            <div className="min-w-0">
+              <CardTitle className="text-base truncate">{patient.name}</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                {patient.age} anos{patient.bed ? ` • Leito ${patient.bed}` : ""}
+              </CardDescription>
+            </div>
+            <span className="shrink-0 text-[11px] font-medium bg-muted/70 border border-border/60 px-2 py-0.5 rounded-full text-muted-foreground whitespace-nowrap">
+              {patient.sector}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="pb-3">
+          {patient.diagnosis && (
+            <p className="text-sm text-muted-foreground truncate mb-3" title={patient.diagnosis}>
+              {patient.diagnosis}
+            </p>
+          )}
+          {hasVitals && (
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="bg-background/50 rounded p-2 border border-border/50">
+                <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                  <HeartPulse className="h-3 w-3" /> FC
+                </div>
+                <div className="font-mono font-semibold">
+                  {patient.heartRate > 0
+                    ? <>{patient.heartRate} <span className="text-[10px] text-muted-foreground font-normal">bpm</span></>
+                    : "—"}
+                </div>
+              </div>
+              <div className="bg-background/50 rounded p-2 border border-border/50">
+                <div className="text-muted-foreground mb-1">FR</div>
+                <div className="font-mono font-semibold">
+                  {patient.respiratoryRate > 0
+                    ? <>{patient.respiratoryRate} <span className="text-[10px] text-muted-foreground font-normal">irpm</span></>
+                    : "—"}
+                </div>
+              </div>
+              <div className="bg-background/50 rounded p-2 border border-border/50">
+                <div className="text-muted-foreground mb-1">Gli.</div>
+                <div className="font-mono font-semibold">
+                  {patient.glucose > 0
+                    ? <>{patient.glucose} <span className="text-[10px] text-muted-foreground font-normal">mg/dL</span></>
+                    : "—"}
+                </div>
+              </div>
+            </div>
+          )}
+          {patient.nurse && (
+            <p className="text-xs text-muted-foreground mt-2 truncate">Resp.: {patient.nurse}</p>
+          )}
+        </CardContent>
+      </Link>
+
+      <div className="border-t border-border/50 px-3 py-2 flex items-center justify-end gap-1">
+        <Button
+          size="sm" variant="ghost" className="h-7 text-xs"
+          onClick={() => onEdit(patient)}
+        >
+          <Pencil className="h-3 w-3 mr-1" /> Editar
+        </Button>
+        <Button
+          size="sm" variant="ghost"
+          className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={() => onAlta(patient)}
+        >
+          <LogOut className="h-3 w-3 mr-1" /> Alta
+        </Button>
+      </div>
+    </Card>
+  );
+});
+
 export default function Dashboard() {
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -61,6 +171,8 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [sectorFilter, setSectorFilter] = useState("Todos");
   const [triageFilter, setTriageFilter] = useState("all");
+
+  const debouncedSearch = useDebounce(search, 200);
 
   const { data: patients, isLoading: isLoadingPatients } = useListPatients();
   const { data: summary, isLoading: isLoadingSummary } = useGetPatientsSummary();
@@ -70,18 +182,21 @@ export default function Dashboard() {
 
   const filtered = useMemo(() => {
     if (!patients) return [];
+    const q = debouncedSearch.toLowerCase();
     return patients
       .filter(p => {
-        const q = search.toLowerCase();
         const matchesSearch = !q || p.name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
         const matchesSector = sectorFilter === "Todos" || p.sector === sectorFilter;
         const matchesTriage = triageFilter === "all" || p.status === triageFilter;
         return matchesSearch && matchesSector && matchesTriage;
       })
       .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99));
-  }, [patients, search, sectorFilter, triageFilter]);
+  }, [patients, debouncedSearch, sectorFilter, triageFilter]);
 
-  const handleAlta = () => {
+  const handleEdit = useCallback((p: Patient) => setEditingPatient(p), []);
+  const handleAlta = useCallback((p: Patient) => setAltaPatient(p), []);
+
+  const confirmAlta = () => {
     if (!altaPatient) return;
     deletePatient.mutate({ id: altaPatient.id }, {
       onSuccess: () => {
@@ -94,14 +209,14 @@ export default function Dashboard() {
     });
   };
 
-  const summaryCards = [
-    { key: "total",  label: "Total",    value: summary?.total,  color: "text-foreground",     borderClass: "border-border/50",          icon: <Users className="h-4 w-4 text-muted-foreground" /> },
-    { key: "red",    label: "Vermelho", value: summary?.red,    color: "text-triage-red",    borderClass: "border-triage-red/40",    icon: <span className="w-3 h-3 rounded-full bg-triage-red" /> },
-    { key: "orange", label: "Laranja",  value: summary?.orange, color: "text-triage-orange", borderClass: "border-triage-orange/40", icon: <span className="w-3 h-3 rounded-full bg-triage-orange" /> },
-    { key: "yellow", label: "Amarelo",  value: summary?.yellow, color: "text-triage-yellow", borderClass: "border-triage-yellow/40", icon: <span className="w-3 h-3 rounded-full bg-triage-yellow" /> },
-    { key: "green",  label: "Verde",    value: summary?.green,  color: "text-triage-green",  borderClass: "border-triage-green/40",  icon: <span className="w-3 h-3 rounded-full bg-triage-green" /> },
-    { key: "blue",   label: "Azul",     value: summary?.blue,   color: "text-triage-blue",   borderClass: "border-triage-blue/40",   icon: <span className="w-3 h-3 rounded-full bg-triage-blue" /> },
-  ];
+  const summaryCards = useMemo(() => [
+    { key: "total",  label: "Total",    value: summary?.total,  colorCls: "text-foreground",      dotCls: "" },
+    { key: "red",    label: "Vermelho", value: summary?.red,    colorCls: "text-triage-red",    dotCls: "bg-triage-red" },
+    { key: "orange", label: "Laranja",  value: summary?.orange, colorCls: "text-triage-orange", dotCls: "bg-triage-orange" },
+    { key: "yellow", label: "Amarelo",  value: summary?.yellow, colorCls: "text-triage-yellow", dotCls: "bg-triage-yellow" },
+    { key: "green",  label: "Verde",    value: summary?.green,  colorCls: "text-triage-green",  dotCls: "bg-triage-green" },
+    { key: "blue",   label: "Azul",     value: summary?.blue,   colorCls: "text-triage-blue",   dotCls: "bg-triage-blue" },
+  ], [summary]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -119,30 +234,31 @@ export default function Dashboard() {
       </header>
 
       <main className="flex-1 container mx-auto px-4 py-6">
-        {/* Summary Cards */}
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6">
           {summaryCards.map(card => (
             <Card
               key={card.key}
-              className={`${card.borderClass} cursor-pointer transition-all hover:bg-muted/20 ${triageFilter === card.key ? "ring-1 ring-primary/50 bg-muted/20" : ""}`}
+              className={`cursor-pointer border-border/50 ${triageFilter === card.key ? "ring-1 ring-primary/50 bg-muted/20" : ""}`}
               onClick={() => setTriageFilter(card.key !== "total" ? (triageFilter === card.key ? "all" : card.key) : "all")}
               data-testid={`card-summary-${card.key}`}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
                 <CardTitle className="text-xs font-medium text-muted-foreground">{card.label}</CardTitle>
-                {card.icon}
+                {card.dotCls
+                  ? <span className={`w-3 h-3 rounded-full ${card.dotCls}`} />
+                  : <Users className="h-4 w-4 text-muted-foreground" />
+                }
               </CardHeader>
               <CardContent className="pb-3 px-3">
                 {isLoadingSummary
                   ? <Skeleton className="h-7 w-10" />
-                  : <div className={`text-2xl font-bold ${card.color}`}>{card.value ?? 0}</div>
+                  : <div className={`text-2xl font-bold ${card.colorCls}`}>{card.value ?? 0}</div>
                 }
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -180,7 +296,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Heading */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Pacientes Ativos
@@ -189,10 +304,9 @@ export default function Dashboard() {
           <span className="text-xs text-muted-foreground">Ordenado por gravidade</span>
         </div>
 
-        {/* Patient Grid */}
         {isLoadingPatients ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <Card key={i} className="border-border/50 overflow-hidden">
                 <Skeleton className="h-10 w-full rounded-none" />
                 <CardHeader className="pb-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2 mt-1" /></CardHeader>
@@ -212,108 +326,18 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map(patient => {
-              const cfg = TRIAGE_CONFIG[patient.status as TriageKey] ?? TRIAGE_CONFIG.blue;
-              const hasVitals = patient.heartRate > 0 || patient.respiratoryRate > 0 || patient.glucose > 0;
-              return (
-                <div key={patient.id} data-testid={`card-patient-${patient.id}`}>
-                  <Card className="h-full flex flex-col overflow-hidden border-border/50 transition-all hover:shadow-lg hover:shadow-black/20">
-
-                    {/* Triage Classification Band — prominent at top */}
-                    <Link href={`/patients/${patient.id}`} className="block">
-                      <div className={`${cfg.bg} px-3 py-2 flex items-center justify-between`}>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-white/70" />
-                          <span className="text-xs font-bold text-white/95 tracking-wider uppercase">
-                            {cfg.label} — {cfg.sublabel}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-white/70">
-                          {format(new Date(patient.createdAt), "dd/MM HH:mm", { locale: ptBR })}
-                        </span>
-                      </div>
-                    </Link>
-
-                    {/* Card Body — clickable, navigates to detail */}
-                    <Link href={`/patients/${patient.id}`} className="flex-1 block hover:bg-muted/10 transition-colors">
-                      <CardHeader className="pb-2 pt-3">
-                        <div className="flex justify-between items-start gap-2">
-                          <div className="min-w-0">
-                            <CardTitle className="text-base truncate">{patient.name}</CardTitle>
-                            <CardDescription className="text-xs mt-0.5">
-                              {patient.age} anos{patient.bed ? ` • Leito ${patient.bed}` : ""}
-                            </CardDescription>
-                          </div>
-                          {/* Sector badge — highlighted */}
-                          <span className="shrink-0 text-[11px] font-medium bg-muted/70 border border-border/60 px-2 py-0.5 rounded-full text-muted-foreground whitespace-nowrap">
-                            {patient.sector}
-                          </span>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pb-3">
-                        {patient.diagnosis && (
-                          <p className="text-sm text-muted-foreground truncate mb-3" title={patient.diagnosis}>
-                            {patient.diagnosis}
-                          </p>
-                        )}
-                        {hasVitals && (
-                          <div className="grid grid-cols-3 gap-2 text-xs">
-                            <div className="bg-background/50 rounded p-2 border border-border/50">
-                              <div className="flex items-center gap-1 text-muted-foreground mb-1">
-                                <HeartPulse className="h-3 w-3" /> FC
-                              </div>
-                              <div className="font-mono font-semibold">
-                                {patient.heartRate > 0 ? <>{patient.heartRate} <span className="text-[10px] text-muted-foreground font-normal">bpm</span></> : "—"}
-                              </div>
-                            </div>
-                            <div className="bg-background/50 rounded p-2 border border-border/50">
-                              <div className="text-muted-foreground mb-1">FR</div>
-                              <div className="font-mono font-semibold">
-                                {patient.respiratoryRate > 0 ? <>{patient.respiratoryRate} <span className="text-[10px] text-muted-foreground font-normal">irpm</span></> : "—"}
-                              </div>
-                            </div>
-                            <div className="bg-background/50 rounded p-2 border border-border/50">
-                              <div className="text-muted-foreground mb-1">Gli.</div>
-                              <div className="font-mono font-semibold">
-                                {patient.glucose > 0 ? <>{patient.glucose} <span className="text-[10px] text-muted-foreground font-normal">mg/dL</span></> : "—"}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {patient.nurse && (
-                          <p className="text-xs text-muted-foreground mt-2 truncate">
-                            Resp.: {patient.nurse}
-                          </p>
-                        )}
-                      </CardContent>
-                    </Link>
-
-                    {/* Action row — outside Link, no navigation */}
-                    <div className="border-t border-border/50 px-3 py-2 flex items-center justify-end gap-1">
-                      <Button
-                        size="sm" variant="ghost" className="h-7 text-xs"
-                        onClick={() => setEditingPatient(patient)}
-                      >
-                        <Pencil className="h-3 w-3 mr-1" /> Editar
-                      </Button>
-                      <Button
-                        size="sm" variant="ghost"
-                        className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => setAltaPatient(patient)}
-                      >
-                        <LogOut className="h-3 w-3 mr-1" /> Alta
-                      </Button>
-                    </div>
-
-                  </Card>
-                </div>
-              );
-            })}
+            {filtered.map(patient => (
+              <PatientCard
+                key={patient.id}
+                patient={patient}
+                onEdit={handleEdit}
+                onAlta={handleAlta}
+              />
+            ))}
           </div>
         )}
       </main>
 
-      {/* Nova Admissão Dialog */}
       <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
         <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -324,7 +348,6 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Editar Paciente Dialog */}
       <Dialog open={!!editingPatient} onOpenChange={open => { if (!open) setEditingPatient(null); }}>
         <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -341,7 +364,6 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Alta AlertDialog */}
       <AlertDialog open={!!altaPatient} onOpenChange={open => { if (!open) setAltaPatient(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -353,7 +375,7 @@ export default function Dashboard() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deletePatient.isPending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={e => { e.preventDefault(); handleAlta(); }}
+              onClick={e => { e.preventDefault(); confirmAlta(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deletePatient.isPending}
             >
