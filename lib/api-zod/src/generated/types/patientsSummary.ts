@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface PatientsSummary {
+  total: number;
+  critical: number;
+  observation: number;
+  stable: number;
 }

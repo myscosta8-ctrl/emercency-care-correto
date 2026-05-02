@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: UPA Patient Management API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: patients
+    description: Patient operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,111 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /patients:
+    get:
+      operationId: listPatients
+      tags: [patients]
+      summary: List all patients
+      responses:
+        "200":
+          description: List of patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Patient"
+    post:
+      operationId: createPatient
+      tags: [patients]
+      summary: Create a new patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePatientBody"
+      responses:
+        "201":
+          description: Created patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+
+  /patients/summary:
+    get:
+      operationId: getPatientsSummary
+      tags: [patients]
+      summary: Get dashboard summary counts
+      responses:
+        "200":
+          description: Patient summary stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientsSummary"
+
+  /patients/{id}:
+    get:
+      operationId: getPatient
+      tags: [patients]
+      summary: Get a single patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not found
+    put:
+      operationId: updatePatient
+      tags: [patients]
+      summary: Update a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePatientBody"
+      responses:
+        "200":
+          description: Updated patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not found
+    delete:
+      operationId: deletePatient
+      tags: [patients]
+      summary: Delete a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +141,96 @@ components:
       required:
         - status
 
+    Patient:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        age:
+          type: integer
+        bed:
+          type: string
+        diagnosis:
+          type: string
+        heartRate:
+          type: integer
+        respiratoryRate:
+          type: integer
+        glucose:
+          type: number
+        status:
+          type: string
+          enum: [critical, observation, stable]
+        sector:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - age
+        - bed
+        - diagnosis
+        - heartRate
+        - respiratoryRate
+        - glucose
+        - status
+        - sector
+        - createdAt
+        - updatedAt
+
+    CreatePatientBody:
+      type: object
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+        bed:
+          type: string
+        diagnosis:
+          type: string
+        heartRate:
+          type: integer
+        respiratoryRate:
+          type: integer
+        glucose:
+          type: number
+        status:
+          type: string
+          enum: [critical, observation, stable]
+        sector:
+          type: string
+      required:
+        - name
+        - age
+        - bed
+        - diagnosis
+        - heartRate
+        - respiratoryRate
+        - glucose
+        - status
+        - sector
+
+    PatientsSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        critical:
+          type: integer
+        observation:
+          type: integer
+        stable:
+          type: integer
+      required:
+        - total
+        - critical
+        - observation
+        - stable
