@@ -180,6 +180,28 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   telefone:        { x: 69,  y: 366, maxWidth: 140 },
 };
 
+// ─── AIDS ADULTO ─────────────────────────────────────────────────────────────
+// [F] nome pdf_y=607,x=68→fill y=593; data_nasc pdf_y=607,x=457→fill y=593
+//     sexo pdf_y=578,x=163→fill y=564; cns pdf_y=517,x=71→fill y=503
+//     mae pdf_y=516,x=245→fill y=502; municipio pdf_y=484,x=95→fill y=470
+//     bairro pdf_y=459,x=67→fill y=445; logradouro pdf_y=458,x=207→fill y=444
+//     numero pdf_y=435,x=68→fill y=421; cep pdf_y=407,x=471→fill y=393
+//     telefone pdf_y=384,x=69→fill y=370
+const COORDS_AIDS_ADULTO: FormCoords = {
+  nome_completo:   { x: 68,  y: 593, maxWidth: 380 },
+  data_nascimento: { x: 457, y: 593, maxWidth: 110 },
+  idade:           { x: 65,  y: 564, maxWidth: 88  },
+  sexo:            { x: 163, y: 564, maxWidth: 88  },
+  cns:             { x: 71,  y: 503, maxWidth: 165 },
+  nome_mae:        { x: 245, y: 502, maxWidth: 290 },
+  municipio:       { x: 95,  y: 470, maxWidth: 250 },
+  bairro:          { x: 67,  y: 445, maxWidth: 130 },
+  logradouro:      { x: 207, y: 444, maxWidth: 200 },
+  numero_end:      { x: 68,  y: 421, maxWidth: 100 },
+  cep:             { x: 471, y: 393, maxWidth: 100 },
+  telefone:        { x: 69,  y: 370, maxWidth: 140 },
+};
+
 // ─── EXANTEMATICA ────────────────────────────────────────────────────────────
 // [F] nome pdf_y=564,x=67→fill y=550; data_nasc pdf_y=564,x=457→fill y=550
 //     sexo pdf_y=535,x=162→fill y=521; cns pdf_y=474,x=69→fill y=460
@@ -225,7 +247,7 @@ const COORDS: Record<string, FormCoords> = {
   febre_amarela: COORDS_FEBRE_AMARELA,
   febre_tifoide: COORDS_FEBRE_TIFOIDE,
   exantematica:  COORDS_EXANTEMATICA,
-  aids_adulto:   COORDS_NOTIF_INDIVIDUAL, // complex Formax form; notif-individual proxy
+  aids_adulto:   COORDS_AIDS_ADULTO,
   violencia:     COORDS_NOTIF_INDIVIDUAL,
   outros:        COORDS_NOTIF_INDIVIDUAL,
 };
