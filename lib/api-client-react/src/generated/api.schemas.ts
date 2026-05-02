@@ -30,6 +30,7 @@ export interface Patient {
   glucose: number;
   status: TriageStatus;
   sector: string;
+  nurse: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +45,7 @@ export interface CreatePatientBody {
   glucose: number;
   status: TriageStatus;
   sector: string;
+  nurse: string;
 }
 
 export interface UpdatePatientStatusBody {

@@ -28,6 +28,7 @@ export const ListPatientsResponseItem = zod.object({
   glucose: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  nurse: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -46,6 +47,7 @@ export const CreatePatientBody = zod.object({
   glucose: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  nurse: zod.string(),
 });
 
 /**
@@ -78,6 +80,7 @@ export const GetPatientResponse = zod.object({
   glucose: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  nurse: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -99,6 +102,7 @@ export const UpdatePatientBody = zod.object({
   glucose: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  nurse: zod.string(),
 });
 
 export const UpdatePatientResponse = zod.object({
@@ -112,6 +116,7 @@ export const UpdatePatientResponse = zod.object({
   glucose: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  nurse: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -145,6 +150,7 @@ export const UpdatePatientStatusResponse = zod.object({
   glucose: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  nurse: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });

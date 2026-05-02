@@ -194,6 +194,8 @@ components:
           $ref: "#/components/schemas/TriageStatus"
         sector:
           type: string
+        nurse:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -211,6 +213,7 @@ components:
         - glucose
         - status
         - sector
+        - nurse
         - createdAt
         - updatedAt
 
@@ -235,6 +238,8 @@ components:
           $ref: "#/components/schemas/TriageStatus"
         sector:
           type: string
+        nurse:
+          type: string
       required:
         - name
         - age
@@ -245,6 +250,7 @@ components:
         - glucose
         - status
         - sector
+        - nurse
 
     UpdatePatientStatusBody:
       type: object

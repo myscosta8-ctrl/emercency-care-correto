@@ -13,6 +13,7 @@ export const patientsTable = pgTable("patients", {
   glucose: real("glucose").notNull(),
   status: text("status", { enum: ["red", "orange", "yellow", "green", "blue"] }).notNull(),
   sector: text("sector").notNull(),
+  nurse: text("nurse").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -13,7 +13,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity, ArrowLeft, Edit, Trash2, HeartPulse,
-  Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
+  Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw, UserCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -129,7 +129,7 @@ export default function PatientDetail() {
             </Button>
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
-              <span className="font-semibold tracking-tight hidden sm:inline">UPA Command Center</span>
+              <span className="font-semibold tracking-tight hidden sm:inline">UPA Breves — Gestão de Pacientes</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -251,6 +251,13 @@ export default function PatientDetail() {
                   <div>
                     <p className="text-xs text-muted-foreground">Leito</p>
                     <p className="font-medium">{patient.bed}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <UserCheck className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Enfermeiro(a) Responsável</p>
+                    <p className="font-medium">{patient.nurse || "—"}</p>
                   </div>
                 </div>
               </CardContent>

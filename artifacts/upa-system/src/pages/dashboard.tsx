@@ -30,7 +30,15 @@ const TRIAGE_CONFIG = {
 
 type TriageKey = keyof typeof TRIAGE_CONFIG;
 
-const SECTOR_FILTERS = ["Todos", "Sala Vermelha", "Sala Amarela", "Sala de Observação"];
+const SECTOR_FILTERS = [
+  "Todos",
+  "Sala Vermelha",
+  "Sala Amarela Adulto",
+  "Sala Amarela Pediátrica",
+  "Observação Masculina",
+  "Observação Feminina",
+  "Medicação",
+];
 
 function TriageBadge({ status }: { status: string }) {
   const cfg = TRIAGE_CONFIG[status as TriageKey];
@@ -78,7 +86,7 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight">UPA Command Center</h1>
+            <h1 className="text-xl font-bold tracking-tight">UPA Breves — Gestão de Pacientes</h1>
           </div>
           <Button onClick={() => setIsNewPatientOpen(true)} data-testid="button-new-patient">
             <UserPlus className="mr-2 h-4 w-4" />
@@ -227,7 +235,7 @@ export default function Dashboard() {
         <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Admitir Novo Paciente</DialogTitle>
-            <DialogDescription>Preencha os dados do paciente e a triagem Manchester.</DialogDescription>
+            <DialogDescription>Preencha os dados, triagem Manchester e enfermeiro(a) responsável.</DialogDescription>
           </DialogHeader>
           <PatientForm onSuccess={() => setIsNewPatientOpen(false)} onCancel={() => setIsNewPatientOpen(false)} />
         </DialogContent>

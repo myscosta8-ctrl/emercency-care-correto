@@ -39,15 +39,11 @@ const TRIAGE_OPTIONS = [
 
 const SECTOR_OPTIONS = [
   "Sala Vermelha",
-  "Sala Amarela",
-  "Sala de Observação",
-  "Cardiologia",
-  "Pneumologia",
-  "Neurologia",
-  "Ortopedia",
-  "Cirurgia Geral",
-  "Endocrinologia",
-  "Pediatria",
+  "Sala Amarela Adulto",
+  "Sala Amarela Pediátrica",
+  "Observação Masculina",
+  "Observação Feminina",
+  "Medicação",
 ];
 
 const formSchema = z.object({
@@ -60,6 +56,7 @@ const formSchema = z.object({
   glucose: z.coerce.number().min(0, "Glicose inválida"),
   status: z.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: z.string().min(1, "Setor é obrigatório"),
+  nurse: z.string().min(1, "Enfermeiro(a) é obrigatório"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -86,6 +83,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       glucose: patient?.glucose ?? 0,
       status: (patient?.status as FormValues["status"]) ?? "yellow",
       sector: patient?.sector ?? "",
+      nurse: patient?.nurse ?? "",
     },
   });
 
@@ -197,6 +195,18 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
                     ))}
                   </SelectContent>
                 </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="nurse"
+            render={({ field }) => (
+              <FormItem className="col-span-2">
+                <FormLabel>Enfermeiro(a) Responsável</FormLabel>
+                <FormControl><Input placeholder="Nome do enfermeiro(a)" data-testid="input-nurse" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
