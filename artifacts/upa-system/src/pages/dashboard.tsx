@@ -175,7 +175,7 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground mt-1">
               {search || sectorFilter !== "Todos" || triageFilter !== "all"
                 ? "Tente ajustar os filtros de busca."
-                : "Clique em 'Novo Paciente' para admitir alguém."}
+                : "Clique em 'Novo Paciente' para registrar uma admissão."}
             </p>
           </div>
         ) : (
@@ -214,8 +214,8 @@ export default function Dashboard() {
                           <div className="font-mono font-semibold">{patient.respiratoryRate} <span className="text-[10px] text-muted-foreground font-normal">irpm</span></div>
                         </div>
                         <div className="bg-background/50 rounded p-2 border border-border/50">
-                          <div className="text-muted-foreground mb-1">Gluc</div>
-                          <div className="font-mono font-semibold">{patient.glucose}</div>
+                          <div className="text-muted-foreground mb-1">Gli.</div>
+                          <div className="font-mono font-semibold">{patient.glucose} <span className="text-[10px] text-muted-foreground font-normal">mg/dL</span></div>
                         </div>
                       </div>
                     </CardContent>

@@ -72,11 +72,11 @@ export default function PatientDetail() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
-        toast({ title: "Paciente removido" });
+        toast({ title: "Alta registrada com sucesso" });
         setLocation("/");
       },
       onError: () => {
-        toast({ title: "Erro ao remover paciente", variant: "destructive" });
+        toast({ title: "Não foi possível registrar a alta", variant: "destructive" });
         setIsDeleteOpen(false);
       },
     });
@@ -172,7 +172,7 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Diagnóstico</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Hipótese Diagnóstica</p>
                   <p className="text-base font-medium">{patient.diagnosis}</p>
                 </div>
               </CardContent>
@@ -210,7 +210,7 @@ export default function PatientDetail() {
                 </Card>
                 <Card className="border-border/50 bg-card/50">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Glicose</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Glicemia</CardTitle>
                     <Droplet className="h-4 w-4 text-triage-yellow" />
                   </CardHeader>
                   <CardContent>
@@ -302,8 +302,8 @@ export default function PatientDetail() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Registro do Paciente</DialogTitle>
-            <DialogDescription>Atualize dados e sinais vitais.</DialogDescription>
+            <DialogTitle>Editar Prontuário</DialogTitle>
+            <DialogDescription>Atualize os dados clínicos e sinais vitais do paciente.</DialogDescription>
           </DialogHeader>
           <PatientForm patient={patient} onSuccess={() => setIsEditOpen(false)} onCancel={() => setIsEditOpen(false)} />
         </DialogContent>
@@ -312,9 +312,9 @@ export default function PatientDetail() {
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover Paciente</AlertDialogTitle>
+            <AlertDialogTitle>Alta / Remoção do Paciente</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja dar alta ou remover <strong>{patient.name}</strong> do sistema? Esta ação não pode ser desfeita.
+              Confirma a alta ou remoção de <strong>{patient.name}</strong> do sistema? O registro será excluído permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -47,16 +47,16 @@ const SECTOR_OPTIONS = [
 ];
 
 const formSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  age: z.coerce.number().min(0, "Idade inválida"),
-  bed: z.string().min(1, "Leito é obrigatório"),
-  diagnosis: z.string().min(1, "Diagnóstico é obrigatório"),
-  heartRate: z.coerce.number().min(0, "FC inválida"),
-  respiratoryRate: z.coerce.number().min(0, "FR inválida"),
-  glucose: z.coerce.number().min(0, "Glicose inválida"),
+  name: z.string().min(1, "Informe o nome completo do paciente"),
+  age: z.coerce.number().min(0, "Informe uma idade válida"),
+  bed: z.string().min(1, "Informe o número do leito"),
+  diagnosis: z.string().min(1, "Informe a hipótese diagnóstica"),
+  heartRate: z.coerce.number().min(0, "Informe a frequência cardíaca"),
+  respiratoryRate: z.coerce.number().min(0, "Informe a frequência respiratória"),
+  glucose: z.coerce.number().min(0, "Informe o valor da glicemia"),
   status: z.enum(["red", "orange", "yellow", "green", "blue"]),
-  sector: z.string().min(1, "Setor é obrigatório"),
-  nurse: z.string().min(1, "Enfermeiro(a) é obrigatório"),
+  sector: z.string().min(1, "Selecione o setor de atendimento"),
+  nurse: z.string().min(1, "Informe o enfermeiro(a) responsável"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -255,7 +255,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             name="glucose"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Glicose (mg/dL)</FormLabel>
+                <FormLabel>Glicemia (mg/dL)</FormLabel>
                 <FormControl><Input type="number" data-testid="input-glucose" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
