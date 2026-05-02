@@ -7,6 +7,7 @@ export interface PdfPatient {
   birthDate?: string | null;
   age?: number | null;
   sex?: string | null;
+  race?: string | null;           // raca_cor: "Branca"|"Preta"|"Amarela"|"Parda"|"Indígena"|"Ignorada"
   motherName?: string | null;
   cns?: string | null;
   cpf?: string | null;
@@ -74,6 +75,7 @@ const COORDS_DENGUE: FormCoords = {
   data_nascimento:      { x: 459, y: 565, maxWidth: 110 },
   idade:                { x: 65,  y: 535, maxWidth: 88  },
   sexo:                 { x: 162, y: 535, maxWidth: 88  },
+  raca_cor:             { x: 260, y: 535, maxWidth: 88  },  // [O] right of sexo
   cns:                  { x: 68,  y: 474, maxWidth: 170 },
   nome_mae:             { x: 247, y: 474, maxWidth: 290 },
   cidade:               { x: 97,  y: 443, maxWidth: 310 },
@@ -96,6 +98,7 @@ const COORDS_TUBERCULOSE: FormCoords = {
   data_nascimento:      { x: 455, y: 619, maxWidth: 110 },
   idade:                { x: 66,  y: 589, maxWidth: 88  },
   sexo:                 { x: 165, y: 589, maxWidth: 88  },
+  raca_cor:             { x: 263, y: 589, maxWidth: 88  },  // [O] right of sexo
   cns:                  { x: 69,  y: 528, maxWidth: 162 },
   nome_mae:             { x: 243, y: 527, maxWidth: 295 },
   cidade:               { x: 98,  y: 497, maxWidth: 305 },
@@ -118,6 +121,7 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
   data_nascimento:      { x: 458, y: 604, maxWidth: 110 },
   idade:                { x: 65,  y: 575, maxWidth: 88  },
   sexo:                 { x: 163, y: 575, maxWidth: 88  },
+  raca_cor:             { x: 261, y: 575, maxWidth: 88  },  // [O] right of sexo
   cns:                  { x: 68,  y: 514, maxWidth: 168 },
   nome_mae:             { x: 243, y: 513, maxWidth: 292 },
   cidade:               { x: 95,  y: 483, maxWidth: 308 },
@@ -140,6 +144,7 @@ const COORDS_MENINGITE: FormCoords = {
   data_nascimento:      { x: 461, y: 600, maxWidth: 110 },
   idade:                { x: 70,  y: 571, maxWidth: 88  },
   sexo:                 { x: 166, y: 571, maxWidth: 88  },
+  raca_cor:             { x: 264, y: 571, maxWidth: 88  },  // [O] right of sexo
   cns:                  { x: 69,  y: 510, maxWidth: 168 },
   nome_mae:             { x: 243, y: 509, maxWidth: 292 },
   cidade:               { x: 97,  y: 479, maxWidth: 308 },
@@ -165,6 +170,7 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
   data_nascimento:      { x: 458, y: 641, maxWidth: 110 },
   idade:                { x: 67,  y: 612, maxWidth: 88  },
   sexo:                 { x: 163, y: 612, maxWidth: 88  },
+  raca_cor:             { x: 261, y: 612, maxWidth: 88  },  // [O] right of sexo
   cns:                  { x: 70,  y: 551, maxWidth: 168 },
   nome_mae:             { x: 245, y: 550, maxWidth: 292 },
   cidade:               { x: 93,  y: 454, maxWidth: 308 },
@@ -187,6 +193,7 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   data_nascimento:      { x: 456, y: 590, maxWidth: 110 },
   idade:                { x: 66,  y: 560, maxWidth: 88  },
   sexo:                 { x: 165, y: 560, maxWidth: 88  },
+  raca_cor:             { x: 263, y: 560, maxWidth: 88  },  // [O] right of sexo
   cns:                  { x: 69,  y: 499, maxWidth: 168 },
   nome_mae:             { x: 243, y: 498, maxWidth: 292 },
   cidade:               { x: 97,  y: 468, maxWidth: 308 },
@@ -212,6 +219,7 @@ const COORDS_AIDS_ADULTO: FormCoords = {
   data_nascimento:      { x: 457, y: 593, maxWidth: 110 },
   idade:                { x: 65,  y: 564, maxWidth: 88  },
   sexo:                 { x: 163, y: 564, maxWidth: 88  },
+  raca_cor:             { x: 261, y: 564, maxWidth: 88  },  // [O] right of sexo
   cns:                  { x: 71,  y: 503, maxWidth: 165 },
   nome_mae:             { x: 245, y: 502, maxWidth: 290 },
   cidade:               { x: 95,  y: 470, maxWidth: 240 },
@@ -237,6 +245,7 @@ const COORDS_EXANTEMATICA: FormCoords = {
   data_nascimento:      { x: 457, y: 550, maxWidth: 110 },
   idade:                { x: 65,  y: 521, maxWidth: 88  },
   sexo:                 { x: 162, y: 521, maxWidth: 88  },
+  raca_cor:             { x: 260, y: 521, maxWidth: 88  },  // [O] right of sexo
   cns:                  { x: 69,  y: 460, maxWidth: 168 },
   nome_mae:             { x: 244, y: 459, maxWidth: 292 },
   cidade:               { x: 94,  y: 428, maxWidth: 308 },
@@ -321,7 +330,8 @@ function buildFieldValues(patient: PdfPatient): Record<string, string> {
     uf:                   patient.addressState   ?? "",
     cep:                  patient.zipCode        ?? "",
     peso:                 patient.weight != null ? `${patient.weight}` : "",
-    // ── SINAN overlay-only fields (not AcroForm field names) ─────────────
+    // ── SINAN-context fields (have coord boxes on SINAN forms; not on Ficha ID)
+    raca_cor:             patient.race           ?? "",
     idade:                patient.age ? `${patient.age} anos` : "",
     sexo:                 sexLabel(patient.sex),
     telefone:             patient.phone          ?? "",
@@ -395,7 +405,8 @@ async function fillTemplate(
   draw("cidade");
   draw("uf");
   draw("cep");
-  // ── 3 SINAN-context fields — have coord boxes on SINAN forms; not on Ficha ID
+  // ── SINAN-context fields — have coord boxes on SINAN forms; not on Ficha ID
+  draw("raca_cor");
   draw("idade");
   draw("sexo");
   draw("telefone");
@@ -621,7 +632,8 @@ export interface DadosPaciente {
   uf?:                   string | null;
   cep?:                  string | null;
   peso?:                 string | number | null;   // "75" | 75 | 75.5
-  // ── SINAN-specific context fields ────────────────────────────────────────
+  // ── SINAN-context fields (have coord boxes on SINAN forms; not on Ficha ID)
+  raca_cor?:             string | null;            // "Branca"|"Preta"|"Amarela"|"Parda"|"Indígena"|"Ignorada"
   idade?:                string | number | null;   // "35" | 35
   sexo?:                 string | null;            // "M" | "F" | "I"
   telefone?:             string | null;
@@ -655,6 +667,7 @@ function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
     weight:             Number.isFinite(pesoNum) ? pesoNum : null,
     age:                Number.isFinite(idadeNum) ? idadeNum : null,
     sex:                d.sexo              ?? null,
+    race:               d.raca_cor          ?? null,
     phone:              d.telefone          ?? null,
   };
 }
