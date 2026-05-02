@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const TRIAGE_OPTIONS = [
   { value: "red",    label: "Vermelho — Emergência" },
@@ -39,12 +40,14 @@ const TRIAGE_OPTIONS = [
 
 const SECTOR_OPTIONS = [
   "Sala Vermelha",
-  "Sala Amarela Adulto",
-  "Sala Amarela Pediátrica",
-  "Observação Masculina",
-  "Observação Feminina",
-  "Medicação",
+  "Observação Adulto",
+  "Observação Pediátrica",
 ];
+
+const INTERNMENT_OPTIONS = [
+  { value: "internado",    label: "Internado" },
+  { value: "nao_internado", label: "Não internado" },
+] as const;
 
 const formSchema = z.object({
   name: z.string().min(1, "Informe o nome completo do paciente"),
@@ -53,6 +56,9 @@ const formSchema = z.object({
     errorMap: () => ({ message: "Selecione a classificação de triagem" }),
   }),
   sector: z.string().min(1, "Selecione o setor de atendimento"),
+  internmentStatus: z.enum(["internado", "nao_internado"], {
+    errorMap: () => ({ message: "Selecione o status de internação" }),
+  }),
   nurse: z.string().default(""),
   bed: z.string().default(""),
   diagnosis: z.string().default(""),
@@ -84,6 +90,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       age: patient?.age ?? 0,
       status: (patient?.status as FormValues["status"]) ?? "yellow",
       sector: patient?.sector ?? "",
+      internmentStatus: (patient?.internmentStatus as FormValues["internmentStatus"]) ?? undefined,
       nurse: patient?.nurse ?? "",
       bed: patient?.bed ?? "",
       diagnosis: patient?.diagnosis ?? "",
@@ -204,6 +211,50 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
                     ))}
                   </SelectContent>
                 </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Status de internação — required, full width */}
+          <FormField
+            control={form.control}
+            name="internmentStatus"
+            render={({ field }) => (
+              <FormItem className="col-span-2">
+                <FormLabel>Status de Internação</FormLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  {INTERNMENT_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => field.onChange(opt.value)}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-3 rounded-lg border text-sm font-medium transition-colors h-11",
+                        field.value === opt.value
+                          ? opt.value === "internado"
+                            ? "bg-blue-500/20 border-blue-500 text-blue-400"
+                            : "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                          : "bg-card/30 border-border/50 text-muted-foreground hover:bg-muted/30"
+                      )}
+                    >
+                      <span className={cn(
+                        "flex h-4 w-4 shrink-0 rounded-full border-2 items-center justify-center",
+                        field.value === opt.value
+                          ? opt.value === "internado" ? "border-blue-500" : "border-emerald-500"
+                          : "border-muted-foreground/40"
+                      )}>
+                        {field.value === opt.value && (
+                          <span className={cn(
+                            "h-2 w-2 rounded-full",
+                            opt.value === "internado" ? "bg-blue-500" : "bg-emerald-500"
+                          )} />
+                        )}
+                      </span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
                 <FormMessage />
               </FormItem>
             )}

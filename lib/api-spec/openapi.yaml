@@ -398,6 +398,9 @@ components:
           $ref: "#/components/schemas/TriageStatus"
         sector:
           type: string
+        internmentStatus:
+          type: string
+          enum: [internado, nao_internado]
         nurse:
           type: string
         createdAt:
@@ -421,6 +424,7 @@ components:
         - diastolicBp
         - status
         - sector
+        - internmentStatus
         - nurse
         - createdAt
         - updatedAt
@@ -454,6 +458,9 @@ components:
           $ref: "#/components/schemas/TriageStatus"
         sector:
           type: string
+        internmentStatus:
+          type: string
+          enum: [internado, nao_internado]
         nurse:
           type: string
       required:
@@ -461,6 +468,7 @@ components:
         - age
         - status
         - sector
+        - internmentStatus
 
     UpdatePatientStatusBody:
       type: object

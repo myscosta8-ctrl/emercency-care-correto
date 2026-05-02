@@ -32,6 +32,7 @@ export const ListPatientsResponseItem = zod.object({
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -55,6 +56,7 @@ export const CreatePatientBody = zod.object({
   diastolicBp: zod.number().optional(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string().optional(),
 });
 
@@ -92,6 +94,7 @@ export const GetPatientResponse = zod.object({
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -118,6 +121,7 @@ export const UpdatePatientBody = zod.object({
   diastolicBp: zod.number().optional(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string().optional(),
 });
 
@@ -136,6 +140,7 @@ export const UpdatePatientResponse = zod.object({
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -174,6 +179,7 @@ export const UpdatePatientStatusResponse = zod.object({
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -219,6 +225,7 @@ export const AddVitalsResponse = zod.object({
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
+  internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),

@@ -707,6 +707,15 @@ export default function PatientDetail() {
                     <p className="font-medium">{patient.sector}</p>
                   </div>
                 </div>
+                <div className="flex items-start gap-3">
+                  <span className="h-4 w-4 mt-0.5 shrink-0 flex items-center justify-center">
+                    <span className={`inline-block h-2.5 w-2.5 rounded-full ${patient.internmentStatus === "internado" ? "bg-blue-500" : "bg-emerald-500"}`} />
+                  </span>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Status de Internação</p>
+                    <p className="font-medium">{patient.internmentStatus === "internado" ? "Internado" : "Não internado"}</p>
+                  </div>
+                </div>
                 {patient.bed && (
                   <div className="flex items-start gap-3">
                     <BedDouble className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />

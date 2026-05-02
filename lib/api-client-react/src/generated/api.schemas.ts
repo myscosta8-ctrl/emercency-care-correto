@@ -19,6 +19,14 @@ export const TriageStatus = {
   blue: "blue",
 } as const;
 
+export type PatientInternmentStatus =
+  (typeof PatientInternmentStatus)[keyof typeof PatientInternmentStatus];
+
+export const PatientInternmentStatus = {
+  internado: "internado",
+  nao_internado: "nao_internado",
+} as const;
+
 export interface Patient {
   id: number;
   name: string;
@@ -34,10 +42,19 @@ export interface Patient {
   diastolicBp: number;
   status: TriageStatus;
   sector: string;
+  internmentStatus: PatientInternmentStatus;
   nurse: string;
   createdAt: string;
   updatedAt: string;
 }
+
+export type CreatePatientBodyInternmentStatus =
+  (typeof CreatePatientBodyInternmentStatus)[keyof typeof CreatePatientBodyInternmentStatus];
+
+export const CreatePatientBodyInternmentStatus = {
+  internado: "internado",
+  nao_internado: "nao_internado",
+} as const;
 
 export interface CreatePatientBody {
   name: string;
@@ -53,6 +70,7 @@ export interface CreatePatientBody {
   diastolicBp?: number;
   status: TriageStatus;
   sector: string;
+  internmentStatus: CreatePatientBodyInternmentStatus;
   nurse?: string;
 }
 

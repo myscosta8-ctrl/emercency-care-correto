@@ -47,11 +47,8 @@ const TRIAGE_SEVERITY: Record<string, number> = {
 const SECTOR_FILTERS = [
   "Todos",
   "Sala Vermelha",
-  "Sala Amarela Adulto",
-  "Sala Amarela Pediátrica",
-  "Observação Masculina",
-  "Observação Feminina",
-  "Medicação",
+  "Observação Adulto",
+  "Observação Pediátrica",
 ];
 
 function useDebounce<T>(value: T, delay: number): T {
