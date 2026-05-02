@@ -584,3 +584,91 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
   document.body.removeChild(link);
   URL.revokeObjectURL(href);
 }
+
+// ── gerarPDF — simplified Portuguese API ──────────────────────────────────────
+// Field names match the 14 standardized AcroForm field names exactly so the
+// caller can use the same object to fill any template:
+//
+//   gerarPDF("dengue", dadosPaciente)
+//   gerarPDF(["dengue", "covid19"], dadosPaciente)
+//
+// baseUrl defaults to "" (works for in-browser relative fetches).
+
+export interface DadosPaciente {
+  // ── 14 standard patient fields (match AcroForm field names) ────────────────
+  nome_paciente:         string;
+  nome_mae?:             string | null;
+  data_nascimento?:      string | null;   // ISO "YYYY-MM-DD" or "DD/MM/YYYY"
+  cpf?:                  string | null;
+  rg?:                   string | null;
+  cns?:                  string | null;
+  endereco_rua?:         string | null;
+  endereco_numero?:      string | null;
+  endereco_complemento?: string | null;
+  bairro?:               string | null;
+  cidade?:               string | null;
+  uf?:                   string | null;
+  cep?:                  string | null;
+  peso?:                 string | number | null;   // "75" | 75 | 75.5
+  // ── SINAN-specific context fields ────────────────────────────────────────
+  idade?:                string | number | null;   // "35" | 35
+  sexo?:                 string | null;            // "M" | "F" | "I"
+  telefone?:             string | null;
+}
+
+function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
+  // Normalise data_nascimento: if the user passes "DD/MM/YYYY" keep as-is;
+  // fmtDate() inside fillTemplate handles both formats (ISO and already formatted).
+  const rawDate = d.data_nascimento ?? null;
+  const isoDate = rawDate && /^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)
+    ? rawDate.split("/").reverse().join("-")   // "DD/MM/YYYY" → "YYYY-MM-DD"
+    : rawDate;
+
+  const pesoNum = d.peso != null ? parseFloat(String(d.peso)) : null;
+  const idadeNum = d.idade != null ? parseInt(String(d.idade), 10) : null;
+
+  return {
+    name:               d.nome_paciente,
+    motherName:         d.nome_mae          ?? null,
+    birthDate:          isoDate,
+    cpf:                d.cpf               ?? null,
+    rg:                 d.rg                ?? null,
+    cns:                d.cns               ?? null,
+    street:             d.endereco_rua      ?? null,
+    addressNumber:      d.endereco_numero   ?? null,
+    addressComplement:  d.endereco_complemento ?? null,
+    neighborhood:       d.bairro            ?? null,
+    city:               d.cidade            ?? null,
+    addressState:       d.uf                ?? null,
+    zipCode:            d.cep               ?? null,
+    weight:             Number.isFinite(pesoNum) ? pesoNum : null,
+    age:                Number.isFinite(idadeNum) ? idadeNum : null,
+    sex:                d.sexo              ?? null,
+    phone:              d.telefone          ?? null,
+  };
+}
+
+/**
+ * Gera e faz o download do PDF SINAN para o tipo de doença informado.
+ *
+ * @param tipoDoenca  Tipo de doença: string única ("dengue") ou array (["dengue","covid19"])
+ * @param dadosPaciente  Dados do paciente com os nomes de campo padronizados
+ * @param baseUrl  Prefixo de URL do app (padrão: "")
+ *
+ * @example
+ * await gerarPDF("dengue", {
+ *   nome_paciente: "Maria Silva",
+ *   cpf: "123.456.789-00",
+ *   peso: 68,
+ * });
+ */
+export async function gerarPDF(
+  tipoDoenca: string | string[],
+  dadosPaciente: DadosPaciente,
+  baseUrl = "",
+): Promise<void> {
+  const tipos = Array.isArray(tipoDoenca) ? tipoDoenca : [tipoDoenca];
+  const patient = dadosParaPdfPatient(dadosPaciente);
+  const notif: PdfNotification = { types: JSON.stringify(tipos) };
+  await downloadSinanPdf(patient, notif, baseUrl);
+}
