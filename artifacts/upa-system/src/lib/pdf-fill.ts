@@ -292,9 +292,17 @@ function sexLabel(sex?: string | null): string {
 }
 
 // ── field value map ───────────────────────────────────────────────────────────
-// Keys match the 12 standardized patient field names.
-// Extra SINAN-only keys (idade, sexo, telefone, numero_end) are included for
-// the text-overlay draw pass; they are not AcroForm field names.
+// Keys use the 14 standardized field names shared by BOTH systems (overlay + AcroForm):
+//   nome_paciente  nome_mae     data_nascimento  cpf
+//   rg             cns          endereco_rua     endereco_numero
+//   endereco_complemento  bairro  cidade         uf   cep   peso
+//
+// cpf / rg / peso have no coord boxes on SINAN forms — draw() silently skips
+// them (pos is undefined); AcroForm fill loop catches the missing-field error.
+// They ARE rendered on the Ficha de Identificação, which has all 14 fields.
+//
+// 3 SINAN-context keys (coord boxes exist on SINAN forms; not on Ficha ID):
+//   idade  sexo  telefone
 
 function buildFieldValues(patient: PdfPatient): Record<string, string> {
   return {
@@ -372,10 +380,13 @@ async function fillTemplate(
     page.drawText(text, { x: pos.x, y: pos.y, font: f, size: SIZE, color: INK });
   }
 
-  // 14 standard fields
+  // ── 14 standard fields — draw() silently skips any key whose coord is absent
   draw("nome_paciente",        true);
   draw("nome_mae");
   draw("data_nascimento");
+  draw("cpf");                   // no coord on SINAN forms → no-op; coord on Ficha ID
+  draw("rg");                    // same
+  draw("peso");                  // same
   draw("cns");
   draw("endereco_rua");
   draw("endereco_numero");
@@ -384,7 +395,7 @@ async function fillTemplate(
   draw("cidade");
   draw("uf");
   draw("cep");
-  // SINAN-only overlay fields (not AcroForm names)
+  // ── 3 SINAN-context fields — have coord boxes on SINAN forms; not on Ficha ID
   draw("idade");
   draw("sexo");
   draw("telefone");

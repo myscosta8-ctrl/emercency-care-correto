@@ -6,13 +6,17 @@
  *
  * Run:  pnpm --filter @workspace/scripts run add-acroform
  *
- * Field names use the 12 standardized patient field names:
- *   nome_paciente  nome_mae     data_nascimento  cns
- *   endereco       bairro       cidade           uf   cep
- * Plus SINAN-specific overlay-only fields (also get AcroForm fields):
- *   idade  sexo  telefone  numero_end
+ * Field names use the 14 standardized patient field names (shared by both
+ * the text-overlay pass and the AcroForm fill loop in pdf-fill.ts):
+ *   nome_paciente  nome_mae          data_nascimento  cpf *
+ *   rg *           cns               endereco_rua     endereco_numero
+ *   endereco_complemento  bairro     cidade           uf   cep   peso *
  *
- * cpf / rg / peso are NOT in SINAN forms — they only appear in the Ficha ID card.
+ * (* cpf / rg / peso have no printed boxes on SINAN forms, so they are NOT
+ *    injected into SINAN templates. They only appear on the Ficha ID card.)
+ *
+ * SINAN-specific context fields (have printed boxes; also get AcroForm fields):
+ *   idade  sexo  telefone
  *
  * Idempotent: backs up originals as <file>.pdf.orig on first run;
  * subsequent runs re-inject from the backup so fields are never duplicated.
