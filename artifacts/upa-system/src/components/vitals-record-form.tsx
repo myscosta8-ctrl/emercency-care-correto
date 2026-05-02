@@ -120,9 +120,9 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
 
         {/* PA row */}
         <div className="space-y-1.5">
-          <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             PA (mmHg)
-          </FormLabel>
+          </p>
           <div className="flex items-center gap-2">
             <FormField control={form.control} name="systolicBp" render={({ field }) => (
               <FormItem className="flex-1">
