@@ -8,7 +8,6 @@
 import * as zod from "zod";
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -27,7 +26,7 @@ export const ListPatientsResponseItem = zod.object({
   heartRate: zod.number(),
   respiratoryRate: zod.number(),
   glucose: zod.number(),
-  status: zod.enum(["critical", "observation", "stable"]),
+  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -45,18 +44,20 @@ export const CreatePatientBody = zod.object({
   heartRate: zod.number(),
   respiratoryRate: zod.number(),
   glucose: zod.number(),
-  status: zod.enum(["critical", "observation", "stable"]),
+  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
 });
 
 /**
- * @summary Get dashboard summary counts
+ * @summary Get dashboard summary counts by Manchester triage
  */
 export const GetPatientsSummaryResponse = zod.object({
   total: zod.number(),
-  critical: zod.number(),
-  observation: zod.number(),
-  stable: zod.number(),
+  red: zod.number(),
+  orange: zod.number(),
+  yellow: zod.number(),
+  green: zod.number(),
+  blue: zod.number(),
 });
 
 /**
@@ -75,7 +76,7 @@ export const GetPatientResponse = zod.object({
   heartRate: zod.number(),
   respiratoryRate: zod.number(),
   glucose: zod.number(),
-  status: zod.enum(["critical", "observation", "stable"]),
+  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -96,7 +97,7 @@ export const UpdatePatientBody = zod.object({
   heartRate: zod.number(),
   respiratoryRate: zod.number(),
   glucose: zod.number(),
-  status: zod.enum(["critical", "observation", "stable"]),
+  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
 });
 
@@ -109,7 +110,7 @@ export const UpdatePatientResponse = zod.object({
   heartRate: zod.number(),
   respiratoryRate: zod.number(),
   glucose: zod.number(),
-  status: zod.enum(["critical", "observation", "stable"]),
+  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   sector: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -120,4 +121,30 @@ export const UpdatePatientResponse = zod.object({
  */
 export const DeletePatientParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Quickly update only the patient triage status
+ */
+export const UpdatePatientStatusParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdatePatientStatusBody = zod.object({
+  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+});
+
+export const UpdatePatientStatusResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  age: zod.number(),
+  bed: zod.string(),
+  diagnosis: zod.string(),
+  heartRate: zod.number(),
+  respiratoryRate: zod.number(),
+  glucose: zod.number(),
+  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+  sector: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });

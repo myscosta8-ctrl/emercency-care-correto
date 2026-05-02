@@ -9,12 +9,14 @@ export interface HealthStatus {
   status: string;
 }
 
-export type PatientStatus = (typeof PatientStatus)[keyof typeof PatientStatus];
+export type TriageStatus = (typeof TriageStatus)[keyof typeof TriageStatus];
 
-export const PatientStatus = {
-  critical: "critical",
-  observation: "observation",
-  stable: "stable",
+export const TriageStatus = {
+  red: "red",
+  orange: "orange",
+  yellow: "yellow",
+  green: "green",
+  blue: "blue",
 } as const;
 
 export interface Patient {
@@ -26,20 +28,11 @@ export interface Patient {
   heartRate: number;
   respiratoryRate: number;
   glucose: number;
-  status: PatientStatus;
+  status: TriageStatus;
   sector: string;
   createdAt: string;
   updatedAt: string;
 }
-
-export type CreatePatientBodyStatus =
-  (typeof CreatePatientBodyStatus)[keyof typeof CreatePatientBodyStatus];
-
-export const CreatePatientBodyStatus = {
-  critical: "critical",
-  observation: "observation",
-  stable: "stable",
-} as const;
 
 export interface CreatePatientBody {
   name: string;
@@ -49,13 +42,19 @@ export interface CreatePatientBody {
   heartRate: number;
   respiratoryRate: number;
   glucose: number;
-  status: CreatePatientBodyStatus;
+  status: TriageStatus;
   sector: string;
+}
+
+export interface UpdatePatientStatusBody {
+  status: TriageStatus;
 }
 
 export interface PatientsSummary {
   total: number;
-  critical: number;
-  observation: number;
-  stable: number;
+  red: number;
+  orange: number;
+  yellow: number;
+  green: number;
+  blue: number;
 }

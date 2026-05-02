@@ -1,16 +1,15 @@
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { 
-  useCreatePatient, 
+import {
+  useCreatePatient,
   useUpdatePatient,
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
-  getGetPatientQueryKey
+  getGetPatientQueryKey,
 } from "@workspace/api-client-react";
-import type { Patient, CreatePatientBody } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Patient } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -30,16 +29,37 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
+const TRIAGE_OPTIONS = [
+  { value: "red",    label: "Vermelho — Emergência" },
+  { value: "orange", label: "Laranja — Muito Urgente" },
+  { value: "yellow", label: "Amarelo — Urgente" },
+  { value: "green",  label: "Verde — Pouco Urgente" },
+  { value: "blue",   label: "Azul — Não Urgente" },
+] as const;
+
+const SECTOR_OPTIONS = [
+  "Sala Vermelha",
+  "Sala Amarela",
+  "Sala de Observação",
+  "Cardiologia",
+  "Pneumologia",
+  "Neurologia",
+  "Ortopedia",
+  "Cirurgia Geral",
+  "Endocrinologia",
+  "Pediatria",
+];
+
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  age: z.coerce.number().min(0, "Invalid age"),
-  bed: z.string().min(1, "Bed is required"),
-  diagnosis: z.string().min(1, "Diagnosis is required"),
-  heartRate: z.coerce.number().min(0, "Invalid rate"),
-  respiratoryRate: z.coerce.number().min(0, "Invalid rate"),
-  glucose: z.coerce.number().min(0, "Invalid glucose"),
-  status: z.enum(["critical", "observation", "stable"]),
-  sector: z.string().min(1, "Sector is required"),
+  name: z.string().min(1, "Nome é obrigatório"),
+  age: z.coerce.number().min(0, "Idade inválida"),
+  bed: z.string().min(1, "Leito é obrigatório"),
+  diagnosis: z.string().min(1, "Diagnóstico é obrigatório"),
+  heartRate: z.coerce.number().min(0, "FC inválida"),
+  respiratoryRate: z.coerce.number().min(0, "FR inválida"),
+  glucose: z.coerce.number().min(0, "Glicose inválida"),
+  status: z.enum(["red", "orange", "yellow", "green", "blue"]),
+  sector: z.string().min(1, "Setor é obrigatório"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -53,25 +73,24 @@ interface PatientFormProps {
 export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: patient?.name || "",
-      age: patient?.age || 0,
-      bed: patient?.bed || "",
-      diagnosis: patient?.diagnosis || "",
-      heartRate: patient?.heartRate || 0,
-      respiratoryRate: patient?.respiratoryRate || 0,
-      glucose: patient?.glucose || 0,
-      status: patient?.status || "stable",
-      sector: patient?.sector || "",
+      name: patient?.name ?? "",
+      age: patient?.age ?? 0,
+      bed: patient?.bed ?? "",
+      diagnosis: patient?.diagnosis ?? "",
+      heartRate: patient?.heartRate ?? 0,
+      respiratoryRate: patient?.respiratoryRate ?? 0,
+      glucose: patient?.glucose ?? 0,
+      status: (patient?.status as FormValues["status"]) ?? "yellow",
+      sector: patient?.sector ?? "",
     },
   });
 
   const createPatient = useCreatePatient();
   const updatePatient = useUpdatePatient();
-
   const isPending = createPatient.isPending || updatePatient.isPending;
 
   function onSubmit(data: FormValues) {
@@ -81,24 +100,20 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientQueryKey(patient.id) });
-          toast({ title: "Patient updated" });
+          toast({ title: "Paciente atualizado" });
           onSuccess();
         },
-        onError: () => {
-          toast({ title: "Failed to update patient", variant: "destructive" });
-        }
+        onError: () => toast({ title: "Erro ao atualizar paciente", variant: "destructive" }),
       });
     } else {
       createPatient.mutate({ data }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
-          toast({ title: "Patient added" });
+          toast({ title: "Paciente admitido" });
           onSuccess();
         },
-        onError: () => {
-          toast({ title: "Failed to add patient", variant: "destructive" });
-        }
+        onError: () => toast({ title: "Erro ao admitir paciente", variant: "destructive" }),
       });
     }
   }
@@ -112,10 +127,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             name="name"
             render={({ field }) => (
               <FormItem className="col-span-2">
-                <FormLabel>Patient Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="John Doe" {...field} />
-                </FormControl>
+                <FormLabel>Nome do Paciente</FormLabel>
+                <FormControl><Input placeholder="Nome completo" {...field} data-testid="input-name" /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -125,10 +138,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             name="age"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Age</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
+                <FormLabel>Idade</FormLabel>
+                <FormControl><Input type="number" data-testid="input-age" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -138,74 +149,82 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             name="bed"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Bed / Room</FormLabel>
-                <FormControl>
-                  <Input placeholder="ICU-01" {...field} />
-                </FormControl>
+                <FormLabel>Leito</FormLabel>
+                <FormControl><Input placeholder="A1, B3..." data-testid="input-bed" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="sector"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sector</FormLabel>
-                <FormControl>
-                  <Input placeholder="Emergency" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Setor</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                    <SelectTrigger data-testid="select-sector">
+                      <SelectValue placeholder="Selecionar setor" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="critical">Critical</SelectItem>
-                    <SelectItem value="observation">Observation</SelectItem>
-                    <SelectItem value="stable">Stable</SelectItem>
+                    {SECTOR_OPTIONS.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Triagem Manchester</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-status">
+                      <SelectValue placeholder="Nível de triagem" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {TRIAGE_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="diagnosis"
             render={({ field }) => (
               <FormItem className="col-span-2">
-                <FormLabel>Diagnosis</FormLabel>
-                <FormControl>
-                  <Input placeholder="Initial diagnosis..." {...field} />
-                </FormControl>
+                <FormLabel>Diagnóstico</FormLabel>
+                <FormControl><Input placeholder="Hipótese diagnóstica inicial..." data-testid="input-diagnosis" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <div className="col-span-2 mt-2 mb-1">
-            <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Vitals</h4>
+
+          <div className="col-span-2 pt-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sinais Vitais</p>
           </div>
+
           <FormField
             control={form.control}
             name="heartRate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Heart Rate (bpm)</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
+                <FormLabel>Freq. Cardíaca (bpm)</FormLabel>
+                <FormControl><Input type="number" data-testid="input-heartRate" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -215,10 +234,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             name="respiratoryRate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Resp. Rate (irpm)</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
+                <FormLabel>Freq. Respiratória (irpm)</FormLabel>
+                <FormControl><Input type="number" data-testid="input-respiratoryRate" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -228,21 +245,20 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             name="glucose"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Glucose (mg/dL)</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
+                <FormLabel>Glicose (mg/dL)</FormLabel>
+                <FormControl><Input type="number" data-testid="input-glucose" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
+
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
-            Cancel
+            Cancelar
           </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving..." : patient ? "Update Patient" : "Add Patient"}
+          <Button type="submit" disabled={isPending} data-testid="button-submit">
+            {isPending ? "Salvando..." : patient ? "Atualizar" : "Admitir Paciente"}
           </Button>
         </div>
       </form>

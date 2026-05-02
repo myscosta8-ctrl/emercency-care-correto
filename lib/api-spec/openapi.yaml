@@ -18,7 +18,6 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -63,7 +62,7 @@ paths:
     get:
       operationId: getPatientsSummary
       tags: [patients]
-      summary: Get dashboard summary counts
+      summary: Get dashboard summary counts by Manchester triage
       responses:
         "200":
           description: Patient summary stats
@@ -131,6 +130,33 @@ paths:
         "204":
           description: Deleted
 
+  /patients/{id}/status:
+    patch:
+      operationId: updatePatientStatus
+      tags: [patients]
+      summary: Quickly update only the patient triage status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePatientStatusBody"
+      responses:
+        "200":
+          description: Updated patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -140,6 +166,10 @@ components:
           type: string
       required:
         - status
+
+    TriageStatus:
+      type: string
+      enum: [red, orange, yellow, green, blue]
 
     Patient:
       type: object
@@ -161,8 +191,7 @@ components:
         glucose:
           type: number
         status:
-          type: string
-          enum: [critical, observation, stable]
+          $ref: "#/components/schemas/TriageStatus"
         sector:
           type: string
         createdAt:
@@ -203,8 +232,7 @@ components:
         glucose:
           type: number
         status:
-          type: string
-          enum: [critical, observation, stable]
+          $ref: "#/components/schemas/TriageStatus"
         sector:
           type: string
       required:
@@ -218,19 +246,33 @@ components:
         - status
         - sector
 
+    UpdatePatientStatusBody:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/TriageStatus"
+      required:
+        - status
+
     PatientsSummary:
       type: object
       properties:
         total:
           type: integer
-        critical:
+        red:
           type: integer
-        observation:
+        orange:
           type: integer
-        stable:
+        yellow:
+          type: integer
+        green:
+          type: integer
+        blue:
           type: integer
       required:
         - total
-        - critical
-        - observation
-        - stable
+        - red
+        - orange
+        - yellow
+        - green
+        - blue

@@ -21,6 +21,7 @@ import type {
   HealthStatus,
   Patient,
   PatientsSummary,
+  UpdatePatientStatusBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -33,7 +34,6 @@ type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const getHealthCheckUrl = () => {
@@ -270,7 +270,7 @@ export const useCreatePatient = <
 };
 
 /**
- * @summary Get dashboard summary counts
+ * @summary Get dashboard summary counts by Manchester triage
  */
 export const getGetPatientsSummaryUrl = () => {
   return `/api/patients/summary`;
@@ -321,7 +321,7 @@ export type GetPatientsSummaryQueryResult = NonNullable<
 export type GetPatientsSummaryQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get dashboard summary counts
+ * @summary Get dashboard summary counts by Manchester triage
  */
 
 export function useGetPatientsSummary<
@@ -600,4 +600,91 @@ export const useDeletePatient = <
   TContext
 > => {
   return useMutation(getDeletePatientMutationOptions(options));
+};
+
+/**
+ * @summary Quickly update only the patient triage status
+ */
+export const getUpdatePatientStatusUrl = (id: number) => {
+  return `/api/patients/${id}/status`;
+};
+
+export const updatePatientStatus = async (
+  id: number,
+  updatePatientStatusBody: UpdatePatientStatusBody,
+  options?: RequestInit,
+): Promise<Patient> => {
+  return customFetch<Patient>(getUpdatePatientStatusUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updatePatientStatusBody),
+  });
+};
+
+export const getUpdatePatientStatusMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePatientStatus>>,
+    TError,
+    { id: number; data: BodyType<UpdatePatientStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePatientStatus>>,
+  TError,
+  { id: number; data: BodyType<UpdatePatientStatusBody> },
+  TContext
+> => {
+  const mutationKey = ["updatePatientStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePatientStatus>>,
+    { id: number; data: BodyType<UpdatePatientStatusBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updatePatientStatus(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePatientStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePatientStatus>>
+>;
+export type UpdatePatientStatusMutationBody = BodyType<UpdatePatientStatusBody>;
+export type UpdatePatientStatusMutationError = ErrorType<void>;
+
+/**
+ * @summary Quickly update only the patient triage status
+ */
+export const useUpdatePatientStatus = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePatientStatus>>,
+    TError,
+    { id: number; data: BodyType<UpdatePatientStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePatientStatus>>,
+  TError,
+  { id: number; data: BodyType<UpdatePatientStatusBody> },
+  TContext
+> => {
+  return useMutation(getUpdatePatientStatusMutationOptions(options));
 };
