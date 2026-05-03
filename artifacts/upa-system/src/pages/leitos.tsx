@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, BedDouble, AlertTriangle, ShieldAlert, User, RefreshCw, Biohazard } from "lucide-react";
+import { ArrowLeft, BedDouble, AlertTriangle, ShieldAlert, RefreshCw, Biohazard, Lightbulb, Info, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/use-auth";
 import { temPermissao } from "@/lib/permissions";
 import { useToast } from "@/hooks/use-toast";
+import { ISOLATION_PROTOCOLS, suggestIsolationType } from "@/lib/isolation-protocols";
+import type { IsolationType as IsoType } from "@/lib/isolation-protocols";
 
 export type Sector =
   | "sala_vermelha"
@@ -54,7 +56,7 @@ interface Bed {
   patient:         BedPatient | null;
 }
 
-type IsolationType = "contact" | "droplet" | "airborne";
+type IsolationType = IsoType;
 
 const ISOLATION_LABELS: Record<IsolationType, string> = {
   contact:  "Contato",
@@ -89,6 +91,63 @@ interface BedModalProps {
   onSaved:  () => void;
 }
 
+/** Alert box displayed when an isolation type is active/selected */
+function IsolationAlertBox({ type }: { type: IsolationType }) {
+  const protocol = ISOLATION_PROTOCOLS[type];
+  return (
+    <div className={`rounded-lg border p-3 space-y-2.5 ${protocol.bgColor} ${protocol.borderColor}`}>
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <ShieldCheck className={`h-4 w-4 flex-shrink-0 ${protocol.color}`} />
+        <p className={`text-xs font-bold uppercase tracking-wider ${protocol.color}`}>
+          PRECAUÇÃO NECESSÁRIA
+        </p>
+        <span className={`ml-auto text-lg leading-none`}>{protocol.icon}</span>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <p className={`text-sm font-semibold ${protocol.color}`}>
+          Precaução por {protocol.label}
+        </p>
+      </div>
+
+      {/* Indications */}
+      <div className="space-y-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40">Usar para</p>
+        <ul className="space-y-0.5">
+          {protocol.indications.map((ind) => (
+            <li key={ind} className="text-[11px] text-white/70 flex items-start gap-1.5">
+              <span className="text-white/30 mt-0.5">•</span>
+              {ind}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Measures */}
+      <div className="space-y-1 border-t border-white/10 pt-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40">Medidas obrigatórias</p>
+        <ul className="space-y-1">
+          {protocol.measures.map((m) => (
+            <li key={m.text} className="text-[11px] text-white/80 flex items-start gap-2">
+              <span className="text-base leading-none">{m.icon}</span>
+              <span>{m.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center gap-1.5 border-t border-white/10 pt-2">
+        <Info className="h-3 w-3 text-white/30 flex-shrink-0" />
+        <p className="text-[10px] text-white/40 italic">
+          Seguir protocolo conforme ANVISA e CDC
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function BedModal({ bed, canEdit, onClose, onSaved }: BedModalProps) {
   const { activeUser } = useAuth();
   const { toast } = useToast();
@@ -105,6 +164,13 @@ function BedModal({ bed, canEdit, onClose, onSaved }: BedModalProps) {
   }, [bed]);
 
   if (!bed) return null;
+
+  /* Auto-suggest isolation type from reason/diagnosis text */
+  const suggested = useMemo(
+    () => suggestIsolationType(isolationReason || bed.patient?.diagnosis || ""),
+    [isolationReason, bed.patient?.diagnosis],
+  );
+  const showSuggestion = isolationActive && canEdit && suggested && suggested !== isolationType;
 
   const handleSave = async () => {
     if (isolationActive && !isolationType) {
@@ -144,7 +210,7 @@ function BedModal({ bed, canEdit, onClose, onSaved }: BedModalProps) {
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="bg-[#0d1117] border-white/10 text-white max-w-md">
+      <DialogContent className="bg-[#0d1117] border-white/10 text-white max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BedDouble className="h-4 w-4 text-sky-400" />
@@ -162,15 +228,15 @@ function BedModal({ bed, canEdit, onClose, onSaved }: BedModalProps) {
           <div className="rounded-lg border border-white/8 bg-white/4 p-3 space-y-1">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Paciente</p>
             {bed.isOccupied && bed.patient ? (
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-white">{bed.patient.fullName}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{bed.patient.fullName}</p>
                   {bed.patient.diagnosis && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{bed.patient.diagnosis}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{bed.patient.diagnosis}</p>
                   )}
                 </div>
                 <Badge
-                  className={`text-[10px] capitalize ${
+                  className={`flex-shrink-0 text-[10px] capitalize ${
                     bed.patient.triageLevel === "red"
                       ? "bg-red-800/60 text-red-200 border-red-600/40"
                       : bed.patient.triageLevel === "orange"
@@ -229,6 +295,22 @@ function BedModal({ bed, canEdit, onClose, onSaved }: BedModalProps) {
 
             {bed.isIsolation && isolationActive && (
               <div className="space-y-3 border-t border-purple-500/20 pt-3">
+                {/* Diagnosis / reason */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Diagnóstico / motivo</Label>
+                  {canEdit ? (
+                    <Textarea
+                      className="h-16 resize-none bg-white/5 border-white/10 text-sm placeholder:text-muted-foreground/50"
+                      placeholder="Ex: suspeita de tuberculose..."
+                      value={isolationReason}
+                      onChange={(e) => setIsolationReason(e.target.value)}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{isolationReason || "—"}</p>
+                  )}
+                </div>
+
+                {/* Type selector */}
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Tipo de precaução</Label>
                   {canEdit ? (
@@ -237,9 +319,9 @@ function BedModal({ bed, canEdit, onClose, onSaved }: BedModalProps) {
                         <SelectValue placeholder="Selecionar tipo..." />
                       </SelectTrigger>
                       <SelectContent className="bg-[#0d1117] border-white/10 text-white">
-                        <SelectItem value="contact">Contato</SelectItem>
-                        <SelectItem value="droplet">Gotículas</SelectItem>
-                        <SelectItem value="airborne">Aerossóis</SelectItem>
+                        <SelectItem value="contact">🧤 Contato</SelectItem>
+                        <SelectItem value="droplet">😷 Gotículas</SelectItem>
+                        <SelectItem value="airborne">🌬️ Aerossóis</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
@@ -249,28 +331,36 @@ function BedModal({ bed, canEdit, onClose, onSaved }: BedModalProps) {
                   )}
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Diagnóstico / motivo</Label>
-                  {canEdit ? (
-                    <Textarea
-                      className="h-20 resize-none bg-white/5 border-white/10 text-sm placeholder:text-muted-foreground/50"
-                      placeholder="Ex: suspeita de tuberculose..."
-                      value={isolationReason}
-                      onChange={(e) => setIsolationReason(e.target.value)}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{isolationReason || "—"}</p>
-                  )}
-                </div>
+                {/* Auto-suggestion banner */}
+                {showSuggestion && (
+                  <button
+                    type="button"
+                    onClick={() => setIsolationType(suggested!)}
+                    className="w-full text-left rounded-lg border border-sky-500/40 bg-sky-950/40 px-3 py-2 flex items-start gap-2 hover:bg-sky-950/60 transition-colors"
+                  >
+                    <Lightbulb className="h-3.5 w-3.5 text-sky-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[11px] font-medium text-sky-300">Sugestão baseada no diagnóstico</p>
+                      <p className="text-[11px] text-sky-400/80 mt-0.5">
+                        Clicar para aplicar: <strong>{ISOLATION_LABELS[suggested!]}</strong>
+                      </p>
+                    </div>
+                  </button>
+                )}
               </div>
             )}
 
-            {bed.isIsolation && !isolationActive && bed.isolationActive === false && canEdit && (
+            {bed.isIsolation && !isolationActive && canEdit && (
               <p className="text-[11px] text-muted-foreground">
                 Ative a precaução para configurar o tipo e motivo de isolamento.
               </p>
             )}
           </div>
+
+          {/* ── Infection control alert box ── */}
+          {isolationActive && isolationType && (
+            <IsolationAlertBox type={isolationType as IsolationType} />
+          )}
 
           {canEdit && (
             <div className="flex justify-end gap-2 pt-1">
