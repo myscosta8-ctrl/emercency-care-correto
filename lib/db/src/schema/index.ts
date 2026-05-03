@@ -10,3 +10,4 @@ export * from "./social-notes";
 export * from "./nutritional-assessments";
 export * from "./pharmacy-entries";
 export * from "./transfers";
+export * from "./password-resets";

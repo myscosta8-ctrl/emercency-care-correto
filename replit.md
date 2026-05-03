@@ -88,6 +88,14 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - **"Nova Admissão"** button disabled unless `pode("criar_paciente")`
 - Logout button (Power icon, `aria-label="Sair"`) in dashboard header → clears session + navigates to `/login`
 
+### Password Reset (Esqueci minha senha)
+- **Tabela**: `password_resets` — `id` (UUID), `user_id` (FK staff), `token` (text único), `expires_at` (1h), `used_at` (nullable), `created_at`.
+- **`POST /api/auth/forgot-password`**: body `{ login }` → busca usuário ativo, gera token 32 bytes hex, salva no DB, loga link no console (`[RESET] nome (login) → /reset-password?token=XYZ`). Retorna `{ ok: true }` sempre (evita enumeração de usuários).
+- **`POST /api/auth/reset-password`**: body `{ token, password }` → valida token (existe, não expirado, não utilizado), atualiza hash bcrypt, marca `used_at`, zera `must_change_password`. Retorna `{ ok: true }`.
+- **Páginas públicas** (sem autenticação): `/forgot-password` e `/reset-password?token=XYZ`.
+- **Login**: botão "Esqueci minha senha" ao lado do label "Senha" → navega para `/forgot-password`.
+- **Segurança**: token de uso único, expiração 1h, bcrypt cost 12, senha nunca exposta.
+
 ### Password & First-Access Flow
 - **Hashing**: Senhas novas armazenadas como `bcrypt(sha256(plain + "upa_salt_2026"), cost=12)`. Usuários legados (SHA-256 puro) continuam funcionando; login detecta pelo prefixo `$2b$`.
 - **Novo usuário**: Senha padrão `1234` aplicada automaticamente pelo servidor; campo senha removido do formulário de criação. `must_change_password = true` para todos os novos usuários.

@@ -17,7 +17,9 @@ const ShiftHandover      = lazy(() => import("@/pages/shift-handover"));
 const StaffPage          = lazy(() => import("@/pages/staff"));
 const NotFound           = lazy(() => import("@/pages/not-found"));
 const LoginPage          = lazy(() => import("@/pages/login"));
-const ChangePasswordPage = lazy(() => import("@/pages/change-password"));
+const ChangePasswordPage  = lazy(() => import("@/pages/change-password"));
+const ForgotPasswordPage  = lazy(() => import("@/pages/forgot-password"));
+const ResetPasswordPage   = lazy(() => import("@/pages/reset-password"));
 const AdminDashboard      = lazy(() => import("@/pages/admin/admin-dashboard"));
 const AdminUsuarios       = lazy(() => import("@/pages/admin/usuarios"));
 const AdminPermissoes     = lazy(() => import("@/pages/admin/permissoes"));
@@ -117,6 +119,8 @@ function Router() {
     <Suspense fallback={<PageLoader />}>
       <Switch>
         <Route path="/login" component={LoginPage} />
+        <Route path="/forgot-password" component={ForgotPasswordPage} />
+        <Route path="/reset-password" component={ResetPasswordPage} />
         <Route path="/change-password">
           <AuthGuardChangePassword>
             <ChangePasswordPage />
