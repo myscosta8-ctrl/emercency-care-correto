@@ -204,6 +204,14 @@ export interface Vitals {
   createdAt: string;
 }
 
+export type PatientPrescriptionType =
+  (typeof PatientPrescriptionType)[keyof typeof PatientPrescriptionType];
+
+export const PatientPrescriptionType = {
+  nursing: "nursing",
+  medical: "medical",
+} as const;
+
 export type PatientPrescriptionStatus =
   (typeof PatientPrescriptionStatus)[keyof typeof PatientPrescriptionStatus];
 
@@ -216,20 +224,25 @@ export const PatientPrescriptionStatus = {
 export interface PatientPrescription {
   id: number;
   patientId: number;
-  items: string;
+  userId: number;
+  type: PatientPrescriptionType;
+  content: string;
   status: PatientPrescriptionStatus;
-  responsible: string;
-  scheduledTime: string;
-  notes: string;
   createdAt: string;
-  updatedAt: string;
 }
 
+export type AddPatientPrescriptionBodyType =
+  (typeof AddPatientPrescriptionBodyType)[keyof typeof AddPatientPrescriptionBodyType];
+
+export const AddPatientPrescriptionBodyType = {
+  nursing: "nursing",
+  medical: "medical",
+} as const;
+
 export interface AddPatientPrescriptionBody {
-  items: string;
-  responsible: string;
-  scheduledTime?: string;
-  notes?: string;
+  userId: number;
+  type: AddPatientPrescriptionBodyType;
+  content: string;
 }
 
 export type UpdatePrescriptionStatusBodyStatus =
@@ -243,8 +256,6 @@ export const UpdatePrescriptionStatusBodyStatus = {
 
 export interface UpdatePrescriptionStatusBody {
   status: UpdatePrescriptionStatusBodyStatus;
-  responsible?: string;
-  scheduledTime?: string;
 }
 
 export type PatientTaskStatus =

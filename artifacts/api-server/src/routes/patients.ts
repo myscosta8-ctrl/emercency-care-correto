@@ -317,7 +317,6 @@ router.get("/:id/prescriptions", async (req, res) => {
   res.json(prescriptions.map(p => ({
     ...p,
     createdAt: p.createdAt.toISOString(),
-    updatedAt: p.updatedAt.toISOString(),
   })));
 });
 
@@ -325,18 +324,15 @@ router.post("/:id/prescriptions", async (req, res) => {
   const { id } = AddPatientPrescriptionParams.parse({ id: Number(req.params.id) });
   const body   = AddPatientPrescriptionBody.parse(req.body);
   const [prescription] = await db.insert(patientPrescriptionsTable).values({
-    patientId:     id,
-    items:         body.items,
-    status:        "pendente",
-    responsible:   body.responsible,
-    scheduledTime: body.scheduledTime ?? "",
-    notes:         body.notes ?? "",
-    updatedAt:     new Date(),
+    patientId: id,
+    userId:    body.userId,
+    type:      body.type as "nursing" | "medical",
+    content:   body.content,
+    status:    "pendente",
   }).returning();
   res.status(201).json({
     ...prescription,
     createdAt: prescription.createdAt.toISOString(),
-    updatedAt: prescription.updatedAt.toISOString(),
   });
 });
 
@@ -347,19 +343,13 @@ router.put("/:id/prescriptions/:prescriptionId/status", async (req, res) => {
   });
   const body = UpdatePrescriptionStatusBody.parse(req.body);
   const [prescription] = await db.update(patientPrescriptionsTable)
-    .set({
-      status:        body.status as "pendente" | "em_andamento" | "concluido",
-      ...(body.responsible   ? { responsible:   body.responsible   } : {}),
-      ...(body.scheduledTime ? { scheduledTime: body.scheduledTime } : {}),
-      updatedAt: new Date(),
-    })
+    .set({ status: body.status as "pendente" | "em_andamento" | "concluido" })
     .where(eq(patientPrescriptionsTable.id, prescriptionId))
     .returning();
   if (!prescription) { res.status(404).json({ error: "Prescrição não encontrada" }); return; }
   res.json({
     ...prescription,
     createdAt: prescription.createdAt.toISOString(),
-    updatedAt: prescription.updatedAt.toISOString(),
   });
 });
 

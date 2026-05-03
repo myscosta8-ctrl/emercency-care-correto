@@ -17,6 +17,7 @@ import {
   useDeletePatientNotification,
   useUpdatePatientNotification,
   useGetPatientVitals,
+  useListStaff,
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
   getGetPatientHistoryQueryKey,
@@ -166,6 +167,8 @@ export default function PatientDetail() {
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
+  const { data: staffList } = useListStaff();
+  const staffMap = Object.fromEntries((staffList ?? []).map(s => [s.id, s]));
   const deleteNotification = useDeletePatientNotification();
   const updateNotification = useUpdatePatientNotification();
   const updateTaskStatus = useUpdateTaskStatus();
@@ -619,38 +622,37 @@ export default function PatientDetail() {
               ) : (
                 <div className="space-y-3">
                   {prescriptions.map(rx => {
-                    const items: string[] = (() => { try { return JSON.parse(rx.items); } catch { return []; } })();
                     const statusCfg = ({
                       pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
                       em_andamento: { label: "Em andamento", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
                       concluido:    { label: "Concluído",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
                     } as const)[rx.status as "pendente" | "em_andamento" | "concluido"] ?? { label: rx.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
+                    const typeCfg = rx.type === "medical"
+                      ? { label: "Médica",      color: "bg-purple-500/10 text-purple-400 border-purple-500/30" }
+                      : { label: "Enfermagem",  color: "bg-blue-500/10 text-blue-400 border-blue-500/30" };
+                    const staffName = staffMap[rx.userId]?.name ?? (rx.userId > 0 ? `#${rx.userId}` : "—");
                     return (
                       <div key={rx.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
                           <div className="flex items-center gap-2">
+                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", typeCfg.color)}>
+                              {typeCfg.label}
+                            </span>
                             <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", statusCfg.color)}>
                               {statusCfg.label}
                             </span>
-                            {rx.scheduledTime && <span className="text-xs text-muted-foreground">{rx.scheduledTime}</span>}
                           </div>
                           <span className="text-xs text-muted-foreground">
                             {format(new Date(rx.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
                           </span>
                         </div>
                         <div className="px-4 py-3">
-                          <ul className="space-y-1.5 mb-3">
-                            {items.map((item, idx) => (
-                              <li key={idx} className="flex items-start gap-2 text-sm">
-                                {rx.status === "concluido"
-                                  ? <CheckSquare className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
-                                  : <Square className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />}
-                                <span className={cn(rx.status === "concluido" && "line-through text-muted-foreground")}>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
+                          <pre className={cn(
+                            "text-sm whitespace-pre-wrap font-sans mb-3",
+                            rx.status === "concluido" && "line-through text-muted-foreground"
+                          )}>{rx.content}</pre>
                           <div className="flex items-center justify-between pt-2 border-t border-border/40">
-                            <span className="text-xs text-muted-foreground">— {rx.responsible}</span>
+                            <span className="text-xs text-muted-foreground">— {staffName}</span>
                             {rx.status !== "concluido" && (
                               <div className="flex gap-1.5">
                                 {rx.status === "pendente" && (
@@ -1179,12 +1181,11 @@ export default function PatientDetail() {
       <Dialog open={isPrescriptionOpen} onOpenChange={setIsPrescriptionOpen}>
         <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nova Prescrição de Enfermagem</DialogTitle>
-            <DialogDescription>Selecione as intervenções e defina o status desta prescrição.</DialogDescription>
+            <DialogTitle>Nova Prescrição</DialogTitle>
+            <DialogDescription>Registre uma prescrição de enfermagem ou médica para este paciente.</DialogDescription>
           </DialogHeader>
           <PrescriptionForm
-            patientId={id}
-            patientName={patient.full_name}
+            patient={patient}
             onSuccess={() => setIsPrescriptionOpen(false)}
             onCancel={() => setIsPrescriptionOpen(false)}
           />

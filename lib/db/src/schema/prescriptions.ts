@@ -6,13 +6,11 @@ export const patientPrescriptionsTable = pgTable("patient_prescriptions", {
   patientId: integer("patient_id")
     .notNull()
     .references(() => patientsTable.id, { onDelete: "cascade" }),
-  items: text("items").notNull().default("[]"),
+  userId: integer("user_id").notNull().default(0),
+  type: text("type", { enum: ["nursing", "medical"] }).notNull().default("nursing"),
+  content: text("content").notNull().default(""),
   status: text("status", { enum: ["pendente", "em_andamento", "concluido"] })
     .notNull()
     .default("pendente"),
-  responsible: text("responsible").notNull().default(""),
-  scheduledTime: text("scheduled_time").notNull().default(""),
-  notes: text("notes").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

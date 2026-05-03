@@ -1011,48 +1011,42 @@ components:
           type: integer
         patientId:
           type: integer
-        items:
+        userId:
+          type: integer
+        type:
+          type: string
+          enum: [nursing, medical]
+        content:
           type: string
         status:
           type: string
           enum: [pendente, em_andamento, concluido]
-        responsible:
-          type: string
-        scheduledTime:
-          type: string
-        notes:
-          type: string
         createdAt:
-          type: string
-          format: date-time
-        updatedAt:
           type: string
           format: date-time
       required:
         - id
         - patientId
-        - items
+        - userId
+        - type
+        - content
         - status
-        - responsible
-        - scheduledTime
-        - notes
         - createdAt
-        - updatedAt
 
     AddPatientPrescriptionBody:
       type: object
       properties:
-        items:
+        userId:
+          type: integer
+        type:
           type: string
-        responsible:
-          type: string
-        scheduledTime:
-          type: string
-        notes:
+          enum: [nursing, medical]
+        content:
           type: string
       required:
-        - items
-        - responsible
+        - userId
+        - type
+        - content
 
     UpdatePrescriptionStatusBody:
       type: object
@@ -1060,10 +1054,6 @@ components:
         status:
           type: string
           enum: [pendente, em_andamento, concluido]
-        responsible:
-          type: string
-        scheduledTime:
-          type: string
       required:
         - status
 

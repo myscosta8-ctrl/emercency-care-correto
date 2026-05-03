@@ -1,143 +1,90 @@
-import { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { ClipboardCheck, Plus, X } from "lucide-react";
+import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  useAddPatientPrescription,
+  useListStaff,
+  getGetPatientPrescriptionsQueryKey,
+} from "@workspace/api-client-react";
+import type { Patient } from "@workspace/api-client-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { ClipboardCheck, Stethoscope } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
-import { useNurse } from "@/hooks/use-nurse";
 import {
-  useAddPatientPrescription,
-  getGetPatientPrescriptionsQueryKey,
-} from "@workspace/api-client-react";
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-const STATUS_OPTIONS = [
-  { value: "pendente",    label: "Pendente",      color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
-  { value: "em_andamento", label: "Em andamento", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-  { value: "concluido",   label: "Concluído",     color: "bg-green-500/20 text-green-400 border-green-500/30" },
+const TYPE_OPTIONS = [
+  {
+    value: "nursing",
+    label: "Enfermagem",
+    icon: ClipboardCheck,
+    color: "border-blue-500/40 text-blue-400 bg-blue-500/10",
+  },
+  {
+    value: "medical",
+    label: "Médica",
+    icon: Stethoscope,
+    color: "border-purple-500/40 text-purple-400 bg-purple-500/10",
+  },
 ] as const;
 
-type PrescriptionStatus = typeof STATUS_OPTIONS[number]["value"];
-
-interface StandardItem {
-  id: string;
-  label: string;
-  hasInterval?: boolean;
-}
-
-const STANDARD_ITEMS: StandardItem[] = [
-  { id: "vitals",      label: "Monitorizar sinais vitais a cada ___ min", hasInterval: true },
-  { id: "iv_access",   label: "Manter acesso venoso pérvio" },
-  { id: "medication",  label: "Administrar medicação conforme prescrição médica" },
-  { id: "glucose",     label: "Controlar glicemia capilar" },
-  { id: "rest",        label: "Manter paciente em repouso" },
-  { id: "oxygen",      label: "Oxigenoterapia conforme necessidade" },
-  { id: "diuresis",    label: "Controle de diurese" },
-  { id: "decubitus",   label: "Mudança de decúbito" },
-];
-
-const formSchema = z.object({
-  responsible: z.string().min(1, "Informe o nome do responsável"),
-  scheduledTime: z.string().default(""),
-  status: z.enum(["pendente", "em_andamento", "concluido"]).default("pendente"),
+const schema = z.object({
+  userId:  z.coerce.number().min(1, "Selecione o profissional responsável"),
+  type:    z.enum(["nursing", "medical"]),
+  content: z.string().min(1, "Preencha o conteúdo da prescrição"),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof schema>;
 
 interface PrescriptionFormProps {
-  patientId: number;
-  patientName: string;
+  patient: Patient;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function PrescriptionForm({ patientId, patientName, onSuccess, onCancel }: PrescriptionFormProps) {
+export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createPrescription = useAddPatientPrescription();
-  const { nurseName, setNurseName } = useNurse();
+
+  const { data: staffList } = useListStaff();
+  const activeStaff = (staffList ?? []).filter(s => s.active);
 
   const now = new Date();
   const dateLabel = format(now, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
 
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [vitalInterval, setVitalInterval] = useState("30");
-  const [customItems, setCustomItems] = useState<string[]>([]);
-  const [newCustomItem, setNewCustomItem] = useState("");
-
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
-      responsible: nurseName,
-      scheduledTime: format(now, "HH:mm"),
-      status: "pendente",
+      userId:  0,
+      type:    "nursing",
+      content: "",
     },
   });
 
-  const toggleItem = (id: string) => {
-    setCheckedItems(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const addCustomItem = () => {
-    const trimmed = newCustomItem.trim();
-    if (!trimmed) return;
-    setCustomItems(prev => [...prev, trimmed]);
-    setNewCustomItem("");
-  };
-
-  const removeCustomItem = (idx: number) => {
-    setCustomItems(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  function buildItemsList(): string[] {
-    const result: string[] = [];
-    for (const item of STANDARD_ITEMS) {
-      if (!checkedItems.has(item.id)) continue;
-      if (item.hasInterval) {
-        result.push(`Monitorizar sinais vitais a cada ${vitalInterval || "___"} min`);
-      } else {
-        result.push(item.label);
-      }
-    }
-    result.push(...customItems);
-    return result;
-  }
-
   function onSubmit(data: FormValues) {
-    const itemsList = buildItemsList();
-    if (itemsList.length === 0) {
-      toast({ title: "Selecione ao menos uma intervenção", variant: "destructive" });
-      return;
-    }
-
     createPrescription.mutate(
       {
-        id: patientId,
+        id: patient.id,
         data: {
-          items: JSON.stringify(itemsList),
-          responsible: data.responsible,
-          scheduledTime: data.scheduledTime,
+          userId:  data.userId,
+          type:    data.type,
+          content: data.content,
         },
       },
       {
         onSuccess: () => {
-          setNurseName(data.responsible);
-          queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(patientId) });
+          queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(patient.id) });
           toast({ title: "Prescrição registrada com sucesso" });
           onSuccess();
         },
@@ -155,139 +102,94 @@ export function PrescriptionForm({ patientId, patientName, onSuccess, onCancel }
         <div className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50">
           <div className="flex items-center gap-2 mb-0.5">
             <ClipboardCheck className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold uppercase tracking-wider text-primary">Prescrição de Enfermagem</span>
+            <span className="text-sm font-semibold uppercase tracking-wider text-primary">Nova Prescrição</span>
           </div>
-          <p className="text-xs text-muted-foreground">{patientName} · {dateLabel}</p>
+          <p className="text-xs text-muted-foreground">{patient.full_name} · {dateLabel}</p>
         </div>
 
-        {/* Standard intervention checklist */}
-        <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Intervenções</Label>
-          <div className="space-y-1.5 border border-border/50 rounded-lg p-3 bg-card/30">
-            {STANDARD_ITEMS.map(item => (
-              <div key={item.id} className="flex items-center gap-3 min-h-[44px] py-1">
-                <Checkbox
-                  id={`item-${item.id}`}
-                  checked={checkedItems.has(item.id)}
-                  onCheckedChange={() => toggleItem(item.id)}
-                  className="shrink-0 h-5 w-5"
-                />
-                <label
-                  htmlFor={`item-${item.id}`}
-                  className="text-sm cursor-pointer select-none flex-1 flex items-center gap-2"
-                >
-                  {item.hasInterval ? (
-                    <>
-                      <span>Monitorizar sinais vitais a cada</span>
-                      <input
-                        type="number"
-                        min={5}
-                        max={240}
-                        value={vitalInterval}
-                        onChange={e => { setVitalInterval(e.target.value); if (!checkedItems.has(item.id)) toggleItem(item.id); }}
-                        onClick={e => e.stopPropagation()}
-                        className="w-14 h-6 text-center text-xs rounded border border-border/60 bg-background font-mono px-1"
-                      />
-                      <span>min</span>
-                    </>
-                  ) : (
-                    item.label
-                  )}
-                </label>
-              </div>
-            ))}
-
-            {/* Custom items already added */}
-            {customItems.map((text, idx) => (
-              <div key={`custom-${idx}`} className="flex items-center gap-3">
-                <Checkbox checked disabled className="shrink-0" />
-                <span className="text-sm flex-1">{text}</span>
-                <button
-                  type="button"
-                  onClick={() => removeCustomItem(idx)}
-                  className="text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-
-            {/* Add custom item */}
-            <div className="flex gap-2 mt-2 pt-2 border-t border-border/40">
-              <Input
-                placeholder="Adicionar outra intervenção..."
-                value={newCustomItem}
-                onChange={e => setNewCustomItem(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCustomItem(); } }}
-                className="h-7 text-xs"
-              />
-              <Button type="button" size="icon" variant="outline" className="h-7 w-7 shrink-0" onClick={addCustomItem}>
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Status */}
-        <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</Label>
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <div className="flex gap-2">
-                    {STATUS_OPTIONS.map(opt => (
+        {/* Type selector */}
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tipo</FormLabel>
+              <FormControl>
+                <div className="flex gap-2">
+                  {TYPE_OPTIONS.map(opt => {
+                    const Icon = opt.icon;
+                    return (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => field.onChange(opt.value)}
                         className={cn(
-                          "flex-1 py-1.5 rounded-md border text-xs font-medium transition-all",
+                          "flex-1 flex items-center justify-center gap-2 py-2 rounded-md border text-sm font-medium transition-all",
                           field.value === opt.value
-                            ? opt.color + " border-current"
+                            ? opt.color
                             : "border-border/50 text-muted-foreground hover:border-border"
                         )}
                       >
+                        <Icon className="h-4 w-4" />
                         {opt.label}
                       </button>
-                    ))}
-                  </div>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
+                    );
+                  })}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        {/* Responsible + Time row */}
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="responsible"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">Responsável <span className="text-destructive">*</span></FormLabel>
+        {/* Responsible staff */}
+        <FormField
+          control={form.control}
+          name="userId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Profissional <span className="text-destructive">*</span>
+              </FormLabel>
+              <Select onValueChange={field.onChange} value={field.value ? String(field.value) : ""}>
                 <FormControl>
-                  <Input placeholder="Nome do enfermeiro(a)" {...field} />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o profissional..." />
+                  </SelectTrigger>
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="scheduledTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">Horário</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
+                <SelectContent>
+                  {activeStaff.map(s => (
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      {s.name} — {s.role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Content */}
+        <FormField
+          control={form.control}
+          name="content"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Conteúdo <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Descreva as prescrições..."
+                  className="min-h-[140px] font-mono text-sm resize-y"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* Actions */}
         <div className="flex gap-3 pt-1">
