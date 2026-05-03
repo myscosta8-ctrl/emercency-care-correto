@@ -78,6 +78,7 @@ export interface CreatePatientBody {
   cns?: string;
   cpf?: string;
   rg?: string;
+  address?: string;
   phone?: string;
   email?: string;
   symptoms?: string;
@@ -110,6 +111,7 @@ export interface UpdatePatientBody {
   cns?: string;
   cpf?: string;
   rg?: string;
+  address?: string;
   phone?: string;
   email?: string;
   symptoms?: string;
@@ -160,27 +162,14 @@ export interface PatientSummary {
 export interface PatientHistoryEntry {
   id: number;
   patientId: number;
-  heartRate?: number;
-  respiratoryRate?: number;
-  systolicBp?: number;
-  diastolicBp?: number;
-  spO2?: number;
-  painScale?: number;
-  consciousnessLevel?: string;
-  generalCondition?: string;
-  subjective: string;
-  objective: string;
-  assessment: string;
-  plan: string;
-  responsible: string;
-  note: string;
-  createdBy: string;
+  userId: number;
+  soapText: string;
   createdAt: string;
 }
 
 export interface AddPatientHistoryBody {
-  note: string;
-  author: string;
+  userId: number;
+  soapText: string;
 }
 
 export interface RecordPatientVitalsBody {

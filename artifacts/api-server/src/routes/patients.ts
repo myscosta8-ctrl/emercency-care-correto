@@ -204,13 +204,9 @@ router.post("/", async (req, res) => {
   }).returning();
 
   await db.insert(patientEvolutionsTable).values({
-    patientId:   patient.id,
-    responsible: responsible,
-    note:        "Admissão inicial",
-    subjective:  "",
-    assessment:  "",
-    plan:        "",
-    createdBy:   responsible,
+    patientId: patient.id,
+    userId:    0,
+    soapText:  "Admissão inicial",
   });
 
   res.status(201).json(serialize(patient));
@@ -279,26 +275,7 @@ router.post("/:id/vitals", async (req, res) => {
   const systolic  = parseInt(bpParts[0] ?? "0") || 0;
   const diastolic = parseInt(bpParts[1] ?? "0") || 0;
 
-  await db.insert(patientEvolutionsTable).values({
-    patientId:          id,
-    heartRate:          body.hr      ?? null,
-    respiratoryRate:    body.rr      ?? null,
-    glucose:            body.glucose ?? null,
-    spO2:               body.spo2    ?? null,
-    temperature:        body.temp    ?? null,
-    systolicBp:         systolic,
-    diastolicBp:        diastolic,
-    responsible:        body.responsible ?? "",
-    note:               body.note        ?? "",
-    subjective:         body.subjective  ?? "",
-    objective:          body.objective   ?? "",
-    assessment:         body.assessment  ?? "",
-    plan:               body.plan        ?? "",
-    painScale:          body.painScale         ?? null,
-    consciousnessLevel: body.consciousnessLevel ?? null,
-    generalCondition:   body.generalCondition  ?? null,
-    createdBy:          body.responsible ?? "",
-  });
+  // Vitals are tracked separately; no evolution entry created here
 
   await db.update(patientsTable).set({ updatedAt: new Date() }).where(eq(patientsTable.id, id));
 
@@ -320,15 +297,11 @@ router.get("/:id/history", async (req, res) => {
 
 router.post("/:id/history", async (req, res) => {
   const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
-  const body   = req.body as { note: string; author: string };
+  const body   = req.body as { userId: number; soapText: string };
   const [entry] = await db.insert(patientEvolutionsTable).values({
-    patientId:   id,
-    note:        body.note ?? "",
-    responsible: body.author ?? "",
-    subjective:  "",
-    assessment:  "",
-    plan:        "",
-    createdBy:   body.author ?? "",
+    patientId: id,
+    userId:    body.userId   ?? 0,
+    soapText:  body.soapText ?? "",
   }).returning();
   res.status(201).json(serializeEvolution(entry));
 });

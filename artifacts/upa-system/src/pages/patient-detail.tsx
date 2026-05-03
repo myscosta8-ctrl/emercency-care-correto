@@ -542,9 +542,9 @@ export default function PatientDetail() {
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-primary" /> Histórico de Evolução de Enfermagem
                 </h3>
-                {history && history.filter(e => e.note !== "Admissão inicial").length > 0 && (
+                {history && history.filter(e => e.soapText !== "Admissão inicial").length > 0 && (
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
-                    {history.filter(e => e.note !== "Admissão inicial").length}
+                    {history.filter(e => e.soapText !== "Admissão inicial").length}
                   </span>
                 )}
               </div>
@@ -559,93 +559,22 @@ export default function PatientDetail() {
               ) : (
                 <div className="space-y-3">
                   {history.map(entry => {
-                    const hasVitals = entry.heartRate || entry.respiratoryRate || entry.spO2 || (entry.systolicBp && entry.diastolicBp);
-                    const isInitial = entry.note === "Admissão inicial";
+                    const isInitial = entry.soapText === "Admissão inicial";
                     return (
                       <div key={entry.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
-                        {/* Entry Header */}
                         <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
                           <span className="text-xs font-semibold">
-                            {isInitial ? "📋 Admissão Inicial" : entry.responsible || "Sistema"}
+                            {isInitial ? "📋 Admissão Inicial" : `Profissional ID ${entry.userId}`}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                           </span>
                         </div>
-
-                        <div className="px-4 py-3 space-y-2.5">
-                          {/* S — Subjetivo */}
-                          {entry.subjective && (
-                            <div className="flex gap-2.5 items-start">
-                              <SoapBadge letter="S" colorClass="bg-blue-500/20 text-blue-400" />
-                              <p className="text-sm text-muted-foreground italic">"{entry.subjective}"</p>
-                            </div>
-                          )}
-
-                          {/* O — Objetivo: Vitals + Achados */}
-                          {(hasVitals || entry.objective) && (
-                            <div className="flex gap-2.5 items-start">
-                              <SoapBadge letter="O" colorClass="bg-green-500/20 text-green-400" />
-                              <div className="flex-1 space-y-1">
-                                {hasVitals && (
-                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                    {entry.systolicBp && entry.diastolicBp && (
-                                      <span>PA: <strong className="text-foreground">{entry.systolicBp}/{entry.diastolicBp}</strong> mmHg</span>
-                                    )}
-                                    {entry.heartRate ? <span>FC: <strong className="text-foreground">{entry.heartRate}</strong> bpm</span> : null}
-                                    {entry.respiratoryRate ? <span>FR: <strong className="text-foreground">{entry.respiratoryRate}</strong> irpm</span> : null}
-                                    {entry.spO2 ? <span>SpO₂: <strong className="text-foreground">{entry.spO2}</strong>%</span> : null}
-                                  </div>
-                                )}
-                                {(entry.generalCondition || entry.consciousnessLevel || entry.painScale != null) && (
-                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                    {entry.generalCondition && (
-                                      <span>Estado: <strong className="text-foreground capitalize">{entry.generalCondition}</strong></span>
-                                    )}
-                                    {entry.consciousnessLevel && (
-                                      <span>Consciência: <strong className="text-foreground capitalize">{entry.consciousnessLevel}</strong></span>
-                                    )}
-                                    {entry.painScale != null && entry.painScale > 0 && (
-                                      <span>Dor: <strong className={cn(
-                                        entry.painScale <= 3 ? "text-triage-green" :
-                                        entry.painScale <= 6 ? "text-triage-yellow" : "text-triage-red"
-                                      )}>{entry.painScale}/10</strong></span>
-                                    )}
-                                  </div>
-                                )}
-                                {entry.objective && (
-                                  <p className="text-sm text-foreground">{entry.objective}</p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* A — Avaliação */}
-                          {entry.assessment && (
-                            <div className="flex gap-2.5 items-start">
-                              <SoapBadge letter="A" colorClass="bg-orange-500/20 text-orange-400" />
-                              <p className="text-sm">{entry.assessment}</p>
-                            </div>
-                          )}
-
-                          {/* P — Plano */}
-                          {entry.plan && !isInitial && (
-                            <div className="flex gap-2.5 items-start">
-                              <SoapBadge letter="P" colorClass="bg-purple-500/20 text-purple-400" />
-                              <p className="text-xs text-muted-foreground font-mono whitespace-pre-line">{entry.plan}</p>
-                            </div>
-                          )}
-
-                          {/* Extra note */}
-                          {entry.note && !isInitial && (
-                            <p className="text-xs text-muted-foreground italic pl-7">{entry.note}</p>
-                          )}
-
-                          {/* Responsible (shown if not header) */}
-                          {!isInitial && (
-                            <p className="text-xs text-muted-foreground pl-7">
-                              — {entry.responsible}
-                            </p>
+                        <div className="px-4 py-3">
+                          {isInitial ? (
+                            <p className="text-sm text-muted-foreground italic">Paciente admitido na unidade.</p>
+                          ) : (
+                            <p className="text-sm font-mono whitespace-pre-wrap text-foreground/90">{entry.soapText}</p>
                           )}
                         </div>
                       </div>
@@ -1437,57 +1366,23 @@ export default function PatientDetail() {
         {/* Evolution history */}
         <div className="print-section">
           <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "6pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            Histórico de Evoluções ({history ? history.filter(e => e.note !== "Admissão inicial").length : 0} registros)
+            Histórico de Evoluções ({history ? history.filter(e => e.soapText !== "Admissão inicial").length : 0} registros)
           </div>
           {history && history.map(entry => {
-            const isInitial = entry.note === "Admissão inicial";
-            const hasVitals = entry.heartRate || entry.respiratoryRate || entry.spO2 || (entry.systolicBp && entry.diastolicBp);
+            const isInitial = entry.soapText === "Admissão inicial";
             return (
               <div key={entry.id} className="soap-entry">
                 <div className="soap-entry-header" style={{ display: "flex", justifyContent: "space-between" }}>
-                  <strong>{isInitial ? "📋 Admissão Inicial" : entry.responsible || "Sistema"}</strong>
+                  <strong>{isInitial ? "📋 Admissão Inicial" : `Profissional ID ${entry.userId}`}</strong>
                   <span style={{ color: "#6b7280" }}>
                     {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </span>
                 </div>
                 <div style={{ padding: "4pt 0 0" }}>
-                  {entry.subjective && (
-                    <div style={{ marginBottom: "3pt" }}>
-                      <span className="soap-badge badge-s">S</span>
-                      <em style={{ color: "#374151" }}>"{entry.subjective}"</em>
-                    </div>
-                  )}
-                  {hasVitals && (
-                    <div style={{ marginBottom: "3pt" }}>
-                      <span className="soap-badge badge-o">O</span>
-                      <span style={{ color: "#374151", fontSize: "9pt" }}>
-                        {entry.systolicBp && entry.diastolicBp ? `PA: ${entry.systolicBp}/${entry.diastolicBp} mmHg  ` : ""}
-                        {entry.heartRate ? `FC: ${entry.heartRate} bpm  ` : ""}
-                        {entry.respiratoryRate ? `FR: ${entry.respiratoryRate} irpm  ` : ""}
-                        {entry.spO2 ? `SpO₂: ${entry.spO2}%  ` : ""}
-                        {entry.generalCondition ? `| Estado: ${entry.generalCondition}  ` : ""}
-                        {entry.consciousnessLevel ? `| Consciência: ${entry.consciousnessLevel}  ` : ""}
-                        {entry.painScale != null && entry.painScale > 0 ? `| Dor: ${entry.painScale}/10` : ""}
-                      </span>
-                    </div>
-                  )}
-                  {entry.assessment && (
-                    <div style={{ marginBottom: "3pt" }}>
-                      <span className="soap-badge badge-a">A</span>
-                      <span style={{ color: "#374151" }}>{entry.assessment}</span>
-                    </div>
-                  )}
-                  {entry.plan && !isInitial && (
-                    <div style={{ marginBottom: "3pt" }}>
-                      <span className="soap-badge badge-p">P</span>
-                      <span style={{ color: "#374151", fontFamily: "monospace", fontSize: "8.5pt", whiteSpace: "pre-wrap" }}>{entry.plan}</span>
-                    </div>
-                  )}
-                  {entry.note && !isInitial && (
-                    <div style={{ color: "#6b7280", fontStyle: "italic", fontSize: "9pt", marginLeft: "22px" }}>{entry.note}</div>
-                  )}
-                  {!isInitial && entry.responsible && (
-                    <div style={{ color: "#6b7280", fontSize: "9pt", marginLeft: "22px" }}>— {entry.responsible}</div>
+                  {isInitial ? (
+                    <em style={{ color: "#6b7280" }}>Paciente admitido na unidade.</em>
+                  ) : (
+                    <pre style={{ fontFamily: "monospace", fontSize: "9pt", whiteSpace: "pre-wrap", color: "#374151", margin: 0 }}>{entry.soapText}</pre>
                   )}
                 </div>
               </div>

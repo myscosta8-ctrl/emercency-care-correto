@@ -70,6 +70,7 @@ export const CreatePatientBody = zod.object({
   cns: zod.string().optional(),
   cpf: zod.string().optional(),
   rg: zod.string().optional(),
+  address: zod.string().optional(),
   phone: zod.string().optional(),
   email: zod.string().optional(),
   symptoms: zod.string().optional(),
@@ -169,6 +170,7 @@ export const UpdatePatientBody = zod.object({
   cns: zod.string().optional(),
   cpf: zod.string().optional(),
   rg: zod.string().optional(),
+  address: zod.string().optional(),
   phone: zod.string().optional(),
   email: zod.string().optional(),
   symptoms: zod.string().optional(),
@@ -304,21 +306,8 @@ export const GetPatientHistoryParams = zod.object({
 export const GetPatientHistoryResponseItem = zod.object({
   id: zod.number(),
   patientId: zod.number(),
-  heartRate: zod.number().optional(),
-  respiratoryRate: zod.number().optional(),
-  systolicBp: zod.number().optional(),
-  diastolicBp: zod.number().optional(),
-  spO2: zod.number().optional(),
-  painScale: zod.number().optional(),
-  consciousnessLevel: zod.string().optional(),
-  generalCondition: zod.string().optional(),
-  subjective: zod.string(),
-  objective: zod.string(),
-  assessment: zod.string(),
-  plan: zod.string(),
-  responsible: zod.string(),
-  note: zod.string(),
-  createdBy: zod.string(),
+  userId: zod.number(),
+  soapText: zod.string(),
   createdAt: zod.coerce.date(),
 });
 export const GetPatientHistoryResponse = zod.array(
@@ -333,8 +322,8 @@ export const AddPatientHistoryParams = zod.object({
 });
 
 export const AddPatientHistoryBody = zod.object({
-  note: zod.string(),
-  author: zod.string(),
+  userId: zod.number(),
+  soapText: zod.string(),
 });
 
 /**

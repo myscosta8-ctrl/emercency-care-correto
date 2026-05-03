@@ -31,19 +31,6 @@ export function validateCPF(cpf: string): boolean {
   return true;
 }
 
-function buildAddress(p: typeof patientsTable.$inferSelect): string {
-  const parts = [
-    p.street,
-    p.addressNumber ? `nº ${p.addressNumber}` : "",
-    p.addressComplement,
-    p.neighborhood,
-    p.city,
-    p.addressState,
-    p.zipCode ? `CEP ${p.zipCode}` : "",
-  ].filter(Boolean);
-  return p.address || parts.join(", ");
-}
-
 const serializeNotif = (n: typeof patientNotificationsTable.$inferSelect) => ({
   ...n,
   createdAt: n.createdAt.toISOString(),
@@ -52,7 +39,7 @@ const serializeNotif = (n: typeof patientNotificationsTable.$inferSelect) => ({
 
 const serializePatient = (p: typeof patientsTable.$inferSelect) => ({
   id:           p.id,
-  full_name:    p.nome,
+  full_name:    p.fullName,
   mother_name:  p.motherName,
   birth_date:   p.birthDate,
   age:          p.age,
@@ -60,10 +47,8 @@ const serializePatient = (p: typeof patientsTable.$inferSelect) => ({
   cpf:          p.cpf,
   rg:           p.rg,
   cns:          p.cns,
-  address:      buildAddress(p),
-  city:         p.city,
+  address:      p.address,
   phone:        p.phone,
-  weight:       p.weight,
   health_unit:  p.healthUnit,
   professional: p.responsibleProfessional,
 });

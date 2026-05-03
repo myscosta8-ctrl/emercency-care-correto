@@ -6,7 +6,6 @@ import {
   useRecordPatientVitals,
   getGetPatientQueryKey,
   getListPatientsQueryKey,
-  getGetPatientHistoryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
 import { format } from "date-fns";
@@ -88,7 +87,6 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
           setNurseName(data.responsible);
           queryClient.invalidateQueries({ queryKey: getGetPatientQueryKey(patient.id) });
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patient.id) });
           toast({ title: "Sinais vitais registrados com sucesso" });
           onSuccess();
         },

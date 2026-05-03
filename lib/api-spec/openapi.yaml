@@ -753,6 +753,8 @@ components:
           type: string
         rg:
           type: string
+        address:
+          type: string
         phone:
           type: string
         email:
@@ -817,6 +819,8 @@ components:
         cpf:
           type: string
         rg:
+          type: string
+        address:
           type: string
         phone:
           type: string
@@ -900,35 +904,9 @@ components:
           type: integer
         patientId:
           type: integer
-        heartRate:
+        userId:
           type: integer
-        respiratoryRate:
-          type: integer
-        systolicBp:
-          type: integer
-        diastolicBp:
-          type: integer
-        spO2:
-          type: integer
-        painScale:
-          type: integer
-        consciousnessLevel:
-          type: string
-        generalCondition:
-          type: string
-        subjective:
-          type: string
-        objective:
-          type: string
-        assessment:
-          type: string
-        plan:
-          type: string
-        responsible:
-          type: string
-        note:
-          type: string
-        createdBy:
+        soapText:
           type: string
         createdAt:
           type: string
@@ -936,25 +914,20 @@ components:
       required:
         - id
         - patientId
-        - subjective
-        - objective
-        - assessment
-        - plan
-        - responsible
-        - note
-        - createdBy
+        - userId
+        - soapText
         - createdAt
 
     AddPatientHistoryBody:
       type: object
       properties:
-        note:
-          type: string
-        author:
+        userId:
+          type: integer
+        soapText:
           type: string
       required:
-        - note
-        - author
+        - userId
+        - soapText
 
     RecordPatientVitalsBody:
       type: object
