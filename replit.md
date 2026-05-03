@@ -88,6 +88,18 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - **"Nova Admissão"** button disabled unless `pode("criar_paciente")`
 - Logout button (Power icon, `aria-label="Sair"`) in dashboard header → clears session + navigates to `/login`
 
+### Critical Alert System (Alerta de Paciente Crítico)
+- **Roles**: only `enfermeiro` and `tecnico_enfermagem` see any alert UI — controlled by `ALERT_ROLES = new Set(["enfermeiro","tecnico_enfermagem"])` and `isNurseOrTech` in dashboard.
+- **Alert panel**: `⚠ ATENÇÃO — N PACIENTES CRÍTICOS` shown above patient list when `isNurseOrTech && criticals.length > 0`.
+- **Header badge**: animated red Siren + count badge in header, same condition.
+- **Row highlighting**: critical patients shown in red highlight with pulsing dot, sorted to top of sector.
+- **Automatic popup**: `div[role="alertdialog"]` fixed overlay renders directly in DOM (no portal) when `criticalPopupOpen = isNurseOrTech && criticals.length > 0 && !popupDismissed`. Re-opens on new critical patients via `prevCriticalIds` ref.
+- **Dismiss button**: "Entendido — Vou Avaliar" sets `popupDismissed=true`. Panel and badge remain visible.
+- **Hook**: `useCriticalAlerts` in `artifacts/upa-system/src/hooks/use-critical-alerts.ts` — polls `GET /api/alerts/critical` every 30s, sound suppressed for non-alert roles.
+- **API**: `GET /api/alerts/critical` — patients with `triage_level='red'` OR vitals (SpO₂<90, HR>130, systolicBP<90). Router at `artifacts/api-server/src/routes/alerts.ts`.
+- **Audit**: `POST /api/alerts/log` — fires whenever new critical patients detected; writes to `audit_log` table.
+- **Test account**: login=`enfteste`, password=`enf123`, role=`enfermeiro` (staff id=5).
+
 ### Feature Flags & Permissions
 - `useFeatures()` + `usePode(acao, feature?)` — combinam permissão de perfil + feature flag em uma só chamada
 - Flags persistidas em `localStorage` (`upa_features`)

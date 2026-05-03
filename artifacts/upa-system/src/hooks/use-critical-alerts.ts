@@ -19,7 +19,6 @@ export interface CriticalAlert {
 
 // ---------------------------------------------------------------------------
 // Web Audio beep — 3 short pulses at 880 Hz, no external files needed.
-// Hardware-accelerated; safe on low-end hardware.
 // ---------------------------------------------------------------------------
 function playAlertSound(): void {
   try {
@@ -49,7 +48,15 @@ function playAlertSound(): void {
 // ---------------------------------------------------------------------------
 // useCriticalAlerts
 // ---------------------------------------------------------------------------
-export function useCriticalAlerts() {
+export interface UseCriticalAlertsOptions {
+  /** Called with newly-detected critical patients (not previously seen). */
+  onNewCriticals?: (newOnes: CriticalAlert[]) => void;
+  /** When false, sound and popup callbacks are suppressed. */
+  alertsEnabled?: boolean;
+}
+
+export function useCriticalAlerts(options: UseCriticalAlertsOptions = {}) {
+  const { onNewCriticals, alertsEnabled = true } = options;
   const { activeUser } = useAuth();
   const seenIds        = useRef<Set<number>>(new Set());
   const base           = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
@@ -66,22 +73,24 @@ export function useCriticalAlerts() {
   const { data = [] } = useQuery<CriticalAlert[]>({
     queryKey:        ["critical-alerts"],
     queryFn:         fetchCriticals,
-    refetchInterval: 30_000,    // poll every 30 s
+    refetchInterval: 30_000,
     staleTime:       25_000,
     enabled:         !!activeUser,
   });
 
-  // Fire sound and log when NEW critical patients appear.
+  // Fire sound / callback when NEW critical patients appear.
   useEffect(() => {
     const newOnes = data.filter(a => !seenIds.current.has(a.patientId));
 
     if (newOnes.length > 0) {
-      playAlertSound();
+      if (alertsEnabled) {
+        playAlertSound();
+        onNewCriticals?.(newOnes);
+      }
 
-      // Register new IDs so we don't re-beep on the next poll.
       newOnes.forEach(a => seenIds.current.add(a.patientId));
 
-      // Log to audit_log via the alerts/log endpoint.
+      // Log to audit_log regardless of role (always audit critical events).
       if (activeUser?.id) {
         const detalhes = newOnes
           .map(a => `Paciente #${a.patientId} ${a.full_name}: ${a.alertDetail}`)
@@ -101,15 +110,15 @@ export function useCriticalAlerts() {
       }
     }
 
-    // Clean up IDs that are no longer critical so they can trigger again later.
+    // Remove IDs that are no longer critical so they can re-trigger later.
     const currentIds = new Set(data.map(a => a.patientId));
     seenIds.current.forEach(id => {
       if (!currentIds.has(id)) seenIds.current.delete(id);
     });
-  }, [data, activeUser, base]);
+  }, [data, activeUser, base, alertsEnabled, onNewCriticals]);
 
-  const criticalPatientIds  = new Set(data.map(a => a.patientId));
-  const criticalDetailMap   = new Map(data.map(a => [a.patientId, a.alertDetail]));
+  const criticalPatientIds = new Set(data.map(a => a.patientId));
+  const criticalDetailMap  = new Map(data.map(a => [a.patientId, a.alertDetail]));
 
   return { criticals: data, criticalPatientIds, criticalDetailMap };
 }

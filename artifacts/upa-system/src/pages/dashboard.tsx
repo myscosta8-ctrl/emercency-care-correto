@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, memo } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, memo } from "react";
 import { useAuth } from "@/lib/use-auth";
 import { Link, useLocation } from "wouter";
 import {
@@ -26,6 +26,10 @@ import { PatientForm } from "@/components/patient-form";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useCriticalAlerts } from "@/hooks/use-critical-alerts";
+import type { CriticalAlert } from "@/hooks/use-critical-alerts";
+
+// Roles that receive active alert notifications (sound + popup + panel)
+const ALERT_ROLES = new Set(["enfermeiro", "tecnico_enfermagem"]);
 
 // ── triage config ─────────────────────────────────────────────────────────────
 
@@ -191,7 +195,29 @@ export default function Dashboard() {
   const { toast }     = useToast();
 
   // ── critical alert system ──────────────────────────────────────────────────
-  const { criticals, criticalPatientIds, criticalDetailMap } = useCriticalAlerts();
+  const isNurseOrTech = ALERT_ROLES.has(activeUser?.role ?? "");
+
+  // Whether the nurse/tech has dismissed the current popup round.
+  const [popupDismissed, setPopupDismissed] = useState(false);
+
+  // Track critical IDs seen in the last poll so we can detect genuinely NEW patients.
+  const prevCriticalIds = useRef<Set<number>>(new Set());
+
+  const { criticals, criticalPatientIds, criticalDetailMap } = useCriticalAlerts({
+    alertsEnabled: isNurseOrTech,
+  });
+
+  // Re-open popup whenever new critical patients appear (not previously in list).
+  useEffect(() => {
+    if (!isNurseOrTech || criticals.length === 0) return;
+    const currentIds = new Set(criticals.map(a => a.patientId));
+    const hasNew = criticals.some(a => !prevCriticalIds.current.has(a.patientId));
+    prevCriticalIds.current = currentIds;
+    if (hasNew) setPopupDismissed(false);
+  }, [criticals, isNurseOrTech]);
+
+  // Popup is open when nurse/tech has unseen critical patients and hasn't dismissed yet.
+  const criticalPopupOpen = isNurseOrTech && criticals.length > 0 && !popupDismissed;
 
   // ── patient grouping ───────────────────────────────────────────────────────
   const grouped = useMemo(() => {
@@ -243,8 +269,8 @@ export default function Dashboard() {
             <Activity className="h-5 w-5 text-primary shrink-0" />
             <h1 className="text-base font-bold tracking-tight truncate hidden sm:block">UPA Breves — Gestão de Pacientes</h1>
             <h1 className="text-base font-bold tracking-tight sm:hidden">UPA Breves</h1>
-            {/* Live critical count badge in header */}
-            {criticals.length > 0 && (
+            {/* Live critical count badge — nurses and technicians only */}
+            {isNurseOrTech && criticals.length > 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse">
                 <Siren className="h-3 w-3" />
                 {criticals.length}
@@ -303,8 +329,8 @@ export default function Dashboard() {
 
       <main className="flex-1 container mx-auto px-4 py-4 max-w-5xl">
 
-        {/* ── CRITICAL PATIENTS ALERT PANEL ─────────────────────────────── */}
-        {criticals.length > 0 && (
+        {/* ── CRITICAL PATIENTS ALERT PANEL — enfermeiro/tecnico_enfermagem only ── */}
+        {isNurseOrTech && criticals.length > 0 && (
           <div className="mb-4 rounded-lg overflow-hidden border border-red-500/50 shadow-[0_0_16px_rgba(239,68,68,0.12)]">
             {/* Header bar */}
             <div className="flex items-center gap-2 px-3 py-2 bg-red-500/20 border-b border-red-500/30">
@@ -387,8 +413,8 @@ export default function Dashboard() {
             </button>
           ))}
 
-          {/* Critical count pill */}
-          {criticals.length > 0 && (
+          {/* Critical count pill — nurses and technicians only */}
+          {isNurseOrTech && criticals.length > 0 && (
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold border-red-500/40 bg-red-500/10 text-red-400">
               <AlertTriangle className="h-3 w-3" />
               <span>{criticals.length}</span>
@@ -462,8 +488,8 @@ export default function Dashboard() {
                   <span className="text-base leading-none">{sector.emoji}</span>
                   <span className="text-xs font-bold uppercase tracking-wider">{sector.name}</span>
                   <span className="ml-auto text-xs font-mono opacity-70">{sector.patients.length}</span>
-                  {/* Show mini critical count per sector */}
-                  {sector.patients.filter(p => criticalPatientIds.has(p.id)).length > 0 && (
+                  {/* Show mini critical count per sector — nurses and technicians only */}
+                  {isNurseOrTech && sector.patients.filter(p => criticalPatientIds.has(p.id)).length > 0 && (
                     <span className="text-[10px] font-bold text-red-400 flex items-center gap-0.5">
                       <AlertTriangle className="h-2.5 w-2.5" />
                       {sector.patients.filter(p => criticalPatientIds.has(p.id)).length}
@@ -483,8 +509,8 @@ export default function Dashboard() {
                         patient={patient}
                         onEdit={handleEdit}
                         onAlta={handleAlta}
-                        isCritical={criticalPatientIds.has(patient.id)}
-                        criticalDetail={criticalDetailMap.get(patient.id)}
+                        isCritical={isNurseOrTech && criticalPatientIds.has(patient.id)}
+                        criticalDetail={isNurseOrTech ? criticalDetailMap.get(patient.id) : undefined}
                       />
                     ))
                   )}
@@ -551,6 +577,62 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Critical patient popup — enfermeiro/tecnico_enfermagem only ── */}
+      {criticalPopupOpen && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="critical-popup-title"
+          aria-describedby="critical-popup-desc"
+          data-testid="critical-alert-popup"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          {/* backdrop */}
+          <div
+            className="absolute inset-0 bg-black/70"
+            onClick={() => setPopupDismissed(true)}
+          />
+          {/* panel */}
+          <div className="relative w-full max-w-md rounded-lg border border-red-500/60 bg-[#120808] shadow-2xl p-6 space-y-4">
+            {/* title */}
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-4 w-4 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500" />
+              </span>
+              <h2 id="critical-popup-title" className="text-red-300 text-base font-semibold">
+                ⚠ Alerta de Paciente Crítico
+              </h2>
+            </div>
+            {/* body */}
+            <div id="critical-popup-desc" className="space-y-3">
+              <p className="text-sm font-semibold text-foreground">
+                Paciente crítico necessita avaliação imediata
+              </p>
+              <div className="rounded-md border border-red-500/30 bg-red-500/10 divide-y divide-red-500/20">
+                {criticals.map(a => (
+                  <div key={a.patientId} className="px-3 py-2.5">
+                    <p className="text-sm font-bold text-red-200">{a.full_name}</p>
+                    <p className="text-xs text-red-400 mt-0.5">{a.alertDetail}</p>
+                    {a.bed && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Leito: {a.bed}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* footer */}
+            <button
+              type="button"
+              onClick={() => setPopupDismissed(true)}
+              className="w-full rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 transition-colors"
+            >
+              Entendido — Vou Avaliar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

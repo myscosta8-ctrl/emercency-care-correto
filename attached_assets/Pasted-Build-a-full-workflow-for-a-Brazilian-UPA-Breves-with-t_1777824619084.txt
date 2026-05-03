@@ -1,0 +1,174 @@
+Build a full workflow for a Brazilian UPA (Breves) with triage, doctor assignment, queues, and observation.
+
+1) ROLES AND SHIFT LOGIN
+- Roles: Receptionist, Nurse (Triage), Doctor, Technician, Admin
+- On login, user must select shift sector(s):
+  • Recepção
+  • Triagem
+  • Consultório 1
+  • Consultório 2
+  • Sala Vermelha
+  • Observação Adulto
+  • Observação Pediátrica
+  • Pré-Observação
+
+- Store daily assignment:
+  user_id, role, sector, shift_date, shift_start_time
+
+- Rules:
+  • Nurse in Triagem is fixed at triage station
+  • Doctor in Consultório 1 is fixed
+  • Doctor in Consultório 2:
+      - covers Observação Pediátrica + Pré-Observação
+      - after finishing visits, attends “porta” (triage queue)
+  • Internal Doctor (Sala Vermelha + Observação Adulto):
+      - fixed in these sectors
+      - after 23:00 also attends “porta” (triage queue)
+
+2) PATIENT FLOW STATES (care_status)
+- "Em Triagem"
+- "Aguardando Atendimento"
+- "Em Atendimento"
+- "Em Procedimentos/Exames"
+- "Em Observação"
+- "Internado (UPA)"
+- "Em Transferência"
+- "Alta"
+
+3) RECEPTION SCREEN
+- Register patient
+- Button: "Enviar para Triagem"
+- Set care_status = "Em Triagem"
+
+4) TRIAGE (NURSE) SCREEN
+- List patients "Em Triagem"
+- Classify Manchester (Red/Orange/Yellow/Green/Blue)
+- Set priority time rules:
+  Red = imediato
+  Orange = até 10 min
+  Yellow = até 60 min
+  Green = até 120 min
+  Blue = até 240 min
+
+- Select preferred doctor (optional):
+  • Consultório 1
+  • Consultório 2
+  (Note: this is preference; final assignment follows availability/queue)
+
+- After triage:
+  care_status = "Aguardando Atendimento"
+  enqueue patient in TRIAGE QUEUE
+
+5) TRIAGE QUEUE (PORTA)
+- Single priority queue ordered by:
+  1) Manchester severity (Red > Orange > Yellow > Green > Blue)
+  2) waiting_time (longest first within same color)
+
+- Show:
+  • color badge
+  • waiting time counter
+  • preferred doctor (if any)
+
+6) DOCTOR ASSIGNMENT
+- Doctors see queue filtered by their active sector:
+
+Consultório 1 doctor:
+  - Sees full triage queue
+  - Can "Chamar paciente"
+  - On call:
+    • assign patient.doctor_id = current_user
+    • care_status = "Em Atendimento"
+    • remove from queue
+
+Consultório 2 doctor:
+  - Primary: handle Observação Pediátrica + Pré-Observação
+  - Secondary: after finishing visits, can pull from triage queue
+  - Same "Chamar paciente" action
+
+Internal doctor:
+  - Works in Sala Vermelha + Observação Adulto
+  - After 23:00:
+    • also sees triage queue
+    • can call patients
+
+7) DOCTOR SCREEN (ATENDIMENTO)
+Fields:
+- Diagnóstico
+- Conduta
+- Prescrição médica
+- Solicitação de exames
+
+Actions:
+- "Solicitar exames/procedimentos"
+  → care_status = "Em Procedimentos/Exames"
+
+- "Encaminhar para Observação"
+  → create initial medical prescription
+  → choose sector (Sala Vermelha / Obs Adulto / Obs Pediátrica / Pré-Obs)
+  → assign bed
+  → care_status = "Em Observação"
+
+- "Alta"
+  → choose:
+    • Receita comum
+    • Receita especial
+    • Ficha de referência
+    • APAC
+  → care_status = "Alta"
+
+- "Transferência"
+  → open TransferSection (already implemented)
+  → care_status = "Em Transferência"
+
+8) PROCEDURES/EXAMS FLOW
+- After procedures:
+  → patient returns to doctor queue (REAVALIAÇÃO)
+  → care_status = "Aguardando Atendimento"
+  → mark as "Retorno"
+
+9) OBSERVATION FLOW
+- Patient in bed
+- Linked to:
+  • sector
+  • bed_id
+  • responsible doctor
+
+- Allow:
+  • vitals (technician)
+  • nursing evolution
+  • reclassification anytime
+
+- Reclassification button:
+  • change Manchester color
+  • update priority
+
+10) UI REQUIREMENTS
+- Clear columns:
+  • Triagem
+  • Aguardando
+  • Em Atendimento
+  • Observação
+
+- Show:
+  • doctor assigned
+  • sector
+  • waiting time
+  • Manchester color
+
+- Highlight:
+  • overdue patients (time exceeded by Manchester rules)
+  • critical patients
+
+11) SAFETY RULES
+- Only patients in "Em Observação" or "Internado" can occupy beds
+- All actions must log:
+  • user_id
+  • timestamp
+
+12) PERFORMANCE
+- Real-time updates
+- Lightweight for low-end computers
+
+IMPORTANT:
+- Keep UI simple and intuitive for emergency workflow
+- Ensure triage, consultório 1 and 2 are connected through the same queue system
