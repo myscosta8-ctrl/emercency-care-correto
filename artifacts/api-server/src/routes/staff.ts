@@ -11,8 +11,10 @@ function hashPassword(plain: string): string {
 
 const serialize = (s: typeof staffTable.$inferSelect) => ({
   id: s.id,
-  fullName: s.fullName,
+  nome: s.nome,
   perfil: s.perfil,
+  email: s.email,
+  ativo: s.ativo,
   corenCrm: s.corenCrm,
   sector: s.sector,
   login: s.login,
@@ -24,14 +26,16 @@ const serialize = (s: typeof staffTable.$inferSelect) => ({
 });
 
 router.get("/", async (req, res) => {
-  const members = await db.select().from(staffTable).orderBy(staffTable.fullName);
+  const members = await db.select().from(staffTable).orderBy(staffTable.nome);
   res.json(members.map(serialize));
 });
 
 router.post("/", async (req, res) => {
   const { password, ...rest } = req.body as {
-    fullName: string;
+    nome: string;
     perfil: string;
+    email?: string;
+    ativo?: boolean;
     corenCrm?: string;
     sector?: string;
     login: string;
@@ -41,16 +45,18 @@ router.post("/", async (req, res) => {
     stamp?: string;
   };
 
-  if (!rest.fullName || !rest.perfil || !rest.login || !password) {
-    res.status(400).json({ error: "fullName, perfil, login and password are required" });
+  if (!rest.nome || !rest.perfil || !rest.login || !password) {
+    res.status(400).json({ error: "nome, perfil, login and password are required" });
     return;
   }
 
   const [created] = await db
     .insert(staffTable)
     .values({
-      fullName: rest.fullName,
+      nome: rest.nome,
       perfil: rest.perfil as "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico",
+      email: rest.email ?? "",
+      ativo: rest.ativo ?? true,
       corenCrm: rest.corenCrm ?? "",
       sector: rest.sector ?? "",
       login: rest.login,
@@ -74,8 +80,10 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   const id = Number(req.params["id"]);
   const { password, perfil: perfilRaw, ...rest } = req.body as {
-    fullName?: string;
+    nome?: string;
     perfil?: string;
+    email?: string;
+    ativo?: boolean;
     corenCrm?: string;
     sector?: string;
     login?: string;

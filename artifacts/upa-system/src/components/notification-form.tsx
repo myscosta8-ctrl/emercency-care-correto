@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useCreatePatientNotification,
+  useAddPatientNotification,
   useUpdatePatientNotification,
   getGetPatientNotificationsQueryKey,
 } from "@workspace/api-client-react";
@@ -73,7 +73,7 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
       diagnosis:        notification?.diagnosis   ?? patient.diagnosis ?? "",
       symptomOnsetDate: notification?.symptomOnsetDate ?? "",
       situation:        (notification?.situation as FormValues["situation"]) ?? "pendente",
-      responsible:      notification?.responsible ?? patient.nurse ?? "",
+      responsible:      notification?.responsible ?? patient.responsibleProfessional ?? "",
       notifiedAt:       notification?.notifiedAt  ?? defaultNotifiedAt,
     },
   });
@@ -81,7 +81,7 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
   const selectedTypes = form.watch("types");
   const hasOutros     = selectedTypes.includes("outros");
 
-  const createNotification = useCreatePatientNotification();
+  const createNotification = useAddPatientNotification();
   const updateNotification = useUpdatePatientNotification();
   const isPending = createNotification.isPending || updateNotification.isPending;
 

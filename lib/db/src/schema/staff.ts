@@ -1,11 +1,13 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const staffTable = pgTable("staff", {
   id: serial("id").primaryKey(),
-  fullName: text("full_name").notNull(),
+  nome: text("nome").notNull(),
   perfil: text("perfil", { enum: ["direcao", "administrativo", "coordenacao", "enfermeiro", "tecnico"] }).notNull(),
+  email: text("email").notNull().default(""),
+  ativo: boolean("ativo").notNull().default(true),
   corenCrm: text("coren_crm").notNull().default(""),
   sector: text("sector").notNull().default(""),
   login: text("login").notNull().unique(),

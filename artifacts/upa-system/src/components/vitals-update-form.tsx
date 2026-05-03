@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useAddVitals,
+  useRecordPatientVitals,
   getGetPatientQueryKey,
   getListPatientsQueryKey,
   getGetPatientHistoryQueryKey,
@@ -115,12 +115,12 @@ export function VitalsUpdateForm({ patient, onSuccess, onCancel }: VitalsUpdateF
       painScale: 0,
       assessment: "",
       plan: DEFAULT_PLAN,
-      responsible: nurseName || patient.nurse || "",
+      responsible: nurseName || patient.responsibleProfessional || "",
       note: "",
     },
   });
 
-  const addVitals = useAddVitals();
+  const addVitals = useRecordPatientVitals();
 
   function onSubmit(data: FormValues) {
     addVitals.mutate({ id: patient.id, data }, {

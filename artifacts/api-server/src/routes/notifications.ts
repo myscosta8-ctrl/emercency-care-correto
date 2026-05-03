@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, patientNotificationsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import {
-  CreatePatientNotificationBody,
+  AddPatientNotificationBody,
   UpdatePatientNotificationBody,
 } from "@workspace/api-zod";
 
@@ -27,7 +27,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const patientId = Number((req.params as Params)["id"]);
-  const body = CreatePatientNotificationBody.parse(req.body);
+  const body = AddPatientNotificationBody.parse(req.body);
   const [notif] = await db
     .insert(patientNotificationsTable)
     .values({

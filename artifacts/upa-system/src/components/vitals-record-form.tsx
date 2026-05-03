@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useAddVitals,
+  useRecordPatientVitals,
   getGetPatientQueryKey,
   getListPatientsQueryKey,
   getGetPatientHistoryQueryKey,
@@ -45,7 +45,7 @@ interface Props {
 export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const addVitals = useAddVitals();
+  const addVitals = useRecordPatientVitals();
   const { nurseName, setNurseName } = useNurse();
 
   const now = new Date();
@@ -62,7 +62,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
       temperature:    patient.temperature ?? 0,
       glucose:        patient.glucose ?? 0,
       note:           "",
-      responsible:    nurseName || (patient.nurse ?? ""),
+      responsible:    nurseName || (patient.responsibleProfessional ?? ""),
     },
   });
 

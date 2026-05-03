@@ -17,7 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useNurse } from "@/hooks/use-nurse";
 import {
-  useCreatePatientTask,
+  useAddPatientTask,
   getGetPatientTasksQueryKey,
 } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -62,7 +62,7 @@ interface TasksFormProps {
 export function TasksForm({ patientId, patientName, defaultResponsible = "", onSuccess, onCancel }: TasksFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const createTask = useCreatePatientTask();
+  const createTask = useAddPatientTask();
   const { nurseName, setNurseName } = useNurse();
 
   const now = new Date();
@@ -129,7 +129,6 @@ export function TasksForm({ patientId, patientName, defaultResponsible = "", onS
         id: patientId,
         data: {
           items: JSON.stringify(itemsList),
-          status: data.status,
           responsible: data.responsible,
         },
       },

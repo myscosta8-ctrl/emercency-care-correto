@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth-context";
-import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle, Mail, ToggleLeft, ToggleRight } from "lucide-react";
 import { useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -174,8 +174,10 @@ function SignaturePad({ value, onChange }: SignaturePadProps) {
 // ── staff form ─────────────────────────────────────────────────────────────────
 
 interface FormData {
-  fullName: string;
+  nome: string;
   perfil: "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico";
+  email: string;
+  ativo: boolean;
   corenCrm: string;
   sector: string;
   login: string;
@@ -186,8 +188,10 @@ interface FormData {
 }
 
 const defaultForm = (): FormData => ({
-  fullName: "",
+  nome: "",
   perfil: "tecnico",
+  email: "",
+  ativo: true,
   corenCrm: "",
   sector: "",
   login: "",
@@ -201,7 +205,7 @@ function buildStamp(f: FormData): string {
   const catLabel = CATEGORIES.find(c => c.value === f.perfil)?.label ?? "";
   const corenLabel = COREN_LABEL[f.perfil] ?? "Reg.";
   return [
-    f.fullName,
+    f.nome,
     catLabel,
     f.corenCrm ? `${corenLabel}: ${f.corenCrm}` : "",
     f.sector,
@@ -222,8 +226,10 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
   const [form, setForm] = useState<FormData>(() => {
     if (!initial) return defaultForm();
     return {
-      fullName: initial.fullName,
+      nome: initial.nome,
       perfil: initial.perfil as FormData["perfil"],
+      email: initial.email,
+      ativo: initial.ativo,
       corenCrm: initial.corenCrm,
       sector: initial.sector,
       login: initial.login,
@@ -244,14 +250,16 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.fullName || !form.login || (!initial && !form.password)) {
+    if (!form.nome || !form.login || (!initial && !form.password)) {
       toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
       return;
     }
 
     const payload = {
-      fullName: form.fullName,
+      nome: form.nome,
       perfil: form.perfil,
+      email: form.email,
+      ativo: form.ativo,
       corenCrm: form.corenCrm,
       sector: form.sector,
       login: form.login,
@@ -290,15 +298,47 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
 
-          {/* nome */}
+          {/* nome + ativo */}
+          <div className="flex items-end gap-3">
+            <div className="flex-1 space-y-1.5">
+              <Label>Nome completo <span className="text-red-400">*</span></Label>
+              <Input
+                value={form.nome}
+                onChange={e => set({ nome: e.target.value })}
+                placeholder="Nome completo do funcionário"
+                autoFocus
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => set({ ativo: !form.ativo })}
+              className={cn(
+                "flex items-center gap-1.5 h-10 px-3 rounded-md border text-sm font-medium transition-colors shrink-0",
+                form.ativo
+                  ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20"
+                  : "border-border/50 text-muted-foreground bg-muted/20 hover:bg-muted/40"
+              )}
+            >
+              {form.ativo
+                ? <ToggleRight className="h-4 w-4" />
+                : <ToggleLeft className="h-4 w-4" />}
+              {form.ativo ? "Ativo" : "Inativo"}
+            </button>
+          </div>
+
+          {/* e-mail */}
           <div className="space-y-1.5">
-            <Label>Nome completo <span className="text-red-400">*</span></Label>
-            <Input
-              value={form.fullName}
-              onChange={e => set({ fullName: e.target.value })}
-              placeholder="Nome completo do funcionário"
-              autoFocus
-            />
+            <Label>E-mail</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="email"
+                value={form.email}
+                onChange={e => set({ email: e.target.value })}
+                placeholder="funcionario@upa.gov.br"
+                className="pl-9"
+              />
+            </div>
           </div>
 
           {/* categoria + coren/crm */}
@@ -470,7 +510,12 @@ function StaffCard({ member, onEdit, onDelete, canEdit }: StaffCardProps) {
         {/* info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="font-semibold text-sm text-foreground truncate">{member.fullName}</h3>
+            <h3 className="font-semibold text-sm text-foreground truncate">{member.nome}</h3>
+            {!member.ativo && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-muted-foreground/30 text-muted-foreground bg-muted/20 shrink-0">
+                Inativo
+              </span>
+            )}
             <span className={cn(
               "px-2 py-0.5 rounded-full text-[11px] font-semibold border shrink-0",
               CATEGORY_COLOR[member.perfil]
@@ -483,6 +528,7 @@ function StaffCard({ member, onEdit, onDelete, canEdit }: StaffCardProps) {
               <p>{COREN_LABEL[member.perfil]}: <span className="text-foreground font-mono">{member.corenCrm}</span></p>
             )}
             {member.sector && <p>Setor: <span className="text-foreground">{SECTOR_LABEL[member.sector] ?? member.sector}</span></p>}
+            {member.email && <p className="flex items-center gap-1"><Mail className="h-3 w-3 shrink-0" /><span className="text-foreground">{member.email}</span></p>}
             <p>Login: <span className="text-foreground font-mono">{member.login}</span></p>
           </div>
           {levels.length > 0 && (
@@ -569,14 +615,14 @@ export default function StaffPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/staff"] });
 
   const handleDelete = async (m: StaffMember) => {
-    if (!confirm(`Remover ${m.fullName}?`)) return;
+    if (!confirm(`Remover ${m.nome}?`)) return;
     await deleteMut.mutateAsync({ id: m.id });
     toast({ title: "Funcionário removido" });
     invalidate();
   };
 
   const filtered = (staff ?? []).filter(m => {
-    const matchSearch = m.fullName.toLowerCase().includes(search.toLowerCase()) ||
+    const matchSearch = m.nome.toLowerCase().includes(search.toLowerCase()) ||
       m.login.toLowerCase().includes(search.toLowerCase()) ||
       m.corenCrm.toLowerCase().includes(search.toLowerCase());
     const matchCat = filterCat === "todos" || m.perfil === filterCat;
@@ -607,7 +653,7 @@ export default function StaffPage() {
               >
                 <option value="">Selecionar acesso</option>
                 {(staff ?? []).map(m => (
-                  <option key={m.id} value={m.login}>{m.fullName}</option>
+                  <option key={m.id} value={m.login}>{m.nome}</option>
                 ))}
               </select>
               {activeUser && (

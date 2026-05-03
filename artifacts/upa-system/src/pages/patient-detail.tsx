@@ -1005,7 +1005,7 @@ export default function PatientDetail() {
                   <UserCheck className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground">Responsável</p>
-                    <p className="font-medium">{patient.nurse || "—"}</p>
+                    <p className="font-medium">{patient.responsibleProfessional || "—"}</p>
                   </div>
                 </div>
                 {patient.attendanceDate && (
@@ -1042,7 +1042,7 @@ export default function PatientDetail() {
             </Card>
 
             {/* Patient Demographics */}
-            {(patient.cns || patient.cpf || patient.rg || patient.phone || patient.email || patient.guardianName || patient.motherName || patient.street) && (
+            {(patient.cns || patient.cpf || patient.rg || patient.phone || patient.email || patient.motherName || patient.street) && (
               <Card className="border-border/50">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -1093,7 +1093,7 @@ export default function PatientDetail() {
                     </div>
                   )}
 
-                  {(patient.phone || patient.email || patient.guardianName) && (
+                  {(patient.phone || patient.email) && (
                     <div className="space-y-1.5 pt-1 border-t border-border/40">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Contato</p>
                       {patient.phone && (
@@ -1106,12 +1106,6 @@ export default function PatientDetail() {
                         <div className="flex justify-between items-baseline">
                           <span className="text-xs text-muted-foreground">E-mail</span>
                           <span className="text-sm font-medium">{patient.email}</span>
-                        </div>
-                      )}
-                      {patient.guardianName && (
-                        <div>
-                          <p className="text-xs text-muted-foreground">Responsável</p>
-                          <p className="text-sm font-medium">{patient.guardianName}</p>
                         </div>
                       )}
                     </div>
@@ -1234,7 +1228,7 @@ export default function PatientDetail() {
           <TasksForm
             patientId={id}
             patientName={patient.nome}
-            defaultResponsible={patient.nurse ?? ""}
+            defaultResponsible={patient.responsibleProfessional ?? ""}
             onSuccess={() => setIsTasksOpen(false)}
             onCancel={() => setIsTasksOpen(false)}
           />
@@ -1350,7 +1344,7 @@ export default function PatientDetail() {
                   </span>
                 </td>
                 <th style={{ textAlign: "left" }}>Responsável</th>
-                <td>{patient.nurse || "—"}</td>
+                <td>{patient.responsibleProfessional || "—"}</td>
               </tr>
               {patient.diagnosis && (
                 <tr>
@@ -1468,7 +1462,7 @@ export default function PatientDetail() {
           <div className="print-sig-box">
             <div>{nurseName || "___________________________________"}</div>
             <div style={{ marginTop: "2pt" }}>Profissional Responsável</div>
-            {patient.nurse && <div style={{ color: "#6b7280" }}>{patient.nurse}</div>}
+            {patient.responsibleProfessional && <div style={{ color: "#6b7280" }}>{patient.responsibleProfessional}</div>}
           </div>
         </div>
       </div>

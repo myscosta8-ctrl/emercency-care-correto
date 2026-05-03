@@ -1,37 +1,29 @@
-openapi: 3.1.0
+openapi: 3.0.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
-  title: Api
-  version: 0.1.0
-  description: UPA Patient Management API
-servers:
-  - url: /api
-    description: Base API path
-tags:
-  - name: health
-    description: Health operations
-  - name: patients
-    description: Patient operations
-  - name: staff
-    description: Staff management operations
+  title: UPA Patient Management API
+  version: 1.0.0
+
 paths:
-  /healthz:
+  /api/healthz:
     get:
       operationId: healthCheck
-      tags: [health]
       summary: Health check
       responses:
         "200":
-          description: Healthy
+          description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthStatus"
+                type: object
+                properties:
+                  status:
+                    type: string
+                required:
+                  - status
 
-  /patients:
+  /api/patients:
     get:
       operationId: listPatients
-      tags: [patients]
       summary: List all patients
       responses:
         "200":
@@ -44,7 +36,6 @@ paths:
                   $ref: "#/components/schemas/Patient"
     post:
       operationId: createPatient
-      tags: [patients]
       summary: Create a new patient
       requestBody:
         required: true
@@ -60,24 +51,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/Patient"
 
-  /patients/summary:
+  /api/patients/summary:
     get:
       operationId: getPatientsSummary
-      tags: [patients]
-      summary: Get dashboard summary counts by Manchester triage
+      summary: Get patient summary stats
       responses:
         "200":
-          description: Patient summary stats
+          description: Summary
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PatientsSummary"
+                $ref: "#/components/schemas/PatientSummary"
 
-  /patients/{id}:
+  /api/patients/{id}:
     get:
       operationId: getPatient
-      tags: [patients]
-      summary: Get a single patient
+      summary: Get a patient by ID
       parameters:
         - name: id
           in: path
@@ -95,7 +84,6 @@ paths:
           description: Not found
     put:
       operationId: updatePatient
-      tags: [patients]
       summary: Update a patient
       parameters:
         - name: id
@@ -108,7 +96,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreatePatientBody"
+              $ref: "#/components/schemas/UpdatePatientBody"
       responses:
         "200":
           description: Updated patient
@@ -120,7 +108,6 @@ paths:
           description: Not found
     delete:
       operationId: deletePatient
-      tags: [patients]
       summary: Delete a patient
       parameters:
         - name: id
@@ -131,12 +118,13 @@ paths:
       responses:
         "204":
           description: Deleted
+        "404":
+          description: Not found
 
-  /patients/{id}/status:
-    patch:
+  /api/patients/{id}/status:
+    put:
       operationId: updatePatientStatus
-      tags: [patients]
-      summary: Quickly update only the patient triage status
+      summary: Update patient triage status
       parameters:
         - name: id
           in: path
@@ -159,11 +147,28 @@ paths:
         "404":
           description: Not found
 
-  /patients/{id}/vitals:
+  /api/patients/{id}/history:
+    get:
+      operationId: getPatientHistory
+      summary: Get patient history entries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: History entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientHistoryEntry"
     post:
-      operationId: addVitals
-      tags: [patients]
-      summary: Update patient vitals and log evolution entry
+      operationId: addPatientHistory
+      summary: Add a patient history entry
       parameters:
         - name: id
           in: path
@@ -175,21 +180,42 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/VitalsUpdateBody"
+              $ref: "#/components/schemas/AddPatientHistoryBody"
       responses:
-        "200":
-          description: Updated patient
+        "201":
+          description: Created history entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientHistoryEntry"
+
+  /api/patients/{id}/vitals:
+    post:
+      operationId: recordPatientVitals
+      summary: Record patient vitals
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordPatientVitalsBody"
+      responses:
+        "201":
+          description: Created vitals record
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Patient"
-        "404":
-          description: Not found
 
-  /patients/{id}/prescriptions:
+  /api/patients/{id}/prescriptions:
     get:
       operationId: getPatientPrescriptions
-      tags: [patients]
       summary: Get patient prescriptions
       parameters:
         - name: id
@@ -199,7 +225,7 @@ paths:
             type: integer
       responses:
         "200":
-          description: Prescription list
+          description: Prescriptions
           content:
             application/json:
               schema:
@@ -207,9 +233,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/PatientPrescription"
     post:
-      operationId: createPatientPrescription
-      tags: [patients]
-      summary: Create a nursing prescription
+      operationId: addPatientPrescription
+      summary: Add a prescription
       parameters:
         - name: id
           in: path
@@ -221,19 +246,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreatePrescriptionBody"
+              $ref: "#/components/schemas/AddPatientPrescriptionBody"
       responses:
         "201":
-          description: Prescription created
+          description: Created prescription
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PatientPrescription"
 
-  /patients/{id}/prescriptions/{prescriptionId}:
-    patch:
+  /api/patients/{id}/prescriptions/{prescriptionId}/status:
+    put:
       operationId: updatePrescriptionStatus
-      tags: [patients]
       summary: Update prescription status
       parameters:
         - name: id
@@ -254,17 +278,16 @@ paths:
               $ref: "#/components/schemas/UpdatePrescriptionStatusBody"
       responses:
         "200":
-          description: Prescription updated
+          description: Updated prescription
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PatientPrescription"
 
-  /patients/{id}/tasks:
+  /api/patients/{id}/tasks:
     get:
       operationId: getPatientTasks
-      tags: [patients]
-      summary: Get patient pending tasks
+      summary: Get patient tasks
       parameters:
         - name: id
           in: path
@@ -273,7 +296,7 @@ paths:
             type: integer
       responses:
         "200":
-          description: Task list
+          description: Tasks
           content:
             application/json:
               schema:
@@ -281,9 +304,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/PatientTask"
     post:
-      operationId: createPatientTask
-      tags: [patients]
-      summary: Create a pending task
+      operationId: addPatientTask
+      summary: Add a task
       parameters:
         - name: id
           in: path
@@ -295,19 +317,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateTaskBody"
+              $ref: "#/components/schemas/AddPatientTaskBody"
       responses:
         "201":
-          description: Task created
+          description: Created task
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PatientTask"
 
-  /patients/{id}/tasks/{taskId}:
-    patch:
+  /api/patients/{id}/tasks/{taskId}/status:
+    put:
       operationId: updateTaskStatus
-      tags: [patients]
       summary: Update task status
       parameters:
         - name: id
@@ -328,17 +349,16 @@ paths:
               $ref: "#/components/schemas/UpdateTaskStatusBody"
       responses:
         "200":
-          description: Task updated
+          description: Updated task
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PatientTask"
 
-  /patients/{id}/notifications:
+  /api/patients/{id}/notifications:
     get:
       operationId: getPatientNotifications
-      tags: [patients]
-      summary: List compulsory notifications for a patient
+      summary: Get patient compulsory notifications
       parameters:
         - name: id
           in: path
@@ -347,7 +367,7 @@ paths:
             type: integer
       responses:
         "200":
-          description: List of notifications
+          description: Notifications
           content:
             application/json:
               schema:
@@ -355,9 +375,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/PatientNotification"
     post:
-      operationId: createPatientNotification
-      tags: [patients]
-      summary: Create a compulsory notification
+      operationId: addPatientNotification
+      summary: Add a compulsory notification
       parameters:
         - name: id
           in: path
@@ -369,19 +388,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateNotificationBody"
+              $ref: "#/components/schemas/AddPatientNotificationBody"
       responses:
         "201":
-          description: Notification created
+          description: Created notification
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PatientNotification"
 
-  /patients/{id}/notifications/{notificationId}:
-    patch:
+  /api/patients/{id}/notifications/{notificationId}:
+    put:
       operationId: updatePatientNotification
-      tags: [patients]
       summary: Update a compulsory notification
       parameters:
         - name: id
@@ -399,17 +417,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateNotificationBody"
+              $ref: "#/components/schemas/UpdatePatientNotificationBody"
       responses:
         "200":
-          description: Notification updated
+          description: Updated notification
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PatientNotification"
     delete:
       operationId: deletePatientNotification
-      tags: [patients]
       summary: Delete a compulsory notification
       parameters:
         - name: id
@@ -426,35 +443,13 @@ paths:
         "204":
           description: Deleted
 
-  /patients/{id}/history:
-    get:
-      operationId: getPatientHistory
-      tags: [patients]
-      summary: Get patient evolution history
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Evolution history entries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/PatientEvolution"
-
-  /staff:
+  /api/staff:
     get:
       operationId: listStaff
-      tags: [staff]
       summary: List all staff members
       responses:
         "200":
-          description: List of staff
+          description: Staff list
           content:
             application/json:
               schema:
@@ -463,7 +458,6 @@ paths:
                   $ref: "#/components/schemas/StaffMember"
     post:
       operationId: createStaff
-      tags: [staff]
       summary: Create a staff member
       requestBody:
         required: true
@@ -479,11 +473,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/StaffMember"
 
-  /staff/{id}:
+  /api/staff/{id}:
     get:
       operationId: getStaff
-      tags: [staff]
-      summary: Get a staff member
+      summary: Get a staff member by ID
       parameters:
         - name: id
           in: path
@@ -501,7 +494,6 @@ paths:
           description: Not found
     put:
       operationId: updateStaff
-      tags: [staff]
       summary: Update a staff member
       parameters:
         - name: id
@@ -526,7 +518,6 @@ paths:
           description: Not found
     delete:
       operationId: deleteStaff
-      tags: [staff]
       summary: Delete a staff member
       parameters:
         - name: id
@@ -542,18 +533,6 @@ paths:
 
 components:
   schemas:
-    HealthStatus:
-      type: object
-      properties:
-        status:
-          type: string
-      required:
-        - status
-
-    TriageStatus:
-      type: string
-      enum: [red, orange, yellow, green, blue]
-
     Patient:
       type: object
       properties:
@@ -567,7 +546,6 @@ components:
           type: integer
         sex:
           type: string
-          enum: [M, F, O]
         motherName:
           type: string
         cns:
@@ -576,15 +554,9 @@ components:
           type: string
         rg:
           type: string
-        weight:
-          type: number
-        height:
-          type: number
         phone:
           type: string
         email:
-          type: string
-        guardianName:
           type: string
         street:
           type: string
@@ -600,45 +572,36 @@ components:
           type: string
         zipCode:
           type: string
-        bed:
-          type: string
-        diagnosis:
-          type: string
+        weight:
+          type: number
+        height:
+          type: number
         symptoms:
           type: string
         symptomOnsetDate:
           type: string
-        heartRate:
-          type: integer
-        respiratoryRate:
-          type: integer
-        glucose:
-          type: number
-        spO2:
-          type: integer
-        temperature:
-          type: number
-        systolicBp:
-          type: integer
-        diastolicBp:
-          type: integer
+        diagnosis:
+          type: string
         status:
-          $ref: "#/components/schemas/TriageStatus"
+          type: string
+          enum: [red, orange, yellow, green, blue]
+        bed:
+          type: string
         setor:
           type: string
           enum: [sala_vermelha, observacao_adulto, observacao_pediatrica, observacao_pre_adulto]
         internmentStatus:
           type: string
-          enum: [internado, nao_internado]
+          enum: [observacao, internado, alta]
         nurse:
+          type: string
+        responsibleProfessional:
           type: string
         attendanceDate:
           type: string
         attendanceTime:
           type: string
         healthUnit:
-          type: string
-        responsibleProfessional:
           type: string
         agravo:
           type: string
@@ -654,10 +617,22 @@ components:
           type: string
         criterioConfirmacao:
           type: string
-        createdBy:
+        guardianName:
           type: string
-        updatedBy:
-          type: string
+        systolicBp:
+          type: number
+        diastolicBp:
+          type: number
+        heartRate:
+          type: number
+        respiratoryRate:
+          type: number
+        spO2:
+          type: number
+        temperature:
+          type: number
+        glucose:
+          type: number
         createdAt:
           type: string
           format: date-time
@@ -674,11 +649,8 @@ components:
         - cns
         - cpf
         - rg
-        - weight
-        - height
         - phone
         - email
-        - guardianName
         - street
         - addressNumber
         - addressComplement
@@ -686,25 +658,20 @@ components:
         - city
         - addressState
         - zipCode
-        - bed
-        - diagnosis
+        - weight
+        - height
         - symptoms
         - symptomOnsetDate
-        - heartRate
-        - respiratoryRate
-        - glucose
-        - spO2
-        - temperature
-        - systolicBp
-        - diastolicBp
+        - diagnosis
         - status
+        - bed
         - setor
         - internmentStatus
         - nurse
+        - responsibleProfessional
         - attendanceDate
         - attendanceTime
         - healthUnit
-        - responsibleProfessional
         - agravo
         - dataNotificacao
         - municipioNotificacao
@@ -712,8 +679,14 @@ components:
         - evolucaoCaso
         - classificacaoFinal
         - criterioConfirmacao
-        - createdBy
-        - updatedBy
+        - guardianName
+        - systolicBp
+        - diastolicBp
+        - heartRate
+        - respiratoryRate
+        - spO2
+        - temperature
+        - glucose
         - createdAt
         - updatedAt
 
@@ -728,7 +701,6 @@ components:
           type: integer
         sex:
           type: string
-          enum: [M, F, O]
         motherName:
           type: string
         cns:
@@ -737,15 +709,9 @@ components:
           type: string
         rg:
           type: string
-        weight:
-          type: number
-        height:
-          type: number
         phone:
           type: string
         email:
-          type: string
-        guardianName:
           type: string
         street:
           type: string
@@ -761,45 +727,33 @@ components:
           type: string
         zipCode:
           type: string
-        bed:
-          type: string
-        diagnosis:
-          type: string
+        weight:
+          type: number
+        height:
+          type: number
         symptoms:
           type: string
         symptomOnsetDate:
           type: string
-        heartRate:
-          type: integer
-        respiratoryRate:
-          type: integer
-        glucose:
-          type: number
-        spO2:
-          type: integer
-        temperature:
-          type: number
-        systolicBp:
-          type: integer
-        diastolicBp:
-          type: integer
+        diagnosis:
+          type: string
         status:
-          $ref: "#/components/schemas/TriageStatus"
+          type: string
+        bed:
+          type: string
         setor:
           type: string
-          enum: [sala_vermelha, observacao_adulto, observacao_pediatrica, observacao_pre_adulto]
         internmentStatus:
           type: string
-          enum: [internado, nao_internado]
         nurse:
+          type: string
+        responsibleProfessional:
           type: string
         attendanceDate:
           type: string
         attendanceTime:
           type: string
         healthUnit:
-          type: string
-        responsibleProfessional:
           type: string
         agravo:
           type: string
@@ -815,57 +769,155 @@ components:
           type: string
         criterioConfirmacao:
           type: string
+        guardianName:
+          type: string
+        systolicBp:
+          type: number
+        diastolicBp:
+          type: number
+        heartRate:
+          type: number
+        respiratoryRate:
+          type: number
+        spO2:
+          type: number
+        temperature:
+          type: number
+        glucose:
+          type: number
       required:
         - nome
-        - status
         - setor
-        - internmentStatus
+
+    UpdatePatientBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        birthDate:
+          type: string
+        age:
+          type: integer
+        sex:
+          type: string
+        motherName:
+          type: string
+        cns:
+          type: string
+        cpf:
+          type: string
+        rg:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        street:
+          type: string
+        addressNumber:
+          type: string
+        addressComplement:
+          type: string
+        neighborhood:
+          type: string
+        city:
+          type: string
+        addressState:
+          type: string
+        zipCode:
+          type: string
+        weight:
+          type: number
+        height:
+          type: number
+        symptoms:
+          type: string
+        symptomOnsetDate:
+          type: string
+        diagnosis:
+          type: string
+        status:
+          type: string
+        bed:
+          type: string
+        setor:
+          type: string
+        internmentStatus:
+          type: string
+        nurse:
+          type: string
+        responsibleProfessional:
+          type: string
+        attendanceDate:
+          type: string
+        attendanceTime:
+          type: string
+        healthUnit:
+          type: string
+        agravo:
+          type: string
+        dataNotificacao:
+          type: string
+        municipioNotificacao:
+          type: string
+        codigoIbge:
+          type: string
+        evolucaoCaso:
+          type: string
+        classificacaoFinal:
+          type: string
+        criterioConfirmacao:
+          type: string
+        guardianName:
+          type: string
+        systolicBp:
+          type: number
+        diastolicBp:
+          type: number
+        heartRate:
+          type: number
+        respiratoryRate:
+          type: number
+        spO2:
+          type: number
+        temperature:
+          type: number
+        glucose:
+          type: number
 
     UpdatePatientStatusBody:
       type: object
       properties:
         status:
-          $ref: "#/components/schemas/TriageStatus"
+          type: string
+          enum: [red, orange, yellow, green, blue]
       required:
         - status
 
-    VitalsUpdateBody:
+    PatientSummary:
       type: object
       properties:
-        heartRate:
+        total:
           type: integer
-        respiratoryRate:
+        red:
           type: integer
-        glucose:
-          type: number
-        systolicBp:
+        orange:
           type: integer
-        diastolicBp:
+        yellow:
           type: integer
-        spO2:
+        green:
           type: integer
-        temperature:
-          type: number
-        painScale:
+        blue:
           type: integer
-        consciousnessLevel:
-          type: string
-        generalCondition:
-          type: string
-        subjective:
-          type: string
-        assessment:
-          type: string
-        plan:
-          type: string
-        responsible:
-          type: string
-        note:
-          type: string
       required:
-        - responsible
+        - total
+        - red
+        - orange
+        - yellow
+        - green
+        - blue
 
-    PatientEvolution:
+    PatientHistoryEntry:
       type: object
       properties:
         id:
@@ -910,13 +962,60 @@ components:
       required:
         - id
         - patientId
-        - responsible
-        - note
         - subjective
         - assessment
         - plan
+        - responsible
+        - note
         - createdBy
         - createdAt
+
+    AddPatientHistoryBody:
+      type: object
+      properties:
+        note:
+          type: string
+        author:
+          type: string
+      required:
+        - note
+        - author
+
+    RecordPatientVitalsBody:
+      type: object
+      properties:
+        systolicBp:
+          type: number
+        diastolicBp:
+          type: number
+        heartRate:
+          type: number
+        respiratoryRate:
+          type: number
+        spO2:
+          type: number
+        temperature:
+          type: number
+        glucose:
+          type: number
+        painScale:
+          type: integer
+        consciousnessLevel:
+          type: string
+        generalCondition:
+          type: string
+        subjective:
+          type: string
+        assessment:
+          type: string
+        plan:
+          type: string
+        responsible:
+          type: string
+        note:
+          type: string
+      required:
+        - responsible
 
     PatientPrescription:
       type: object
@@ -953,14 +1052,11 @@ components:
         - createdAt
         - updatedAt
 
-    CreatePrescriptionBody:
+    AddPatientPrescriptionBody:
       type: object
       properties:
         items:
           type: string
-        status:
-          type: string
-          enum: [pendente, em_andamento, concluido]
         responsible:
           type: string
         scheduledTime:
@@ -1016,14 +1112,11 @@ components:
         - createdAt
         - updatedAt
 
-    CreateTaskBody:
+    AddPatientTaskBody:
       type: object
       properties:
         items:
           type: string
-        status:
-          type: string
-          enum: [pendente, em_andamento, concluido]
         responsible:
           type: string
         notes:
@@ -1038,42 +1131,115 @@ components:
         status:
           type: string
           enum: [pendente, em_andamento, concluido]
+        responsible:
+          type: string
       required:
         - status
 
-    PatientsSummary:
+    PatientNotification:
       type: object
       properties:
-        total:
+        id:
           type: integer
-        red:
+        patientId:
           type: integer
-        orange:
-          type: integer
-        yellow:
-          type: integer
-        green:
-          type: integer
-        blue:
-          type: integer
+        types:
+          type: string
+        otherType:
+          type: string
+        diagnosis:
+          type: string
+        symptomOnsetDate:
+          type: string
+        situation:
+          type: string
+          enum: [pendente, notificado]
+        notifiedAt:
+          type: string
+        responsible:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
       required:
-        - total
-        - red
-        - orange
-        - yellow
-        - green
-        - blue
+        - id
+        - patientId
+        - types
+        - otherType
+        - diagnosis
+        - symptomOnsetDate
+        - situation
+        - notifiedAt
+        - responsible
+        - notes
+        - createdAt
+        - updatedAt
+
+    AddPatientNotificationBody:
+      type: object
+      properties:
+        types:
+          type: string
+        otherType:
+          type: string
+        diagnosis:
+          type: string
+        symptomOnsetDate:
+          type: string
+        situation:
+          type: string
+          enum: [pendente, notificado]
+        notifiedAt:
+          type: string
+        responsible:
+          type: string
+        notes:
+          type: string
+      required:
+        - types
+        - situation
+        - responsible
+
+    UpdatePatientNotificationBody:
+      type: object
+      properties:
+        types:
+          type: string
+        otherType:
+          type: string
+        diagnosis:
+          type: string
+        symptomOnsetDate:
+          type: string
+        situation:
+          type: string
+          enum: [pendente, notificado]
+        notifiedAt:
+          type: string
+        responsible:
+          type: string
+        notes:
+          type: string
 
     StaffMember:
       type: object
       properties:
         id:
           type: integer
-        fullName:
+        nome:
           type: string
         perfil:
           type: string
           enum: [direcao, administrativo, coordenacao, enfermeiro, tecnico]
+        email:
+          type: string
+        ativo:
+          type: boolean
         corenCrm:
           type: string
         sector:
@@ -1094,8 +1260,10 @@ components:
           format: date-time
       required:
         - id
-        - fullName
+        - nome
         - perfil
+        - email
+        - ativo
         - corenCrm
         - sector
         - login
@@ -1108,11 +1276,15 @@ components:
     CreateStaffBody:
       type: object
       properties:
-        fullName:
+        nome:
           type: string
         perfil:
           type: string
           enum: [direcao, administrativo, coordenacao, enfermeiro, tecnico]
+        email:
+          type: string
+        ativo:
+          type: boolean
         corenCrm:
           type: string
         sector:
@@ -1128,7 +1300,7 @@ components:
         stamp:
           type: string
       required:
-        - fullName
+        - nome
         - perfil
         - login
         - password
@@ -1136,11 +1308,15 @@ components:
     UpdateStaffBody:
       type: object
       properties:
-        fullName:
+        nome:
           type: string
         perfil:
           type: string
           enum: [direcao, administrativo, coordenacao, enfermeiro, tecnico]
+        email:
+          type: string
+        ativo:
+          type: boolean
         corenCrm:
           type: string
         sector:
@@ -1163,113 +1339,3 @@ components:
           type: integer
       required:
         - id
-
-    UpdateStaffParams:
-      type: object
-      properties:
-        id:
-          type: integer
-      required:
-        - id
-
-    DeleteStaffParams:
-      type: object
-      properties:
-        id:
-          type: integer
-      required:
-        - id
-
-    PatientNotification:
-      type: object
-      properties:
-        id:
-          type: integer
-        patientId:
-          type: integer
-        types:
-          type: string
-        otherType:
-          type: string
-        diagnosis:
-          type: string
-        symptomOnsetDate:
-          type: string
-        situation:
-          type: string
-          enum: [notificado, pendente]
-        responsible:
-          type: string
-        notifiedAt:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-      required:
-        - id
-        - patientId
-        - types
-        - otherType
-        - diagnosis
-        - symptomOnsetDate
-        - situation
-        - responsible
-        - notifiedAt
-        - createdAt
-        - updatedAt
-
-    CreateNotificationBody:
-      type: object
-      properties:
-        types:
-          type: string
-        otherType:
-          type: string
-        diagnosis:
-          type: string
-        symptomOnsetDate:
-          type: string
-        situation:
-          type: string
-          enum: [notificado, pendente]
-        responsible:
-          type: string
-        notifiedAt:
-          type: string
-      required:
-        - types
-        - situation
-        - responsible
-
-    UpdateNotificationBody:
-      type: object
-      properties:
-        types:
-          type: string
-        otherType:
-          type: string
-        diagnosis:
-          type: string
-        symptomOnsetDate:
-          type: string
-        situation:
-          type: string
-          enum: [notificado, pendente]
-        responsible:
-          type: string
-        notifiedAt:
-          type: string
-
-    GetNotificationParams:
-      type: object
-      properties:
-        id:
-          type: integer
-        notificationId:
-          type: integer
-      required:
-        - id
-        - notificationId

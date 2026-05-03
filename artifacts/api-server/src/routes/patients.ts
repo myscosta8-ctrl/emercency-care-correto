@@ -9,14 +9,14 @@ import {
   DeletePatientParams,
   UpdatePatientStatusParams,
   UpdatePatientStatusBody,
-  AddVitalsParams,
-  AddVitalsBody,
-  CreatePatientPrescriptionParams,
-  CreatePatientPrescriptionBody,
+  RecordPatientVitalsParams,
+  RecordPatientVitalsBody,
+  AddPatientPrescriptionParams,
+  AddPatientPrescriptionBody,
   UpdatePrescriptionStatusParams,
   UpdatePrescriptionStatusBody,
-  CreatePatientTaskParams,
-  CreatePatientTaskBody,
+  AddPatientTaskParams,
+  AddPatientTaskBody,
   UpdateTaskStatusParams,
   UpdateTaskStatusBody,
 } from "@workspace/api-zod";
@@ -36,7 +36,6 @@ const serializeEvolution = (e: typeof patientEvolutionsTable.$inferSelect) => ({
   createdAt: e.createdAt.toISOString(),
 });
 
-/** Compute age in years from an ISO date string (YYYY-MM-DD). Returns 0 if invalid. */
 function ageFromBirthDate(birthDate: string): number {
   if (!birthDate) return 0;
   const birth = new Date(birthDate);
@@ -48,57 +47,117 @@ function ageFromBirthDate(birthDate: string): number {
   return Math.max(0, age);
 }
 
-/** Build the insert/update data object from a CreatePatientBody (or UpdatePatientBody) */
-function buildPatientData(body: typeof CreatePatientBody._type) {
+type PatientStatus = "red" | "orange" | "yellow" | "green" | "blue";
+type PatientSetor = "sala_vermelha" | "observacao_adulto" | "observacao_pediatrica" | "observacao_pre_adulto";
+type InternmentStatus = "internado" | "nao_internado";
+
+/** Full insert payload for patient creation */
+function buildPatientInsert(body: typeof CreatePatientBody._type) {
   const age = body.birthDate ? ageFromBirthDate(body.birthDate) : (body.age ?? 0);
   return {
-    nome:            body.nome,
-    birthDate:       body.birthDate ?? "",
+    nome:                    body.nome,
+    birthDate:               body.birthDate ?? "",
     age,
-    sex:             (body.sex ?? "O") as "M" | "F" | "O",
-    motherName:      body.motherName ?? "",
-    cns:             body.cns ?? "",
-    cpf:             body.cpf ?? "",
-    rg:              body.rg ?? "",
-    weight:          body.weight ?? 0,
-    height:          body.height ?? 0,
-    phone:           body.phone ?? "",
-    email:           body.email ?? "",
-    guardianName:    body.guardianName ?? "",
-    street:            body.street ?? "",
-    addressNumber:     body.addressNumber ?? "",
-    addressComplement: body.addressComplement ?? "",
-    neighborhood:      body.neighborhood ?? "",
-    city:            body.city ?? "",
-    addressState:    body.addressState ?? "",
-    zipCode:         body.zipCode ?? "",
-    status:          body.status,
-    setor:           body.setor!,
-    internmentStatus: body.internmentStatus,
-    bed:             body.bed ?? "",
-    diagnosis:       body.diagnosis ?? "",
-    symptoms:        body.symptoms ?? "",
-    symptomOnsetDate: body.symptomOnsetDate ?? "",
-    heartRate:       body.heartRate ?? 0,
-    respiratoryRate: body.respiratoryRate ?? 0,
-    glucose:         body.glucose ?? 0,
-    spO2:            body.spO2 ?? 0,
-    temperature:     body.temperature ?? 0,
-    systolicBp:      body.systolicBp ?? 0,
-    diastolicBp:     body.diastolicBp ?? 0,
-    nurse:           body.nurse ?? "",
-    attendanceDate:          body.attendanceDate          ?? "",
-    attendanceTime:          body.attendanceTime          ?? "",
-    healthUnit:              body.healthUnit              ?? "UPA Breves - Breves/PA",
+    sex:                     (body.sex ?? "O") as "M" | "F" | "O",
+    motherName:              body.motherName ?? "",
+    cns:                     body.cns ?? "",
+    cpf:                     body.cpf ?? "",
+    rg:                      body.rg ?? "",
+    weight:                  body.weight ?? 0,
+    height:                  body.height ?? 0,
+    phone:                   body.phone ?? "",
+    email:                   body.email ?? "",
+    guardianName:            "",
+    street:                  body.street ?? "",
+    addressNumber:           body.addressNumber ?? "",
+    addressComplement:       body.addressComplement ?? "",
+    neighborhood:            body.neighborhood ?? "",
+    city:                    body.city ?? "",
+    addressState:            body.addressState ?? "",
+    zipCode:                 body.zipCode ?? "",
+    status:                  (body.status ?? "green") as PatientStatus,
+    setor:                   body.setor as PatientSetor,
+    internmentStatus:        (body.internmentStatus ?? "nao_internado") as InternmentStatus,
+    bed:                     body.bed ?? "",
+    diagnosis:               body.diagnosis ?? "",
+    symptoms:                body.symptoms ?? "",
+    symptomOnsetDate:        body.symptomOnsetDate ?? "",
+    heartRate:               body.heartRate ?? 0,
+    respiratoryRate:         body.respiratoryRate ?? 0,
+    glucose:                 body.glucose ?? 0,
+    spO2:                    body.spO2 ?? 0,
+    temperature:             body.temperature ?? 0,
+    systolicBp:              body.systolicBp ?? 0,
+    diastolicBp:             body.diastolicBp ?? 0,
+    nurse:                   body.responsibleProfessional ?? "",
+    attendanceDate:          body.attendanceDate ?? "",
+    attendanceTime:          body.attendanceTime ?? "",
+    healthUnit:              body.healthUnit ?? "UPA Breves - Breves/PA",
     responsibleProfessional: body.responsibleProfessional ?? "",
-    agravo:              body.agravo              ?? "",
-    dataNotificacao:     body.dataNotificacao     ?? "",
-    municipioNotificacao: body.municipioNotificacao ?? "",
-    codigoIbge:          body.codigoIbge          ?? "",
-    evolucaoCaso:        body.evolucaoCaso         ?? "",
-    classificacaoFinal:  body.classificacaoFinal  ?? "",
-    criterioConfirmacao: body.criterioConfirmacao  ?? "",
+    agravo:                  body.agravo ?? "",
+    dataNotificacao:         body.dataNotificacao ?? "",
+    municipioNotificacao:    body.municipioNotificacao ?? "",
+    codigoIbge:              body.codigoIbge ?? "",
+    evolucaoCaso:            body.evolucaoCaso ?? "",
+    classificacaoFinal:      body.classificacaoFinal ?? "",
+    criterioConfirmacao:     body.criterioConfirmacao ?? "",
   };
+}
+
+/** Partial patch payload for patient update (only sets provided fields) */
+function buildPatientPatch(body: typeof UpdatePatientBody._type): Partial<typeof patientsTable.$inferInsert> {
+  const patch: Partial<typeof patientsTable.$inferInsert> = {};
+  if (body.nome              !== undefined) patch.nome              = body.nome;
+  if (body.birthDate         !== undefined) {
+    patch.birthDate = body.birthDate;
+    patch.age = ageFromBirthDate(body.birthDate);
+  }
+  if (body.age               !== undefined) patch.age               = body.age;
+  if (body.sex               !== undefined) patch.sex               = body.sex as "M" | "F" | "O";
+  if (body.motherName        !== undefined) patch.motherName        = body.motherName;
+  if (body.cns               !== undefined) patch.cns               = body.cns;
+  if (body.cpf               !== undefined) patch.cpf               = body.cpf;
+  if (body.rg                !== undefined) patch.rg                = body.rg;
+  if (body.weight            !== undefined) patch.weight            = body.weight;
+  if (body.height            !== undefined) patch.height            = body.height;
+  if (body.phone             !== undefined) patch.phone             = body.phone;
+  if (body.email             !== undefined) patch.email             = body.email;
+  if (body.street            !== undefined) patch.street            = body.street;
+  if (body.addressNumber     !== undefined) patch.addressNumber     = body.addressNumber;
+  if (body.addressComplement !== undefined) patch.addressComplement = body.addressComplement;
+  if (body.neighborhood      !== undefined) patch.neighborhood      = body.neighborhood;
+  if (body.city              !== undefined) patch.city              = body.city;
+  if (body.addressState      !== undefined) patch.addressState      = body.addressState;
+  if (body.zipCode           !== undefined) patch.zipCode           = body.zipCode;
+  if (body.status            !== undefined) patch.status            = body.status as PatientStatus;
+  if (body.setor             !== undefined) patch.setor             = body.setor as PatientSetor;
+  if (body.internmentStatus  !== undefined) patch.internmentStatus  = body.internmentStatus as InternmentStatus;
+  if (body.bed               !== undefined) patch.bed               = body.bed;
+  if (body.diagnosis         !== undefined) patch.diagnosis         = body.diagnosis;
+  if (body.symptoms          !== undefined) patch.symptoms          = body.symptoms;
+  if (body.symptomOnsetDate  !== undefined) patch.symptomOnsetDate  = body.symptomOnsetDate;
+  if (body.heartRate         !== undefined) patch.heartRate         = body.heartRate;
+  if (body.respiratoryRate   !== undefined) patch.respiratoryRate   = body.respiratoryRate;
+  if (body.glucose           !== undefined) patch.glucose           = body.glucose;
+  if (body.spO2              !== undefined) patch.spO2              = body.spO2;
+  if (body.temperature       !== undefined) patch.temperature       = body.temperature;
+  if (body.systolicBp        !== undefined) patch.systolicBp        = body.systolicBp;
+  if (body.diastolicBp       !== undefined) patch.diastolicBp       = body.diastolicBp;
+  if (body.attendanceDate          !== undefined) patch.attendanceDate          = body.attendanceDate;
+  if (body.attendanceTime          !== undefined) patch.attendanceTime          = body.attendanceTime;
+  if (body.healthUnit              !== undefined) patch.healthUnit              = body.healthUnit;
+  if (body.responsibleProfessional !== undefined) {
+    patch.responsibleProfessional = body.responsibleProfessional;
+    patch.nurse = body.responsibleProfessional;
+  }
+  if (body.agravo              !== undefined) patch.agravo              = body.agravo;
+  if (body.dataNotificacao     !== undefined) patch.dataNotificacao     = body.dataNotificacao;
+  if (body.municipioNotificacao !== undefined) patch.municipioNotificacao = body.municipioNotificacao;
+  if (body.codigoIbge          !== undefined) patch.codigoIbge          = body.codigoIbge;
+  if (body.evolucaoCaso        !== undefined) patch.evolucaoCaso        = body.evolucaoCaso;
+  if (body.classificacaoFinal  !== undefined) patch.classificacaoFinal  = body.classificacaoFinal;
+  if (body.criterioConfirmacao !== undefined) patch.criterioConfirmacao = body.criterioConfirmacao;
+  return patch;
 }
 
 // ── routes ────────────────────────────────────────────────────────────────────
@@ -135,29 +194,30 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const body = CreatePatientBody.parse(req.body);
-  const data = buildPatientData(body);
+  const data = buildPatientInsert(body);
+  const responsible = data.responsibleProfessional;
 
   const [patient] = await db.insert(patientsTable).values({
     ...data,
-    createdBy: data.nurse,
-    updatedBy: data.nurse,
+    createdBy: responsible,
+    updatedBy: responsible,
     updatedAt: new Date(),
   }).returning();
 
   await db.insert(patientEvolutionsTable).values({
-    patientId:      patient.id,
-    heartRate:      body.heartRate ?? null,
+    patientId:       patient.id,
+    heartRate:       body.heartRate ?? null,
     respiratoryRate: body.respiratoryRate ?? null,
-    glucose:        body.glucose ?? null,
-    spO2:           body.spO2 ?? null,
-    temperature:    body.temperature ?? null,
-    systolicBp:     body.systolicBp ?? null,
-    diastolicBp:    body.diastolicBp ?? null,
-    responsible:    body.nurse ?? "",
-    note:           "Admissão inicial",
-    subjective:     "",
-    assessment:     "",
-    plan:           "",
+    glucose:         body.glucose ?? null,
+    spO2:            body.spO2 ?? null,
+    temperature:     body.temperature ?? null,
+    systolicBp:      body.systolicBp ?? null,
+    diastolicBp:     body.diastolicBp ?? null,
+    responsible:     responsible,
+    note:            "Admissão inicial",
+    subjective:      "",
+    assessment:      "",
+    plan:            "",
   });
 
   res.status(201).json(serialize(patient));
@@ -166,11 +226,11 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   const { id } = UpdatePatientParams.parse({ id: Number(req.params.id) });
   const body    = UpdatePatientBody.parse(req.body);
-  const data    = buildPatientData(body);
+  const patch   = buildPatientPatch(body);
 
   const [patient] = await db.update(patientsTable).set({
-    ...data,
-    updatedBy: data.nurse,
+    ...patch,
+    updatedBy: patch.responsibleProfessional ?? "",
     updatedAt: new Date(),
   }).where(eq(patientsTable.id, id)).returning();
 
@@ -178,10 +238,10 @@ router.put("/:id", async (req, res) => {
   res.json(serialize(patient));
 });
 
-router.patch("/:id/status", async (req, res) => {
-  const { id }   = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
+router.put("/:id/status", async (req, res) => {
+  const { id }     = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
   const { status } = UpdatePatientStatusBody.parse(req.body);
-  const [patient] = await db.update(patientsTable)
+  const [patient]  = await db.update(patientsTable)
     .set({ status, updatedAt: new Date() })
     .where(eq(patientsTable.id, id)).returning();
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
@@ -189,18 +249,18 @@ router.patch("/:id/status", async (req, res) => {
 });
 
 router.post("/:id/vitals", async (req, res) => {
-  const { id } = AddVitalsParams.parse({ id: Number(req.params.id) });
-  const body   = AddVitalsBody.parse(req.body);
+  const { id } = RecordPatientVitalsParams.parse({ id: Number(req.params.id) });
+  const body   = RecordPatientVitalsBody.parse(req.body);
 
-  const updateData: Record<string, unknown> = { updatedAt: new Date() };
-  if (body.heartRate      !== undefined) updateData.heartRate      = body.heartRate;
+  const updateData: Partial<typeof patientsTable.$inferInsert> = { updatedAt: new Date() };
+  if (body.heartRate       !== undefined) updateData.heartRate       = body.heartRate;
   if (body.respiratoryRate !== undefined) updateData.respiratoryRate = body.respiratoryRate;
-  if (body.glucose        !== undefined) updateData.glucose        = body.glucose;
-  if (body.spO2           !== undefined) updateData.spO2           = body.spO2;
-  if (body.temperature    !== undefined) updateData.temperature    = body.temperature;
-  if (body.systolicBp     !== undefined) updateData.systolicBp     = body.systolicBp;
-  if (body.diastolicBp    !== undefined) updateData.diastolicBp    = body.diastolicBp;
-  if (body.responsible)                  updateData.nurse          = body.responsible;
+  if (body.glucose         !== undefined) updateData.glucose         = body.glucose;
+  if (body.spO2            !== undefined) updateData.spO2            = body.spO2;
+  if (body.temperature     !== undefined) updateData.temperature     = body.temperature;
+  if (body.systolicBp      !== undefined) updateData.systolicBp      = body.systolicBp;
+  if (body.diastolicBp     !== undefined) updateData.diastolicBp     = body.diastolicBp;
+  if (body.responsible)                   updateData.nurse           = body.responsible;
 
   const [patient] = await db.update(patientsTable).set(updateData).where(eq(patientsTable.id, id)).returning();
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
@@ -214,18 +274,42 @@ router.post("/:id/vitals", async (req, res) => {
     temperature:       body.temperature ?? null,
     systolicBp:        body.systolicBp ?? null,
     diastolicBp:       body.diastolicBp ?? null,
-    painScale:         body.painScale ?? null,
-    consciousnessLevel: body.consciousnessLevel ?? null,
-    generalCondition:  body.generalCondition ?? null,
-    subjective:        body.subjective ?? "",
-    assessment:        body.assessment ?? "",
-    plan:              body.plan ?? "",
     responsible:       body.responsible,
-    note:              body.note ?? "",
+    note:              body.note              ?? "",
+    subjective:        body.subjective        ?? "",
+    assessment:        body.assessment        ?? "",
+    plan:              body.plan              ?? "",
+    painScale:         body.painScale         ?? null,
+    consciousnessLevel: body.consciousnessLevel ?? null,
+    generalCondition:  body.generalCondition  ?? null,
     createdBy:         body.responsible,
   });
 
   res.json(serialize(patient));
+});
+
+router.get("/:id/history", async (req, res) => {
+  const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
+  const evolutions = await db.select()
+    .from(patientEvolutionsTable)
+    .where(eq(patientEvolutionsTable.patientId, id))
+    .orderBy(desc(patientEvolutionsTable.createdAt));
+  res.json(evolutions.map(serializeEvolution));
+});
+
+router.post("/:id/history", async (req, res) => {
+  const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
+  const body   = req.body as { note: string; author: string };
+  const [entry] = await db.insert(patientEvolutionsTable).values({
+    patientId:   id,
+    note:        body.note ?? "",
+    responsible: body.author ?? "",
+    subjective:  "",
+    assessment:  "",
+    plan:        "",
+    createdBy:   body.author ?? "",
+  }).returning();
+  res.status(201).json(serializeEvolution(entry));
 });
 
 router.get("/:id/prescriptions", async (req, res) => {
@@ -242,12 +326,12 @@ router.get("/:id/prescriptions", async (req, res) => {
 });
 
 router.post("/:id/prescriptions", async (req, res) => {
-  const { id } = CreatePatientPrescriptionParams.parse({ id: Number(req.params.id) });
-  const body   = CreatePatientPrescriptionBody.parse(req.body);
+  const { id } = AddPatientPrescriptionParams.parse({ id: Number(req.params.id) });
+  const body   = AddPatientPrescriptionBody.parse(req.body);
   const [prescription] = await db.insert(patientPrescriptionsTable).values({
     patientId:     id,
     items:         body.items,
-    status:        body.status ?? "pendente",
+    status:        "pendente",
     responsible:   body.responsible,
     scheduledTime: body.scheduledTime ?? "",
     notes:         body.notes ?? "",
@@ -260,7 +344,7 @@ router.post("/:id/prescriptions", async (req, res) => {
   });
 });
 
-router.patch("/:id/prescriptions/:prescriptionId", async (req, res) => {
+router.put("/:id/prescriptions/:prescriptionId/status", async (req, res) => {
   const { id, prescriptionId } = UpdatePrescriptionStatusParams.parse({
     id: Number(req.params.id),
     prescriptionId: Number(req.params.prescriptionId),
@@ -268,8 +352,8 @@ router.patch("/:id/prescriptions/:prescriptionId", async (req, res) => {
   const body = UpdatePrescriptionStatusBody.parse(req.body);
   const [prescription] = await db.update(patientPrescriptionsTable)
     .set({
-      status: body.status,
-      ...(body.responsible  ? { responsible:  body.responsible  } : {}),
+      status:        body.status as "pendente" | "em_andamento" | "concluido",
+      ...(body.responsible   ? { responsible:   body.responsible   } : {}),
       ...(body.scheduledTime ? { scheduledTime: body.scheduledTime } : {}),
       updatedAt: new Date(),
     })
@@ -297,12 +381,12 @@ router.get("/:id/tasks", async (req, res) => {
 });
 
 router.post("/:id/tasks", async (req, res) => {
-  const { id } = CreatePatientTaskParams.parse({ id: Number(req.params.id) });
-  const body   = CreatePatientTaskBody.parse(req.body);
+  const { id } = AddPatientTaskParams.parse({ id: Number(req.params.id) });
+  const body   = AddPatientTaskBody.parse(req.body);
   const [task] = await db.insert(patientTasksTable).values({
     patientId:  id,
     items:      body.items,
-    status:     body.status ?? "pendente",
+    status:     "pendente",
     responsible: body.responsible,
     notes:      body.notes ?? "",
     updatedAt:  new Date(),
@@ -314,14 +398,14 @@ router.post("/:id/tasks", async (req, res) => {
   });
 });
 
-router.patch("/:id/tasks/:taskId", async (req, res) => {
+router.put("/:id/tasks/:taskId/status", async (req, res) => {
   const { id, taskId } = UpdateTaskStatusParams.parse({
     id: Number(req.params.id),
     taskId: Number(req.params.taskId),
   });
   const body   = UpdateTaskStatusBody.parse(req.body);
   const [task] = await db.update(patientTasksTable)
-    .set({ status: body.status, updatedAt: new Date() })
+    .set({ status: body.status as "pendente" | "concluido", updatedAt: new Date() })
     .where(eq(patientTasksTable.id, taskId))
     .returning();
   if (!task) { res.status(404).json({ error: "Pendência não encontrada" }); return; }
@@ -330,15 +414,6 @@ router.patch("/:id/tasks/:taskId", async (req, res) => {
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
   });
-});
-
-router.get("/:id/history", async (req, res) => {
-  const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
-  const evolutions = await db.select()
-    .from(patientEvolutionsTable)
-    .where(eq(patientEvolutionsTable.patientId, id))
-    .orderBy(desc(patientEvolutionsTable.createdAt));
-  res.json(evolutions.map(serializeEvolution));
 });
 
 router.delete("/:id", async (req, res) => {

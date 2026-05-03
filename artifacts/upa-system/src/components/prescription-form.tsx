@@ -17,7 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useNurse } from "@/hooks/use-nurse";
 import {
-  useCreatePatientPrescription,
+  useAddPatientPrescription,
   getGetPatientPrescriptionsQueryKey,
 } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -65,7 +65,7 @@ interface PrescriptionFormProps {
 export function PrescriptionForm({ patientId, patientName, onSuccess, onCancel }: PrescriptionFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const createPrescription = useCreatePatientPrescription();
+  const createPrescription = useAddPatientPrescription();
   const { nurseName, setNurseName } = useNurse();
 
   const now = new Date();
@@ -130,7 +130,6 @@ export function PrescriptionForm({ patientId, patientName, onSuccess, onCancel }
         id: patientId,
         data: {
           items: JSON.stringify(itemsList),
-          status: data.status,
           responsible: data.responsible,
           scheduledTime: data.scheduledTime,
         },
