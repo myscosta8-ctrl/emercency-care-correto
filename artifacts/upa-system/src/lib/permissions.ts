@@ -2,6 +2,7 @@ export type Perfil = "direcao" | "administrativo" | "coordenacao" | "enfermeiro"
 export type Acao =
   | "criar_paciente"
   | "editar_paciente"
+  | "excluir_paciente"
   | "gerar_pdf"
   | "mudar_setor"
   | "visualizar_relatorios"
@@ -14,9 +15,9 @@ export interface Usuario {
 
 const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
   direcao:        ["*"],
-  administrativo: ["criar_paciente", "editar_paciente", "gerar_pdf", "visualizar_relatorios"],
-  coordenacao:    ["criar_paciente", "editar_paciente", "mudar_setor", "visualizar_setores"],
-  enfermeiro:     ["criar_paciente", "editar_paciente", "classificacao_risco"],
+  administrativo: ["criar_paciente", "editar_paciente", "excluir_paciente", "gerar_pdf", "visualizar_relatorios"],
+  coordenacao:    ["criar_paciente", "editar_paciente", "excluir_paciente", "mudar_setor", "visualizar_setores"],
+  enfermeiro:     ["criar_paciente", "editar_paciente", "excluir_paciente", "classificacao_risco"],
   tecnico:        ["criar_paciente"],
 };
 

@@ -191,7 +191,7 @@ const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: Patient
             <Pencil className="h-3.5 w-3.5" />
           </button>
         )}
-        {pode("editar_paciente") && (
+        {pode("excluir_paciente") && (
           <button
             type="button"
             title="Alta"

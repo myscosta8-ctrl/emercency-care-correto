@@ -345,7 +345,7 @@ export default function PatientDetail() {
                 <Edit className="h-4 w-4 mr-1.5" /> Editar
               </Button>
             )}
-            {pode("editar_paciente") && (
+            {pode("excluir_paciente") && (
               <Button variant="destructive" size="sm" onClick={() => setIsDeleteOpen(true)}>
                 <Trash2 className="h-4 w-4 mr-1.5" /> Alta/Remover
               </Button>
