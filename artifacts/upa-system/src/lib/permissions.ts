@@ -3,13 +3,16 @@ export type Acao =
   | "criar_paciente"
   | "editar_paciente"
   | "gerar_pdf"
-  | "mudar_setor";
+  | "mudar_setor"
+  | "visualizar_relatorios"
+  | "classificacao_risco"
+  | "visualizar_setores";
 
 const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
   direcao:        ["*"],
-  administrativo: ["criar_paciente", "editar_paciente", "gerar_pdf"],
-  coordenacao:    ["criar_paciente", "editar_paciente", "mudar_setor"],
-  enfermeiro:     ["criar_paciente", "editar_paciente"],
+  administrativo: ["criar_paciente", "editar_paciente", "gerar_pdf", "visualizar_relatorios"],
+  coordenacao:    ["criar_paciente", "editar_paciente", "mudar_setor", "visualizar_setores"],
+  enfermeiro:     ["criar_paciente", "editar_paciente", "classificacao_risco"],
   tecnico:        ["criar_paciente"],
 };
 
