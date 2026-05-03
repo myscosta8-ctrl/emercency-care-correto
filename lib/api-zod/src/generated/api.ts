@@ -40,6 +40,15 @@ export const ListPatientsResponseItem = zod.object({
     "observacao_pre_adulto",
   ]),
   internmentStatus: zod.enum(["observacao", "internado", "alta"]),
+  careStatus: zod.enum([
+    "Em Triagem",
+    "Aguardando Atendimento",
+    "Em Observação",
+    "Internado",
+    "Em Transferência",
+    "Alta",
+  ]),
+  careStatusChangedAt: zod.coerce.date(),
   nurse: zod.string(),
   responsibleProfessional: zod.string(),
   attendanceDate: zod.string(),
@@ -80,6 +89,16 @@ export const CreatePatientBody = zod.object({
   bed: zod.string().optional(),
   sector: zod.string(),
   internmentStatus: zod.string().optional(),
+  care_status: zod
+    .enum([
+      "Em Triagem",
+      "Aguardando Atendimento",
+      "Em Observação",
+      "Internado",
+      "Em Transferência",
+      "Alta",
+    ])
+    .optional(),
   nurse: zod.string().optional(),
   responsibleProfessional: zod.string().optional(),
   attendanceDate: zod.string().optional(),
@@ -137,6 +156,15 @@ export const GetPatientResponse = zod.object({
     "observacao_pre_adulto",
   ]),
   internmentStatus: zod.enum(["observacao", "internado", "alta"]),
+  careStatus: zod.enum([
+    "Em Triagem",
+    "Aguardando Atendimento",
+    "Em Observação",
+    "Internado",
+    "Em Transferência",
+    "Alta",
+  ]),
+  careStatusChangedAt: zod.coerce.date(),
   nurse: zod.string(),
   responsibleProfessional: zod.string(),
   attendanceDate: zod.string(),
@@ -180,6 +208,16 @@ export const UpdatePatientBody = zod.object({
   bed: zod.string().optional(),
   sector: zod.string().optional(),
   internmentStatus: zod.string().optional(),
+  care_status: zod
+    .enum([
+      "Em Triagem",
+      "Aguardando Atendimento",
+      "Em Observação",
+      "Internado",
+      "Em Transferência",
+      "Alta",
+    ])
+    .optional(),
   nurse: zod.string().optional(),
   responsibleProfessional: zod.string().optional(),
   attendanceDate: zod.string().optional(),
@@ -218,6 +256,15 @@ export const UpdatePatientResponse = zod.object({
     "observacao_pre_adulto",
   ]),
   internmentStatus: zod.enum(["observacao", "internado", "alta"]),
+  careStatus: zod.enum([
+    "Em Triagem",
+    "Aguardando Atendimento",
+    "Em Observação",
+    "Internado",
+    "Em Transferência",
+    "Alta",
+  ]),
+  careStatusChangedAt: zod.coerce.date(),
   nurse: zod.string(),
   responsibleProfessional: zod.string(),
   attendanceDate: zod.string(),
@@ -253,6 +300,17 @@ export const UpdatePatientStatusBody = zod.object({
   triage_level: zod
     .enum(["red", "orange", "yellow", "green", "blue"])
     .optional(),
+  care_status: zod
+    .enum([
+      "Em Triagem",
+      "Aguardando Atendimento",
+      "Em Observação",
+      "Internado",
+      "Em Transferência",
+      "Alta",
+    ])
+    .optional(),
+  user_id: zod.number().optional(),
 });
 
 export const UpdatePatientStatusResponse = zod.object({
@@ -279,6 +337,15 @@ export const UpdatePatientStatusResponse = zod.object({
     "observacao_pre_adulto",
   ]),
   internmentStatus: zod.enum(["observacao", "internado", "alta"]),
+  careStatus: zod.enum([
+    "Em Triagem",
+    "Aguardando Atendimento",
+    "Em Observação",
+    "Internado",
+    "Em Transferência",
+    "Alta",
+  ]),
+  careStatusChangedAt: zod.coerce.date(),
   nurse: zod.string(),
   responsibleProfessional: zod.string(),
   attendanceDate: zod.string(),

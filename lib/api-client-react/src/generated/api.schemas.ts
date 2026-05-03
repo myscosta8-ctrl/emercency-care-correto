@@ -33,6 +33,18 @@ export const PatientInternmentStatus = {
   alta: "alta",
 } as const;
 
+export type PatientCareStatus =
+  (typeof PatientCareStatus)[keyof typeof PatientCareStatus];
+
+export const PatientCareStatus = {
+  Em_Triagem: "Em Triagem",
+  Aguardando_Atendimento: "Aguardando Atendimento",
+  Em_Observação: "Em Observação",
+  Internado: "Internado",
+  Em_Transferência: "Em Transferência",
+  Alta: "Alta",
+} as const;
+
 export interface Patient {
   id: number;
   full_name: string;
@@ -52,6 +64,8 @@ export interface Patient {
   bed: string;
   sector: PatientSector;
   internmentStatus: PatientInternmentStatus;
+  careStatus: PatientCareStatus;
+  careStatusChangedAt: string;
   nurse: string;
   responsibleProfessional: string;
   attendanceDate: string;
@@ -68,6 +82,18 @@ export interface Patient {
   createdAt: string;
   updatedAt: string;
 }
+
+export type CreatePatientBodyCareStatus =
+  (typeof CreatePatientBodyCareStatus)[keyof typeof CreatePatientBodyCareStatus];
+
+export const CreatePatientBodyCareStatus = {
+  Em_Triagem: "Em Triagem",
+  Aguardando_Atendimento: "Aguardando Atendimento",
+  Em_Observação: "Em Observação",
+  Internado: "Internado",
+  Em_Transferência: "Em Transferência",
+  Alta: "Alta",
+} as const;
 
 export interface CreatePatientBody {
   full_name: string;
@@ -88,6 +114,7 @@ export interface CreatePatientBody {
   bed?: string;
   sector: string;
   internmentStatus?: string;
+  care_status?: CreatePatientBodyCareStatus;
   nurse?: string;
   responsibleProfessional?: string;
   attendanceDate?: string;
@@ -101,6 +128,18 @@ export interface CreatePatientBody {
   classificacaoFinal?: string;
   criterioConfirmacao?: string;
 }
+
+export type UpdatePatientBodyCareStatus =
+  (typeof UpdatePatientBodyCareStatus)[keyof typeof UpdatePatientBodyCareStatus];
+
+export const UpdatePatientBodyCareStatus = {
+  Em_Triagem: "Em Triagem",
+  Aguardando_Atendimento: "Aguardando Atendimento",
+  Em_Observação: "Em Observação",
+  Internado: "Internado",
+  Em_Transferência: "Em Transferência",
+  Alta: "Alta",
+} as const;
 
 export interface UpdatePatientBody {
   full_name?: string;
@@ -121,6 +160,7 @@ export interface UpdatePatientBody {
   bed?: string;
   sector?: string;
   internmentStatus?: string;
+  care_status?: UpdatePatientBodyCareStatus;
   nurse?: string;
   responsibleProfessional?: string;
   attendanceDate?: string;
@@ -146,8 +186,22 @@ export const UpdatePatientStatusBodyTriageLevel = {
   blue: "blue",
 } as const;
 
+export type UpdatePatientStatusBodyCareStatus =
+  (typeof UpdatePatientStatusBodyCareStatus)[keyof typeof UpdatePatientStatusBodyCareStatus];
+
+export const UpdatePatientStatusBodyCareStatus = {
+  Em_Triagem: "Em Triagem",
+  Aguardando_Atendimento: "Aguardando Atendimento",
+  Em_Observação: "Em Observação",
+  Internado: "Internado",
+  Em_Transferência: "Em Transferência",
+  Alta: "Alta",
+} as const;
+
 export interface UpdatePatientStatusBody {
   triage_level?: UpdatePatientStatusBodyTriageLevel;
+  care_status?: UpdatePatientStatusBodyCareStatus;
+  user_id?: number;
 }
 
 export interface PatientSummary {

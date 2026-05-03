@@ -29,6 +29,10 @@ export const patientsTable = pgTable("patients", {
   // ── triagem ────────────────────────────────────────────────────────────────
   triageLevel:      text("triage_level", { enum: ["red", "orange", "yellow", "green", "blue"] }).notNull(),
   internmentStatus: text("internment_status", { enum: ["internado", "nao_internado"] }).notNull().default("nao_internado"),
+  careStatus:       text("care_status", {
+    enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"],
+  }).notNull().default("Em Triagem"),
+  careStatusChangedAt: timestamp("care_status_changed_at").defaultNow().notNull(),
 
   // ── clínico ────────────────────────────────────────────────────────────────
   diagnosis:        text("diagnosis").notNull().default(""),

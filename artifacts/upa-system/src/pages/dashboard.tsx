@@ -5,11 +5,12 @@ import {
   useListPatients,
   useGetPatientsSummary,
   useDeletePatient,
+  useUpdatePatientStatus,
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,45 @@ import type { CriticalAlert } from "@/hooks/use-critical-alerts";
 
 // Roles that receive active alert notifications (sound + popup + panel)
 const ALERT_ROLES = new Set(["enfermeiro", "tecnico_enfermagem"]);
+
+// ── care status config ─────────────────────────────────────────────────────────
+
+const CARE_STATUS_CONFIG = {
+  "Em Triagem":             { label: "Em Triagem",             color: "text-blue-400",   bg: "bg-blue-500/15",   border: "border-blue-500/30",   dot: "bg-blue-500"   },
+  "Aguardando Atendimento": { label: "Aguardando",             color: "text-yellow-400", bg: "bg-yellow-500/15", border: "border-yellow-500/30", dot: "bg-yellow-400" },
+  "Em Observação":          { label: "Em Observação",          color: "text-orange-400", bg: "bg-orange-500/15", border: "border-orange-500/30", dot: "bg-orange-500" },
+  "Internado":              { label: "Internado",              color: "text-red-400",    bg: "bg-red-500/15",    border: "border-red-500/30",    dot: "bg-red-500"    },
+  "Em Transferência":       { label: "Em Transferência",       color: "text-purple-400", bg: "bg-purple-500/15", border: "border-purple-500/30", dot: "bg-purple-500" },
+  "Alta":                   { label: "Alta",                   color: "text-green-400",  bg: "bg-green-500/15",  border: "border-green-500/30",  dot: "bg-green-500"  },
+} as const;
+
+type CareStatusKey = keyof typeof CARE_STATUS_CONFIG;
+
+const CARE_STATUS_KEYS: CareStatusKey[] = [
+  "Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta",
+];
+
+const CARE_STATUS_SECTION_KEYS: CareStatusKey[] = [
+  "Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência",
+];
+
+// ── time alert helpers ─────────────────────────────────────────────────────────
+
+function minutesSince(iso: string): number {
+  return (Date.now() - new Date(iso).getTime()) / 60_000;
+}
+
+function hoursSince(iso: string): number {
+  return minutesSince(iso) / 60;
+}
+
+function formatElapsed(iso: string): string {
+  const mins = Math.floor(minutesSince(iso));
+  if (mins < 60) return `${mins}min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
 
 // ── triage config ─────────────────────────────────────────────────────────────
 
@@ -72,15 +112,23 @@ interface PatientRowProps {
   patient: Patient;
   onEdit: (p: Patient) => void;
   onAlta: (p: Patient) => void;
+  onReclassify: (p: Patient) => void;
   isCritical?: boolean;
   criticalDetail?: string;
 }
 
 const PatientRow = memo(function PatientRow({
-  patient, onEdit, onAlta, isCritical = false, criticalDetail,
+  patient, onEdit, onAlta, onReclassify, isCritical = false, criticalDetail,
 }: PatientRowProps) {
   const { pode } = useAuth();
   const cfg = TRIAGE_CONFIG[patient.triage_level as TriageKey] ?? TRIAGE_CONFIG.blue;
+  const csCfg = CARE_STATUS_CONFIG[patient.careStatus as CareStatusKey] ?? CARE_STATUS_CONFIG["Em Triagem"];
+
+  // Time-based alerts
+  const careStatus = patient.careStatus as CareStatusKey;
+  const triageAlert  = careStatus === "Em Triagem"   && minutesSince(patient.createdAt) > 30;
+  const obsAlert     = careStatus === "Em Observação" && hoursSince(patient.careStatusChangedAt as string) > 6;
+  const hasTimeAlert = triageAlert || obsAlert;
 
   return (
     <div className={cn(
@@ -120,7 +168,7 @@ const PatientRow = memo(function PatientRow({
         )} />
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className={cn(
               "font-semibold text-sm leading-tight truncate",
               isCritical ? "text-red-300" : "text-foreground",
@@ -128,8 +176,26 @@ const PatientRow = memo(function PatientRow({
               {patient.full_name}
             </span>
             <span className="text-xs text-muted-foreground shrink-0">{patient.age}a</span>
-            {patient.internmentStatus === "internado" && (
-              <span className="text-[10px] font-bold px-1.5 py-0 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 leading-5">INT</span>
+
+            {/* Care status badge */}
+            <span className={cn(
+              "text-[10px] font-bold px-1.5 py-0 rounded border leading-5 shrink-0",
+              csCfg.bg, csCfg.color, csCfg.border,
+            )}>
+              {csCfg.label}
+            </span>
+
+            {/* Time alert badge */}
+            {hasTimeAlert && (
+              <span className={cn(
+                "flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0 rounded border leading-5 shrink-0",
+                triageAlert ? "bg-orange-500/15 text-orange-400 border-orange-500/30" : "bg-purple-500/15 text-purple-400 border-purple-500/30",
+              )}>
+                <Clock className="h-2.5 w-2.5" />
+                {triageAlert
+                  ? `Triagem ${formatElapsed(patient.createdAt)}`
+                  : `Obs. ${formatElapsed(patient.careStatusChangedAt as string)}`}
+              </span>
             )}
           </div>
           {/* Critical detail shows the offending vital (SpO₂, FC, PAS) */}
@@ -149,6 +215,16 @@ const PatientRow = memo(function PatientRow({
       </Link>
 
       <div className="flex items-center gap-0.5 px-1.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
+        {pode("mudar_setor") && (
+          <button
+            type="button"
+            title="Reclassificar paciente"
+            onClick={e => { e.preventDefault(); onReclassify(patient); }}
+            className="h-8 w-8 flex items-center justify-center rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+        )}
         {pode("editar_paciente") && (
           <button
             type="button"
@@ -174,17 +250,125 @@ const PatientRow = memo(function PatientRow({
   );
 });
 
+// ── reclassify modal ───────────────────────────────────────────────────────────
+
+interface ReclassifyModalProps {
+  patient: Patient | null;
+  onClose: () => void;
+  onSuccess: () => void;
+  userId: number;
+}
+
+function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModalProps) {
+  const { toast } = useToast();
+  const reclassify = useUpdatePatientStatus();
+  const [triageLevel, setTriageLevel] = useState<string>("");
+  const [careStatus, setCareStatus]   = useState<string>("");
+
+  useEffect(() => {
+    if (patient) {
+      setTriageLevel(patient.triage_level);
+      setCareStatus(patient.careStatus as string);
+    }
+  }, [patient]);
+
+  const triageLevels = [
+    { value: "red",    label: "Vermelho — Emergência" },
+    { value: "orange", label: "Laranja — Muito Urgente" },
+    { value: "yellow", label: "Amarelo — Urgente" },
+    { value: "green",  label: "Verde — Pouco Urgente" },
+    { value: "blue",   label: "Azul — Não Urgente" },
+  ];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patient) return;
+    reclassify.mutate(
+      { id: patient.id, data: { triage_level: triageLevel as "red" | "orange" | "yellow" | "green" | "blue", care_status: careStatus as "Em Triagem" | "Aguardando Atendimento" | "Em Observação" | "Internado" | "Em Transferência" | "Alta", user_id: userId } },
+      {
+        onSuccess: () => {
+          toast({ title: "Paciente reclassificado com sucesso" });
+          onSuccess();
+        },
+        onError: () => toast({ title: "Erro ao reclassificar paciente", variant: "destructive" }),
+      }
+    );
+  };
+
+  return (
+    <Dialog open={!!patient} onOpenChange={open => !open && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Reclassificar Paciente</DialogTitle>
+          <DialogDescription>
+            {patient?.full_name} — altere triagem e/ou status de cuidado.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+          {/* Triage level */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Nível de Triagem (Manchester)
+            </label>
+            <select
+              value={triageLevel}
+              onChange={e => setTriageLevel(e.target.value)}
+              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              {triageLevels.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Care status */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Status de Cuidado
+            </label>
+            <select
+              value={careStatus}
+              onChange={e => setCareStatus(e.target.value)}
+              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              {CARE_STATUS_KEYS.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            {(careStatus === "Em Triagem" || careStatus === "Aguardando Atendimento") && (
+              <p className="text-[11px] text-yellow-400">
+                ⚠ Pacientes neste status não podem ser alocados a leitos.
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <Button type="button" variant="outline" size="sm" className="flex-1" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" size="sm" className="flex-1" disabled={reclassify.isPending}>
+              {reclassify.isPending ? "Salvando..." : "Reclassificar"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── main page ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const { pode, activeUser, logout } = useAuth();
   const [, setLocation] = useLocation();
-  const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  const [altaPatient, setAltaPatient]     = useState<Patient | null>(null);
-  const [search, setSearch]               = useState("");
-  const [filtro, setFiltro]               = useState("Todos");
-  const [triageFilter, setTriageFilter]   = useState("all");
+  const [isNewPatientOpen, setIsNewPatientOpen]     = useState(false);
+  const [editingPatient, setEditingPatient]         = useState<Patient | null>(null);
+  const [altaPatient, setAltaPatient]               = useState<Patient | null>(null);
+  const [reclassifyPatient, setReclassifyPatient]   = useState<Patient | null>(null);
+  const [search, setSearch]                         = useState("");
+  const [filtro, setFiltro]                         = useState("Todos");
+  const [triageFilter, setTriageFilter]             = useState("all");
+  const [viewMode, setViewMode]                     = useState<"setor" | "status">("setor");
 
   const debouncedSearch = useDebounce(search, 200);
 
@@ -220,8 +404,8 @@ export default function Dashboard() {
   const criticalPopupOpen = isNurseOrTech && criticals.length > 0 && !popupDismissed;
 
   // ── patient grouping ───────────────────────────────────────────────────────
-  const grouped = useMemo(() => {
-    if (!patients) return null;
+  const { grouped, groupedByStatus } = useMemo(() => {
+    if (!patients) return { grouped: null, groupedByStatus: null };
     const q = debouncedSearch.toLowerCase();
     const base = patients.filter(p => {
       const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
@@ -229,23 +413,35 @@ export default function Dashboard() {
       const matchesTriage = triageFilter === "all" || p.triage_level === triageFilter;
       return matchesSearch && matchesSector && matchesTriage;
     });
-    return SECTOR_CONFIG.map(cfg => ({
+
+    const sortFn = (a: Patient, b: Patient) => {
+      const aCrit = criticalPatientIds.has(a.id) ? 0 : 1;
+      const bCrit = criticalPatientIds.has(b.id) ? 0 : 1;
+      if (aCrit !== bCrit) return aCrit - bCrit;
+      return (TRIAGE_SEVERITY[a.triage_level] ?? 99) - (TRIAGE_SEVERITY[b.triage_level] ?? 99);
+    };
+
+    const grouped = SECTOR_CONFIG.map(cfg => ({
       ...cfg,
-      patients: base
-        .filter(p => p.sector === cfg.key)
-        .sort((a, b) => {
-          // Critical patients (by vitals or triage) always come first
-          const aCrit = criticalPatientIds.has(a.id) ? 0 : 1;
-          const bCrit = criticalPatientIds.has(b.id) ? 0 : 1;
-          if (aCrit !== bCrit) return aCrit - bCrit;
-          return (TRIAGE_SEVERITY[a.triage_level] ?? 99) - (TRIAGE_SEVERITY[b.triage_level] ?? 99);
-        }),
+      patients: base.filter(p => p.sector === cfg.key).sort(sortFn),
     }));
+
+    const groupedByStatus = CARE_STATUS_SECTION_KEYS.map(status => ({
+      key: status,
+      ...CARE_STATUS_CONFIG[status],
+      patients: base.filter(p => p.careStatus === status).sort(sortFn),
+    }));
+
+    return { grouped, groupedByStatus };
   }, [patients, debouncedSearch, filtro, triageFilter, criticalPatientIds]);
 
-  const totalFiltered = grouped ? grouped.reduce((n, g) => n + g.patients.length, 0) : 0;
-  const handleEdit    = useCallback((p: Patient) => setEditingPatient(p), []);
-  const handleAlta    = useCallback((p: Patient) => setAltaPatient(p), []);
+  const totalFiltered = viewMode === "setor"
+    ? (grouped  ? grouped.reduce((n, g) => n + g.patients.length, 0)        : 0)
+    : (groupedByStatus ? groupedByStatus.reduce((n, g) => n + g.patients.length, 0) : 0);
+
+  const handleEdit        = useCallback((p: Patient) => setEditingPatient(p), []);
+  const handleAlta        = useCallback((p: Patient) => setAltaPatient(p), []);
+  const handleReclassify  = useCallback((p: Patient) => setReclassifyPatient(p), []);
 
   const confirmAlta = () => {
     if (!altaPatient) return;
@@ -430,7 +626,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── search + filters ───────────────────────────────────────── */}
-        <div className="flex gap-2 mb-4 flex-wrap">
+        <div className="flex gap-2 mb-3 flex-wrap">
           <div className="relative flex-1 min-w-[160px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -441,7 +637,30 @@ export default function Dashboard() {
               data-testid="input-search"
             />
           </div>
-          <div className="flex gap-1 flex-wrap">
+          {/* View mode toggle */}
+          <div className="flex gap-0.5 border border-border/40 rounded-md p-0.5 bg-card h-8">
+            <button
+              type="button"
+              onClick={() => setViewMode("setor")}
+              className={cn(
+                "px-2.5 rounded text-xs font-medium transition-colors",
+                viewMode === "setor" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >Por Setor</button>
+            <button
+              type="button"
+              onClick={() => setViewMode("status")}
+              className={cn(
+                "px-2.5 rounded text-xs font-medium transition-colors",
+                viewMode === "status" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >Por Status</button>
+          </div>
+        </div>
+
+        {/* Sector filters — only in "setor" mode */}
+        {viewMode === "setor" && (
+          <div className="flex gap-1 mb-4 flex-wrap">
             {["Todos", ...SECTOR_NAMES].map(s => (
               <button
                 key={s}
@@ -458,7 +677,7 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-        </div>
+        )}
 
         {/* ── patient label ──────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-2">
@@ -467,7 +686,7 @@ export default function Dashboard() {
             {totalFiltered > 0 && <span className="ml-2 text-foreground font-bold text-sm">{totalFiltered}</span>}
           </span>
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide hidden sm:block">
-            Leito · Nome · Diagnóstico
+            Leito · Nome · Status · Diagnóstico
           </span>
         </div>
 
@@ -483,7 +702,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        ) : (
+        ) : viewMode === "setor" ? (
           <div className="space-y-4">
             {(grouped ?? []).map(sector => (
               <div key={sector.name}>
@@ -494,7 +713,6 @@ export default function Dashboard() {
                   <span className="text-base leading-none">{sector.emoji}</span>
                   <span className="text-xs font-bold uppercase tracking-wider">{sector.name}</span>
                   <span className="ml-auto text-xs font-mono opacity-70">{sector.patients.length}</span>
-                  {/* Show mini critical count per sector — nurses and technicians only */}
                   {isNurseOrTech && sector.patients.filter(p => criticalPatientIds.has(p.id)).length > 0 && (
                     <span className="text-[10px] font-bold text-red-400 flex items-center gap-0.5">
                       <AlertTriangle className="h-2.5 w-2.5" />
@@ -502,7 +720,6 @@ export default function Dashboard() {
                     </span>
                   )}
                 </div>
-
                 <div className="rounded-b-lg border border-t-0 border-border/30 overflow-hidden">
                   {sector.patients.length === 0 ? (
                     <div className={cn("py-3 text-center text-xs text-muted-foreground/50 border-l-4", sector.emptyBorder)}>
@@ -515,6 +732,7 @@ export default function Dashboard() {
                         patient={patient}
                         onEdit={handleEdit}
                         onAlta={handleAlta}
+                        onReclassify={handleReclassify}
                         isCritical={isNurseOrTech && criticalPatientIds.has(patient.id)}
                         criticalDetail={isNurseOrTech ? criticalDetailMap.get(patient.id) : undefined}
                       />
@@ -523,12 +741,71 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
-
             {grouped && grouped.every(g => g.patients.length === 0) && (
               <div className="text-center py-12 text-muted-foreground">
                 <Users className="h-8 w-8 mx-auto mb-2 opacity-30" />
                 <p className="text-sm">Nenhum paciente encontrado</p>
                 {search && <p className="text-xs mt-1 opacity-60">Tente outro termo de busca</p>}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── "Por Status" view ── */
+          <div className="space-y-4">
+            {(groupedByStatus ?? []).map(section => (
+              <div key={section.key}>
+                <div className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-t-md border mb-0",
+                  section.bg, section.border,
+                )}>
+                  <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", section.dot)} />
+                  <span className={cn("text-xs font-bold uppercase tracking-wider", section.color)}>{section.key}</span>
+                  <span className="ml-auto text-xs font-mono opacity-70">{section.patients.length}</span>
+                  {isNurseOrTech && section.patients.filter(p => criticalPatientIds.has(p.id)).length > 0 && (
+                    <span className="text-[10px] font-bold text-red-400 flex items-center gap-0.5">
+                      <AlertTriangle className="h-2.5 w-2.5" />
+                      {section.patients.filter(p => criticalPatientIds.has(p.id)).length}
+                    </span>
+                  )}
+                  {/* Time alert count */}
+                  {section.key === "Em Triagem" && section.patients.filter(p => minutesSince(p.createdAt) > 30).length > 0 && (
+                    <span className="text-[10px] font-bold text-orange-400 flex items-center gap-0.5">
+                      <Clock className="h-2.5 w-2.5" />
+                      {section.patients.filter(p => minutesSince(p.createdAt) > 30).length} &gt;30min
+                    </span>
+                  )}
+                  {section.key === "Em Observação" && section.patients.filter(p => hoursSince(p.careStatusChangedAt as string) > 6).length > 0 && (
+                    <span className="text-[10px] font-bold text-purple-400 flex items-center gap-0.5">
+                      <Clock className="h-2.5 w-2.5" />
+                      {section.patients.filter(p => hoursSince(p.careStatusChangedAt as string) > 6).length} &gt;6h
+                    </span>
+                  )}
+                </div>
+                <div className="rounded-b-lg border border-t-0 border-border/30 overflow-hidden">
+                  {section.patients.length === 0 ? (
+                    <div className="py-3 text-center text-xs text-muted-foreground/50">
+                      Nenhum paciente
+                    </div>
+                  ) : (
+                    section.patients.map(patient => (
+                      <PatientRow
+                        key={patient.id}
+                        patient={patient}
+                        onEdit={handleEdit}
+                        onAlta={handleAlta}
+                        onReclassify={handleReclassify}
+                        isCritical={isNurseOrTech && criticalPatientIds.has(patient.id)}
+                        criticalDetail={isNurseOrTech ? criticalDetailMap.get(patient.id) : undefined}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            ))}
+            {groupedByStatus && groupedByStatus.every(g => g.patients.length === 0) && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Users className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">Nenhum paciente encontrado</p>
               </div>
             )}
           </div>
@@ -565,6 +842,18 @@ export default function Dashboard() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ── reclassify modal ───────────────────────────────────────────── */}
+      <ReclassifyModal
+        patient={reclassifyPatient}
+        onClose={() => setReclassifyPatient(null)}
+        onSuccess={() => {
+          setReclassifyPatient(null);
+          queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
+        }}
+        userId={activeUser?.id ?? 0}
+      />
 
       {/* ── alta confirmation ──────────────────────────────────────────── */}
       <AlertDialog open={!!altaPatient} onOpenChange={open => !open && setAltaPatient(null)}>

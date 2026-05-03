@@ -941,6 +941,12 @@ components:
         internmentStatus:
           type: string
           enum: [observacao, internado, alta]
+        careStatus:
+          type: string
+          enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"]
+        careStatusChangedAt:
+          type: string
+          format: date-time
         nurse:
           type: string
         responsibleProfessional:
@@ -1004,6 +1010,8 @@ components:
         - evolucaoCaso
         - classificacaoFinal
         - criterioConfirmacao
+        - careStatus
+        - careStatusChangedAt
         - createdAt
         - updatedAt
 
@@ -1046,6 +1054,9 @@ components:
           type: string
         internmentStatus:
           type: string
+        care_status:
+          type: string
+          enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"]
         nurse:
           type: string
         responsibleProfessional:
@@ -1113,6 +1124,9 @@ components:
           type: string
         internmentStatus:
           type: string
+        care_status:
+          type: string
+          enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"]
         nurse:
           type: string
         responsibleProfessional:
@@ -1144,8 +1158,11 @@ components:
         triage_level:
           type: string
           enum: [red, orange, yellow, green, blue]
-      required:
-        - status
+        care_status:
+          type: string
+          enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"]
+        user_id:
+          type: integer
 
     PatientSummary:
       type: object

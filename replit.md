@@ -88,6 +88,24 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - **"Nova Admissão"** button disabled unless `pode("criar_paciente")`
 - Logout button (Power icon, `aria-label="Sair"`) in dashboard header → clears session + navigates to `/login`
 
+### Workflow de Status de Cuidado (`careStatus`)
+- **Campo DB**: `care_status` (text, enum) + `care_status_changed_at` (timestamp) na tabela `patients`.
+- **Valores**: `"Em Triagem"` → `"Aguardando Atendimento"` → `"Em Observação"` → `"Internado"` → `"Em Transferência"` → `"Alta"`.
+- **Padrão**: todo paciente criado começa com `"Em Triagem"`.
+- **Endpoint**: `PUT /api/patients/:id/status` (requer `mudar_setor`) aceita `{ triage_level?, care_status?, user_id }`.
+  - Atualiza `careStatus` + `careStatusChangedAt` + `triageLevel` conforme enviado.
+  - Registra evolução automática: `[Reclassificação] Triagem: X → Y | Status: A → B`.
+  - Loga no servidor: `action=patient_reclassified` com `changes[]`.
+- **Regra de leito**: Pacientes em `"Em Triagem"` ou `"Aguardando Atendimento"` são bloqueados de ser alocados a leitos (422 backend).
+- **Frontend — badge**: Cada card de paciente exibe o status com cor:
+  - Azul = Em Triagem, Amarelo = Aguardando, Laranja = Em Observação, Vermelho = Internado, Roxo = Em Transferência, Verde = Alta.
+- **Frontend — alertas de tempo**:
+  - `"Em Triagem"` há >30min → badge laranja com `Clock` e tempo decorrido.
+  - `"Em Observação"` há >6h → badge roxo com `Clock` e tempo decorrido.
+- **Frontend — "Reclassificar"**: Botão `RefreshCw` em cada linha (visível para quem tem `mudar_setor`) abre modal com selects de triagem + status.
+- **Frontend — visualização "Por Status"**: Toggle "Por Setor" / "Por Status" no dashboard. "Por Status" agrupa em seções: Triagem, Aguardando, Observação, Internado, Transferência (alta excluída da lista ativa).
+  - Cabeçalho de cada seção exibe contagem de alertas de tempo (>30min triagem / >6h observação).
+
 ### Gestão de Leitos (`/leitos`)
 - **Tabela**: `beds` — `id`, `bed_id` (único), `sector`, `bed_number`, `is_isolation` (fixo), `is_extra` (boolean), `extra_reason`, `is_occupied`, `patient_id` (FK → patients), `admission_time` (timestamp), `isolation_active`, `isolation_type` (contact/droplet/airborne), `isolation_reason`, `created_at`, `updated_at`.
 - **Seed automático**: 35 leitos criados na primeira chamada GET se a tabela estiver vazia.
@@ -96,7 +114,7 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
   - Observação Pediátrica: OP-01 a OP-05 + OP-ISO (6 leitos, 1 isolamento)
   - Pré-Observação: PA-01 a PA-07 + PA-ISO (8 leitos, 1 isolamento)
 - **API**: `GET /api/beds` (lista com dados do paciente), `GET /api/beds/:id`, `PUT /api/beds/:id` (requer `registrar_sinais_vitais`).
-- **Bloqueio servidor**: `PUT` retorna 400 se `isolationActive=true` em leito sem `is_isolation`.
+- **Bloqueio servidor**: `PUT` retorna 400 se `isolationActive=true` em leito sem `is_isolation`. `PUT` retorna 422 se o paciente não estiver em `"Em Observação"` ou `"Internado"` ao tentar alocar a um leito.
 - **Frontend**: Página `/leitos` acessível a todos os autenticados; botão "Leitos" na barra de navegação do dashboard.
   - Grade por setor com cards coloridos: verde (livre), amarelo (ocupado), vermelho (crítico/triagem red), roxo (isolamento ativo).
   - Ícone de biohazard nos leitos com capacidade de isolamento.

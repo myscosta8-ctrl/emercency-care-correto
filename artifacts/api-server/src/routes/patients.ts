@@ -50,6 +50,8 @@ const serialize = (p: typeof patientsTable.$inferSelect) => ({
   // snake_case aliases to match OpenAPI spec and generated TypeScript types
   full_name:    p.fullName,
   triage_level: p.triageLevel,
+  careStatus:   p.careStatus,
+  careStatusChangedAt: p.careStatusChangedAt.toISOString(),
   createdAt:    p.createdAt.toISOString(),
   updatedAt:    p.updatedAt.toISOString(),
 });
@@ -78,10 +80,17 @@ function ageFromBirthDate(birthDate: string): number {
 type TriageLevel   = "red" | "orange" | "yellow" | "green" | "blue";
 type PatientSector = "sala_vermelha" | "observacao_adulto" | "observacao_pediatrica" | "observacao_pre_adulto";
 type InternStatus  = "internado" | "nao_internado";
+type CareStatus    = "Em Triagem" | "Aguardando Atendimento" | "Em Observação" | "Internado" | "Em Transferência" | "Alta";
+
+const CARE_STATUSES: CareStatus[] = [
+  "Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta",
+];
 
 /** Full insert payload for patient creation */
 function buildPatientInsert(body: typeof CreatePatientBody._type) {
   const age = body.birthDate ? ageFromBirthDate(body.birthDate) : (body.age ?? 0);
+  const rawCareStatus = (body as Record<string, unknown>).care_status as string | undefined;
+  const careStatus = (CARE_STATUSES.includes(rawCareStatus as CareStatus) ? rawCareStatus : "Em Triagem") as CareStatus;
   return {
     fullName:                body.full_name,
     birthDate:               body.birthDate ?? "",
@@ -97,6 +106,8 @@ function buildPatientInsert(body: typeof CreatePatientBody._type) {
     triageLevel:             (body.triage_level ?? "green") as TriageLevel,
     sector:                  body.sector as PatientSector,
     internmentStatus:        (body.internmentStatus ?? "nao_internado") as InternStatus,
+    careStatus,
+    careStatusChangedAt:     new Date(),
     bed:                     body.bed ?? "",
     diagnosis:               body.diagnosis ?? "",
     symptoms:                body.symptoms ?? "",
@@ -136,6 +147,11 @@ function buildPatientPatch(body: typeof UpdatePatientBody._type): Partial<typeof
   if (body.triage_level      !== undefined) patch.triageLevel      = body.triage_level as TriageLevel;
   if (body.sector            !== undefined) patch.sector           = body.sector as PatientSector;
   if (body.internmentStatus  !== undefined) patch.internmentStatus = body.internmentStatus as InternStatus;
+  const rawCs = (body as Record<string, unknown>).care_status as string | undefined;
+  if (rawCs !== undefined && CARE_STATUSES.includes(rawCs as CareStatus)) {
+    patch.careStatus = rawCs as CareStatus;
+    patch.careStatusChangedAt = new Date();
+  }
   if (body.bed               !== undefined) patch.bed              = body.bed;
   if (body.diagnosis         !== undefined) patch.diagnosis        = body.diagnosis;
   if (body.symptoms          !== undefined) patch.symptoms         = body.symptoms;
@@ -239,12 +255,42 @@ router.put("/:id", requirePermissao("editar_paciente"), async (req, res) => {
 });
 
 router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
-  const { id }           = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
-  const { triage_level } = UpdatePatientStatusBody.parse(req.body);
+  const { id }              = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
+  const { triage_level, care_status, user_id } = UpdatePatientStatusBody.parse(req.body);
+
+  const [current] = await db.select().from(patientsTable).where(eq(patientsTable.id, id));
+  if (!current) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
+
+  const newCareStatus = care_status && CARE_STATUSES.includes(care_status as CareStatus)
+    ? care_status as CareStatus : undefined;
+
+  const patch: Partial<typeof patientsTable.$inferInsert> = { updatedAt: new Date() };
+  if (triage_level)   patch.triageLevel = triage_level as TriageLevel;
+  if (newCareStatus)  {
+    patch.careStatus = newCareStatus;
+    patch.careStatusChangedAt = new Date();
+  }
+
   const [patient] = await db.update(patientsTable)
-    .set({ triageLevel: (triage_level ?? "green") as TriageLevel, updatedAt: new Date() })
+    .set(patch)
     .where(eq(patientsTable.id, id)).returning();
-  if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
+
+  // Audit log
+  const changes: string[] = [];
+  if (triage_level && triage_level !== current.triageLevel)
+    changes.push(`Triagem: ${current.triageLevel} → ${triage_level}`);
+  if (newCareStatus && newCareStatus !== current.careStatus)
+    changes.push(`Status: ${current.careStatus} → ${newCareStatus}`);
+
+  if (changes.length > 0) {
+    await db.insert(patientEvolutionsTable).values({
+      patientId: id,
+      userId:    user_id ?? 0,
+      soapText:  `[Reclassificação] ${changes.join(" | ")}`,
+    });
+    req.log.info({ action: "patient_reclassified", patientId: id, staffId: user_id, changes }, "Paciente reclassificado");
+  }
+
   res.json(serialize(patient));
 });
 
