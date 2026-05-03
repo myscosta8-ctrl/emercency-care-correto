@@ -17,6 +17,16 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _extraHeaders: Record<string, string> | null = null;
+
+/**
+ * Set extra headers that are attached to every request.
+ * Use this to send the authenticated staff ID on each API call.
+ * Pass `null` to clear all extra headers.
+ */
+export function setExtraHeaders(headers: Record<string, string> | null): void {
+  _extraHeaders = headers;
+}
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -355,6 +365,13 @@ export async function customFetch<T = unknown>(
     const token = await _authTokenGetter();
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
+    }
+  }
+
+  // Attach any extra headers registered at module level (e.g. x-staff-id).
+  if (_extraHeaders) {
+    for (const [key, value] of Object.entries(_extraHeaders)) {
+      if (!headers.has(key)) headers.set(key, value);
     }
   }
 

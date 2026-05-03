@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, socialNotesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router({ mergeParams: true });
 type Params = Record<string, string>;
@@ -23,18 +24,20 @@ router.get("/", async (req, res) => {
   res.json(rows.map(serialize));
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requirePermissao("registrar_nota_social"), async (req, res) => {
   const patientId = Number((req.params as Params)["id"]);
-  const { userId, content } = req.body as { userId?: number; content?: string };
+  const { content } = req.body as { userId?: number; content?: string };
 
   if (!content?.trim()) {
     res.status(400).json({ error: "Conteúdo da nota é obrigatório" });
     return;
   }
 
+  const staffId = req.staff?.id ?? 0;
+
   const [created] = await db
     .insert(socialNotesTable)
-    .values({ patientId, userId: userId ?? 0, content: content.trim() })
+    .values({ patientId, userId: staffId, content: content.trim() })
     .returning();
 
   res.status(201).json(serialize(created));

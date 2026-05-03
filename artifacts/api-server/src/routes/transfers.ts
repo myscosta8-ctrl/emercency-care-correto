@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, transfersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router({ mergeParams: true });
 type Params = Record<string, string>;
@@ -31,7 +32,7 @@ router.get("/", async (req, res) => {
   res.json(rows.map(serialize));
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requirePermissao("mudar_setor"), async (req, res) => {
   const patientId = Number((req.params as Params)["id"]);
   const body = req.body as {
     userId?:              number;
@@ -78,7 +79,7 @@ router.post("/", async (req, res) => {
   res.status(201).json(serialize(created));
 });
 
-router.patch("/:transferId", async (req, res) => {
+router.patch("/:transferId", requirePermissao("mudar_setor"), async (req, res) => {
   const transferId = Number((req.params as Params)["transferId"]);
   const body = req.body as {
     transferStatus?:      string;

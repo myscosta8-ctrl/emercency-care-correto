@@ -65,17 +65,34 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - `POST /api/patients` e `PUT /api/patients/:id` retornam `422` com mensagem clara se o CPF for inválido
 - CPF em branco / não preenchido é aceito normalmente
 
+### Access Control (Server-side)
+
+- **`requireAuth`** middleware (`artifacts/api-server/src/middleware/require-auth.ts`): reads `x-staff-id` header, looks up staff in DB, attaches `req.staff`. Blocks all writes (POST/PUT/PATCH/DELETE) that lack a valid header → HTTP 401.
+- **`requirePermissao(acao)`**: per-route middleware that checks `req.staff.role` against the server-side `PERMISSOES` map → HTTP 403 if insufficient.
+- **`auditWrite`** middleware (`artifacts/api-server/src/middleware/audit-write.ts`): hooks into `res.on("finish")` to auto-log every successful write to `audit_log` with `staff_id`, `usuario`, `acao`, `ip`.
+- All routes (except `/api/healthz` and `/api/auth/*`) require auth.
+- Frontend: `setExtraHeaders({ "x-staff-id": String(user.id) })` called on login/logout/mount in `auth-context.tsx`.
+- **Auth context split**: `auth-context.tsx` exports only `AuthContext` + `AuthProvider` (component file); `use-auth.ts` exports `useAuth` hook (separate file for Vite HMR compatibility).
+
 ### Audit Log
-- Tabela `audit_log`: `id`, `usuario`, `acao`, `detalhes`, `ip`, `criado_em`
+- Tabela `audit_log`: `id`, `usuario`, `acao`, `detalhes`, `ip`, `criado_em`, `staff_id` (integer FK to staff)
 - `GET  /api/audit?limit=N` — lista entradas (padrão 200, máx 500)
-- `POST /api/audit` — grava entrada `{ usuario, acao, detalhes? }`
+- `POST /api/audit` — grava entrada `{ usuario, acao, detalhes? }` (legado — usado pelo admin panel)
+- `auditWrite` middleware grava automaticamente toda escrita bem-sucedida via API com `staff_id`
 - Hook `useAudit()` (`src/hooks/use-audit.ts`) — chama `registrar(acao, detalhes?)` com o usuário logado
 - Integrado em: toggles de feature flags, "Restaurar padrões"
+
+### Role-based UI
+- **"Funcionários"** link hidden unless `pode("gerenciar_usuarios")` → only `administrador`
+- **"Admin"** link hidden unless `activeUser?.role === "administrador"`
+- **"Nova Admissão"** button disabled unless `pode("criar_paciente")`
+- Logout button (Power icon, `aria-label="Sair"`) in dashboard header → clears session + navigates to `/login`
 
 ### Feature Flags & Permissions
 - `useFeatures()` + `usePode(acao, feature?)` — combinam permissão de perfil + feature flag em uma só chamada
 - Flags persistidas em `localStorage` (`upa_features`)
 - Permissões definidas em `lib/permissions.ts` (exporta `PERMISSOES`, `PERFIL_LABELS`, `ACAO_LABELS`, `ACOES`, `PERFIS`)
+- Server-side mirror: `artifacts/api-server/src/lib/server-permissions.ts`
 
 ### Features Implemented
 - **Dashboard**: Patient list by sector (Sala Vermelha / Obs. Adulto / Obs. Pediátrica / Obs. Pré-Adulto), triage summary, search/filter

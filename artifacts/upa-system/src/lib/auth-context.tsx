@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useState, useCallback, useEffect } from "react";
 import type { AuthUser } from "@workspace/api-client-react";
+import { setExtraHeaders } from "@workspace/api-client-react";
 import { temPermissao } from "@/lib/permissions";
 import type { Acao } from "@/lib/permissions";
 
@@ -23,7 +24,7 @@ function loadUser(): AuthUser | null {
   }
 }
 
-interface AuthContextValue {
+export interface AuthContextValue {
   activeUser: AuthUser | null;
   isLoading:  boolean;
   login:      (login: string, password: string) => Promise<void>;
@@ -32,7 +33,7 @@ interface AuthContextValue {
   pode:       (acao: Acao) => boolean;
 }
 
-const AuthContext = createContext<AuthContextValue>({
+export const AuthContext = createContext<AuthContextValue>({
   activeUser:     null,
   isLoading:      false,
   login:          async () => {},
@@ -43,6 +44,13 @@ const AuthContext = createContext<AuthContextValue>({
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [activeUser, setActiveUser] = useState<AuthUser | null>(loadUser);
+
+  useEffect(() => {
+    const stored = loadUser();
+    if (stored?.id) {
+      setExtraHeaders({ "x-staff-id": String(stored.id) });
+    }
+  }, []);
 
   const login = useCallback(async (loginVal: string, password: string) => {
     const hashed = await sha256hex(password + "upa_salt_2026");
@@ -55,11 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!res.ok) throw new Error("Credenciais inválidas");
     const user: AuthUser = await res.json();
     localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    setExtraHeaders({ "x-staff-id": String(user.id) });
     setActiveUser(user);
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_KEY);
+    setExtraHeaders(null);
     setActiveUser(null);
   }, []);
 
@@ -80,8 +90,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }

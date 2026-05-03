@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, staffTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { createHash } from "crypto";
+import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get("/", async (req, res) => {
   res.json(members.map(serialize));
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   const { password, ...rest } = req.body as {
     name: string;
     role: string;
@@ -77,7 +78,7 @@ router.get("/:id", async (req, res) => {
   res.json(serialize(member));
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   const id = Number(req.params["id"]);
   const { password, role: roleRaw, ...rest } = req.body as {
     name?: string;
@@ -110,7 +111,7 @@ router.put("/:id", async (req, res) => {
   res.json(serialize(updated));
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   const id = Number(req.params["id"]);
   const [deleted] = await db.delete(staffTable).where(eq(staffTable.id, id)).returning();
   if (!deleted) { res.status(404).json({ error: "Not found" }); return; }

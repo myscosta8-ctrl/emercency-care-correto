@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/use-auth";
 import { usePode } from "@/hooks/use-pode";
 import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle, Mail, ToggleLeft, ToggleRight } from "lucide-react";
 import { useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from "@workspace/api-client-react";

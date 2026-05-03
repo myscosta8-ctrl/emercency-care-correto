@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, memo } from "react";
-import { useAuth } from "@/lib/auth-context";
-import { Link } from "wouter";
+import { useAuth } from "@/lib/use-auth";
+import { Link, useLocation } from "wouter";
 import {
   useListPatients,
   useGetPatientsSummary,
@@ -9,7 +9,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2 } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -137,7 +137,8 @@ const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: Patient
 // ── main page ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { pode, activeUser } = useAuth();
+  const { pode, activeUser, logout } = useAuth();
+  const [, setLocation] = useLocation();
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [altaPatient, setAltaPatient]     = useState<Patient | null>(null);
@@ -206,12 +207,14 @@ export default function Dashboard() {
                 </Button>
               </Link>
             )}
-            <Link href="/funcionarios">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                <Users className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">Funcionários</span>
-              </Button>
-            </Link>
+            {pode("gerenciar_usuarios") && (
+              <Link href="/funcionarios">
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
+                  <Users className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Funcionários</span>
+                </Button>
+              </Link>
+            )}
             <Link href="/passagem-plantao">
               <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
                 <ClipboardList className="h-3.5 w-3.5" />
@@ -228,6 +231,16 @@ export default function Dashboard() {
               <UserPlus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Nova Admissão</span>
               <span className="sm:hidden">+ Admissão</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              title={`Sair (${activeUser?.name ?? ""})`}
+              aria-label="Sair"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+              onClick={() => { logout(); setLocation("/login"); }}
+            >
+              <Power className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { requirePermissao } from "../middleware/require-auth";
 import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable } from "@workspace/db";
 import { eq, sql, desc } from "drizzle-orm";
 import {
@@ -183,7 +184,7 @@ router.get("/:id", async (req, res) => {
   res.json(serialize(patient));
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requirePermissao("criar_paciente"), async (req, res) => {
   const body = CreatePatientBody.parse(req.body);
 
   if (body.cpf && body.cpf.replace(/\D/g, "").length > 0) {
@@ -212,7 +213,7 @@ router.post("/", async (req, res) => {
   res.status(201).json(serialize(patient));
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", requirePermissao("editar_paciente"), async (req, res) => {
   const { id } = UpdatePatientParams.parse({ id: Number(req.params.id) });
   const body    = UpdatePatientBody.parse(req.body);
 
@@ -234,7 +235,7 @@ router.put("/:id", async (req, res) => {
   res.json(serialize(patient));
 });
 
-router.put("/:id/status", async (req, res) => {
+router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
   const { id }           = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
   const { triage_level } = UpdatePatientStatusBody.parse(req.body);
   const [patient] = await db.update(patientsTable)
@@ -255,7 +256,7 @@ router.get("/:id/vitals", async (req, res) => {
   res.json(vitals.map(serializeVitals));
 });
 
-router.post("/:id/vitals", async (req, res) => {
+router.post("/:id/vitals", requirePermissao("registrar_sinais_vitais"), async (req, res) => {
   const { id } = RecordPatientVitalsParams.parse({ id: Number(req.params.id) });
   const body   = RecordPatientVitalsBody.parse(req.body);
 
@@ -295,7 +296,7 @@ router.get("/:id/history", async (req, res) => {
   res.json(evolutions.map(serializeEvolution));
 });
 
-router.post("/:id/history", async (req, res) => {
+router.post("/:id/history", requirePermissao("registrar_evolucao"), async (req, res) => {
   const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
   const body   = req.body as { userId: number; soapText: string };
   const [entry] = await db.insert(patientEvolutionsTable).values({
@@ -320,7 +321,7 @@ router.get("/:id/prescriptions", async (req, res) => {
   })));
 });
 
-router.post("/:id/prescriptions", async (req, res) => {
+router.post("/:id/prescriptions", requirePermissao("registrar_prescricao"), async (req, res) => {
   const { id } = AddPatientPrescriptionParams.parse({ id: Number(req.params.id) });
   const body   = AddPatientPrescriptionBody.parse(req.body);
   const [prescription] = await db.insert(patientPrescriptionsTable).values({
@@ -336,7 +337,7 @@ router.post("/:id/prescriptions", async (req, res) => {
   });
 });
 
-router.put("/:id/prescriptions/:prescriptionId/status", async (req, res) => {
+router.put("/:id/prescriptions/:prescriptionId/status", requirePermissao("registrar_prescricao"), async (req, res) => {
   const { id, prescriptionId } = UpdatePrescriptionStatusParams.parse({
     id: Number(req.params.id),
     prescriptionId: Number(req.params.prescriptionId),
@@ -368,7 +369,7 @@ router.get("/:id/tasks", async (req, res) => {
   })));
 });
 
-router.post("/:id/tasks", async (req, res) => {
+router.post("/:id/tasks", requirePermissao("editar_paciente"), async (req, res) => {
   const { id } = AddPatientTaskParams.parse({ id: Number(req.params.id) });
   const body   = AddPatientTaskBody.parse(req.body);
   const [task] = await db.insert(patientTasksTable).values({
@@ -386,7 +387,7 @@ router.post("/:id/tasks", async (req, res) => {
   });
 });
 
-router.put("/:id/tasks/:taskId/status", async (req, res) => {
+router.put("/:id/tasks/:taskId/status", requirePermissao("editar_paciente"), async (req, res) => {
   const { id, taskId } = UpdateTaskStatusParams.parse({
     id: Number(req.params.id),
     taskId: Number(req.params.taskId),
@@ -406,7 +407,7 @@ router.put("/:id/tasks/:taskId/status", async (req, res) => {
 
 // ── delete ────────────────────────────────────────────────────────────────────
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requirePermissao("excluir_paciente"), async (req, res) => {
   const { id } = DeletePatientParams.parse({ id: Number(req.params.id) });
   await db.delete(patientsTable).where(eq(patientsTable.id, id));
   res.status(204).send();

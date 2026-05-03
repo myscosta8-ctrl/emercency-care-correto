@@ -1,4 +1,4 @@
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/use-auth";
 import { useFeatures } from "@/lib/features-context";
 import type { Acao } from "@/lib/permissions";
 import type { FeatureKey } from "@/lib/features";

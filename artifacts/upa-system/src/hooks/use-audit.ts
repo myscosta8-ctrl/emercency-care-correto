@@ -1,5 +1,5 @@
 import { useCreateAuditLog } from "@workspace/api-client-react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/use-auth";
 import { useCallback } from "react";
 
 export function useAudit() {

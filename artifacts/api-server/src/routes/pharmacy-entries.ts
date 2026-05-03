@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, pharmacyEntriesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router({ mergeParams: true });
 type Params = Record<string, string>;
@@ -27,9 +28,9 @@ router.get("/", async (req, res) => {
   res.json(rows.map(serialize));
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requirePermissao("registrar_farmacia"), async (req, res) => {
   const patientId = Number((req.params as Params)["id"]);
-  const { userId, medication, status, notes } = req.body as {
+  const { medication, status, notes } = req.body as {
     userId?:     number;
     medication?: string;
     status?:     PharmacyStatus;
@@ -46,11 +47,13 @@ router.post("/", async (req, res) => {
     ? (status as PharmacyStatus)
     : "pendente";
 
+  const staffId = req.staff?.id ?? 0;
+
   const [created] = await db
     .insert(pharmacyEntriesTable)
     .values({
       patientId,
-      userId:     userId ?? 0,
+      userId:     staffId,
       medication: medication.trim(),
       status:     safeStatus,
       notes:      notes?.trim() ?? "",
@@ -60,7 +63,7 @@ router.post("/", async (req, res) => {
   res.status(201).json(serialize(created));
 });
 
-router.patch("/:entryId/status", async (req, res) => {
+router.patch("/:entryId/status", requirePermissao("registrar_farmacia"), async (req, res) => {
   const entryId = Number(req.params["entryId"]);
   const { status } = req.body as { status?: PharmacyStatus };
 

@@ -4,7 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { AuthProvider } from "@/lib/auth-context";
+import { useAuth } from "@/lib/use-auth";
 import { FeaturesProvider } from "@/lib/features-context";
 
 const Dashboard          = lazy(() => import("@/pages/dashboard"));

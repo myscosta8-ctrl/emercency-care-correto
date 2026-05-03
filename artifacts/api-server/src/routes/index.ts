@@ -10,11 +10,17 @@ import socialNotesRouter from "./social-notes";
 import nutritionalAssessmentsRouter from "./nutritional-assessments";
 import pharmacyEntriesRouter from "./pharmacy-entries";
 import transfersRouter from "./transfers";
+import { requireAuth } from "../middleware/require-auth";
+import { auditWrite } from "../middleware/audit-write";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use("/auth", authRouter);
+
+router.use(requireAuth);
+router.use(auditWrite);
+
 router.use("/patients", patientsRouter);
 router.use("/patients/:id/notifications", notificationsRouter);
 router.use("/patients/:id/social-notes", socialNotesRouter);

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Activity, LayoutDashboard, Users, ShieldCheck, SlidersHorizontal, ClipboardList, ArrowLeft, Lock } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";

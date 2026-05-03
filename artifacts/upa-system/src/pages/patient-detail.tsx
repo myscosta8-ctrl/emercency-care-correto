@@ -40,7 +40,7 @@ import {
 } from "@workspace/api-client-react";
 import type { PatientNotification } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/use-auth";
 import {
   Activity, ArrowLeft, Edit, Trash2, HeartPulse,
   Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
