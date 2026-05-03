@@ -13,9 +13,11 @@ import { cn } from "@/lib/utils";
 // ── constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { value: "tecnico",    label: "Técnico de Enfermagem" },
-  { value: "enfermeiro", label: "Enfermeiro" },
-  { value: "medico",     label: "Médico" },
+  { value: "direcao",       label: "Direção" },
+  { value: "administrativo", label: "Administrativo" },
+  { value: "coordenacao",   label: "Coordenação" },
+  { value: "enfermeiro",    label: "Enfermeiro" },
+  { value: "tecnico",       label: "Técnico de Enfermagem" },
 ] as const;
 
 const ACCESS_LEVELS = [
@@ -43,15 +45,22 @@ const SECTORS = [
 ];
 
 const CATEGORY_LABEL: Record<string, string> = {
-  tecnico: "Técnico", enfermeiro: "Enfermeiro", medico: "Médico",
+  direcao:       "Direção",
+  administrativo: "Administrativo",
+  coordenacao:   "Coordenação",
+  enfermeiro:    "Enfermeiro",
+  tecnico:       "Técnico",
 };
 const CATEGORY_COLOR: Record<string, string> = {
-  tecnico: "text-blue-400 bg-blue-500/10 border-blue-500/30",
-  enfermeiro: "text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
-  medico: "text-purple-400 bg-purple-500/10 border-purple-500/30",
+  direcao:       "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+  administrativo: "text-slate-400 bg-slate-500/10 border-slate-500/30",
+  coordenacao:   "text-orange-400 bg-orange-500/10 border-orange-500/30",
+  enfermeiro:    "text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
+  tecnico:       "text-blue-400 bg-blue-500/10 border-blue-500/30",
 };
 const COREN_LABEL: Record<string, string> = {
-  tecnico: "COREN", enfermeiro: "COREN", medico: "CRM",
+  enfermeiro: "COREN",
+  tecnico:    "COREN",
 };
 
 // ── signature pad ─────────────────────────────────────────────────────────────
@@ -165,7 +174,7 @@ function SignaturePad({ value, onChange }: SignaturePadProps) {
 
 interface FormData {
   fullName: string;
-  category: "tecnico" | "enfermeiro" | "medico";
+  category: "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico";
   corenCrm: string;
   sector: string;
   login: string;
@@ -177,7 +186,7 @@ interface FormData {
 
 const defaultForm = (): FormData => ({
   fullName: "",
-  category: "enfermeiro",
+  category: "tecnico",
   corenCrm: "",
   sector: "",
   login: "",
@@ -660,9 +669,11 @@ export default function StaffPage() {
         <div className="flex flex-wrap gap-4 mb-5">
           {[
             { label: "Total", count: staff?.length ?? 0, cls: "text-foreground" },
-            { label: "Técnicos", count: staff?.filter(m => m.category === "tecnico").length ?? 0, cls: "text-blue-400" },
+            { label: "Direção", count: staff?.filter(m => m.category === "direcao").length ?? 0, cls: "text-yellow-400" },
+            { label: "Admin.", count: staff?.filter(m => m.category === "administrativo").length ?? 0, cls: "text-slate-400" },
+            { label: "Coord.", count: staff?.filter(m => m.category === "coordenacao").length ?? 0, cls: "text-orange-400" },
             { label: "Enfermeiros", count: staff?.filter(m => m.category === "enfermeiro").length ?? 0, cls: "text-cyan-400" },
-            { label: "Médicos", count: staff?.filter(m => m.category === "medico").length ?? 0, cls: "text-purple-400" },
+            { label: "Técnicos", count: staff?.filter(m => m.category === "tecnico").length ?? 0, cls: "text-blue-400" },
           ].map(s => (
             <div key={s.label} className="bg-card border border-border/30 rounded-xl px-4 py-2.5 min-w-[80px]">
               <p className="text-xs text-muted-foreground">{s.label}</p>

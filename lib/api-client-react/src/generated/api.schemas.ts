@@ -333,9 +333,11 @@ export type StaffMemberCategory =
   (typeof StaffMemberCategory)[keyof typeof StaffMemberCategory];
 
 export const StaffMemberCategory = {
-  tecnico: "tecnico",
+  direcao: "direcao",
+  administrativo: "administrativo",
+  coordenacao: "coordenacao",
   enfermeiro: "enfermeiro",
-  medico: "medico",
+  tecnico: "tecnico",
 } as const;
 
 export interface StaffMember {
@@ -356,9 +358,11 @@ export type CreateStaffBodyCategory =
   (typeof CreateStaffBodyCategory)[keyof typeof CreateStaffBodyCategory];
 
 export const CreateStaffBodyCategory = {
-  tecnico: "tecnico",
+  direcao: "direcao",
+  administrativo: "administrativo",
+  coordenacao: "coordenacao",
   enfermeiro: "enfermeiro",
-  medico: "medico",
+  tecnico: "tecnico",
 } as const;
 
 export interface CreateStaffBody {
@@ -377,9 +381,11 @@ export type UpdateStaffBodyCategory =
   (typeof UpdateStaffBodyCategory)[keyof typeof UpdateStaffBodyCategory];
 
 export const UpdateStaffBodyCategory = {
-  tecnico: "tecnico",
+  direcao: "direcao",
+  administrativo: "administrativo",
+  coordenacao: "coordenacao",
   enfermeiro: "enfermeiro",
-  medico: "medico",
+  tecnico: "tecnico",
 } as const;
 
 export interface UpdateStaffBody {

@@ -731,7 +731,13 @@ export const GetPatientHistoryResponse = zod.array(
 export const ListStaffResponseItem = zod.object({
   id: zod.number(),
   fullName: zod.string(),
-  category: zod.enum(["tecnico", "enfermeiro", "medico"]),
+  category: zod.enum([
+    "direcao",
+    "administrativo",
+    "coordenacao",
+    "enfermeiro",
+    "tecnico",
+  ]),
   corenCrm: zod.string(),
   sector: zod.string(),
   login: zod.string(),
@@ -748,7 +754,13 @@ export const ListStaffResponse = zod.array(ListStaffResponseItem);
  */
 export const CreateStaffBody = zod.object({
   fullName: zod.string(),
-  category: zod.enum(["tecnico", "enfermeiro", "medico"]),
+  category: zod.enum([
+    "direcao",
+    "administrativo",
+    "coordenacao",
+    "enfermeiro",
+    "tecnico",
+  ]),
   corenCrm: zod.string().optional(),
   sector: zod.string().optional(),
   login: zod.string(),
@@ -768,7 +780,13 @@ export const GetStaffParams = zod.object({
 export const GetStaffResponse = zod.object({
   id: zod.number(),
   fullName: zod.string(),
-  category: zod.enum(["tecnico", "enfermeiro", "medico"]),
+  category: zod.enum([
+    "direcao",
+    "administrativo",
+    "coordenacao",
+    "enfermeiro",
+    "tecnico",
+  ]),
   corenCrm: zod.string(),
   sector: zod.string(),
   login: zod.string(),
@@ -788,7 +806,9 @@ export const UpdateStaffParams = zod.object({
 
 export const UpdateStaffBody = zod.object({
   fullName: zod.string().optional(),
-  category: zod.enum(["tecnico", "enfermeiro", "medico"]).optional(),
+  category: zod
+    .enum(["direcao", "administrativo", "coordenacao", "enfermeiro", "tecnico"])
+    .optional(),
   corenCrm: zod.string().optional(),
   sector: zod.string().optional(),
   login: zod.string().optional(),
@@ -801,7 +821,13 @@ export const UpdateStaffBody = zod.object({
 export const UpdateStaffResponse = zod.object({
   id: zod.number(),
   fullName: zod.string(),
-  category: zod.enum(["tecnico", "enfermeiro", "medico"]),
+  category: zod.enum([
+    "direcao",
+    "administrativo",
+    "coordenacao",
+    "enfermeiro",
+    "tecnico",
+  ]),
   corenCrm: zod.string(),
   sector: zod.string(),
   login: zod.string(),
