@@ -624,7 +624,7 @@ components:
           type: integer
         status:
           $ref: "#/components/schemas/TriageStatus"
-        sector:
+        setor:
           type: string
           enum: [sala_vermelha, observacao_adulto, observacao_pediatrica, observacao_pre_adulto]
         internmentStatus:
@@ -698,7 +698,7 @@ components:
         - systolicBp
         - diastolicBp
         - status
-        - sector
+        - setor
         - internmentStatus
         - nurse
         - attendanceDate
@@ -785,7 +785,7 @@ components:
           type: integer
         status:
           $ref: "#/components/schemas/TriageStatus"
-        sector:
+        setor:
           type: string
           enum: [sala_vermelha, observacao_adulto, observacao_pediatrica, observacao_pre_adulto]
         internmentStatus:

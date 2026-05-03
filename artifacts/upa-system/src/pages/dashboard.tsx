@@ -219,14 +219,14 @@ export default function Dashboard() {
     const q = debouncedSearch.toLowerCase();
     const base = patients.filter(p => {
       const matchesSearch = !q || p.name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
-      const matchesSector = sectorFilter === "Todos" || p.sector === sectorFilter;
+      const matchesSector = sectorFilter === "Todos" || p.setor === sectorFilter;
       const matchesTriage = triageFilter === "all" || p.status === triageFilter;
       return matchesSearch && matchesSector && matchesTriage;
     });
     return SECTOR_CONFIG.map(cfg => ({
       ...cfg,
       patients: base
-        .filter(p => p.sector === cfg.key)
+        .filter(p => p.setor === cfg.key)
         .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99)),
     }));
   }, [patients, debouncedSearch, sectorFilter, triageFilter]);

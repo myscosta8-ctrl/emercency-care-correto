@@ -10,7 +10,7 @@ import {
   getGetPatientsSummaryQueryKey,
   getGetPatientQueryKey,
 } from "@workspace/api-client-react";
-import type { Patient } from "@workspace/api-client-react";
+import type { Patient, CreatePatientBody } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
@@ -103,7 +103,7 @@ const formSchema = z.object({
   status:           z.enum(["red", "orange", "yellow", "green", "blue"], {
     errorMap: () => ({ message: "Selecione a classificação de triagem" }),
   }),
-  sector:           z.string().min(1, "Selecione o setor de atendimento"),
+  setor:            z.string().min(1, "Selecione o setor de atendimento"),
   internmentStatus: z.enum(["internado", "nao_internado"], {
     errorMap: () => ({ message: "Selecione o status de internação" }),
   }),
@@ -178,7 +178,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       zipCode:       patient?.zipCode       ?? "",
 
       status:           (patient?.status as FormValues["status"]) ?? "yellow",
-      sector:           patient?.sector ?? "",
+      setor:            patient?.setor ?? "",
       internmentStatus: (patient?.internmentStatus as FormValues["internmentStatus"]) ?? "nao_internado",
       nurse:     patient?.nurse     ?? "",
       bed:              patient?.bed              ?? "",
@@ -223,7 +223,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
 
   function onSubmit(data: FormValues) {
     if (patient) {
-      updatePatient.mutate({ id: patient.id, data }, {
+      updatePatient.mutate({ id: patient.id, data: data as unknown as CreatePatientBody }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
@@ -234,7 +234,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
         onError: () => toast({ title: "Não foi possível atualizar o prontuário", variant: "destructive" }),
       });
     } else {
-      createPatient.mutate({ data }, {
+      createPatient.mutate({ data: data as unknown as CreatePatientBody }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
@@ -537,7 +537,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           )} />
 
           {/* Setor */}
-          <FormField control={form.control} name="sector" render={({ field }) => (
+          <FormField control={form.control} name="setor" render={({ field }) => (
             <FormItem>
               <FormLabel>Setor</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>

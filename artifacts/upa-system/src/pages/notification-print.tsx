@@ -800,7 +800,7 @@ function UpaDataBox({ patient, notif, types }: { patient: Patient; notif: Patien
               </td>
               <td style={S.td}>
                 <span style={S.fieldLabel}>Leito / Setor</span>
-                <span style={{ fontWeight: 700 }}>{patient.bed} — {patient.sector}</span>
+                <span style={{ fontWeight: 700 }}>{patient.bed} — {patient.setor}</span>
               </td>
               <td style={S.td}>
                 <span style={S.fieldLabel}>Triagem Manchester</span>

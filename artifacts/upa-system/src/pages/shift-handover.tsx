@@ -199,7 +199,7 @@ export default function ShiftHandover() {
   const grouped = SECTORS.map(s => ({
     ...s,
     patients: (patients ?? [])
-      .filter(p => p.sector === s.key)
+      .filter(p => p.setor === s.key)
       .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99)),
   }));
 

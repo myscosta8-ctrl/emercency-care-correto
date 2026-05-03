@@ -73,7 +73,7 @@ function buildPatientData(body: typeof CreatePatientBody._type) {
     addressState:    body.addressState ?? "",
     zipCode:         body.zipCode ?? "",
     status:          body.status,
-    sector:          body.sector,
+    setor:           body.setor!,
     internmentStatus: body.internmentStatus,
     bed:             body.bed ?? "",
     diagnosis:       body.diagnosis ?? "",

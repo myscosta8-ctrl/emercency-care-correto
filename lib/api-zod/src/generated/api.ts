@@ -51,7 +51,7 @@ export const ListPatientsResponseItem = zod.object({
   systolicBp: zod.number(),
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
-  sector: zod.enum([
+  setor: zod.enum([
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -113,12 +113,14 @@ export const CreatePatientBody = zod.object({
   systolicBp: zod.number().optional(),
   diastolicBp: zod.number().optional(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
-  sector: zod.enum([
-    "sala_vermelha",
-    "observacao_adulto",
-    "observacao_pediatrica",
-    "observacao_pre_adulto",
-  ]),
+  setor: zod
+    .enum([
+      "sala_vermelha",
+      "observacao_adulto",
+      "observacao_pediatrica",
+      "observacao_pre_adulto",
+    ])
+    .optional(),
   internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string().optional(),
   attendanceDate: zod.string().optional(),
@@ -187,7 +189,7 @@ export const GetPatientResponse = zod.object({
   systolicBp: zod.number(),
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
-  sector: zod.enum([
+  setor: zod.enum([
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -252,12 +254,14 @@ export const UpdatePatientBody = zod.object({
   systolicBp: zod.number().optional(),
   diastolicBp: zod.number().optional(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
-  sector: zod.enum([
-    "sala_vermelha",
-    "observacao_adulto",
-    "observacao_pediatrica",
-    "observacao_pre_adulto",
-  ]),
+  setor: zod
+    .enum([
+      "sala_vermelha",
+      "observacao_adulto",
+      "observacao_pediatrica",
+      "observacao_pre_adulto",
+    ])
+    .optional(),
   internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string().optional(),
   attendanceDate: zod.string().optional(),
@@ -307,7 +311,7 @@ export const UpdatePatientResponse = zod.object({
   systolicBp: zod.number(),
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
-  sector: zod.enum([
+  setor: zod.enum([
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -384,7 +388,7 @@ export const UpdatePatientStatusResponse = zod.object({
   systolicBp: zod.number(),
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
-  sector: zod.enum([
+  setor: zod.enum([
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -468,7 +472,7 @@ export const AddVitalsResponse = zod.object({
   systolicBp: zod.number(),
   diastolicBp: zod.number(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
-  sector: zod.enum([
+  setor: zod.enum([
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",

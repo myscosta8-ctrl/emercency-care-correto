@@ -27,9 +27,9 @@ export const PatientSex = {
   O: "O",
 } as const;
 
-export type PatientSector = (typeof PatientSector)[keyof typeof PatientSector];
+export type PatientSetor = (typeof PatientSetor)[keyof typeof PatientSetor];
 
-export const PatientSector = {
+export const PatientSetor = {
   sala_vermelha: "sala_vermelha",
   observacao_adulto: "observacao_adulto",
   observacao_pediatrica: "observacao_pediatrica",
@@ -78,7 +78,7 @@ export interface Patient {
   systolicBp: number;
   diastolicBp: number;
   status: TriageStatus;
-  sector: PatientSector;
+  setor: PatientSetor;
   internmentStatus: PatientInternmentStatus;
   nurse: string;
   attendanceDate: string;
@@ -107,10 +107,10 @@ export const CreatePatientBodySex = {
   O: "O",
 } as const;
 
-export type CreatePatientBodySector =
-  (typeof CreatePatientBodySector)[keyof typeof CreatePatientBodySector];
+export type CreatePatientBodySetor =
+  (typeof CreatePatientBodySetor)[keyof typeof CreatePatientBodySetor];
 
-export const CreatePatientBodySector = {
+export const CreatePatientBodySetor = {
   sala_vermelha: "sala_vermelha",
   observacao_adulto: "observacao_adulto",
   observacao_pediatrica: "observacao_pediatrica",
@@ -158,7 +158,7 @@ export interface CreatePatientBody {
   systolicBp?: number;
   diastolicBp?: number;
   status: TriageStatus;
-  sector: CreatePatientBodySector;
+  setor?: CreatePatientBodySetor;
   internmentStatus: CreatePatientBodyInternmentStatus;
   nurse?: string;
   attendanceDate?: string;

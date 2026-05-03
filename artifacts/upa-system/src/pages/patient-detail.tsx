@@ -366,7 +366,7 @@ export default function PatientDetail() {
                         <><span>&bull;</span><span>{patient.birthDate.split("-").reverse().join("/")}</span></>
                       )}
                       <span>&bull;</span>
-                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{patient.sector}</span>
+                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{patient.setor}</span>
                       {patient.bed && (
                         <>
                           <span>&bull;</span>
@@ -968,7 +968,7 @@ export default function PatientDetail() {
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground">Setor</p>
-                    <p className="font-medium">{patient.sector}</p>
+                    <p className="font-medium">{patient.setor}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -1326,7 +1326,7 @@ export default function PatientDetail() {
               </tr>
               <tr>
                 <th style={{ textAlign: "left" }}>Setor</th>
-                <td>{patient.sector}</td>
+                <td>{patient.setor}</td>
                 <th style={{ textAlign: "left" }}>Triagem</th>
                 <td>
                   <span style={{
