@@ -14,11 +14,14 @@ import { cn } from "@/lib/utils";
 // ── constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { value: "direcao",       label: "Direção" },
-  { value: "administrativo", label: "Administrativo" },
-  { value: "coordenacao",   label: "Coordenação" },
-  { value: "enfermeiro",    label: "Enfermeiro" },
-  { value: "tecnico",       label: "Técnico de Enfermagem" },
+  { value: "recepcionista",    label: "Recepcionista" },
+  { value: "enfermeiro",       label: "Enfermeiro" },
+  { value: "tecnico_enfermagem", label: "Técnico de Enfermagem" },
+  { value: "medico",           label: "Médico" },
+  { value: "assistente_social", label: "Assistente Social" },
+  { value: "nutricionista",    label: "Nutricionista" },
+  { value: "farmaceutico",     label: "Farmacêutico" },
+  { value: "administrador",    label: "Administrador" },
 ] as const;
 
 const ACCESS_LEVELS = [
@@ -46,22 +49,29 @@ const SECTORS = [
 ];
 
 const CATEGORY_LABEL: Record<string, string> = {
-  direcao:       "Direção",
-  administrativo: "Administrativo",
-  coordenacao:   "Coordenação",
-  enfermeiro:    "Enfermeiro",
-  tecnico:       "Técnico",
+  recepcionista:     "Recepcionista",
+  enfermeiro:        "Enfermeiro",
+  tecnico_enfermagem: "Técnico de Enfermagem",
+  medico:            "Médico",
+  assistente_social: "Assistente Social",
+  nutricionista:     "Nutricionista",
+  farmaceutico:      "Farmacêutico",
+  administrador:     "Administrador",
 };
 const CATEGORY_COLOR: Record<string, string> = {
-  direcao:       "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
-  administrativo: "text-slate-400 bg-slate-500/10 border-slate-500/30",
-  coordenacao:   "text-orange-400 bg-orange-500/10 border-orange-500/30",
-  enfermeiro:    "text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
-  tecnico:       "text-blue-400 bg-blue-500/10 border-blue-500/30",
+  recepcionista:     "text-pink-400   bg-pink-500/10   border-pink-500/30",
+  enfermeiro:        "text-cyan-400   bg-cyan-500/10   border-cyan-500/30",
+  tecnico_enfermagem:"text-blue-400   bg-blue-500/10   border-blue-500/30",
+  medico:            "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+  assistente_social: "text-purple-400 bg-purple-500/10 border-purple-500/30",
+  nutricionista:     "text-lime-400   bg-lime-500/10   border-lime-500/30",
+  farmaceutico:      "text-amber-400  bg-amber-500/10  border-amber-500/30",
+  administrador:     "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
 };
 const COREN_LABEL: Record<string, string> = {
-  enfermeiro: "COREN",
-  tecnico:    "COREN",
+  enfermeiro:        "COREN",
+  tecnico_enfermagem:"COREN",
+  medico:            "CRM",
 };
 
 // ── signature pad ─────────────────────────────────────────────────────────────
@@ -175,7 +185,7 @@ function SignaturePad({ value, onChange }: SignaturePadProps) {
 
 interface FormData {
   nome: string;
-  perfil: "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico";
+  perfil: "recepcionista" | "enfermeiro" | "tecnico_enfermagem" | "medico" | "assistente_social" | "nutricionista" | "farmaceutico" | "administrador";
   email: string;
   ativo: boolean;
   corenCrm: string;
@@ -189,7 +199,7 @@ interface FormData {
 
 const defaultForm = (): FormData => ({
   nome: "",
-  perfil: "tecnico",
+  perfil: "recepcionista",
   email: "",
   ativo: true,
   corenCrm: "",
@@ -709,11 +719,14 @@ export default function StaffPage() {
         <div className="flex flex-wrap gap-4 mb-5">
           {[
             { label: "Total", count: staff?.length ?? 0, cls: "text-foreground" },
-            { label: "Direção", count: staff?.filter(m => m.perfil === "direcao").length ?? 0, cls: "text-yellow-400" },
-            { label: "Admin.", count: staff?.filter(m => m.perfil === "administrativo").length ?? 0, cls: "text-slate-400" },
-            { label: "Coord.", count: staff?.filter(m => m.perfil === "coordenacao").length ?? 0, cls: "text-orange-400" },
-            { label: "Enfermeiros", count: staff?.filter(m => m.perfil === "enfermeiro").length ?? 0, cls: "text-cyan-400" },
-            { label: "Técnicos", count: staff?.filter(m => m.perfil === "tecnico").length ?? 0, cls: "text-blue-400" },
+            { label: "Recep.", count: staff?.filter(m => m.perfil === "recepcionista").length ?? 0, cls: "text-pink-400" },
+            { label: "Enferm.", count: staff?.filter(m => m.perfil === "enfermeiro").length ?? 0, cls: "text-cyan-400" },
+            { label: "Técnicos", count: staff?.filter(m => m.perfil === "tecnico_enfermagem").length ?? 0, cls: "text-blue-400" },
+            { label: "Médicos", count: staff?.filter(m => m.perfil === "medico").length ?? 0, cls: "text-emerald-400" },
+            { label: "Assist.", count: staff?.filter(m => m.perfil === "assistente_social").length ?? 0, cls: "text-purple-400" },
+            { label: "Nutri.", count: staff?.filter(m => m.perfil === "nutricionista").length ?? 0, cls: "text-lime-400" },
+            { label: "Farmac.", count: staff?.filter(m => m.perfil === "farmaceutico").length ?? 0, cls: "text-amber-400" },
+            { label: "Admin.", count: staff?.filter(m => m.perfil === "administrador").length ?? 0, cls: "text-yellow-400" },
           ].map(s => (
             <div key={s.label} className="bg-card border border-border/30 rounded-xl px-4 py-2.5 min-w-[80px]">
               <p className="text-xs text-muted-foreground">{s.label}</p>

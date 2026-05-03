@@ -1320,7 +1320,7 @@ components:
           type: string
         perfil:
           type: string
-          enum: [direcao, administrativo, coordenacao, enfermeiro, tecnico]
+          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador]
         email:
           type: string
         ativo:
@@ -1365,7 +1365,7 @@ components:
           type: string
         perfil:
           type: string
-          enum: [direcao, administrativo, coordenacao, enfermeiro, tecnico]
+          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador]
         email:
           type: string
         ativo:
@@ -1397,7 +1397,7 @@ components:
           type: string
         perfil:
           type: string
-          enum: [direcao, administrativo, coordenacao, enfermeiro, tecnico]
+          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador]
         email:
           type: string
         ativo:

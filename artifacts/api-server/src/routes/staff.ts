@@ -54,7 +54,7 @@ router.post("/", async (req, res) => {
     .insert(staffTable)
     .values({
       nome: rest.nome,
-      perfil: rest.perfil as "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico",
+      perfil: rest.perfil as "recepcionista" | "enfermeiro" | "tecnico_enfermagem" | "medico" | "assistente_social" | "nutricionista" | "farmaceutico" | "administrador",
       email: rest.email ?? "",
       ativo: rest.ativo ?? true,
       corenCrm: rest.corenCrm ?? "",
@@ -95,7 +95,7 @@ router.put("/:id", async (req, res) => {
 
   const patch: Partial<typeof staffTable.$inferInsert> = {
     ...rest,
-    ...(perfilRaw ? { perfil: perfilRaw as "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico" } : {}),
+    ...(perfilRaw ? { perfil: perfilRaw as "recepcionista" | "enfermeiro" | "tecnico_enfermagem" | "medico" | "assistente_social" | "nutricionista" | "farmaceutico" | "administrador" } : {}),
     ...(password ? { passwordHash: hashPassword(password) } : {}),
     updatedAt: new Date(),
   };

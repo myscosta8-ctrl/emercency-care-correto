@@ -5,7 +5,7 @@ import { z } from "zod/v4";
 export const staffTable = pgTable("staff", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
-  perfil: text("perfil", { enum: ["direcao", "administrativo", "coordenacao", "enfermeiro", "tecnico"] }).notNull(),
+  perfil: text("perfil", { enum: ["recepcionista", "enfermeiro", "tecnico_enfermagem", "medico", "assistente_social", "nutricionista", "farmaceutico", "administrador"] }).notNull(),
   email: text("email").notNull().default(""),
   ativo: boolean("ativo").notNull().default(true),
   corenCrm: text("coren_crm").notNull().default(""),

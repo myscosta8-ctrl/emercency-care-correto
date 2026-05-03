@@ -10,11 +10,14 @@ function hasPermissao(perfil: Perfil, acao: Acao): boolean {
 }
 
 const PERFIL_HEADER_COLOR: Record<Perfil, string> = {
-  direcao:        "text-yellow-400",
-  administrativo: "text-slate-400",
-  coordenacao:    "text-orange-400",
-  enfermeiro:     "text-cyan-400",
-  tecnico:        "text-blue-400",
+  recepcionista:     "text-pink-400",
+  enfermeiro:        "text-cyan-400",
+  tecnico_enfermagem:"text-blue-400",
+  medico:            "text-emerald-400",
+  assistente_social: "text-purple-400",
+  nutricionista:     "text-lime-400",
+  farmaceutico:      "text-amber-400",
+  administrador:     "text-yellow-400",
 };
 
 const ACAO_GROUPS: { label: string; acoes: Acao[] }[] = [

@@ -58,7 +58,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
     );
   }
 
-  if (!activeUser || activeUser.perfil !== "direcao") {
+  if (!activeUser || activeUser.perfil !== "administrador") {
     return <AccessDenied />;
   }
 

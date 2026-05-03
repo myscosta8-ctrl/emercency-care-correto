@@ -403,11 +403,14 @@ export type StaffMemberPerfil =
   (typeof StaffMemberPerfil)[keyof typeof StaffMemberPerfil];
 
 export const StaffMemberPerfil = {
-  direcao: "direcao",
-  administrativo: "administrativo",
-  coordenacao: "coordenacao",
+  recepcionista: "recepcionista",
   enfermeiro: "enfermeiro",
-  tecnico: "tecnico",
+  tecnico_enfermagem: "tecnico_enfermagem",
+  medico: "medico",
+  assistente_social: "assistente_social",
+  nutricionista: "nutricionista",
+  farmaceutico: "farmaceutico",
+  administrador: "administrador",
 } as const;
 
 export interface StaffMember {
@@ -430,11 +433,14 @@ export type CreateStaffBodyPerfil =
   (typeof CreateStaffBodyPerfil)[keyof typeof CreateStaffBodyPerfil];
 
 export const CreateStaffBodyPerfil = {
-  direcao: "direcao",
-  administrativo: "administrativo",
-  coordenacao: "coordenacao",
+  recepcionista: "recepcionista",
   enfermeiro: "enfermeiro",
-  tecnico: "tecnico",
+  tecnico_enfermagem: "tecnico_enfermagem",
+  medico: "medico",
+  assistente_social: "assistente_social",
+  nutricionista: "nutricionista",
+  farmaceutico: "farmaceutico",
+  administrador: "administrador",
 } as const;
 
 export interface CreateStaffBody {
@@ -455,11 +461,14 @@ export type UpdateStaffBodyPerfil =
   (typeof UpdateStaffBodyPerfil)[keyof typeof UpdateStaffBodyPerfil];
 
 export const UpdateStaffBodyPerfil = {
-  direcao: "direcao",
-  administrativo: "administrativo",
-  coordenacao: "coordenacao",
+  recepcionista: "recepcionista",
   enfermeiro: "enfermeiro",
-  tecnico: "tecnico",
+  tecnico_enfermagem: "tecnico_enfermagem",
+  medico: "medico",
+  assistente_social: "assistente_social",
+  nutricionista: "nutricionista",
+  farmaceutico: "farmaceutico",
+  administrador: "administrador",
 } as const;
 
 export interface UpdateStaffBody {

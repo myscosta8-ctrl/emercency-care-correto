@@ -266,7 +266,7 @@ export default function Dashboard() {
             <h1 className="text-base font-bold tracking-tight sm:hidden">UPA Breves</h1>
           </div>
           <div className="flex items-center gap-1.5">
-            {activeUser?.perfil === "direcao" && (
+            {activeUser?.perfil === "administrador" && (
               <Link href="/admin/dashboard">
                 <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
                   <Settings2 className="h-3.5 w-3.5" />
