@@ -13,6 +13,10 @@ const NotificationPrint = lazy(() => import("@/pages/notification-print"));
 const ShiftHandover = lazy(() => import("@/pages/shift-handover"));
 const StaffPage = lazy(() => import("@/pages/staff"));
 const NotFound = lazy(() => import("@/pages/not-found"));
+const AdminDashboard      = lazy(() => import("@/pages/admin/admin-dashboard"));
+const AdminUsuarios       = lazy(() => import("@/pages/admin/usuarios"));
+const AdminPermissoes     = lazy(() => import("@/pages/admin/permissoes"));
+const AdminFuncionalidades = lazy(() => import("@/pages/admin/funcionalidades"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +53,10 @@ function Router() {
         <Route path="/patients/:id" component={PatientDetail} />
         <Route path="/passagem-plantao" component={ShiftHandover} />
         <Route path="/funcionarios" component={StaffPage} />
+        <Route path="/admin/dashboard"       component={AdminDashboard} />
+        <Route path="/admin/usuarios"        component={AdminUsuarios} />
+        <Route path="/admin/permissoes"      component={AdminPermissoes} />
+        <Route path="/admin/funcionalidades" component={AdminFuncionalidades} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

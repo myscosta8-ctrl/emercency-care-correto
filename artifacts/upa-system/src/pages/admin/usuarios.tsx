@@ -1,0 +1,400 @@
+import { useState, useCallback } from "react";
+import { AdminLayout } from "./layout";
+import {
+  useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff,
+} from "@workspace/api-client-react";
+import type { StaffMember } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2, Search, UserCircle, Check, X, ToggleLeft, ToggleRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { PERFIL_LABELS, PERFIS } from "@/lib/permissions";
+import type { Perfil } from "@/lib/permissions";
+
+const PERFIL_COLOR: Record<Perfil, string> = {
+  direcao:        "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+  administrativo: "text-slate-400  bg-slate-500/10  border-slate-500/30",
+  coordenacao:    "text-orange-400 bg-orange-500/10 border-orange-500/30",
+  enfermeiro:     "text-cyan-400   bg-cyan-500/10   border-cyan-500/30",
+  tecnico:        "text-blue-400   bg-blue-500/10   border-blue-500/30",
+};
+
+const SECTOR_OPTIONS = [
+  { value: "todos_os_setores",      label: "Todos os Setores"      },
+  { value: "sala_vermelha",         label: "Sala Vermelha"         },
+  { value: "observacao_adulto",     label: "Observação Adulto"     },
+  { value: "observacao_pediatrica", label: "Observação Pediátrica" },
+  { value: "observacao_pre_adulto", label: "Observação Pré-Adulto" },
+];
+
+interface FormState {
+  nome: string;
+  login: string;
+  password: string;
+  perfil: Perfil;
+  email: string;
+  sector: string;
+  corenCrm: string;
+  ativo: boolean;
+}
+
+const EMPTY_FORM: FormState = {
+  nome: "", login: "", password: "", perfil: "enfermeiro",
+  email: "", sector: "todos_os_setores", corenCrm: "", ativo: true,
+};
+
+function StaffForm({
+  initial,
+  isEditing,
+  onSave,
+  onCancel,
+  isPending,
+}: {
+  initial: FormState;
+  isEditing: boolean;
+  onSave: (f: FormState) => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  const [form, setForm] = useState<FormState>(initial);
+  const set = (k: keyof FormState, v: string | boolean) =>
+    setForm(prev => ({ ...prev, [k]: v }));
+
+  return (
+    <div className="space-y-4 pt-1">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2 space-y-1">
+          <Label className="text-xs">Nome completo *</Label>
+          <Input value={form.nome} onChange={e => set("nome", e.target.value)} placeholder="Ex: Maria Silva" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Login *</Label>
+          <Input value={form.login} onChange={e => set("login", e.target.value)} placeholder="Ex: maria.silva" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">{isEditing ? "Nova senha (opcional)" : "Senha *"}</Label>
+          <Input type="password" value={form.password} onChange={e => set("password", e.target.value)} placeholder="••••••••" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Perfil *</Label>
+          <select
+            value={form.perfil}
+            onChange={e => set("perfil", e.target.value)}
+            className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            {PERFIS.map(p => (
+              <option key={p} value={p}>{PERFIL_LABELS[p]}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Setor</Label>
+          <select
+            value={form.sector}
+            onChange={e => set("sector", e.target.value)}
+            className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            {SECTOR_OPTIONS.map(s => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">E-mail</Label>
+          <Input type="email" value={form.email} onChange={e => set("email", e.target.value)} placeholder="email@upa.gov.br" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">COREN / CRM</Label>
+          <Input value={form.corenCrm} onChange={e => set("corenCrm", e.target.value)} placeholder="Ex: COREN-PA 123456" />
+        </div>
+        <div className="col-span-2 flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="ativo-check"
+            checked={form.ativo}
+            onChange={e => set("ativo", e.target.checked)}
+            className="h-4 w-4 rounded border-border"
+          />
+          <Label htmlFor="ativo-check" className="text-xs cursor-pointer">
+            Usuário ativo (pode fazer login)
+          </Label>
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 pt-1">
+        <Button variant="outline" size="sm" onClick={onCancel} disabled={isPending}>Cancelar</Button>
+        <Button size="sm" onClick={() => onSave(form)} disabled={isPending || !form.nome || !form.login}>
+          {isPending ? "Salvando…" : isEditing ? "Salvar alterações" : "Criar funcionário"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default function AdminUsuariosPage() {
+  const { data: staff, isLoading } = useListStaff();
+  const createStaff  = useCreateStaff();
+  const updateStaff  = useUpdateStaff();
+  const deleteStaff  = useDeleteStaff();
+  const queryClient  = useQueryClient();
+  const { toast }    = useToast();
+
+  const [search,        setSearch]        = useState("");
+  const [perfilFilter,  setPerfilFilter]  = useState<Perfil | "all">("all");
+  const [isFormOpen,    setIsFormOpen]    = useState(false);
+  const [editingMember, setEditingMember] = useState<StaffMember | null>(null);
+  const [deletingId,    setDeletingId]    = useState<number | null>(null);
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["staff"] });
+  }, [queryClient]);
+
+  const filtered = (staff ?? []).filter(m => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || m.nome.toLowerCase().includes(q) || m.login.toLowerCase().includes(q);
+    const matchPerfil = perfilFilter === "all" || m.perfil === perfilFilter;
+    return matchSearch && matchPerfil;
+  });
+
+  function openCreate() { setEditingMember(null); setIsFormOpen(true); }
+  function openEdit(m: StaffMember) { setEditingMember(m); setIsFormOpen(true); }
+
+  function handleSave(form: FormState) {
+    if (editingMember) {
+      const body: Record<string, unknown> = {
+        nome: form.nome, login: form.login, perfil: form.perfil,
+        email: form.email, sector: form.sector, corenCrm: form.corenCrm, ativo: form.ativo,
+      };
+      if (form.password) body.password = form.password;
+      updateStaff.mutate({ id: editingMember.id, data: body as Parameters<typeof updateStaff.mutate>[0]["data"] }, {
+        onSuccess: () => {
+          toast({ title: "Funcionário atualizado" });
+          setIsFormOpen(false);
+          invalidate();
+        },
+        onError: () => toast({ title: "Erro ao atualizar", variant: "destructive" }),
+      });
+    } else {
+      createStaff.mutate({
+        data: {
+          nome: form.nome, login: form.login, password: form.password,
+          perfil: form.perfil as Parameters<typeof createStaff.mutate>[0]["data"]["perfil"],
+          email: form.email, sector: form.sector, corenCrm: form.corenCrm, ativo: form.ativo,
+        },
+      }, {
+        onSuccess: () => {
+          toast({ title: "Funcionário criado com sucesso" });
+          setIsFormOpen(false);
+          invalidate();
+        },
+        onError: () => toast({ title: "Erro ao criar funcionário", variant: "destructive" }),
+      });
+    }
+  }
+
+  function handleToggleAtivo(m: StaffMember) {
+    updateStaff.mutate({ id: m.id, data: { ativo: !m.ativo } as Parameters<typeof updateStaff.mutate>[0]["data"] }, {
+      onSuccess: () => {
+        toast({ title: m.ativo ? "Usuário desativado" : "Usuário ativado" });
+        invalidate();
+      },
+      onError: () => toast({ title: "Erro ao alterar status", variant: "destructive" }),
+    });
+  }
+
+  function handleDelete() {
+    if (!deletingId) return;
+    deleteStaff.mutate({ id: deletingId }, {
+      onSuccess: () => {
+        toast({ title: "Funcionário removido" });
+        setDeletingId(null);
+        invalidate();
+      },
+      onError: () => toast({ title: "Erro ao remover", variant: "destructive" }),
+    });
+  }
+
+  const isPending = createStaff.isPending || updateStaff.isPending;
+
+  return (
+    <AdminLayout title="Usuários">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold">Usuários do Sistema</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {staff?.length ?? 0} funcionários cadastrados
+            </p>
+          </div>
+          <Button size="sm" className="gap-1.5 shrink-0" onClick={openCreate}>
+            <Plus className="h-4 w-4" /> Novo Funcionário
+          </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-36">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              className="pl-8 h-8 text-xs"
+              placeholder="Buscar nome ou login…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <select
+            value={perfilFilter}
+            onChange={e => setPerfilFilter(e.target.value as Perfil | "all")}
+            className="h-8 rounded-md border border-input bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="all">Todos os perfis</option>
+            {PERFIS.map(p => <option key={p} value={p}>{PERFIL_LABELS[p]}</option>)}
+          </select>
+        </div>
+
+        {/* Table */}
+        <div className="rounded-lg border border-border overflow-hidden">
+          {isLoading ? (
+            <div className="p-4 space-y-3">
+              {Array.from({length: 5}).map((_,i) => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground text-sm">
+              Nenhum funcionário encontrado.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/20">
+                  <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Funcionário</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-medium text-muted-foreground hidden sm:table-cell">Perfil</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-medium text-muted-foreground hidden md:table-cell">Login</th>
+                  <th className="text-center px-3 py-2.5 text-xs font-medium text-muted-foreground">Status</th>
+                  <th className="px-3 py-2.5 text-xs font-medium text-muted-foreground text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(m => (
+                  <tr key={m.id} className="border-b border-border/30 last:border-0 hover:bg-muted/10 transition-colors">
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                          <UserCircle className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className={cn("text-xs font-medium truncate", !m.ativo && "text-muted-foreground line-through")}>{m.nome}</p>
+                          {m.email && <p className="text-[11px] text-muted-foreground truncate">{m.email}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 hidden sm:table-cell">
+                      <span className={cn(
+                        "text-[11px] font-semibold px-2 py-0.5 rounded border",
+                        PERFIL_COLOR[m.perfil as Perfil] ?? "text-muted-foreground"
+                      )}>
+                        {PERFIL_LABELS[m.perfil as Perfil] ?? m.perfil}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 hidden md:table-cell">
+                      <code className="text-[11px] text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded">{m.login}</code>
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <button
+                        onClick={() => handleToggleAtivo(m)}
+                        title={m.ativo ? "Desativar" : "Ativar"}
+                        className="inline-flex items-center justify-center transition-colors"
+                      >
+                        {m.ativo
+                          ? <ToggleRight className="h-5 w-5 text-green-400 hover:text-green-300" />
+                          : <ToggleLeft  className="h-5 w-5 text-muted-foreground hover:text-foreground" />}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <button
+                          onClick={() => openEdit(m)}
+                          className="h-7 w-7 flex items-center justify-center rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
+                          title="Editar"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeletingId(m.id)}
+                          className="h-7 w-7 flex items-center justify-center rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                          title="Remover"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* Create / Edit dialog */}
+      <Dialog open={isFormOpen} onOpenChange={open => { if (!open) setIsFormOpen(false); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingMember ? "Editar Funcionário" : "Novo Funcionário"}</DialogTitle>
+            <DialogDescription>
+              {editingMember ? `Editando ${editingMember.nome}.` : "Preencha os dados do novo funcionário."}
+            </DialogDescription>
+          </DialogHeader>
+          <StaffForm
+            key={editingMember?.id ?? "new"}
+            initial={editingMember ? {
+              nome: editingMember.nome,
+              login: editingMember.login,
+              password: "",
+              perfil: (editingMember.perfil as Perfil) ?? "enfermeiro",
+              email: editingMember.email ?? "",
+              sector: editingMember.sector ?? "todos_os_setores",
+              corenCrm: editingMember.corenCrm ?? "",
+              ativo: editingMember.ativo,
+            } : EMPTY_FORM}
+            isEditing={!!editingMember}
+            onSave={handleSave}
+            onCancel={() => setIsFormOpen(false)}
+            isPending={isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm */}
+      <AlertDialog open={!!deletingId} onOpenChange={open => { if (!open) setDeletingId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover Funcionário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente e não pode ser desfeita. O funcionário perderá acesso ao sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteStaff.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteStaff.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteStaff.isPending ? "Removendo…" : "Remover"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </AdminLayout>
+  );
+}

@@ -1,7 +1,4 @@
 import { useState, useMemo, useCallback, useEffect, memo } from "react";
-import { useFeatures } from "@/lib/features-context";
-import { FEATURE_LABELS } from "@/lib/features";
-import type { FeatureKey } from "@/lib/features";
 import { useAuth } from "@/lib/auth-context";
 import { Link } from "wouter";
 import {
@@ -12,7 +9,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, SlidersHorizontal } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -25,7 +22,6 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { PatientForm } from "@/components/patient-form";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -210,9 +206,7 @@ const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: Patient
 
 export default function Dashboard() {
   const { pode, activeUser } = useAuth();
-  const { features, toggleFeature } = useFeatures();
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [altaPatient, setAltaPatient]     = useState<Patient | null>(null);
   const [search, setSearch]               = useState("");
@@ -273,16 +267,12 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-1.5">
             {activeUser?.perfil === "direcao" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-2 text-xs"
-                onClick={() => setIsSettingsOpen(true)}
-                title="Configurações de Funcionalidades"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">Funcionalidades</span>
-              </Button>
+              <Link href="/admin/dashboard">
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
+                  <Settings2 className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Admin</span>
+                </Button>
+              </Link>
             )}
             <Link href="/funcionarios">
               <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
@@ -500,37 +490,6 @@ export default function Dashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── painel de funcionalidades (direcao only) ─────────────────── */}
-      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4 text-primary" />
-              Funcionalidades do Sistema
-            </DialogTitle>
-            <DialogDescription>
-              Ative ou desative módulos em tempo real. As alterações são salvas localmente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1 pt-1">
-            {(Object.entries(features) as [FeatureKey, boolean][]).map(([key, ativo]) => (
-              <div
-                key={key}
-                className="flex items-center justify-between rounded-md px-3 py-2.5 hover:bg-muted/40 transition-colors"
-              >
-                <span className="text-sm font-medium leading-none">
-                  {FEATURE_LABELS[key]}
-                </span>
-                <Switch
-                  checked={ativo}
-                  onCheckedChange={() => toggleFeature(key)}
-                  aria-label={FEATURE_LABELS[key]}
-                />
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

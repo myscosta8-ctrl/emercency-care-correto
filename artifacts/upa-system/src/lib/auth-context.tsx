@@ -6,18 +6,20 @@ import type { Acao } from "@/lib/permissions";
 
 interface AuthContextValue {
   activeUser: StaffMember | null;
+  isLoading: boolean;
   setActiveLogin: (login: string) => void;
   pode: (acao: Acao) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   activeUser: null,
+  isLoading: true,
   setActiveLogin: () => {},
   pode: () => false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data: staff } = useListStaff();
+  const { data: staff, isLoading } = useListStaff();
   const [login, setLogin] = useState<string>(
     () => localStorage.getItem("upa_active_staff") ?? ""
   );
@@ -39,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     temPermissao(activeUser, acao);
 
   return (
-    <AuthContext.Provider value={{ activeUser, setActiveLogin: handleSetLogin, pode }}>
+    <AuthContext.Provider value={{ activeUser, isLoading, setActiveLogin: handleSetLogin, pode }}>
       {children}
     </AuthContext.Provider>
   );
