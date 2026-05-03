@@ -425,21 +425,25 @@ export default function PatientDetail() {
                   <Activity className="h-4 w-4 text-primary" /> Sinais Vitais
                 </h3>
                 <div className="flex items-center gap-2">
-                  <Button
-                    size="sm" variant="outline" className="h-8 text-xs gap-1.5"
-                    onClick={() => setIsVitalsRecordOpen(true)}
-                  >
-                    <Activity className="h-3.5 w-3.5" />
-                    Registrar SVs
-                  </Button>
-                  <Button
-                    size="sm" variant="outline" className="h-8 text-xs gap-1.5"
-                    onClick={() => setIsVitalsOpen(true)}
-                    data-testid="button-update-vitals"
-                  >
-                    <Stethoscope className="h-3.5 w-3.5" />
-                    Registrar Evolução
-                  </Button>
+                  {pode("registrar_sinais_vitais") && (
+                    <Button
+                      size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                      onClick={() => setIsVitalsRecordOpen(true)}
+                    >
+                      <Activity className="h-3.5 w-3.5" />
+                      Registrar SVs
+                    </Button>
+                  )}
+                  {pode("registrar_evolucao") && (
+                    <Button
+                      size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                      onClick={() => setIsVitalsOpen(true)}
+                      data-testid="button-update-vitals"
+                    >
+                      <Stethoscope className="h-3.5 w-3.5" />
+                      Registrar Evolução
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -655,13 +659,15 @@ export default function PatientDetail() {
                     </span>
                   )}
                 </div>
-                <Button
-                  size="sm" variant="outline" className="h-8 text-xs gap-1.5"
-                  onClick={() => setIsPrescriptionOpen(true)}
-                >
-                  <ClipboardCheck className="h-3.5 w-3.5" />
-                  Nova Prescrição
-                </Button>
+                {pode("registrar_prescricao") && (
+                  <Button
+                    size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                    onClick={() => setIsPrescriptionOpen(true)}
+                  >
+                    <ClipboardCheck className="h-3.5 w-3.5" />
+                    Nova Prescrição
+                  </Button>
+                )}
               </div>
 
               {isLoadingPrescriptions ? (
@@ -1312,14 +1318,14 @@ export default function PatientDetail() {
 
       {/* Mobile sticky bottom action bar */}
       <div className="no-print fixed bottom-0 left-0 right-0 md:hidden bg-card/95 backdrop-blur-sm border-t border-border z-30">
-        <div className="grid grid-cols-5 gap-0 pb-safe">
+        <div className="flex pb-safe">
           {([
-            { icon: <Activity className="h-5 w-5" />, label: "SVs",        action: () => setIsVitalsRecordOpen(true) },
-            { icon: <ClipboardList className="h-5 w-5" />, label: "SOAP",  action: () => setIsVitalsOpen(true) },
-            { icon: <ClipboardCheck className="h-5 w-5" />, label: "Prescrição", action: () => setIsPrescriptionOpen(true) },
+            pode("registrar_sinais_vitais") && { icon: <Activity className="h-5 w-5" />, label: "SVs",        action: () => setIsVitalsRecordOpen(true) },
+            pode("registrar_evolucao")      && { icon: <ClipboardList className="h-5 w-5" />, label: "SOAP",  action: () => setIsVitalsOpen(true) },
+            pode("registrar_prescricao")    && { icon: <ClipboardCheck className="h-5 w-5" />, label: "Prescrição", action: () => setIsPrescriptionOpen(true) },
             { icon: <ListTodo className="h-5 w-5" />, label: "Pendência",  action: () => setIsTasksOpen(true) },
             { icon: <Bell className="h-5 w-5" />, label: "Notif.",  action: () => { setEditingNotification(null); setIsNotificationOpen(true); } },
-          ] as const).map((item, i) => (
+          ].filter(Boolean) as { icon: React.ReactNode; label: string; action: () => void }[]).map((item, i) => (
             <button
               key={i}
               type="button"
