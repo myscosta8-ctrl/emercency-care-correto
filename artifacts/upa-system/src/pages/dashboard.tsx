@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, memo } from "react";
+import { FEATURES } from "@/lib/features";
 import { Link } from "wouter";
 import {
   useListPatients,

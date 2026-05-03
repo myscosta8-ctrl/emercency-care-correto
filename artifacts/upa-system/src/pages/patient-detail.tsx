@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FEATURES } from "@/lib/features";
 import { useRoute, useLocation, Link } from "wouter";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -820,7 +821,7 @@ export default function PatientDetail() {
             </div>
 
             {/* Notificações Compulsórias */}
-            <div>
+            {FEATURES.sinan_pdf && <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -936,7 +937,7 @@ export default function PatientDetail() {
                   })}
                 </div>
               )}
-            </div>
+            </div>}
 
           </div>
 

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { FEATURES } from "@/lib/features";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -639,6 +640,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           )} />
 
           {/* ── NOTIFICAÇÃO SINAN ─────────────────────────────────────── */}
+          {FEATURES.sinan_pdf && (<>
           <SectionTitle>Notificação SINAN</SectionTitle>
 
           <FormField control={form.control} name="agravo" render={({ field }) => (
@@ -727,6 +729,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
               <FormMessage />
             </FormItem>
           )} />
+          </>)}
 
           {/* ── SINAIS VITAIS INICIAIS ─────────────────────────────────── */}
           <SectionTitle>Sinais Vitais Iniciais <Opt /></SectionTitle>
