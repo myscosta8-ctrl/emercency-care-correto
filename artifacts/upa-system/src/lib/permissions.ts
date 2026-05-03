@@ -8,6 +8,10 @@ export type Acao =
   | "classificacao_risco"
   | "visualizar_setores";
 
+export interface Usuario {
+  perfil: Perfil;
+}
+
 const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
   direcao:        ["*"],
   administrativo: ["criar_paciente", "editar_paciente", "gerar_pdf", "visualizar_relatorios"],
@@ -16,8 +20,8 @@ const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
   tecnico:        ["criar_paciente"],
 };
 
-export function temPermissao(perfil: Perfil | null | undefined, acao: Acao): boolean {
-  if (!perfil) return false;
-  const perms = PERMISSOES[perfil];
-  return perms.includes("*") || perms.includes(acao);
+export function temPermissao(usuario: Usuario | null | undefined, acao: Acao): boolean {
+  if (!usuario) return false;
+  const permissoes = PERMISSOES[usuario.perfil];
+  return permissoes.includes("*") || permissoes.includes(acao);
 }

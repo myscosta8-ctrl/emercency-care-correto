@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useListStaff } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
 import { temPermissao } from "@/lib/permissions";
-import type { Acao, Perfil } from "@/lib/permissions";
+import type { Acao } from "@/lib/permissions";
 
 interface AuthContextValue {
   activeUser: StaffMember | null;
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const activeUser = (staff ?? []).find(m => m.login === login) ?? null;
   const pode = (acao: Acao) =>
-    temPermissao(activeUser?.perfil as Perfil, acao);
+    temPermissao(activeUser, acao);
 
   return (
     <AuthContext.Provider value={{ activeUser, setActiveLogin: handleSetLogin, pode }}>
