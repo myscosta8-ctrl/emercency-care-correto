@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Activity, LayoutDashboard, Users, ShieldCheck, SlidersHorizontal, ArrowLeft, Lock } from "lucide-react";
+import { Activity, LayoutDashboard, Users, ShieldCheck, SlidersHorizontal, ClipboardList, ArrowLeft, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +10,7 @@ const NAV = [
   { href: "/admin/usuarios",        label: "Usuários",        icon: Users           },
   { href: "/admin/permissoes",      label: "Permissões",      icon: ShieldCheck     },
   { href: "/admin/funcionalidades", label: "Funcionalidades", icon: SlidersHorizontal },
+  { href: "/admin/auditoria",       label: "Auditoria",       icon: ClipboardList    },
 ];
 
 function AccessDenied() {

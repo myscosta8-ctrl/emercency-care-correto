@@ -443,6 +443,41 @@ paths:
         "204":
           description: Deleted
 
+  /api/audit:
+    get:
+      operationId: listAuditLogs
+      summary: List audit log entries
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of audit log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+    post:
+      operationId: createAuditLog
+      summary: Create an audit log entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAuditLogBody"
+      responses:
+        "201":
+          description: Created audit log entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLog"
+
   /api/staff:
     get:
       operationId: listStaff
@@ -1339,3 +1374,41 @@ components:
           type: integer
       required:
         - id
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        usuario:
+          type: string
+        acao:
+          type: string
+        detalhes:
+          type: string
+          nullable: true
+        ip:
+          type: string
+          nullable: true
+        criadoEm:
+          type: string
+      required:
+        - id
+        - usuario
+        - acao
+        - detalhes
+        - ip
+        - criadoEm
+
+    CreateAuditLogBody:
+      type: object
+      properties:
+        usuario:
+          type: string
+        acao:
+          type: string
+        detalhes:
+          type: string
+      required:
+        - usuario
+        - acao

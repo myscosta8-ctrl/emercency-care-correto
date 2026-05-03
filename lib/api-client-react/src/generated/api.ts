@@ -20,9 +20,12 @@ import type {
   AddPatientNotificationBody,
   AddPatientPrescriptionBody,
   AddPatientTaskBody,
+  AuditLog,
+  CreateAuditLogBody,
   CreatePatientBody,
   CreateStaffBody,
   HealthCheck200,
+  ListAuditLogsParams,
   Patient,
   PatientHistoryEntry,
   PatientNotification,
@@ -1900,6 +1903,186 @@ export const useDeletePatientNotification = <
   TContext
 > => {
   return useMutation(getDeletePatientNotificationMutationOptions(options));
+};
+
+/**
+ * @summary List audit log entries
+ */
+export const getListAuditLogsUrl = (params?: ListAuditLogsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/audit?${stringifiedParams}`
+    : `/api/audit`;
+};
+
+export const listAuditLogs = async (
+  params?: ListAuditLogsParams,
+  options?: RequestInit,
+): Promise<AuditLog[]> => {
+  return customFetch<AuditLog[]>(getListAuditLogsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAuditLogsQueryKey = (params?: ListAuditLogsParams) => {
+  return [`/api/audit`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAuditLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAuditLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAuditLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAuditLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAuditLogsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAuditLogs>>> = ({
+    signal,
+  }) => listAuditLogs(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAuditLogs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAuditLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAuditLogs>>
+>;
+export type ListAuditLogsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List audit log entries
+ */
+
+export function useListAuditLogs<
+  TData = Awaited<ReturnType<typeof listAuditLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAuditLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAuditLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAuditLogsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create an audit log entry
+ */
+export const getCreateAuditLogUrl = () => {
+  return `/api/audit`;
+};
+
+export const createAuditLog = async (
+  createAuditLogBody: CreateAuditLogBody,
+  options?: RequestInit,
+): Promise<AuditLog> => {
+  return customFetch<AuditLog>(getCreateAuditLogUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createAuditLogBody),
+  });
+};
+
+export const getCreateAuditLogMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAuditLog>>,
+    TError,
+    { data: BodyType<CreateAuditLogBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAuditLog>>,
+  TError,
+  { data: BodyType<CreateAuditLogBody> },
+  TContext
+> => {
+  const mutationKey = ["createAuditLog"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAuditLog>>,
+    { data: BodyType<CreateAuditLogBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createAuditLog(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAuditLogMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAuditLog>>
+>;
+export type CreateAuditLogMutationBody = BodyType<CreateAuditLogBody>;
+export type CreateAuditLogMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create an audit log entry
+ */
+export const useCreateAuditLog = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAuditLog>>,
+    TError,
+    { data: BodyType<CreateAuditLogBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAuditLog>>,
+  TError,
+  { data: BodyType<CreateAuditLogBody> },
+  TContext
+> => {
+  return useMutation(getCreateAuditLogMutationOptions(options));
 };
 
 /**

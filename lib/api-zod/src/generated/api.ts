@@ -663,6 +663,32 @@ export const DeletePatientNotificationParams = zod.object({
 });
 
 /**
+ * @summary List audit log entries
+ */
+export const ListAuditLogsQueryParams = zod.object({
+  limit: zod.coerce.number().optional(),
+});
+
+export const ListAuditLogsResponseItem = zod.object({
+  id: zod.number(),
+  usuario: zod.string(),
+  acao: zod.string(),
+  detalhes: zod.string().nullable(),
+  ip: zod.string().nullable(),
+  criadoEm: zod.string(),
+});
+export const ListAuditLogsResponse = zod.array(ListAuditLogsResponseItem);
+
+/**
+ * @summary Create an audit log entry
+ */
+export const CreateAuditLogBody = zod.object({
+  usuario: zod.string(),
+  acao: zod.string(),
+  detalhes: zod.string().optional(),
+});
+
+/**
  * @summary List all staff members
  */
 export const ListStaffResponseItem = zod.object({

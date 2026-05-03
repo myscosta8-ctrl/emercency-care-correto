@@ -476,6 +476,27 @@ export interface GetStaffParams {
   id: number;
 }
 
+export interface AuditLog {
+  id: number;
+  usuario: string;
+  acao: string;
+  /** @nullable */
+  detalhes: string | null;
+  /** @nullable */
+  ip: string | null;
+  criadoEm: string;
+}
+
+export interface CreateAuditLogBody {
+  usuario: string;
+  acao: string;
+  detalhes?: string;
+}
+
 export type HealthCheck200 = {
   status: string;
+};
+
+export type ListAuditLogsParams = {
+  limit?: number;
 };

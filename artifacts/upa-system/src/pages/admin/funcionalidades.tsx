@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAudit } from "@/hooks/use-audit";
 
 const FEATURE_DESCRIPTIONS: Record<FeatureKey, string> = {
   sinan_pdf:           "Geração automática de fichas SINAN e identificação do paciente em PDF.",
@@ -18,11 +19,22 @@ const FEATURE_DESCRIPTIONS: Record<FeatureKey, string> = {
 
 export default function AdminFuncionalidadesPage() {
   const { features, toggleFeature } = useFeatures();
+  const { registrar } = useAudit();
+
+  function handleToggle(key: FeatureKey) {
+    const novoEstado = !features[key];
+    toggleFeature(key);
+    registrar(
+      novoEstado ? `ativou_${key}` : `desativou_${key}`,
+      FEATURE_LABELS[key],
+    );
+  }
 
   function resetToDefaults() {
     (Object.keys(features) as FeatureKey[]).forEach(key => {
       if (features[key] !== FEATURES_DEFAULTS[key]) toggleFeature(key);
     });
+    registrar("restaurou_funcionalidades", "Funcionalidades restauradas para os padrões do sistema.");
   }
 
   const featureList = Object.entries(features) as [FeatureKey, boolean][];
@@ -78,7 +90,7 @@ export default function AdminFuncionalidadesPage() {
                 </div>
                 <Switch
                   checked={ativo}
-                  onCheckedChange={() => toggleFeature(key)}
+                  onCheckedChange={() => handleToggle(key)}
                   aria-label={FEATURE_LABELS[key]}
                   className="shrink-0 mt-0.5"
                 />

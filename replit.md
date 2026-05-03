@@ -38,6 +38,25 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - `artifacts/upa-system` — React+Vite frontend, preview path `/`
 - `artifacts/api-server` — Express API server, paths `/api`
 
+### Admin Section (`/admin`) — Direção only
+- **Dashboard**: stats cards (pacientes, triagem por cor, funcionários por perfil, feature flags)
+- **Usuários**: CRUD completo de funcionários (criar/editar/excluir/ativar/desativar)
+- **Permissões**: matriz ações × perfis (somente leitura)
+- **Funcionalidades**: feature flags com Switch — cada toggle grava entrada no audit log
+- **Auditoria** (`/admin/auditoria`): log persistido em PostgreSQL, busca por usuário/ação/detalhes, badges coloridos por tipo de ação, botão atualizar
+
+### Audit Log
+- Tabela `audit_log`: `id`, `usuario`, `acao`, `detalhes`, `ip`, `criado_em`
+- `GET  /api/audit?limit=N` — lista entradas (padrão 200, máx 500)
+- `POST /api/audit` — grava entrada `{ usuario, acao, detalhes? }`
+- Hook `useAudit()` (`src/hooks/use-audit.ts`) — chama `registrar(acao, detalhes?)` com o usuário logado
+- Integrado em: toggles de feature flags, "Restaurar padrões"
+
+### Feature Flags & Permissions
+- `useFeatures()` + `usePode(acao, feature?)` — combinam permissão de perfil + feature flag em uma só chamada
+- Flags persistidas em `localStorage` (`upa_features`)
+- Permissões definidas em `lib/permissions.ts` (exporta `PERMISSOES`, `PERFIL_LABELS`, `ACAO_LABELS`, `ACOES`, `PERFIS`)
+
 ### Features Implemented
 - **Dashboard**: Patient list by sector (Sala Vermelha / Obs. Adulto / Obs. Pediátrica / Obs. Pré-Adulto), triage summary, search/filter
 - **Patient Detail**: Full SOAP evolution history, vital signs, prescriptions, pending tasks, reclassification

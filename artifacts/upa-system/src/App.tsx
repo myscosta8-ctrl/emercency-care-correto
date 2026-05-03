@@ -17,6 +17,7 @@ const AdminDashboard      = lazy(() => import("@/pages/admin/admin-dashboard"));
 const AdminUsuarios       = lazy(() => import("@/pages/admin/usuarios"));
 const AdminPermissoes     = lazy(() => import("@/pages/admin/permissoes"));
 const AdminFuncionalidades = lazy(() => import("@/pages/admin/funcionalidades"));
+const AdminAuditoria       = lazy(() => import("@/pages/admin/auditoria"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,6 +58,7 @@ function Router() {
         <Route path="/admin/usuarios"        component={AdminUsuarios} />
         <Route path="/admin/permissoes"      component={AdminPermissoes} />
         <Route path="/admin/funcionalidades" component={AdminFuncionalidades} />
+        <Route path="/admin/auditoria"       component={AdminAuditoria} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
