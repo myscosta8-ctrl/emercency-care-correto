@@ -9,7 +9,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PatientForm } from "@/components/patient-form";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useCriticalAlerts } from "@/hooks/use-critical-alerts";
 
 // ── triage config ─────────────────────────────────────────────────────────────
 
@@ -67,45 +68,80 @@ interface PatientRowProps {
   patient: Patient;
   onEdit: (p: Patient) => void;
   onAlta: (p: Patient) => void;
+  isCritical?: boolean;
+  criticalDetail?: string;
 }
 
-const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: PatientRowProps) {
+const PatientRow = memo(function PatientRow({
+  patient, onEdit, onAlta, isCritical = false, criticalDetail,
+}: PatientRowProps) {
   const { pode } = useAuth();
   const cfg = TRIAGE_CONFIG[patient.triage_level as TriageKey] ?? TRIAGE_CONFIG.blue;
 
   return (
     <div className={cn(
-      "group flex items-stretch border-l-4 hover:bg-muted/20 transition-colors border-b border-border/30 last:border-b-0",
-      cfg.border,
+      "group relative flex items-stretch border-l-4 border-b border-border/30 last:border-b-0 transition-colors",
+      isCritical
+        ? "border-l-red-500 bg-red-500/10"
+        : cn(cfg.border, "hover:bg-muted/20"),
     )}>
+      {/* Blinking overlay for critical patients */}
+      {isCritical && (
+        <div className="absolute inset-0 bg-red-500/8 animate-pulse pointer-events-none" />
+      )}
+
       <Link href={`/patients/${patient.id}`} className="flex-1 flex items-center gap-3 px-3 py-2.5 min-w-0 cursor-pointer">
 
+        {/* ⚠️ critical icon or leito */}
         <div className="w-11 shrink-0 text-center">
-          <div className="text-sm font-mono font-bold text-foreground leading-tight">
-            {patient.bed || <BedDouble className="h-3.5 w-3.5 text-muted-foreground mx-auto" />}
-          </div>
+          {isCritical ? (
+            <AlertTriangle className="h-4 w-4 text-red-400 mx-auto animate-pulse" />
+          ) : (
+            <div className="text-sm font-mono font-bold text-foreground leading-tight">
+              {patient.bed || <BedDouble className="h-3.5 w-3.5 text-muted-foreground mx-auto" />}
+            </div>
+          )}
         </div>
 
+        {/* Triage badge */}
         <div className={cn(
           "shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded leading-tight hidden md:block",
-          cfg.bg, cfg.text
+          isCritical ? "bg-red-500/20 text-red-400" : cn(cfg.bg, cfg.text),
         )}>
-          {cfg.label}
+          {isCritical ? "⚠ CRÍTICO" : cfg.label}
         </div>
-        <span className={cn("w-2 h-2 rounded-full shrink-0 md:hidden", cfg.dot)} />
+        <span className={cn(
+          "w-2 h-2 rounded-full shrink-0 md:hidden",
+          isCritical ? "bg-red-500 animate-pulse" : cfg.dot,
+        )} />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="font-semibold text-sm text-foreground leading-tight truncate">{patient.full_name}</span>
+            <span className={cn(
+              "font-semibold text-sm leading-tight truncate",
+              isCritical ? "text-red-300" : "text-foreground",
+            )}>
+              {patient.full_name}
+            </span>
             <span className="text-xs text-muted-foreground shrink-0">{patient.age}a</span>
             {patient.internmentStatus === "internado" && (
               <span className="text-[10px] font-bold px-1.5 py-0 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 leading-5">INT</span>
             )}
           </div>
-          {patient.diagnosis && (
+          {/* Critical detail shows the offending vital (SpO₂, FC, PAS) */}
+          {isCritical && criticalDetail ? (
+            <p className="text-xs font-semibold text-red-400 leading-tight mt-0.5">{criticalDetail}</p>
+          ) : patient.diagnosis ? (
             <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{patient.diagnosis}</p>
-          )}
+          ) : null}
         </div>
+
+        {/* PACIENTE CRÍTICO badge (desktop) */}
+        {isCritical && (
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-500/20 text-red-400 border-red-500/40 uppercase tracking-wider shrink-0 hidden sm:inline-flex items-center gap-1">
+            PACIENTE CRÍTICO
+          </span>
+        )}
       </Link>
 
       <div className="flex items-center gap-0.5 px-1.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
@@ -154,6 +190,10 @@ export default function Dashboard() {
   const queryClient   = useQueryClient();
   const { toast }     = useToast();
 
+  // ── critical alert system ──────────────────────────────────────────────────
+  const { criticals, criticalPatientIds, criticalDetailMap } = useCriticalAlerts();
+
+  // ── patient grouping ───────────────────────────────────────────────────────
   const grouped = useMemo(() => {
     if (!patients) return null;
     const q = debouncedSearch.toLowerCase();
@@ -167,9 +207,15 @@ export default function Dashboard() {
       ...cfg,
       patients: base
         .filter(p => p.sector === cfg.key)
-        .sort((a, b) => (TRIAGE_SEVERITY[a.triage_level] ?? 99) - (TRIAGE_SEVERITY[b.triage_level] ?? 99)),
+        .sort((a, b) => {
+          // Critical patients (by vitals or triage) always come first
+          const aCrit = criticalPatientIds.has(a.id) ? 0 : 1;
+          const bCrit = criticalPatientIds.has(b.id) ? 0 : 1;
+          if (aCrit !== bCrit) return aCrit - bCrit;
+          return (TRIAGE_SEVERITY[a.triage_level] ?? 99) - (TRIAGE_SEVERITY[b.triage_level] ?? 99);
+        }),
     }));
-  }, [patients, debouncedSearch, filtro, triageFilter]);
+  }, [patients, debouncedSearch, filtro, triageFilter, criticalPatientIds]);
 
   const totalFiltered = grouped ? grouped.reduce((n, g) => n + g.patients.length, 0) : 0;
   const handleEdit    = useCallback((p: Patient) => setEditingPatient(p), []);
@@ -197,6 +243,13 @@ export default function Dashboard() {
             <Activity className="h-5 w-5 text-primary shrink-0" />
             <h1 className="text-base font-bold tracking-tight truncate hidden sm:block">UPA Breves — Gestão de Pacientes</h1>
             <h1 className="text-base font-bold tracking-tight sm:hidden">UPA Breves</h1>
+            {/* Live critical count badge in header */}
+            {criticals.length > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse">
+                <Siren className="h-3 w-3" />
+                {criticals.length}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5">
             {activeUser?.role === "administrador" && (
@@ -250,48 +303,58 @@ export default function Dashboard() {
 
       <main className="flex-1 container mx-auto px-4 py-4 max-w-5xl">
 
-        {/* ── critical patients alert ────────────────────────────────── */}
-        {(() => {
-          const criticals = (patients ?? []).filter(p => p.triage_level === "red" || p.triage_level === "orange");
-          if (criticals.length === 0) return null;
-          return (
-            <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/5 overflow-hidden">
-              <div className="flex items-center gap-2 px-3 py-2 bg-red-500/15 border-b border-red-500/30">
-                <AlertTriangle className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
-                  Atenção — {criticals.length} paciente{criticals.length !== 1 ? "s" : ""} crítico{criticals.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="divide-y divide-red-500/20">
-                {criticals
-                  .sort((a, b) => (a.triage_level === "red" ? -1 : 1) - (b.triage_level === "red" ? -1 : 1))
-                  .map(p => {
-                    const isRed = p.triage_level === "red";
-                    return (
-                      <Link key={p.id} href={`/patients/${p.id}`}>
-                        <div className="flex items-center gap-3 px-3 py-2 hover:bg-red-500/10 transition-colors cursor-pointer">
-                          <span className={cn("h-2.5 w-2.5 rounded-full shrink-0 animate-pulse", isRed ? "bg-red-500" : "bg-orange-500")} />
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-semibold truncate">{p.full_name}</span>
-                            {p.diagnosis && <span className="text-xs text-muted-foreground ml-2 truncate hidden sm:inline">{p.diagnosis}</span>}
-                          </div>
-                          {p.bed && (
-                            <span className="text-xs text-muted-foreground shrink-0">Leito {p.bed}</span>
-                          )}
-                          <span className={cn(
-                            "text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0",
-                            isRed ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-orange-500/20 text-orange-400 border-orange-500/30"
-                          )}>
-                            {isRed ? "EMERGÊNCIA" : "MUITO URG."}
-                          </span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-              </div>
+        {/* ── CRITICAL PATIENTS ALERT PANEL ─────────────────────────────── */}
+        {criticals.length > 0 && (
+          <div className="mb-4 rounded-lg overflow-hidden border border-red-500/50 shadow-[0_0_16px_rgba(239,68,68,0.12)]">
+            {/* Header bar */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-500/20 border-b border-red-500/30">
+              <Siren className="h-4 w-4 text-red-400 shrink-0 animate-pulse" />
+              <span className="text-xs font-bold text-red-300 uppercase tracking-wider flex-1">
+                ⚠ ATENÇÃO — {criticals.length} PACIENTE{criticals.length !== 1 ? "S" : ""} CRÍTICO{criticals.length !== 1 ? "S" : ""}
+              </span>
+              <span className="text-[10px] text-red-400/70 shrink-0 hidden sm:block">
+                Atualiza a cada 30s
+              </span>
             </div>
-          );
-        })()}
+
+            {/* Critical patient rows */}
+            <div className="bg-red-950/20 divide-y divide-red-500/20">
+              {criticals.map(alert => (
+                <Link key={alert.patientId} href={`/patients/${alert.patientId}`}>
+                  <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-red-500/10 transition-colors cursor-pointer group">
+                    {/* Pulsing indicator */}
+                    <span className="relative flex h-3 w-3 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                    </span>
+
+                    {/* Patient info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-red-200 truncate">{alert.full_name}</span>
+                        {alert.bed && (
+                          <span className="text-[10px] text-red-400/70 shrink-0">Leito {alert.bed}</span>
+                        )}
+                      </div>
+                      <p className="text-xs font-semibold text-red-400 leading-tight">
+                        {alert.alertDetail}
+                      </p>
+                    </div>
+
+                    {/* Reason badge */}
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-red-500/25 text-red-300 border-red-500/40 uppercase tracking-wider shrink-0 hidden sm:block">
+                      {alert.alertReason === "triage_red"   ? "TRIAGEM VERM."
+                        : alert.alertReason === "spo2_baixo"  ? "SpO₂ BAIXO"
+                        : alert.alertReason === "fc_alta"     ? "FC ELEVADA"
+                        : alert.alertReason === "pas_baixa"   ? "PAS BAIXA"
+                        : "MÚLTIPLOS"}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── summary strip ──────────────────────────────────────────── */}
         <div className="flex items-center gap-1 mb-4 flex-wrap">
@@ -323,6 +386,15 @@ export default function Dashboard() {
               <span className="text-muted-foreground font-normal">{card.label}</span>
             </button>
           ))}
+
+          {/* Critical count pill */}
+          {criticals.length > 0 && (
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold border-red-500/40 bg-red-500/10 text-red-400">
+              <AlertTriangle className="h-3 w-3" />
+              <span>{criticals.length}</span>
+              <span className="text-red-400/70 font-normal">Críticos</span>
+            </span>
+          )}
         </div>
 
         {/* ── search + filters ───────────────────────────────────────── */}
@@ -390,6 +462,13 @@ export default function Dashboard() {
                   <span className="text-base leading-none">{sector.emoji}</span>
                   <span className="text-xs font-bold uppercase tracking-wider">{sector.name}</span>
                   <span className="ml-auto text-xs font-mono opacity-70">{sector.patients.length}</span>
+                  {/* Show mini critical count per sector */}
+                  {sector.patients.filter(p => criticalPatientIds.has(p.id)).length > 0 && (
+                    <span className="text-[10px] font-bold text-red-400 flex items-center gap-0.5">
+                      <AlertTriangle className="h-2.5 w-2.5" />
+                      {sector.patients.filter(p => criticalPatientIds.has(p.id)).length}
+                    </span>
+                  )}
                 </div>
 
                 <div className="rounded-b-lg border border-t-0 border-border/30 overflow-hidden">
@@ -404,6 +483,8 @@ export default function Dashboard() {
                         patient={patient}
                         onEdit={handleEdit}
                         onAlta={handleAlta}
+                        isCritical={criticalPatientIds.has(patient.id)}
+                        criticalDetail={criticalDetailMap.get(patient.id)}
                       />
                     ))
                   )}
