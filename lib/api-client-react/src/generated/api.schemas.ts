@@ -329,10 +329,10 @@ export interface PatientsSummary {
   blue: number;
 }
 
-export type StaffMemberCategory =
-  (typeof StaffMemberCategory)[keyof typeof StaffMemberCategory];
+export type StaffMemberPerfil =
+  (typeof StaffMemberPerfil)[keyof typeof StaffMemberPerfil];
 
-export const StaffMemberCategory = {
+export const StaffMemberPerfil = {
   direcao: "direcao",
   administrativo: "administrativo",
   coordenacao: "coordenacao",
@@ -343,7 +343,7 @@ export const StaffMemberCategory = {
 export interface StaffMember {
   id: number;
   fullName: string;
-  category: StaffMemberCategory;
+  perfil: StaffMemberPerfil;
   corenCrm: string;
   sector: string;
   login: string;
@@ -354,10 +354,10 @@ export interface StaffMember {
   updatedAt: string;
 }
 
-export type CreateStaffBodyCategory =
-  (typeof CreateStaffBodyCategory)[keyof typeof CreateStaffBodyCategory];
+export type CreateStaffBodyPerfil =
+  (typeof CreateStaffBodyPerfil)[keyof typeof CreateStaffBodyPerfil];
 
-export const CreateStaffBodyCategory = {
+export const CreateStaffBodyPerfil = {
   direcao: "direcao",
   administrativo: "administrativo",
   coordenacao: "coordenacao",
@@ -367,7 +367,7 @@ export const CreateStaffBodyCategory = {
 
 export interface CreateStaffBody {
   fullName: string;
-  category: CreateStaffBodyCategory;
+  perfil: CreateStaffBodyPerfil;
   corenCrm?: string;
   sector?: string;
   login: string;
@@ -377,10 +377,10 @@ export interface CreateStaffBody {
   stamp?: string;
 }
 
-export type UpdateStaffBodyCategory =
-  (typeof UpdateStaffBodyCategory)[keyof typeof UpdateStaffBodyCategory];
+export type UpdateStaffBodyPerfil =
+  (typeof UpdateStaffBodyPerfil)[keyof typeof UpdateStaffBodyPerfil];
 
-export const UpdateStaffBodyCategory = {
+export const UpdateStaffBodyPerfil = {
   direcao: "direcao",
   administrativo: "administrativo",
   coordenacao: "coordenacao",
@@ -390,7 +390,7 @@ export const UpdateStaffBodyCategory = {
 
 export interface UpdateStaffBody {
   fullName?: string;
-  category?: UpdateStaffBodyCategory;
+  perfil?: UpdateStaffBodyPerfil;
   corenCrm?: string;
   sector?: string;
   login?: string;

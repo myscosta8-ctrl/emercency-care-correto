@@ -731,7 +731,7 @@ export const GetPatientHistoryResponse = zod.array(
 export const ListStaffResponseItem = zod.object({
   id: zod.number(),
   fullName: zod.string(),
-  category: zod.enum([
+  perfil: zod.enum([
     "direcao",
     "administrativo",
     "coordenacao",
@@ -754,7 +754,7 @@ export const ListStaffResponse = zod.array(ListStaffResponseItem);
  */
 export const CreateStaffBody = zod.object({
   fullName: zod.string(),
-  category: zod.enum([
+  perfil: zod.enum([
     "direcao",
     "administrativo",
     "coordenacao",
@@ -780,7 +780,7 @@ export const GetStaffParams = zod.object({
 export const GetStaffResponse = zod.object({
   id: zod.number(),
   fullName: zod.string(),
-  category: zod.enum([
+  perfil: zod.enum([
     "direcao",
     "administrativo",
     "coordenacao",
@@ -806,7 +806,7 @@ export const UpdateStaffParams = zod.object({
 
 export const UpdateStaffBody = zod.object({
   fullName: zod.string().optional(),
-  category: zod
+  perfil: zod
     .enum(["direcao", "administrativo", "coordenacao", "enfermeiro", "tecnico"])
     .optional(),
   corenCrm: zod.string().optional(),
@@ -821,7 +821,7 @@ export const UpdateStaffBody = zod.object({
 export const UpdateStaffResponse = zod.object({
   id: zod.number(),
   fullName: zod.string(),
-  category: zod.enum([
+  perfil: zod.enum([
     "direcao",
     "administrativo",
     "coordenacao",

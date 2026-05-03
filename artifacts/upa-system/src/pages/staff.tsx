@@ -174,7 +174,7 @@ function SignaturePad({ value, onChange }: SignaturePadProps) {
 
 interface FormData {
   fullName: string;
-  category: "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico";
+  perfil: "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico";
   corenCrm: string;
   sector: string;
   login: string;
@@ -186,7 +186,7 @@ interface FormData {
 
 const defaultForm = (): FormData => ({
   fullName: "",
-  category: "tecnico",
+  perfil: "tecnico",
   corenCrm: "",
   sector: "",
   login: "",
@@ -197,8 +197,8 @@ const defaultForm = (): FormData => ({
 });
 
 function buildStamp(f: FormData): string {
-  const catLabel = CATEGORIES.find(c => c.value === f.category)?.label ?? "";
-  const corenLabel = COREN_LABEL[f.category] ?? "Reg.";
+  const catLabel = CATEGORIES.find(c => c.value === f.perfil)?.label ?? "";
+  const corenLabel = COREN_LABEL[f.perfil] ?? "Reg.";
   return [
     f.fullName,
     catLabel,
@@ -222,7 +222,7 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
     if (!initial) return defaultForm();
     return {
       fullName: initial.fullName,
-      category: initial.category as FormData["category"],
+      perfil: initial.perfil as FormData["perfil"],
       corenCrm: initial.corenCrm,
       sector: initial.sector,
       login: initial.login,
@@ -250,7 +250,7 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
 
     const payload = {
       fullName: form.fullName,
-      category: form.category,
+      perfil: form.perfil,
       corenCrm: form.corenCrm,
       sector: form.sector,
       login: form.login,
@@ -306,8 +306,8 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
               <Label>Categoria <span className="text-red-400">*</span></Label>
               <div className="relative">
                 <select
-                  value={form.category}
-                  onChange={e => set({ category: e.target.value as FormData["category"] })}
+                  value={form.perfil}
+                  onChange={e => set({ perfil: e.target.value as FormData["perfil"] })}
                   className="w-full h-10 bg-background border border-input rounded-md px-3 pr-8 text-sm text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -316,11 +316,11 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>{COREN_LABEL[form.category] ?? "Registro"}</Label>
+              <Label>{COREN_LABEL[form.perfil] ?? "Registro"}</Label>
               <Input
                 value={form.corenCrm}
                 onChange={e => set({ corenCrm: e.target.value })}
-                placeholder={`Nº do ${COREN_LABEL[form.category]}`}
+                placeholder={`Nº do ${COREN_LABEL[form.perfil]}`}
               />
             </div>
           </div>
@@ -472,14 +472,14 @@ function StaffCard({ member, onEdit, onDelete, canEdit }: StaffCardProps) {
             <h3 className="font-semibold text-sm text-foreground truncate">{member.fullName}</h3>
             <span className={cn(
               "px-2 py-0.5 rounded-full text-[11px] font-semibold border shrink-0",
-              CATEGORY_COLOR[member.category]
+              CATEGORY_COLOR[member.perfil]
             )}>
-              {CATEGORY_LABEL[member.category]}
+              {CATEGORY_LABEL[member.perfil]}
             </span>
           </div>
           <div className="text-xs text-muted-foreground space-y-0.5">
             {member.corenCrm && (
-              <p>{COREN_LABEL[member.category]}: <span className="text-foreground font-mono">{member.corenCrm}</span></p>
+              <p>{COREN_LABEL[member.perfil]}: <span className="text-foreground font-mono">{member.corenCrm}</span></p>
             )}
             {member.sector && <p>Setor: <span className="text-foreground">{SECTOR_LABEL[member.sector] ?? member.sector}</span></p>}
             <p>Login: <span className="text-foreground font-mono">{member.login}</span></p>
@@ -585,7 +585,7 @@ export default function StaffPage() {
     const matchSearch = m.fullName.toLowerCase().includes(search.toLowerCase()) ||
       m.login.toLowerCase().includes(search.toLowerCase()) ||
       m.corenCrm.toLowerCase().includes(search.toLowerCase());
-    const matchCat = filterCat === "todos" || m.category === filterCat;
+    const matchCat = filterCat === "todos" || m.perfil === filterCat;
     return matchSearch && matchCat;
   });
 
@@ -669,11 +669,11 @@ export default function StaffPage() {
         <div className="flex flex-wrap gap-4 mb-5">
           {[
             { label: "Total", count: staff?.length ?? 0, cls: "text-foreground" },
-            { label: "Direção", count: staff?.filter(m => m.category === "direcao").length ?? 0, cls: "text-yellow-400" },
-            { label: "Admin.", count: staff?.filter(m => m.category === "administrativo").length ?? 0, cls: "text-slate-400" },
-            { label: "Coord.", count: staff?.filter(m => m.category === "coordenacao").length ?? 0, cls: "text-orange-400" },
-            { label: "Enfermeiros", count: staff?.filter(m => m.category === "enfermeiro").length ?? 0, cls: "text-cyan-400" },
-            { label: "Técnicos", count: staff?.filter(m => m.category === "tecnico").length ?? 0, cls: "text-blue-400" },
+            { label: "Direção", count: staff?.filter(m => m.perfil === "direcao").length ?? 0, cls: "text-yellow-400" },
+            { label: "Admin.", count: staff?.filter(m => m.perfil === "administrativo").length ?? 0, cls: "text-slate-400" },
+            { label: "Coord.", count: staff?.filter(m => m.perfil === "coordenacao").length ?? 0, cls: "text-orange-400" },
+            { label: "Enfermeiros", count: staff?.filter(m => m.perfil === "enfermeiro").length ?? 0, cls: "text-cyan-400" },
+            { label: "Técnicos", count: staff?.filter(m => m.perfil === "tecnico").length ?? 0, cls: "text-blue-400" },
           ].map(s => (
             <div key={s.label} className="bg-card border border-border/30 rounded-xl px-4 py-2.5 min-w-[80px]">
               <p className="text-xs text-muted-foreground">{s.label}</p>

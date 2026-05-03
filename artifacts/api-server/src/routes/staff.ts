@@ -12,7 +12,7 @@ function hashPassword(plain: string): string {
 const serialize = (s: typeof staffTable.$inferSelect) => ({
   id: s.id,
   fullName: s.fullName,
-  category: s.category,
+  perfil: s.perfil,
   corenCrm: s.corenCrm,
   sector: s.sector,
   login: s.login,
@@ -31,7 +31,7 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const { password, ...rest } = req.body as {
     fullName: string;
-    category: string;
+    perfil: string;
     corenCrm?: string;
     sector?: string;
     login: string;
@@ -41,8 +41,8 @@ router.post("/", async (req, res) => {
     stamp?: string;
   };
 
-  if (!rest.fullName || !rest.category || !rest.login || !password) {
-    res.status(400).json({ error: "fullName, category, login and password are required" });
+  if (!rest.fullName || !rest.perfil || !rest.login || !password) {
+    res.status(400).json({ error: "fullName, perfil, login and password are required" });
     return;
   }
 
@@ -50,7 +50,7 @@ router.post("/", async (req, res) => {
     .insert(staffTable)
     .values({
       fullName: rest.fullName,
-      category: rest.category as "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico",
+      perfil: rest.perfil as "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico",
       corenCrm: rest.corenCrm ?? "",
       sector: rest.sector ?? "",
       login: rest.login,
@@ -73,9 +73,9 @@ router.get("/:id", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const id = Number(req.params["id"]);
-  const { password, category: categoryRaw, ...rest } = req.body as {
+  const { password, perfil: perfilRaw, ...rest } = req.body as {
     fullName?: string;
-    category?: string;
+    perfil?: string;
     corenCrm?: string;
     sector?: string;
     login?: string;
@@ -87,7 +87,7 @@ router.put("/:id", async (req, res) => {
 
   const patch: Partial<typeof staffTable.$inferInsert> = {
     ...rest,
-    ...(categoryRaw ? { category: categoryRaw as "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico" } : {}),
+    ...(perfilRaw ? { perfil: perfilRaw as "direcao" | "administrativo" | "coordenacao" | "enfermeiro" | "tecnico" } : {}),
     ...(password ? { passwordHash: hashPassword(password) } : {}),
     updatedAt: new Date(),
   };
