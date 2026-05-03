@@ -156,6 +156,7 @@ export default function PatientDetail() {
   const [downloadingFicha, setDownloadingFicha] = useState(false);
 
   const { pode } = useAuth();
+  const podeGerarPDF = pode("gerar_pdf") && featureAtiva("sinan_pdf");
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
@@ -827,7 +828,7 @@ export default function PatientDetail() {
             </div>
 
             {/* Notificações Compulsórias */}
-            {featureAtiva("sinan_pdf") && <div>
+            {podeGerarPDF && <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -912,13 +913,13 @@ export default function PatientDetail() {
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
                                 title="Imprimir / Gerar PDF SINAN"
-                                disabled={!pode("gerar_pdf") || !featureAtiva("sinan_pdf")}
+                                disabled={!podeGerarPDF}
                                 onClick={() => window.open(`${import.meta.env.BASE_URL}patients/${id}/notifications/${notif.id}/print`, "_blank")}
                               ><Printer className="h-3 w-3" /></Button>
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                                 title="Baixar PDF Preenchido"
-                                disabled={!pode("gerar_pdf") || !featureAtiva("sinan_pdf")}
+                                disabled={!podeGerarPDF}
                                 onClick={async () => {
                                   try { await downloadSinanPdf(patient, notif, import.meta.env.BASE_URL); }
                                   catch (e) { toast({ title: "Erro ao gerar PDF", description: String(e), variant: "destructive" }); }
