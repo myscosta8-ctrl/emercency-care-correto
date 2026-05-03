@@ -6,7 +6,7 @@ export type FeatureKey =
   | "relatorios"
   | "controle_estoque";
 
-const FEATURES: Record<FeatureKey, boolean> = {
+export const FEATURES_DEFAULTS: Record<FeatureKey, boolean> = {
   sinan_pdf:           true,
   classificacao_risco: true,
   triagem_avancada:    false,
@@ -15,6 +15,11 @@ const FEATURES: Record<FeatureKey, boolean> = {
   controle_estoque:    false,
 };
 
-export function featureAtiva(feature: FeatureKey): boolean {
-  return FEATURES[feature] === true;
-}
+export const FEATURE_LABELS: Record<FeatureKey, string> = {
+  sinan_pdf:           "SINAN — Notificações Compulsórias",
+  classificacao_risco: "Classificação de Risco",
+  triagem_avancada:    "Triagem Avançada",
+  dashboard:           "Dashboard",
+  relatorios:          "Relatórios",
+  controle_estoque:    "Controle de Estoque",
+};

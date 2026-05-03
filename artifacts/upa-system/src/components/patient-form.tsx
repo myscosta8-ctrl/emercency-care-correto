@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { featureAtiva } from "@/lib/features";
+import { useFeatures } from "@/lib/features-context";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -150,6 +150,7 @@ interface PatientFormProps {
 export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) {
   const { toast }     = useToast();
   const queryClient   = useQueryClient();
+  const { featureAtiva } = useFeatures();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),

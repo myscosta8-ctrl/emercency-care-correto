@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AuthProvider } from "@/lib/auth-context";
+import { FeaturesProvider } from "@/lib/features-context";
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const PatientDetail = lazy(() => import("@/pages/patient-detail"));
@@ -62,12 +63,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </AuthProvider>
+        <FeaturesProvider>
+          <AuthProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </AuthProvider>
+        </FeaturesProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

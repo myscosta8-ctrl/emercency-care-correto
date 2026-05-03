@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { featureAtiva } from "@/lib/features";
+import { useFeatures } from "@/lib/features-context";
 import { useAuth } from "@/lib/auth-context";
 import { useRoute, useLocation, Link } from "wouter";
 import { format, formatDistanceToNow } from "date-fns";
@@ -156,6 +156,7 @@ export default function PatientDetail() {
   const [downloadingFicha, setDownloadingFicha] = useState(false);
 
   const { pode } = useAuth();
+  const { featureAtiva } = useFeatures();
   const podeGerarPDF = pode("gerar_pdf") && featureAtiva("sinan_pdf");
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
