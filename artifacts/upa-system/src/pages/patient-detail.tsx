@@ -841,6 +841,7 @@ export default function PatientDetail() {
                 </div>
                 <Button
                   size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                  disabled={!pode("editar_paciente")}
                   onClick={() => { setEditingNotification(null); setIsNotificationOpen(true); }}
                 >
                   <Bell className="h-3.5 w-3.5" />
@@ -911,13 +912,13 @@ export default function PatientDetail() {
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
                                 title="Imprimir / Gerar PDF SINAN"
-                                disabled={!pode("gerar_pdf")}
+                                disabled={!pode("gerar_pdf") || !featureAtiva("sinan_pdf")}
                                 onClick={() => window.open(`${import.meta.env.BASE_URL}patients/${id}/notifications/${notif.id}/print`, "_blank")}
                               ><Printer className="h-3 w-3" /></Button>
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                                 title="Baixar PDF Preenchido"
-                                disabled={!pode("gerar_pdf")}
+                                disabled={!pode("gerar_pdf") || !featureAtiva("sinan_pdf")}
                                 onClick={async () => {
                                   try { await downloadSinanPdf(patient, notif, import.meta.env.BASE_URL); }
                                   catch (e) { toast({ title: "Erro ao gerar PDF", description: String(e), variant: "destructive" }); }
@@ -925,10 +926,12 @@ export default function PatientDetail() {
                               ><Download className="h-3 w-3" /></Button>
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-muted-foreground/20 text-muted-foreground hover:bg-muted/30"
+                                disabled={!pode("editar_paciente")}
                                 onClick={() => { setEditingNotification(notif); setIsNotificationOpen(true); }}
                               ><Pencil className="h-3 w-3" /></Button>
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                disabled={!pode("editar_paciente")}
                                 onClick={() => deleteNotification.mutate(
                                   { id, notificationId: notif.id },
                                   {
