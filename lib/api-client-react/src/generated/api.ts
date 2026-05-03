@@ -23,6 +23,7 @@ import type {
   AuditLog,
   CreateAuditLogBody,
   CreatePatientBody,
+  CreateSinanNotificationBody,
   CreateStaffBody,
   HealthCheck200,
   ListAuditLogsParams,
@@ -33,6 +34,7 @@ import type {
   PatientSummary,
   PatientTask,
   RecordPatientVitalsBody,
+  SinanNotificationWithPatient,
   StaffMember,
   UpdatePatientBody,
   UpdatePatientNotificationBody,
@@ -1904,6 +1906,187 @@ export const useDeletePatientNotification = <
 > => {
   return useMutation(getDeletePatientNotificationMutationOptions(options));
 };
+
+/**
+ * @summary Create a SINAN notification (auto-fills from patient)
+ */
+export const getCreateSinanNotificationUrl = () => {
+  return `/api/notifications`;
+};
+
+export const createSinanNotification = async (
+  createSinanNotificationBody: CreateSinanNotificationBody,
+  options?: RequestInit,
+): Promise<SinanNotificationWithPatient> => {
+  return customFetch<SinanNotificationWithPatient>(
+    getCreateSinanNotificationUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createSinanNotificationBody),
+    },
+  );
+};
+
+export const getCreateSinanNotificationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSinanNotification>>,
+    TError,
+    { data: BodyType<CreateSinanNotificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSinanNotification>>,
+  TError,
+  { data: BodyType<CreateSinanNotificationBody> },
+  TContext
+> => {
+  const mutationKey = ["createSinanNotification"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSinanNotification>>,
+    { data: BodyType<CreateSinanNotificationBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createSinanNotification(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSinanNotificationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSinanNotification>>
+>;
+export type CreateSinanNotificationMutationBody =
+  BodyType<CreateSinanNotificationBody>;
+export type CreateSinanNotificationMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a SINAN notification (auto-fills from patient)
+ */
+export const useCreateSinanNotification = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSinanNotification>>,
+    TError,
+    { data: BodyType<CreateSinanNotificationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSinanNotification>>,
+  TError,
+  { data: BodyType<CreateSinanNotificationBody> },
+  TContext
+> => {
+  return useMutation(getCreateSinanNotificationMutationOptions(options));
+};
+
+/**
+ * @summary Get a SINAN notification with patient data
+ */
+export const getGetSinanNotificationUrl = (id: number) => {
+  return `/api/notifications/${id}`;
+};
+
+export const getSinanNotification = async (
+  id: number,
+  options?: RequestInit,
+): Promise<SinanNotificationWithPatient> => {
+  return customFetch<SinanNotificationWithPatient>(
+    getGetSinanNotificationUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetSinanNotificationQueryKey = (id: number) => {
+  return [`/api/notifications/${id}`] as const;
+};
+
+export const getGetSinanNotificationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSinanNotification>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSinanNotification>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSinanNotificationQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSinanNotification>>
+  > = ({ signal }) => getSinanNotification(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSinanNotification>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSinanNotificationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSinanNotification>>
+>;
+export type GetSinanNotificationQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a SINAN notification with patient data
+ */
+
+export function useGetSinanNotification<
+  TData = Awaited<ReturnType<typeof getSinanNotification>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSinanNotification>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSinanNotificationQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List audit log entries

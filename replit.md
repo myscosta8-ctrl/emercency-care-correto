@@ -45,6 +45,26 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - **Funcionalidades**: feature flags com Switch — cada toggle grava entrada no audit log
 - **Auditoria** (`/admin/auditoria`): log persistido em PostgreSQL, busca por usuário/ação/detalhes, badges coloridos por tipo de ação, botão atualizar
 
+### Backend DB Structure — novos campos e tabelas
+
+#### `patients` — campos adicionados
+- `address TEXT` — endereço consolidado em texto único (para compatibilidade com sistemas externos como SINAN)
+
+#### `patient_notifications` — campos adicionados
+- `disease TEXT` — doença notificada (ex: "Dengue Clássico")
+- `classification TEXT` — classificação do caso (ex: "Confirmado Laboratorial")
+- `health_unit TEXT DEFAULT 'UPA Breves'` — unidade de saúde notificadora
+- `pdf_url TEXT` — URL do PDF SINAN gerado
+
+#### Novas rotas standalone de notificação
+- `POST /api/notifications` — cria notificação; busca paciente por `patient_id` e auto-preenche `disease`, `classification`, `health_unit`, `professional` a partir dos dados do paciente
+- `GET /api/notifications/:id` — retorna notificação com dados do paciente mesclados (`patient.full_name`, `patient.cpf`, `patient.address`, etc.)
+
+#### Validação de CPF
+- Algoritmo completo de validação (módulo 11) em `patients.ts` e `sinan-notifications.ts`
+- `POST /api/patients` e `PUT /api/patients/:id` retornam `422` com mensagem clara se o CPF for inválido
+- CPF em branco / não preenchido é aceito normalmente
+
 ### Audit Log
 - Tabela `audit_log`: `id`, `usuario`, `acao`, `detalhes`, `ip`, `criado_em`
 - `GET  /api/audit?limit=N` — lista entradas (padrão 200, máx 500)

@@ -16,6 +16,12 @@ export const patientNotificationsTable = pgTable("patient_notifications", {
   // ── situação ────────────────────────────────────────────────────────────────
   situation: text("situation", { enum: ["notificado", "pendente"] }).notNull().default("pendente"),
 
+  // ── campos SINAN (compatibilidade com schema externo) ───────────────────────
+  disease:        text("disease").notNull().default(""),
+  classification: text("classification").notNull().default(""),
+  healthUnit:     text("health_unit").notNull().default("UPA Breves"),
+  pdfUrl:         text("pdf_url").notNull().default(""),
+
   // ── responsável / data da notificação ───────────────────────────────────────
   responsible:  text("responsible").notNull().default(""),
   notifiedAt:   text("notified_at").notNull().default(""),  // ISO datetime string

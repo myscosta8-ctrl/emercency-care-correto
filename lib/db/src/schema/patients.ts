@@ -21,6 +21,9 @@ export const patientsTable = pgTable("patients", {
   weight:       real("weight").notNull().default(0),
   height:       real("height").notNull().default(0),
 
+  // ── endereço consolidado (campo único para compatibilidade com sistemas externos)
+  address:      text("address").notNull().default(""),
+
   // ── contato ─────────────────────────────────────────────────────────────────
   phone:        text("phone").notNull().default(""),
   email:        text("email").notNull().default(""),

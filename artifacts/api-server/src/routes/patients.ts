@@ -23,6 +23,24 @@ import {
 
 const router = Router();
 
+// ── CPF validation ─────────────────────────────────────────────────────────────
+function validateCPF(cpf: string): boolean {
+  const digits = cpf.replace(/\D/g, "");
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]!) * (10 - i);
+  let check = 11 - (sum % 11);
+  if (check >= 10) check = 0;
+  if (check !== parseInt(digits[9]!)) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]!) * (11 - i);
+  check = 11 - (sum % 11);
+  if (check >= 10) check = 0;
+  if (check !== parseInt(digits[10]!)) return false;
+  return true;
+}
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 const serialize = (p: typeof patientsTable.$inferSelect) => ({
@@ -194,6 +212,15 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const body = CreatePatientBody.parse(req.body);
+
+  // CPF validation (se preenchido)
+  if (body.cpf && body.cpf.replace(/\D/g, "").length > 0) {
+    if (!validateCPF(body.cpf)) {
+      res.status(422).json({ error: "CPF inválido. Verifique o número informado." });
+      return;
+    }
+  }
+
   const data = buildPatientInsert(body);
   const responsible = data.responsibleProfessional;
 
@@ -226,6 +253,15 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   const { id } = UpdatePatientParams.parse({ id: Number(req.params.id) });
   const body    = UpdatePatientBody.parse(req.body);
+
+  // CPF validation (se preenchido)
+  if (body.cpf && body.cpf.replace(/\D/g, "").length > 0) {
+    if (!validateCPF(body.cpf)) {
+      res.status(422).json({ error: "CPF inválido. Verifique o número informado." });
+      return;
+    }
+  }
+
   const patch   = buildPatientPatch(body);
 
   const [patient] = await db.update(patientsTable).set({

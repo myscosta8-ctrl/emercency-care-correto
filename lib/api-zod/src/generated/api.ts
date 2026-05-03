@@ -663,6 +663,61 @@ export const DeletePatientNotificationParams = zod.object({
 });
 
 /**
+ * @summary Create a SINAN notification (auto-fills from patient)
+ */
+export const CreateSinanNotificationBody = zod.object({
+  patient_id: zod.number(),
+  disease: zod.string().optional(),
+  classification: zod.string().optional(),
+  symptom_date: zod.string().optional(),
+  notification_date: zod.string().optional(),
+  health_unit: zod.string().optional(),
+  professional: zod.string().optional(),
+  pdf_url: zod.string().optional(),
+});
+
+/**
+ * @summary Get a SINAN notification with patient data
+ */
+export const GetSinanNotificationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetSinanNotificationResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  disease: zod.string(),
+  classification: zod.string(),
+  symptomOnsetDate: zod.string(),
+  notifiedAt: zod.string(),
+  healthUnit: zod.string(),
+  pdfUrl: zod.string(),
+  responsible: zod.string(),
+  situation: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+  patient: zod
+    .object({
+      id: zod.number(),
+      full_name: zod.string(),
+      mother_name: zod.string(),
+      birth_date: zod.string(),
+      age: zod.number(),
+      sex: zod.string(),
+      cpf: zod.string(),
+      rg: zod.string(),
+      cns: zod.string(),
+      address: zod.string(),
+      city: zod.string(),
+      phone: zod.string(),
+      weight: zod.number(),
+      health_unit: zod.string(),
+      professional: zod.string(),
+    })
+    .nullable(),
+});
+
+/**
  * @summary List audit log entries
  */
 export const ListAuditLogsQueryParams = zod.object({

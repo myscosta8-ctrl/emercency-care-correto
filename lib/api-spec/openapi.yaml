@@ -443,6 +443,46 @@ paths:
         "204":
           description: Deleted
 
+  /api/notifications:
+    post:
+      operationId: createSinanNotification
+      summary: Create a SINAN notification (auto-fills from patient)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSinanNotificationBody"
+      responses:
+        "201":
+          description: Created notification with patient data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SinanNotificationWithPatient"
+        "404":
+          description: Patient not found
+
+  /api/notifications/{id}:
+    get:
+      operationId: getSinanNotification
+      summary: Get a SINAN notification with patient data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notification with patient data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SinanNotificationWithPatient"
+        "404":
+          description: Not found
+
   /api/audit:
     get:
       operationId: listAuditLogs
@@ -1374,6 +1414,124 @@ components:
           type: integer
       required:
         - id
+
+    SinanPatientData:
+      type: object
+      properties:
+        id:
+          type: integer
+        full_name:
+          type: string
+        mother_name:
+          type: string
+        birth_date:
+          type: string
+        age:
+          type: integer
+        sex:
+          type: string
+        cpf:
+          type: string
+        rg:
+          type: string
+        cns:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        phone:
+          type: string
+        weight:
+          type: number
+        health_unit:
+          type: string
+        professional:
+          type: string
+      required:
+        - id
+        - full_name
+        - mother_name
+        - birth_date
+        - age
+        - sex
+        - cpf
+        - rg
+        - cns
+        - address
+        - city
+        - phone
+        - weight
+        - health_unit
+        - professional
+
+    SinanNotificationWithPatient:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        disease:
+          type: string
+        classification:
+          type: string
+        symptomOnsetDate:
+          type: string
+        notifiedAt:
+          type: string
+        healthUnit:
+          type: string
+        pdfUrl:
+          type: string
+        responsible:
+          type: string
+        situation:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        patient:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/SinanPatientData"
+      required:
+        - id
+        - patientId
+        - disease
+        - classification
+        - symptomOnsetDate
+        - notifiedAt
+        - healthUnit
+        - pdfUrl
+        - responsible
+        - situation
+        - createdAt
+        - updatedAt
+        - patient
+
+    CreateSinanNotificationBody:
+      type: object
+      properties:
+        patient_id:
+          type: integer
+        disease:
+          type: string
+        classification:
+          type: string
+        symptom_date:
+          type: string
+        notification_date:
+          type: string
+        health_unit:
+          type: string
+        professional:
+          type: string
+        pdf_url:
+          type: string
+      required:
+        - patient_id
 
     AuditLog:
       type: object

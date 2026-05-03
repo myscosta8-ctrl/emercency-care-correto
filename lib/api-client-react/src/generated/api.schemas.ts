@@ -476,6 +476,51 @@ export interface GetStaffParams {
   id: number;
 }
 
+export interface SinanPatientData {
+  id: number;
+  full_name: string;
+  mother_name: string;
+  birth_date: string;
+  age: number;
+  sex: string;
+  cpf: string;
+  rg: string;
+  cns: string;
+  address: string;
+  city: string;
+  phone: string;
+  weight: number;
+  health_unit: string;
+  professional: string;
+}
+
+export interface SinanNotificationWithPatient {
+  id: number;
+  patientId: number;
+  disease: string;
+  classification: string;
+  symptomOnsetDate: string;
+  notifiedAt: string;
+  healthUnit: string;
+  pdfUrl: string;
+  responsible: string;
+  situation: string;
+  createdAt: string;
+  updatedAt: string;
+  patient: SinanPatientData | null;
+}
+
+export interface CreateSinanNotificationBody {
+  patient_id: number;
+  disease?: string;
+  classification?: string;
+  symptom_date?: string;
+  notification_date?: string;
+  health_unit?: string;
+  professional?: string;
+  pdf_url?: string;
+}
+
 export interface AuditLog {
   id: number;
   usuario: string;
