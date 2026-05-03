@@ -76,6 +76,13 @@ export interface Patient {
   attendanceTime: string;
   healthUnit: string;
   responsibleProfessional: string;
+  agravo: string;
+  dataNotificacao: string;
+  municipioNotificacao: string;
+  codigoIbge: string;
+  evolucaoCaso: string;
+  classificacaoFinal: string;
+  criterioConfirmacao: string;
   createdBy: string;
   updatedBy: string;
   createdAt: string;
@@ -139,6 +146,13 @@ export interface CreatePatientBody {
   attendanceTime?: string;
   healthUnit?: string;
   responsibleProfessional?: string;
+  agravo?: string;
+  dataNotificacao?: string;
+  municipioNotificacao?: string;
+  codigoIbge?: string;
+  evolucaoCaso?: string;
+  classificacaoFinal?: string;
+  criterioConfirmacao?: string;
 }
 
 export interface UpdatePatientStatusBody {

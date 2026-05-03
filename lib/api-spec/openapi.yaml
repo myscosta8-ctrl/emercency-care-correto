@@ -639,6 +639,20 @@ components:
           type: string
         responsibleProfessional:
           type: string
+        agravo:
+          type: string
+        dataNotificacao:
+          type: string
+        municipioNotificacao:
+          type: string
+        codigoIbge:
+          type: string
+        evolucaoCaso:
+          type: string
+        classificacaoFinal:
+          type: string
+        criterioConfirmacao:
+          type: string
         createdBy:
           type: string
         updatedBy:
@@ -690,6 +704,13 @@ components:
         - attendanceTime
         - healthUnit
         - responsibleProfessional
+        - agravo
+        - dataNotificacao
+        - municipioNotificacao
+        - codigoIbge
+        - evolucaoCaso
+        - classificacaoFinal
+        - criterioConfirmacao
         - createdBy
         - updatedBy
         - createdAt
@@ -777,6 +798,20 @@ components:
         healthUnit:
           type: string
         responsibleProfessional:
+          type: string
+        agravo:
+          type: string
+        dataNotificacao:
+          type: string
+        municipioNotificacao:
+          type: string
+        codigoIbge:
+          type: string
+        evolucaoCaso:
+          type: string
+        classificacaoFinal:
+          type: string
+        criterioConfirmacao:
           type: string
       required:
         - name

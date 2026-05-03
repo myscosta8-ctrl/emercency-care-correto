@@ -91,6 +91,13 @@ function buildPatientData(body: typeof CreatePatientBody._type) {
     attendanceTime:          body.attendanceTime          ?? "",
     healthUnit:              body.healthUnit              ?? "UPA Breves - Breves/PA",
     responsibleProfessional: body.responsibleProfessional ?? "",
+    agravo:              body.agravo              ?? "",
+    dataNotificacao:     body.dataNotificacao     ?? "",
+    municipioNotificacao: body.municipioNotificacao ?? "",
+    codigoIbge:          body.codigoIbge          ?? "",
+    evolucaoCaso:        body.evolucaoCaso         ?? "",
+    classificacaoFinal:  body.classificacaoFinal  ?? "",
+    criterioConfirmacao: body.criterioConfirmacao  ?? "",
   };
 }
 

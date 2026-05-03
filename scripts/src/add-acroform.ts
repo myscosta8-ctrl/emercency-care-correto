@@ -63,6 +63,13 @@ const COORDS_DENGUE: FormCoords = {
   data_atendimento:        { x: 380, y: 620, maxWidth: 100 },
   hora_atendimento:        { x: 490, y: 620, maxWidth: 80  },
   profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 68,  y: 676, maxWidth: 290 },
+  data_notificacao:        { x: 380, y: 676, maxWidth: 100 },
+  municipio_notificacao:   { x: 68,  y: 648, maxWidth: 280 },
+  codigo_ibge:             { x: 380, y: 648, maxWidth: 90  },
+  evolucao_caso:           { x: 68,  y: 270, maxWidth: 200 },
+  classificacao_final:     { x: 68,  y: 235, maxWidth: 250 },
+  criterio_confirmacao:    { x: 280, y: 235, maxWidth: 150 },
 };
 
 const COORDS_TUBERCULOSE: FormCoords = {
@@ -90,6 +97,13 @@ const COORDS_TUBERCULOSE: FormCoords = {
   data_atendimento:        { x: 380, y: 674, maxWidth: 100 },
   hora_atendimento:        { x: 490, y: 674, maxWidth: 80  },
   profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 67,  y: 730, maxWidth: 290 },
+  data_notificacao:        { x: 380, y: 730, maxWidth: 100 },
+  municipio_notificacao:   { x: 67,  y: 702, maxWidth: 280 },
+  codigo_ibge:             { x: 380, y: 702, maxWidth: 90  },
+  evolucao_caso:           { x: 67,  y: 325, maxWidth: 200 },
+  classificacao_final:     { x: 67,  y: 290, maxWidth: 250 },
+  criterio_confirmacao:    { x: 280, y: 290, maxWidth: 150 },
 };
 
 const COORDS_FEBRE_AMARELA: FormCoords = {
@@ -117,6 +131,13 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
   data_atendimento:        { x: 380, y: 660, maxWidth: 100 },
   hora_atendimento:        { x: 490, y: 660, maxWidth: 80  },
   profissional_responsavel:{ x: 65,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 65,  y: 716, maxWidth: 290 },
+  data_notificacao:        { x: 380, y: 716, maxWidth: 100 },
+  municipio_notificacao:   { x: 65,  y: 688, maxWidth: 280 },
+  codigo_ibge:             { x: 380, y: 688, maxWidth: 90  },
+  evolucao_caso:           { x: 65,  y: 310, maxWidth: 200 },
+  classificacao_final:     { x: 65,  y: 275, maxWidth: 250 },
+  criterio_confirmacao:    { x: 278, y: 275, maxWidth: 150 },
 };
 
 const COORDS_MENINGITE: FormCoords = {
@@ -144,6 +165,13 @@ const COORDS_MENINGITE: FormCoords = {
   data_atendimento:        { x: 380, y: 656, maxWidth: 100 },
   hora_atendimento:        { x: 490, y: 656, maxWidth: 80  },
   profissional_responsavel:{ x: 71,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 71,  y: 712, maxWidth: 290 },
+  data_notificacao:        { x: 380, y: 712, maxWidth: 100 },
+  municipio_notificacao:   { x: 71,  y: 684, maxWidth: 280 },
+  codigo_ibge:             { x: 380, y: 684, maxWidth: 90  },
+  evolucao_caso:           { x: 71,  y: 306, maxWidth: 200 },
+  classificacao_final:     { x: 71,  y: 271, maxWidth: 250 },
+  criterio_confirmacao:    { x: 284, y: 271, maxWidth: 150 },
 };
 
 const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
@@ -171,6 +199,13 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
   data_atendimento:        { x: 380, y: 697, maxWidth: 100 },
   hora_atendimento:        { x: 490, y: 697, maxWidth: 80  },
   profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 68,  y: 753, maxWidth: 290 },
+  data_notificacao:        { x: 380, y: 753, maxWidth: 100 },
+  municipio_notificacao:   { x: 68,  y: 725, maxWidth: 280 },
+  codigo_ibge:             { x: 380, y: 725, maxWidth: 90  },
+  evolucao_caso:           { x: 68,  y: 281, maxWidth: 200 },
+  classificacao_final:     { x: 68,  y: 246, maxWidth: 250 },
+  criterio_confirmacao:    { x: 281, y: 246, maxWidth: 150 },
 };
 
 const COORDS_FEBRE_TIFOIDE: FormCoords = {
@@ -198,6 +233,13 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   data_atendimento:        { x: 380, y: 645, maxWidth: 100 },
   hora_atendimento:        { x: 490, y: 645, maxWidth: 80  },
   profissional_responsavel:{ x: 66,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 66,  y: 701, maxWidth: 290 },
+  data_notificacao:        { x: 380, y: 701, maxWidth: 100 },
+  municipio_notificacao:   { x: 66,  y: 673, maxWidth: 280 },
+  codigo_ibge:             { x: 380, y: 673, maxWidth: 90  },
+  evolucao_caso:           { x: 66,  y: 293, maxWidth: 200 },
+  classificacao_final:     { x: 66,  y: 258, maxWidth: 250 },
+  criterio_confirmacao:    { x: 279, y: 258, maxWidth: 150 },
 };
 
 const COORDS_AIDS_ADULTO: FormCoords = {
@@ -225,6 +267,13 @@ const COORDS_AIDS_ADULTO: FormCoords = {
   data_atendimento:        { x: 380, y: 649, maxWidth: 100 },
   hora_atendimento:        { x: 490, y: 649, maxWidth: 80  },
   profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 68,  y: 705, maxWidth: 290 },
+  data_notificacao:        { x: 380, y: 705, maxWidth: 100 },
+  municipio_notificacao:   { x: 68,  y: 677, maxWidth: 280 },
+  codigo_ibge:             { x: 380, y: 677, maxWidth: 90  },
+  evolucao_caso:           { x: 68,  y: 297, maxWidth: 200 },
+  classificacao_final:     { x: 68,  y: 262, maxWidth: 250 },
+  criterio_confirmacao:    { x: 281, y: 262, maxWidth: 150 },
 };
 
 const COORDS_EXANTEMATICA: FormCoords = {
@@ -252,6 +301,13 @@ const COORDS_EXANTEMATICA: FormCoords = {
   data_atendimento:        { x: 380, y: 606, maxWidth: 100 },
   hora_atendimento:        { x: 490, y: 606, maxWidth: 80  },
   profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 67,  y: 662, maxWidth: 290 },
+  data_notificacao:        { x: 380, y: 662, maxWidth: 100 },
+  municipio_notificacao:   { x: 67,  y: 634, maxWidth: 280 },
+  codigo_ibge:             { x: 380, y: 634, maxWidth: 90  },
+  evolucao_caso:           { x: 67,  y: 255, maxWidth: 200 },
+  classificacao_final:     { x: 67,  y: 220, maxWidth: 250 },
+  criterio_confirmacao:    { x: 280, y: 220, maxWidth: 150 },
 };
 
 const TEMPLATES: Array<{ file: string; coords: FormCoords }> = [

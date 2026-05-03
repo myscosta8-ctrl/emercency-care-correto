@@ -58,6 +58,15 @@ export const patientsTable = pgTable("patients", {
   healthUnit:              text("health_unit").notNull().default("UPA Breves - Breves/PA"),
   responsibleProfessional: text("responsible_professional").notNull().default(""),
 
+  // ── notificação sinan ───────────────────────────────────────────────────────
+  agravo:              text("agravo").notNull().default(""),
+  dataNotificacao:     text("data_notificacao").notNull().default(""),
+  municipioNotificacao: text("municipio_notificacao").notNull().default(""),
+  codigoIbge:          text("codigo_ibge").notNull().default(""),
+  evolucaoCaso:        text("evolucao_caso").notNull().default(""),
+  classificacaoFinal:  text("classificacao_final").notNull().default(""),
+  criterioConfirmacao: text("criterio_confirmacao").notNull().default(""),
+
   // ── auditoria ───────────────────────────────────────────────────────────────
   createdBy: text("created_by").notNull().default(""),
   updatedBy: text("updated_by").notNull().default(""),

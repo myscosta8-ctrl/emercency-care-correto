@@ -125,6 +125,15 @@ const formSchema = z.object({
   temperature:      z.coerce.number().min(0).default(0),
   systolicBp:       z.coerce.number().min(0).default(0),
   diastolicBp:      z.coerce.number().min(0).default(0),
+
+  // notificação sinan
+  agravo:               z.string().default(""),
+  dataNotificacao:      z.string().default(""),
+  municipioNotificacao: z.string().default(""),
+  codigoIbge:           z.string().default(""),
+  evolucaoCaso:         z.string().default(""),
+  classificacaoFinal:   z.string().default(""),
+  criterioConfirmacao:  z.string().default(""),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -188,6 +197,14 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       temperature:     patient?.temperature     ?? 0,
       systolicBp:      patient?.systolicBp      ?? 0,
       diastolicBp:     patient?.diastolicBp     ?? 0,
+
+      agravo:               patient?.agravo               ?? "",
+      dataNotificacao:      patient?.dataNotificacao      ?? "",
+      municipioNotificacao: patient?.municipioNotificacao ?? "",
+      codigoIbge:           patient?.codigoIbge           ?? "",
+      evolucaoCaso:         patient?.evolucaoCaso         ?? "",
+      classificacaoFinal:   patient?.classificacaoFinal   ?? "",
+      criterioConfirmacao:  patient?.criterioConfirmacao  ?? "",
     },
   });
 
@@ -617,6 +634,96 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
               <FormControl>
                 <Input placeholder="Técnico(a) ou Enfermeiro(a) responsável" data-testid="input-nurse" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          {/* ── NOTIFICAÇÃO SINAN ─────────────────────────────────────── */}
+          <SectionTitle>Notificação SINAN</SectionTitle>
+
+          <FormField control={form.control} name="agravo" render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel>Agravo / Doença <Opt /></FormLabel>
+              <FormControl><Input placeholder="Ex: Dengue, Tuberculose..." {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="dataNotificacao" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data da Notificação <Opt /></FormLabel>
+              <FormControl><Input type="date" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="municipioNotificacao" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Município de Notificação <Opt /></FormLabel>
+              <FormControl><Input placeholder="Ex: Breves" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="codigoIbge" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Código IBGE <Opt /></FormLabel>
+              <FormControl><Input placeholder="Ex: 1501501" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="evolucaoCaso" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Evolução do Caso <Opt /></FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Em investigação">Em investigação</SelectItem>
+                  <SelectItem value="Cura">Cura</SelectItem>
+                  <SelectItem value="Óbito pelo agravo notificado">Óbito pelo agravo notificado</SelectItem>
+                  <SelectItem value="Óbito por outras causas">Óbito por outras causas</SelectItem>
+                  <SelectItem value="Óbito em investigação">Óbito em investigação</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="classificacaoFinal" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Classificação Final <Opt /></FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Confirmado laboratorial">Confirmado laboratorial</SelectItem>
+                  <SelectItem value="Confirmado clínico-epidemiológico">Confirmado clínico-epidemiológico</SelectItem>
+                  <SelectItem value="Confirmado clínico">Confirmado clínico</SelectItem>
+                  <SelectItem value="Descartado">Descartado</SelectItem>
+                  <SelectItem value="Inconclusivo">Inconclusivo</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="criterioConfirmacao" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Critério de Confirmação <Opt /></FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Laboratorial">Laboratorial</SelectItem>
+                  <SelectItem value="Clínico-epidemiológico">Clínico-epidemiológico</SelectItem>
+                  <SelectItem value="Clínico">Clínico</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )} />
