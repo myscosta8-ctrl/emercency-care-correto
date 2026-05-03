@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, memo } from "react";
 import { FEATURES } from "@/lib/features";
+import { useAuth } from "@/lib/auth-context";
 import { Link } from "wouter";
 import {
   useListPatients,
@@ -108,6 +109,7 @@ interface PatientRowProps {
 }
 
 const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: PatientRowProps) {
+  const { pode } = useAuth();
   const cfg = TRIAGE_CONFIG[patient.status as TriageKey] ?? TRIAGE_CONFIG.blue;
   const hasBp = patient.systolicBp > 0 && patient.diastolicBp > 0;
 
@@ -176,22 +178,26 @@ const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: Patient
 
       {/* Actions */}
       <div className="flex items-center gap-0.5 px-1.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
-        <button
-          type="button"
-          title="Editar"
-          onClick={e => { e.preventDefault(); onEdit(patient); }}
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          title="Alta"
-          onClick={e => { e.preventDefault(); onAlta(patient); }}
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-        </button>
+        {pode("editar_paciente") && (
+          <button
+            type="button"
+            title="Editar"
+            onClick={e => { e.preventDefault(); onEdit(patient); }}
+            className="h-8 w-8 flex items-center justify-center rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {pode("editar_paciente") && (
+          <button
+            type="button"
+            title="Alta"
+            onClick={e => { e.preventDefault(); onAlta(patient); }}
+            className="h-8 w-8 flex items-center justify-center rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -200,6 +206,7 @@ const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: Patient
 // ── main page ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const { pode } = useAuth();
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [altaPatient, setAltaPatient]     = useState<Patient | null>(null);
@@ -277,6 +284,7 @@ export default function Dashboard() {
               data-testid="button-new-patient"
               size="sm"
               className="h-8 gap-1.5 px-3 text-xs font-semibold"
+              disabled={!pode("criar_paciente")}
             >
               <UserPlus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Nova Admissão</span>

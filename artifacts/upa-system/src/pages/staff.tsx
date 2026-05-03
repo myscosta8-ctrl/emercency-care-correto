@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
+import { useAuth } from "@/lib/auth-context";
 import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle } from "lucide-react";
 import { useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
@@ -559,18 +560,11 @@ export default function StaffPage() {
   const [editing, setEditing] = useState<StaffMember | null>(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("todos");
-  const [activeLogin, setActiveLogin] = useState<string>(
-    () => localStorage.getItem("upa_active_staff") ?? ""
-  );
-
-  const activeUser = (staff ?? []).find(m => m.login === activeLogin) ?? null;
+  const { activeUser, setActiveLogin } = useAuth();
   const activeRoles = activeUser?.accessLevels?.split(",").filter(Boolean) ?? [];
   const canEdit = activeRoles.some(r => EDITOR_ROLES.has(r));
 
-  const handleSetActive = (login: string) => {
-    setActiveLogin(login);
-    localStorage.setItem("upa_active_staff", login);
-  };
+  const handleSetActive = (login: string) => setActiveLogin(login);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/staff"] });
 
@@ -607,7 +601,7 @@ export default function StaffPage() {
             <div className="relative hidden sm:flex items-center gap-1.5">
               <UserCircle className="h-4 w-4 text-muted-foreground" />
               <select
-                value={activeLogin}
+                value={activeUser?.login ?? ""}
                 onChange={e => handleSetActive(e.target.value)}
                 className="h-8 text-xs bg-background border border-input rounded-md px-2 pr-6 text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-ring max-w-[140px]"
               >

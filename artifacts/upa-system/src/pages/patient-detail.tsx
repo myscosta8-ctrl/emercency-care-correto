@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FEATURES } from "@/lib/features";
+import { useAuth } from "@/lib/auth-context";
 import { useRoute, useLocation, Link } from "wouter";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -154,6 +155,7 @@ export default function PatientDetail() {
   const [nurseInput, setNurseInput] = useState("");
   const [downloadingFicha, setDownloadingFicha] = useState(false);
 
+  const { pode } = useAuth();
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
@@ -293,7 +295,7 @@ export default function PatientDetail() {
               variant="outline"
               size="sm"
               className="print-hide hidden sm:flex"
-              disabled={downloadingFicha || !patient}
+              disabled={downloadingFicha || !patient || !pode("gerar_pdf")}
               onClick={async () => {
                 if (!patient) return;
                 setDownloadingFicha(true);
@@ -336,12 +338,16 @@ export default function PatientDetail() {
               <FileDown className="h-4 w-4 mr-1.5" />
               {downloadingFicha ? "Gerando…" : "Ficha ID"}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
-              <Edit className="h-4 w-4 mr-1.5" /> Editar
-            </Button>
-            <Button variant="destructive" size="sm" onClick={() => setIsDeleteOpen(true)}>
-              <Trash2 className="h-4 w-4 mr-1.5" /> Alta/Remover
-            </Button>
+            {pode("editar_paciente") && (
+              <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
+                <Edit className="h-4 w-4 mr-1.5" /> Editar
+              </Button>
+            )}
+            {pode("editar_paciente") && (
+              <Button variant="destructive" size="sm" onClick={() => setIsDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4 mr-1.5" /> Alta/Remover
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -905,11 +911,13 @@ export default function PatientDetail() {
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
                                 title="Imprimir / Gerar PDF SINAN"
+                                disabled={!pode("gerar_pdf")}
                                 onClick={() => window.open(`${import.meta.env.BASE_URL}patients/${id}/notifications/${notif.id}/print`, "_blank")}
                               ><Printer className="h-3 w-3" /></Button>
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                                 title="Baixar PDF Preenchido"
+                                disabled={!pode("gerar_pdf")}
                                 onClick={async () => {
                                   try { await downloadSinanPdf(patient, notif, import.meta.env.BASE_URL); }
                                   catch (e) { toast({ title: "Erro ao gerar PDF", description: String(e), variant: "destructive" }); }
