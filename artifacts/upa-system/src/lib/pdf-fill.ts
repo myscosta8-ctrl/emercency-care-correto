@@ -802,12 +802,12 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
   URL.revokeObjectURL(href);
 }
 
-// ── gerarPDF — simplified Portuguese API ──────────────────────────────────────
+// ── preencherPDF — simplified Portuguese API ──────────────────────────────────
 // Field names match the 14 standardized AcroForm field names exactly so the
 // caller can use the same object to fill any template:
 //
-//   gerarPDF("dengue", dadosPaciente)
-//   gerarPDF(["dengue", "covid19"], dadosPaciente)
+//   preencherPDF("dengue", dadosPaciente)
+//   preencherPDF(["dengue", "covid19"], dadosPaciente)
 //
 // baseUrl defaults to "" (works for in-browser relative fetches).
 
@@ -927,13 +927,13 @@ function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
  * @param baseUrl  Prefixo de URL do app (padrão: "")
  *
  * @example
- * await gerarPDF("dengue", {
+ * await preencherPDF("dengue", {
  *   nome_paciente: "Maria Silva",
  *   cpf: "123.456.789-00",
  *   peso: 68,
  * });
  */
-export async function gerarPDF(
+export async function preencherPDF(
   tipoDoenca: string | string[],
   dadosPaciente: DadosPaciente,
   baseUrl = "",
