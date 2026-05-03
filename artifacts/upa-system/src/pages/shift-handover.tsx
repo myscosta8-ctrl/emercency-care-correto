@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Printer, ClipboardList } from "lucide-react";
+import { ArrowLeft, Printer, ClipboardList, HeartPulse, Wind, Droplet, Thermometer, Gauge, Activity } from "lucide-react";
 import { useListPatients } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
 import { useNurse } from "@/hooks/use-nurse";
@@ -15,45 +15,37 @@ import { cn } from "@/lib/utils";
 const SECTORS = [
   {
     key: "sala_vermelha",
-    name: "Sala Vermelha",
-    emoji: "🔴",
     label: "SALA VERMELHA",
     sub: "Leitos críticos",
     headerCls: "bg-red-950/70 border-red-700/50 text-red-200",
-    rowEvenCls: "bg-red-950/10",
+    accentCls: "border-l-red-500",
     printHeaderBg: "#fef2f2",
     printHeaderColor: "#991b1b",
   },
   {
     key: "observacao_adulto",
-    name: "Observação Adulto",
-    emoji: "🟡",
     label: "OBSERVAÇÃO ADULTO",
     sub: "",
     headerCls: "bg-yellow-950/50 border-yellow-700/40 text-yellow-200",
-    rowEvenCls: "bg-yellow-950/10",
+    accentCls: "border-l-yellow-500",
     printHeaderBg: "#fefce8",
     printHeaderColor: "#854d0e",
   },
   {
     key: "observacao_pediatrica",
-    name: "Observação Pediátrica",
-    emoji: "🟢",
     label: "OBSERVAÇÃO PEDIÁTRICA",
     sub: "",
     headerCls: "bg-green-950/50 border-green-700/40 text-green-200",
-    rowEvenCls: "bg-green-950/10",
+    accentCls: "border-l-green-500",
     printHeaderBg: "#f0fdf4",
     printHeaderColor: "#166534",
   },
   {
     key: "observacao_pre_adulto",
-    name: "Observação Pré-Adulto",
-    emoji: "🔵",
     label: "OBSERVAÇÃO PRÉ-ADULTO",
     sub: "",
     headerCls: "bg-blue-950/50 border-blue-700/40 text-blue-200",
-    rowEvenCls: "bg-blue-950/10",
+    accentCls: "border-l-blue-500",
     printHeaderBg: "#eff6ff",
     printHeaderColor: "#1e40af",
   },
@@ -65,12 +57,13 @@ const TRIAGE_LABEL: Record<string, string> = {
 const TRIAGE_SEVERITY: Record<string, number> = {
   red: 1, orange: 2, yellow: 3, green: 4, blue: 5,
 };
-const TRIAGE_COLOR: Record<string, string> = {
-  red: "text-red-400", orange: "text-orange-400", yellow: "text-yellow-400",
-  green: "text-green-400", blue: "text-blue-400",
+const TRIAGE_COLOR_SCREEN: Record<string, string> = {
+  red: "text-red-400 bg-red-500/15 border-red-500/30",
+  orange: "text-orange-400 bg-orange-500/15 border-orange-500/30",
+  yellow: "text-yellow-400 bg-yellow-500/15 border-yellow-500/30",
+  green: "text-green-400 bg-green-500/15 border-green-500/30",
+  blue: "text-blue-400 bg-blue-500/15 border-blue-500/30",
 };
-
-const ESTADO_OPTIONS = ["Estável", "Grave", "Instável", "Crítico"];
 
 const TURNOS = ["Manhã", "Tarde", "Noite"] as const;
 
@@ -81,103 +74,218 @@ function detectTurno(): (typeof TURNOS)[number] {
   return "Noite";
 }
 
-// ── per-patient row state ─────────────────────────────────────────────────────
+// ── row state ─────────────────────────────────────────────────────────────────
 
 type RowState = { estado: string; pendencias: string; notif: "ok" | "pendente" | null };
 const defaultRow = (): RowState => ({ estado: "", pendencias: "", notif: null });
+const ESTADO_OPTIONS = ["Estável", "Grave", "Instável", "Crítico"];
 
-// ── patient row component ─────────────────────────────────────────────────────
+// ── helpers ───────────────────────────────────────────────────────────────────
 
-interface PatientRowProps {
+function val(v: string | number | null | undefined, fallback = "—"): string {
+  if (v === null || v === undefined || v === "" || v === 0) return fallback;
+  return String(v);
+}
+
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const parts = iso.slice(0, 10).split("-");
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : iso;
+}
+
+function endereco(p: Patient): string {
+  const parts = [p.street, p.addressNumber, p.addressComplement, p.neighborhood].filter(Boolean);
+  return parts.join(", ") || "—";
+}
+
+// ── vitals row ────────────────────────────────────────────────────────────────
+
+interface VitalCellProps { label: string; value: string; alert?: boolean; icon?: React.ReactNode }
+function VitalCell({ label, value, alert, icon }: VitalCellProps) {
+  return (
+    <div className={cn(
+      "flex flex-col items-center justify-center rounded border py-1 px-1.5 min-w-[52px]",
+      "bg-muted/10 border-border/30 print:bg-white print:border-gray-300",
+      alert ? "border-red-500/50 bg-red-950/20 print:border-red-400" : ""
+    )}>
+      <span className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground print:text-gray-500 leading-none mb-0.5 flex items-center gap-0.5">
+        {icon}<span>{label}</span>
+      </span>
+      <span className={cn(
+        "text-sm font-bold font-mono leading-none print:text-black",
+        alert ? "text-red-400 print:text-red-700" : "text-foreground"
+      )}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+// ── patient card ──────────────────────────────────────────────────────────────
+
+interface PatientCardProps {
   patient: Patient;
-  idx: number;
-  evenCls: string;
+  accentCls: string;
   state: RowState;
   onChange: (patch: Partial<RowState>) => void;
 }
 
-function PatientRow({ patient, idx, evenCls, state, onChange }: PatientRowProps) {
-  const isEven = idx % 2 === 0;
+function PatientCard({ patient: p, accentCls, state, onChange }: PatientCardProps) {
+  const triage = TRIAGE_COLOR_SCREEN[p.status] ?? TRIAGE_COLOR_SCREEN.blue;
+  const pa = (p.systolicBp && p.diastolicBp) ? `${p.systolicBp}/${p.diastolicBp}` : "—";
+  const fc = p.heartRate ? String(p.heartRate) : "—";
+  const fr = p.respiratoryRate ? String(p.respiratoryRate) : "—";
+  const spo2 = p.spO2 ? `${p.spO2}%` : "—";
+  const temp = p.temperature ? `${p.temperature}°C` : "—";
+  const hgt = p.glucose ? `${p.glucose}` : "—";
+  const dataHora = [p.attendanceDate ? fmtDate(p.attendanceDate) : "", p.attendanceTime || ""].filter(Boolean).join(" ") || "—";
+  const profissional = val(p.responsibleProfessional);
+
+  const fcAlert = p.heartRate > 100 || p.heartRate < 50;
+  const spo2Alert = p.spO2 > 0 && p.spO2 < 94;
+  const tempAlert = p.temperature > 37.8 || (p.temperature > 0 && p.temperature < 35.5);
 
   return (
-    <tr className={cn(
-      "border-b border-border/20 print:border-gray-300",
-      isEven ? evenCls : "",
+    <div className={cn(
+      "rounded-lg border border-border/40 border-l-4 overflow-hidden",
+      "print:border print:border-gray-300 print:border-l-4 print:rounded-none print:mb-2",
+      accentCls
     )}>
-      {/* Paciente */}
-      <td className="px-3 py-2 print:px-2 print:py-1.5">
-        <div className="font-semibold text-sm text-foreground print:text-black leading-tight">{patient.nome}</div>
-        <div className={cn("text-xs font-medium", TRIAGE_COLOR[patient.status], "print:text-gray-600")}>
-          {TRIAGE_LABEL[patient.status]}
+
+      {/* ── card header: nome + classificação ──────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 px-3 py-2 bg-muted/20 print:bg-gray-50 print:px-2 print:py-1.5 border-b border-border/30 print:border-gray-200">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-bold text-sm text-foreground print:text-black truncate">{p.nome}</span>
+          {p.diagnosis && (
+            <span className="text-xs text-muted-foreground print:text-gray-500 truncate hidden sm:inline">— {p.diagnosis}</span>
+          )}
         </div>
-      </td>
-
-      {/* Leito */}
-      <td className="px-3 py-2 print:px-2 print:py-1.5 text-sm text-center text-foreground print:text-black font-mono">
-        {patient.bed || "—"}
-      </td>
-
-      {/* Diagnóstico */}
-      <td className="px-3 py-2 print:px-2 print:py-1.5 text-sm text-foreground print:text-black">
-        {patient.diagnosis || <span className="text-muted-foreground print:text-gray-400 italic">—</span>}
-      </td>
-
-      {/* Estado */}
-      <td className="px-2 py-1.5 print:px-2 print:py-1.5">
-        <select
-          value={state.estado}
-          onChange={e => onChange({ estado: e.target.value })}
-          className="w-full bg-transparent border border-border/40 rounded px-1.5 py-1 text-xs text-foreground print:hidden focus:outline-none focus:border-primary/60 min-w-[90px]"
-        >
-          <option value="">—</option>
-          {ESTADO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-        <span className="hidden print:inline text-sm text-black">
-          {state.estado || "____________"}
-        </span>
-      </td>
-
-      {/* Pendências */}
-      <td className="px-2 py-1.5 print:px-2 print:py-1.5">
-        <input
-          type="text"
-          value={state.pendencias}
-          onChange={e => onChange({ pendencias: e.target.value })}
-          placeholder="Registrar pendência..."
-          className="w-full bg-transparent border-b border-border/40 print:border-gray-400 outline-none text-xs text-foreground print:text-black placeholder:text-muted-foreground/60 py-0.5 print:hidden min-w-[120px]"
-        />
-        <span className="hidden print:inline text-sm text-black">
-          {state.pendencias || "______________________________"}
-        </span>
-      </td>
-
-      {/* Notificação */}
-      <td className="px-2 py-1.5 print:px-2 print:py-1.5">
-        <div className="flex gap-1 print:hidden">
-          {(["ok", "pendente"] as const).map(v => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => onChange({ notif: state.notif === v ? null : v })}
-              className={cn(
-                "px-2 py-1 rounded text-[11px] font-semibold border transition-colors",
-                state.notif === v
-                  ? v === "ok"
-                    ? "bg-emerald-500/20 border-emerald-500/60 text-emerald-300"
-                    : "bg-red-500/20 border-red-500/60 text-red-300"
-                  : "border-border/40 text-muted-foreground hover:bg-muted/30"
-              )}
-            >
-              {v === "ok" ? "OK" : "Pend."}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={cn(
+            "text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wide",
+            triage, "print:text-gray-800 print:bg-gray-100 print:border-gray-400"
+          )}>
+            {TRIAGE_LABEL[p.status] ?? p.status}
+          </span>
+          <span className="text-xs font-mono font-semibold text-foreground print:text-black bg-muted/40 print:bg-gray-100 border border-border/40 print:border-gray-300 rounded px-1.5 py-0.5">
+            Leito {val(p.bed)}
+          </span>
         </div>
-        <div className="hidden print:flex gap-2 text-xs text-black">
-          <span>({state.notif === "ok" ? "✓" : " "}) OK</span>
-          <span>({state.notif === "pendente" ? "✓" : " "}) Pend.</span>
+      </div>
+
+      {/* ── body: dois painéis ───────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] print:grid-cols-[1fr_auto] gap-0 divide-y md:divide-y-0 md:divide-x divide-border/30 print:divide-x print:divide-gray-200">
+
+        {/* ── painel esquerdo: identificação ──────────────────────────── */}
+        <div className="px-3 py-2 print:px-2 print:py-1.5">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-1.5">Identificação</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 print:grid-cols-3 gap-x-4 gap-y-0.5 text-xs">
+            <Field label="Mãe" value={val(p.motherName)} />
+            <Field label="Nasc." value={fmtDate(p.birthDate)} />
+            <Field label="Idade" value={p.age ? `${p.age} anos` : "—"} />
+            <Field label="Sexo" value={p.sex === "M" ? "Masculino" : p.sex === "F" ? "Feminino" : val(p.sex)} />
+            <Field label="CPF" value={val(p.cpf)} mono />
+            <Field label="RG" value={val(p.rg)} mono />
+            <Field label="CNS" value={val(p.cns)} mono />
+            <Field label="Setor" value={val(p.setor).replace(/_/g, " ")} className="capitalize" />
+            <Field label="Endereço" value={endereco(p)} className="col-span-2 sm:col-span-1 print:col-span-1" />
+          </div>
         </div>
-      </td>
-    </tr>
+
+        {/* ── painel direito: sinais vitais ────────────────────────────── */}
+        <div className="px-3 py-2 print:px-2 print:py-1.5 md:w-[300px] print:w-[280px]">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-1.5">Sinais Vitais</p>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            <VitalCell label="PA" value={pa} icon={<Gauge className="h-2 w-2 mr-0.5" />} />
+            <VitalCell label="FC" value={fc} alert={fcAlert} icon={<HeartPulse className="h-2 w-2 mr-0.5" />} />
+            <VitalCell label="FR" value={fr} icon={<Wind className="h-2 w-2 mr-0.5" />} />
+            <VitalCell label="SpO₂" value={spo2} alert={spo2Alert} icon={<Droplet className="h-2 w-2 mr-0.5" />} />
+            <VitalCell label="Temp." value={temp} alert={tempAlert} icon={<Thermometer className="h-2 w-2 mr-0.5" />} />
+            <VitalCell label="HGT" value={hgt === "—" ? hgt : `${hgt} mg/dL`} icon={<Activity className="h-2 w-2 mr-0.5" />} />
+          </div>
+          <div className="flex gap-3 text-xs">
+            <div className="min-w-0">
+              <span className="text-muted-foreground print:text-gray-500 font-semibold uppercase text-[9px]">Data/Hora: </span>
+              <span className="text-foreground print:text-black font-mono">{dataHora}</span>
+            </div>
+            <div className="min-w-0 truncate">
+              <span className="text-muted-foreground print:text-gray-500 font-semibold uppercase text-[9px]">Profissional: </span>
+              <span className="text-foreground print:text-black">{profissional}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── rodapé: estado / pendências / notificação ─────────────────── */}
+      <div className="grid grid-cols-[130px_1fr_auto] gap-2 px-3 py-2 print:px-2 print:py-1.5 border-t border-border/20 print:border-gray-200 bg-muted/5 print:bg-white items-start">
+
+        {/* Estado */}
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-0.5">Estado</p>
+          <select
+            value={state.estado}
+            onChange={e => onChange({ estado: e.target.value })}
+            className="w-full bg-transparent border border-border/40 rounded px-1.5 py-1 text-xs text-foreground print:hidden focus:outline-none focus:border-primary/60"
+          >
+            <option value="">—</option>
+            {ESTADO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+          <span className="hidden print:inline text-sm text-black">{state.estado || "___________"}</span>
+        </div>
+
+        {/* Pendências */}
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-0.5">Pendências</p>
+          <input
+            type="text"
+            value={state.pendencias}
+            onChange={e => onChange({ pendencias: e.target.value })}
+            placeholder="Registrar pendência..."
+            className="w-full bg-transparent border-b border-border/40 print:border-gray-400 outline-none text-xs text-foreground print:text-black placeholder:text-muted-foreground/60 py-0.5 print:hidden"
+          />
+          <span className="hidden print:inline text-sm text-black">{state.pendencias || "____________________________________________"}</span>
+        </div>
+
+        {/* Notificação */}
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-0.5">Notificação</p>
+          <div className="flex gap-1 print:hidden">
+            {(["ok", "pendente"] as const).map(v => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => onChange({ notif: state.notif === v ? null : v })}
+                className={cn(
+                  "px-2 py-1 rounded text-[11px] font-semibold border transition-colors",
+                  state.notif === v
+                    ? v === "ok"
+                      ? "bg-emerald-500/20 border-emerald-500/60 text-emerald-300"
+                      : "bg-red-500/20 border-red-500/60 text-red-300"
+                    : "border-border/40 text-muted-foreground hover:bg-muted/30"
+                )}
+              >
+                {v === "ok" ? "OK" : "Pend."}
+              </button>
+            ))}
+          </div>
+          <div className="hidden print:flex gap-2 text-xs text-black">
+            <span>({state.notif === "ok" ? "✓" : " "}) OK</span>
+            <span>({state.notif === "pendente" ? "✓" : " "}) Pend.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── field helper ──────────────────────────────────────────────────────────────
+
+function Field({ label, value, mono, className }: { label: string; value: string; mono?: boolean; className?: string }) {
+  return (
+    <div className={cn("leading-snug", className)}>
+      <span className="text-muted-foreground print:text-gray-500 text-[9px] font-semibold uppercase tracking-wide">{label}: </span>
+      <span className={cn("text-foreground print:text-black", mono ? "font-mono" : "")}>{value}</span>
+    </div>
   );
 }
 
@@ -214,47 +322,16 @@ export default function ShiftHandover() {
     <>
       <style>{`
         @media print {
-          @page { margin: 7mm 8mm; size: A4 landscape; }
+          @page { margin: 8mm 10mm; size: A4; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          body { background: white !important; color: black !important; font-size: 8.5pt !important; line-height: 1.3; }
+          body { background: white !important; color: black !important; font-size: 8pt !important; line-height: 1.3; }
           .print-hide { display: none !important; }
-
-          /* tables */
-          table { border-collapse: collapse; width: 100%; page-break-inside: auto; font-size: 8pt; }
-          thead { display: table-header-group; }
-          tr { page-break-inside: avoid; }
-          th { background: #e5e7eb !important; font-weight: 700; color: #111 !important; font-size: 7.5pt !important; text-transform: uppercase; letter-spacing: 0.03em; }
-          th, td { border: 1px solid #9ca3af; padding: 2px 5px !important; }
-
-          /* sector blocks */
-          .print-sector-block { page-break-inside: avoid; margin-bottom: 5pt; }
-          .print-sector-header {
-            font-size: 9pt !important; font-weight: 700;
-            padding: 2px 6px !important;
-            page-break-after: avoid;
-          }
-          /* empty sector: hide full table, show 1-line stub */
-          .print-sector-empty-table { display: none !important; }
-          .print-sector-empty-stub { display: block !important; font-size: 7.5pt; color: #6b7280; padding: 1px 6px; border: 1px solid #d1d5db; border-top: 0; font-style: italic; }
-
-          /* meta row */
-          .print-meta { padding: 3px 6px !important; margin-bottom: 4pt !important; font-size: 8.5pt; }
-
-          /* summary block */
-          .print-summary { margin-top: 6pt !important; padding: 4px 6px !important; }
-          .print-summary h2 { font-size: 8.5pt !important; margin-bottom: 4pt !important; }
-          .print-summary-counters { gap: 16pt !important; margin-bottom: 4pt !important; }
-          .print-summary-counter-val { font-size: 14pt !important; }
-
-          /* document title */
-          .print-doc-title { margin-bottom: 4pt !important; padding-bottom: 3pt !important; }
-          .print-doc-title h1 { font-size: 11pt !important; }
         }
       `}</style>
 
       <div className="min-h-screen bg-background text-foreground print:bg-white print:text-black">
 
-        {/* header */}
+        {/* ── header ───────────────────────────────────────────────────── */}
         <header className="print-hide border-b border-border bg-card sticky top-0 z-10">
           <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -266,28 +343,33 @@ export default function ShiftHandover() {
               <ClipboardList className="h-4 w-4 text-primary" />
               <h1 className="text-base font-bold tracking-tight">Passagem de Plantão</h1>
             </div>
-            <Button onClick={() => window.print()} size="sm" className="gap-2">
-              <Printer className="h-3.5 w-3.5" />
-              Imprimir
-            </Button>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>{totalPatients} pac. ativos</span>
+              {criticalCount > 0 && (
+                <span className="text-red-400 font-semibold">{criticalCount} críticos</span>
+              )}
+              <Button onClick={() => window.print()} size="sm" className="gap-2 ml-2">
+                <Printer className="h-3.5 w-3.5" />
+                Imprimir
+              </Button>
+            </div>
           </div>
         </header>
 
-        <main className="container mx-auto px-4 py-5 max-w-6xl print:px-0 print:py-0 print:max-w-none">
+        <main className="container mx-auto px-4 py-5 max-w-5xl print:px-0 print:py-0 print:max-w-none">
 
-          {/* ── document title (print only) ────────────────────────────── */}
-          <div className="print-doc-title hidden print:block text-center mb-3 pb-2 border-b-2 border-gray-400">
-            <h1 className="text-lg font-bold text-black uppercase tracking-wide">
+          {/* ── título (só impressão) ────────────────────────────────── */}
+          <div className="hidden print:block text-center mb-3 pb-2 border-b-2 border-gray-600">
+            <h1 className="text-base font-bold text-black uppercase tracking-wider">
               PASSAGEM DE PLANTÃO — UPA BREVES
             </h1>
           </div>
 
-          {/* ── meta row ────────────────────────────────────────────────── */}
-          <div className="print-meta flex flex-wrap gap-4 mb-5 p-4 rounded-xl border border-border/40 bg-card/50 print:border print:border-gray-400 print:rounded-none print:bg-white print:p-2 print:mb-3">
+          {/* ── meta row ─────────────────────────────────────────────── */}
+          <div className="flex flex-wrap gap-4 mb-5 p-4 rounded-xl border border-border/40 bg-card/50 print:border print:border-gray-400 print:rounded-none print:bg-white print:p-2 print:mb-3">
 
-            {/* Data */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-500">Data:</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-600">Data:</span>
               <input
                 type="text"
                 value={date}
@@ -297,9 +379,8 @@ export default function ShiftHandover() {
               <span className="hidden print:inline text-sm font-semibold text-black">{date}</span>
             </div>
 
-            {/* Turno */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-500">Turno:</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-600">Turno:</span>
               <div className="flex gap-3 print:hidden">
                 {TURNOS.map(t => (
                   <label key={t} className="flex items-center gap-1 text-sm cursor-pointer">
@@ -309,15 +390,12 @@ export default function ShiftHandover() {
                 ))}
               </div>
               <div className="hidden print:flex gap-3 text-sm text-black">
-                {TURNOS.map(t => (
-                  <span key={t}>({turno === t ? "✓" : " "}) {t}</span>
-                ))}
+                {TURNOS.map(t => <span key={t}>({turno === t ? "✓" : " "}) {t}</span>)}
               </div>
             </div>
 
-            {/* Responsável */}
-            <div className="flex items-center gap-2 flex-1 min-w-[180px]">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-500 shrink-0">Responsável:</span>
+            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-600 shrink-0">Responsável:</span>
               <input
                 type="text"
                 value={responsible}
@@ -331,109 +409,72 @@ export default function ShiftHandover() {
             </div>
           </div>
 
-          {/* ── loading ─────────────────────────────────────────────────── */}
+          {/* ── loading ──────────────────────────────────────────────── */}
           {isLoading && (
-            <div className="text-center py-16 text-muted-foreground">Carregando...</div>
+            <div className="text-center py-16 text-muted-foreground">Carregando pacientes...</div>
           )}
 
-          {/* ── sector tables ────────────────────────────────────────────── */}
+          {/* ── setores ──────────────────────────────────────────────── */}
           {!isLoading && (
             <div className="space-y-6 print:space-y-4">
               {grouped.map(sector => (
-                <div key={sector.name} className="print-sector-block">
+                <div key={sector.key}>
 
                   {/* sector header */}
                   <div className={cn(
-                    "print-sector-header flex items-center gap-3 px-4 py-2 rounded-t-lg border-b-0 border",
+                    "flex items-center justify-between gap-3 px-4 py-2 rounded-t-lg border",
                     sector.headerCls,
                     "print:rounded-none"
-                  )}
-                    style={{ WebkitPrintColorAdjust: "exact" } as React.CSSProperties}
-                  >
-                    <span className="text-base leading-none">{sector.emoji}</span>
-                    <div>
-                      <span className="font-bold text-sm tracking-wide">{sector.label}</span>
-                      {sector.sub && <span className="ml-2 text-xs opacity-70">({sector.sub})</span>}
-                    </div>
+                  )}>
+                    <span className="font-bold text-sm tracking-wide">{sector.label}</span>
+                    {sector.sub && <span className="text-xs opacity-70">({sector.sub})</span>}
                     <span className="ml-auto text-xs font-semibold opacity-80 tabular-nums">
                       {sector.patients.length} {sector.patients.length === 1 ? "paciente" : "pacientes"}
                     </span>
                   </div>
 
-                  {/* empty sector — compact stub for print, full empty row for screen */}
+                  {/* patients */}
                   {sector.patients.length === 0 ? (
-                    <>
-                      <div className="print-sector-empty-stub hidden text-gray-500 italic text-xs py-1 px-2 border border-t-0 border-gray-300">
-                        Setor vazio
-                      </div>
-                      <div className="print-sector-empty-table overflow-x-auto rounded-b-lg border border-border/30 print:border print:border-gray-300 print:rounded-none">
-                        <table className="w-full text-sm">
-                          <tbody>
-                            <tr>
-                              <td colSpan={6} className="px-4 py-4 text-center text-sm text-muted-foreground italic">
-                                Nenhum paciente neste setor
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </>
+                    <div className="border border-t-0 border-border/30 print:border-gray-300 rounded-b-lg px-4 py-3 text-sm text-muted-foreground italic print:text-gray-400">
+                      Nenhum paciente neste setor.
+                    </div>
                   ) : (
-                    /* table with patients */
-                    <div className="overflow-x-auto rounded-b-lg border border-border/30 print:border print:border-gray-300 print:rounded-none">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border/30 print:border-gray-300 bg-muted/20 print:bg-gray-100">
-                            <th className="px-3 py-2 print:px-2 print:py-1 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[20%]">Paciente</th>
-                            <th className="px-3 py-2 print:px-2 print:py-1 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[7%]">Leito</th>
-                            <th className="px-3 py-2 print:px-2 print:py-1 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[22%]">Diagnóstico</th>
-                            <th className="px-3 py-2 print:px-2 print:py-1 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[12%]">Estado</th>
-                            <th className="px-3 py-2 print:px-2 print:py-1 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[27%]">Pendências</th>
-                            <th className="px-3 py-2 print:px-2 print:py-1 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 w-[12%]">Notificação</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sector.patients.map((p, idx) => (
-                            <PatientRow
-                              key={p.id}
-                              patient={p}
-                              idx={idx}
-                              evenCls={sector.rowEvenCls}
-                              state={getRow(p.id)}
-                              onChange={patch => updateRow(p.id, patch)}
-                            />
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="border border-t-0 border-border/30 print:border-gray-300 rounded-b-lg p-3 print:p-2 space-y-2 print:space-y-1.5">
+                      {sector.patients.map(p => (
+                        <PatientCard
+                          key={p.id}
+                          patient={p}
+                          accentCls={sector.accentCls}
+                          state={getRow(p.id)}
+                          onChange={patch => updateRow(p.id, patch)}
+                        />
+                      ))}
                     </div>
                   )}
-
                 </div>
               ))}
 
-              {/* ── resumo geral ─────────────────────────────────────────── */}
-              <div className="rounded-xl border border-border/40 bg-card/50 p-5 print:border print:border-gray-400 print:rounded-none print:bg-white print:p-3 print:mt-4">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 mb-4 print:mb-3 border-b border-border/30 print:border-gray-300 pb-2">
+              {/* ── resumo geral ──────────────────────────────────────── */}
+              <div className="rounded-xl border border-border/40 bg-card/50 p-5 print:border print:border-gray-400 print:rounded-none print:bg-white print:p-3">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground print:text-gray-700 mb-4 border-b border-border/30 print:border-gray-300 pb-2">
                   Resumo Geral
                 </h2>
 
-                {/* counters */}
-                <div className="flex flex-wrap gap-6 mb-4 print:gap-8">
+                <div className="flex flex-wrap gap-8 mb-4">
                   <div>
-                    <span className="text-xs text-muted-foreground print:text-gray-500 uppercase font-semibold">Total de Pacientes:</span>
-                    <span className="ml-2 text-xl font-bold text-foreground print:text-black">{totalPatients}</span>
+                    <span className="text-xs text-muted-foreground print:text-gray-500 uppercase font-semibold">Total de Pacientes: </span>
+                    <span className="text-xl font-bold text-foreground print:text-black">{totalPatients}</span>
                   </div>
                   <div>
-                    <span className="text-xs text-muted-foreground print:text-gray-500 uppercase font-semibold">Críticos (Vermelho/Laranja):</span>
+                    <span className="text-xs text-muted-foreground print:text-gray-500 uppercase font-semibold">Críticos (Vermelho/Laranja): </span>
                     <span className={cn(
-                      "ml-2 text-xl font-bold",
+                      "text-xl font-bold",
                       criticalCount > 0 ? "text-red-400 print:text-red-700" : "text-foreground print:text-black"
                     )}>{criticalCount}</span>
                   </div>
                 </div>
 
-                {/* pendências gerais */}
-                <div className="mb-4 print:mb-3">
+                <div className="mb-4">
                   <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-500 mb-1.5">
                     Pendências Gerais
                   </label>
@@ -445,17 +486,12 @@ export default function ShiftHandover() {
                   />
                   <div className="hidden print:block text-sm text-black space-y-1.5">
                     {pendenciasGerais
-                      ? pendenciasGerais.split("\n").map((line, i) => (
-                          <div key={i}>{line || "—"}</div>
-                        ))
-                      : [0, 1, 2].map(i => (
-                          <div key={i} className="border-b border-gray-300 h-5" />
-                        ))
+                      ? pendenciasGerais.split("\n").map((line, i) => <div key={i}>{line || "—"}</div>)
+                      : [0, 1, 2].map(i => <div key={i} className="border-b border-gray-300 h-5" />)
                     }
                   </div>
                 </div>
 
-                {/* observações */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground print:text-gray-500 mb-1.5">
                     Observações Importantes
@@ -470,8 +506,18 @@ export default function ShiftHandover() {
                     {obsGerais || <span className="border-b border-gray-300 block h-5 w-full" />}
                   </div>
                 </div>
-              </div>
 
+                {/* assinatura */}
+                <div className="mt-6 print:mt-4 pt-4 border-t border-border/30 print:border-gray-300 flex justify-end">
+                  <div className="text-center min-w-[200px]">
+                    <div className="border-b border-border/50 print:border-gray-500 h-8 mb-1" />
+                    <p className="text-xs text-muted-foreground print:text-gray-600 uppercase tracking-wide">Assinatura do Responsável</p>
+                    {responsible && (
+                      <p className="text-xs font-semibold text-foreground print:text-black mt-0.5">{responsible}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </main>
