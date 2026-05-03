@@ -1,15 +1,20 @@
-/**
- * Feature flags for UPA Breves — Gestão de Pacientes.
- * Set a flag to `true` to enable the feature, `false` to disable it.
- */
-export const FEATURES = {
-  sinan_pdf:            true,
-  triagem_avancada:     false,
-  classificacao_risco:  true,
-  dashboard_gestao:     true,
-  controle_estoque:     false,
-} as const;
+const config = {
+  features: {
+    sinan_pdf:           true,
+    triagem_avancada:    false,
+    classificacao_risco: true,
+    dashboard_gestao:    true,
+    controle_estoque:    false,
+  } as Record<string, boolean>,
+};
 
-export type FeatureKey = keyof typeof FEATURES;
+export type FeatureKey =
+  | "sinan_pdf"
+  | "triagem_avancada"
+  | "classificacao_risco"
+  | "dashboard_gestao"
+  | "controle_estoque";
 
-export const isEnabled = (feature: FeatureKey): boolean => FEATURES[feature];
+export function featureAtiva(nomeFeature: FeatureKey): boolean {
+  return config.features[nomeFeature] === true;
+}

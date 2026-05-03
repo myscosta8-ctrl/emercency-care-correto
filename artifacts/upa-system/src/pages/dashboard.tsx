@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, memo } from "react";
-import { FEATURES } from "@/lib/features";
+import { featureAtiva } from "@/lib/features";
 import { useAuth } from "@/lib/auth-context";
 import { Link } from "wouter";
 import {

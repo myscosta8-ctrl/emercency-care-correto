@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FEATURES } from "@/lib/features";
+import { featureAtiva } from "@/lib/features";
 import { useAuth } from "@/lib/auth-context";
 import { useRoute, useLocation, Link } from "wouter";
 import { format, formatDistanceToNow } from "date-fns";
@@ -827,7 +827,7 @@ export default function PatientDetail() {
             </div>
 
             {/* Notificações Compulsórias */}
-            {FEATURES.sinan_pdf && <div>
+            {featureAtiva("sinan_pdf") && <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
