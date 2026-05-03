@@ -1,18 +1,20 @@
 const config = {
   features: {
     sinan_pdf:           true,
-    triagem_avancada:    false,
     classificacao_risco: true,
-    dashboard_gestao:    true,
+    triagem_avancada:    false,
+    dashboard:           true,
+    relatorios:          true,
     controle_estoque:    false,
   } as Record<string, boolean>,
 };
 
 export type FeatureKey =
   | "sinan_pdf"
-  | "triagem_avancada"
   | "classificacao_risco"
-  | "dashboard_gestao"
+  | "triagem_avancada"
+  | "dashboard"
+  | "relatorios"
   | "controle_estoque";
 
 export function featureAtiva(nomeFeature: FeatureKey): boolean {
