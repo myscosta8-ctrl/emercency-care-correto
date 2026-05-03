@@ -96,8 +96,21 @@ interface RowState {
   notif:      "ok" | "pendente" | null;
 }
 
-const defaultRow = (): RowState => ({
-  estado: "", soap_s: "", soap_o: "", soap_a: "", soap_p: "",
+function defaultPlan(status: string): string {
+  if (status === "red" || status === "orange") {
+    return "- Monitorar 15/15 min\n- O2 contínuo\n- Acesso venoso";
+  }
+  if (status === "yellow") {
+    return "- Monitorar 1/1h";
+  }
+  if (status === "green") {
+    return "- Monitorar 6/6h";
+  }
+  return "";
+}
+
+const defaultRow = (status = ""): RowState => ({
+  estado: "", soap_s: "", soap_o: "", soap_a: "", soap_p: defaultPlan(status),
   pends: new Set(), pend_obs: "", notif: null,
 });
 
@@ -430,9 +443,9 @@ export default function ShiftHandover() {
   const totalPatients = grouped.reduce((n, g) => n + g.patients.length, 0);
   const criticalCount = (patients ?? []).filter(p => p.status === "red" || p.status === "orange").length;
 
-  const getRow    = (id: number): RowState => rowStates[id] ?? defaultRow();
-  const updateRow = (id: number, patch: Partial<RowState>) =>
-    setRowStates(prev => ({ ...prev, [id]: { ...getRow(id), ...patch } }));
+  const getRow    = (id: number, status = ""): RowState => rowStates[id] ?? defaultRow(status);
+  const updateRow = (id: number, status: string, patch: Partial<RowState>) =>
+    setRowStates(prev => ({ ...prev, [id]: { ...getRow(id, status), ...patch } }));
 
   return (
     <>
@@ -556,8 +569,8 @@ export default function ShiftHandover() {
                           key={p.id}
                           patient={p}
                           accentCls={sector.accentCls}
-                          state={getRow(p.id)}
-                          onChange={patch => updateRow(p.id, patch)}
+                          state={getRow(p.id, p.status)}
+                          onChange={patch => updateRow(p.id, p.status, patch)}
                         />
                       ))}
                     </div>
