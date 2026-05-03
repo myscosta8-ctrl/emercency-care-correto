@@ -1235,6 +1235,8 @@ components:
           type: string
         notes:
           type: string
+        pdfUrl:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -1252,6 +1254,7 @@ components:
         - notifiedAt
         - responsible
         - notes
+        - pdfUrl
         - createdAt
         - updatedAt
 
@@ -1299,6 +1302,8 @@ components:
         responsible:
           type: string
         notes:
+          type: string
+        pdfUrl:
           type: string
 
     StaffMember:

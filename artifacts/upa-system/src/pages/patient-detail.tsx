@@ -15,6 +15,7 @@ import {
   useUpdateTaskStatus,
   useGetPatientNotifications,
   useDeletePatientNotification,
+  useUpdatePatientNotification,
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
   getGetPatientHistoryQueryKey,
@@ -31,7 +32,7 @@ import {
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
   Bell, Trash, Download, FileDown, Calendar, Building2,
 } from "lucide-react";
-import { downloadSinanPdf, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
+import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,9 +161,11 @@ export default function PatientDetail() {
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
   const deleteNotification = useDeletePatientNotification();
+  const updateNotification = useUpdatePatientNotification();
   const updateTaskStatus = useUpdateTaskStatus();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [generatingPdfId, setGeneratingPdfId] = useState<number | null>(null);
 
   const handleDelete = () => {
     deletePatient.mutate({ id }, {
@@ -907,7 +910,20 @@ export default function PatientDetail() {
                             </p>
                           )}
                           <div className="flex items-center justify-between pt-1.5 border-t border-border/40 mt-1.5">
-                            <span className="text-xs text-muted-foreground">— {notif.responsible}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">— {notif.responsible}</span>
+                              {notif.pdfUrl && (
+                                <a
+                                  href={notif.pdfUrl}
+                                  download={`SINAN_${patient.nome.replace(/\s+/g, "_")}.pdf`}
+                                  className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+                                  title="PDF SINAN gerado — clique para baixar novamente"
+                                >
+                                  <FileDown className="h-3 w-3" />
+                                  PDF salvo
+                                </a>
+                              )}
+                            </div>
                             <div className="flex gap-1.5">
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
@@ -917,13 +933,44 @@ export default function PatientDetail() {
                               ><Printer className="h-3 w-3" /></Button>
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-                                title="Baixar PDF Preenchido"
-                                disabled={!podeGerarPDF}
+                                title="Gerar e salvar PDF SINAN"
+                                disabled={!podeGerarPDF || generatingPdfId === notif.id}
                                 onClick={async () => {
-                                  try { await downloadSinanPdf(patient, notif, import.meta.env.BASE_URL); }
-                                  catch (e) { toast({ title: "Erro ao gerar PDF", description: String(e), variant: "destructive" }); }
+                                  setGeneratingPdfId(notif.id);
+                                  try {
+                                    const blob = await generateSinanPdfBlob(patient, notif, import.meta.env.BASE_URL);
+                                    const reader = new FileReader();
+                                    const dataUrl: string = await new Promise((resolve, reject) => {
+                                      reader.onload = () => resolve(reader.result as string);
+                                      reader.onerror = reject;
+                                      reader.readAsDataURL(blob);
+                                    });
+                                    updateNotification.mutate(
+                                      { id, notificationId: notif.id, data: { pdfUrl: dataUrl } },
+                                      {
+                                        onSuccess: () => {
+                                          queryClient.invalidateQueries({ queryKey: getGetPatientNotificationsQueryKey(id) });
+                                          const href = URL.createObjectURL(blob);
+                                          const a = Object.assign(document.createElement("a"), {
+                                            href,
+                                            download: `SINAN_${patient.nome.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`,
+                                          });
+                                          document.body.appendChild(a);
+                                          a.click();
+                                          document.body.removeChild(a);
+                                          URL.revokeObjectURL(href);
+                                          toast({ title: "PDF SINAN gerado e salvo com sucesso" });
+                                        },
+                                        onError: () => toast({ title: "Erro ao salvar PDF", variant: "destructive" }),
+                                      }
+                                    );
+                                  } catch (e) {
+                                    toast({ title: "Erro ao gerar PDF", description: String(e), variant: "destructive" });
+                                  } finally {
+                                    setGeneratingPdfId(null);
+                                  }
                                 }}
-                              ><Download className="h-3 w-3" /></Button>
+                              >{generatingPdfId === notif.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}</Button>
                               <Button size="sm" variant="outline"
                                 className="h-6 text-[10px] px-2 border-muted-foreground/20 text-muted-foreground hover:bg-muted/30"
                                 disabled={!pode("editar_paciente")}

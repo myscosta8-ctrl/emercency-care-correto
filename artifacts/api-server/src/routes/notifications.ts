@@ -60,6 +60,7 @@ router.patch("/:notificationId", async (req, res) => {
   if (body.situation        !== undefined) patch.situation        = body.situation;
   if (body.responsible      !== undefined) patch.responsible      = body.responsible;
   if (body.notifiedAt       !== undefined) patch.notifiedAt       = body.notifiedAt;
+  if (body.pdfUrl           !== undefined) patch.pdfUrl           = body.pdfUrl;
 
   const [notif] = await db
     .update(patientNotificationsTable)

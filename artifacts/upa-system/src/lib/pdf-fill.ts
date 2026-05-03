@@ -617,11 +617,15 @@ async function fillTemplate(
  * @param notif    Notification data
  * @param baseUrl  import.meta.env.BASE_URL (proxy prefix, trailing slash)
  */
-export async function downloadSinanPdf(
+/**
+ * Generates a merged SINAN PDF for all notification types and returns it as a
+ * Blob without triggering a browser download.
+ */
+export async function generateSinanPdfBlob(
   patient: PdfPatient,
   notif: PdfNotification,
   baseUrl: string,
-): Promise<void> {
+): Promise<Blob> {
   let types: string[] = [];
   try { types = JSON.parse(notif.types) as string[]; } catch { /* ignore */ }
   if (!types.length) types = ["outros"];
@@ -648,7 +652,15 @@ export async function downloadSinanPdf(
   }
 
   const bytes = await merged.save();
-  const blob  = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+  return new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+}
+
+export async function downloadSinanPdf(
+  patient: PdfPatient,
+  notif: PdfNotification,
+  baseUrl: string,
+): Promise<void> {
+  const blob = await generateSinanPdfBlob(patient, notif, baseUrl);
   const href  = URL.createObjectURL(blob);
   const a     = Object.assign(document.createElement("a"), {
     href,

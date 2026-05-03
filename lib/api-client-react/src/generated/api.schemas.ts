@@ -353,6 +353,7 @@ export interface PatientNotification {
   notifiedAt: string;
   responsible: string;
   notes: string;
+  pdfUrl: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -393,6 +394,7 @@ export interface UpdatePatientNotificationBody {
   notifiedAt?: string;
   responsible?: string;
   notes?: string;
+  pdfUrl?: string;
 }
 
 export type StaffMemberPerfil =

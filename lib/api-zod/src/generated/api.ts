@@ -595,6 +595,7 @@ export const GetPatientNotificationsResponseItem = zod.object({
   notifiedAt: zod.string(),
   responsible: zod.string(),
   notes: zod.string(),
+  pdfUrl: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -637,6 +638,7 @@ export const UpdatePatientNotificationBody = zod.object({
   notifiedAt: zod.string().optional(),
   responsible: zod.string().optional(),
   notes: zod.string().optional(),
+  pdfUrl: zod.string().optional(),
 });
 
 export const UpdatePatientNotificationResponse = zod.object({
@@ -650,6 +652,7 @@ export const UpdatePatientNotificationResponse = zod.object({
   notifiedAt: zod.string(),
   responsible: zod.string(),
   notes: zod.string(),
+  pdfUrl: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
