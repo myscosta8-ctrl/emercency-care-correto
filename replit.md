@@ -89,7 +89,7 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - Logout button (Power icon, `aria-label="Sair"`) in dashboard header → clears session + navigates to `/login`
 
 ### Gestão de Leitos (`/leitos`)
-- **Tabela**: `beds` — `id`, `bed_id` (único), `sector`, `bed_number`, `is_isolation` (fixo, capacidade física), `is_occupied`, `patient_id` (FK → patients), `isolation_active`, `isolation_type` (contact/droplet/airborne), `isolation_reason`, `created_at`, `updated_at`.
+- **Tabela**: `beds` — `id`, `bed_id` (único), `sector`, `bed_number`, `is_isolation` (fixo), `is_extra` (boolean), `extra_reason`, `is_occupied`, `patient_id` (FK → patients), `admission_time` (timestamp), `isolation_active`, `isolation_type` (contact/droplet/airborne), `isolation_reason`, `created_at`, `updated_at`.
 - **Seed automático**: 35 leitos criados na primeira chamada GET se a tabela estiver vazia.
   - Sala Vermelha: VS-01 a VS-04 (4 leitos, sem isolamento)
   - Observação Adulto: OA-01 a OA-16 + OA-ISO (17 leitos, 1 isolamento)

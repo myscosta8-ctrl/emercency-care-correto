@@ -1,9 +1,16 @@
 import { Router } from "express";
 import { db, bedsTable, patientsTable } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and, like, sql } from "drizzle-orm";
 import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router();
+
+const SECTOR_PREFIXES: Record<string, string> = {
+  sala_vermelha:          "VS",
+  observacao_adulto:      "OA",
+  observacao_pediatrica:  "OP",
+  observacao_pre_adulto:  "PA",
+};
 
 const SEED_DATA = [
   { bedId: "VS-01", sector: "sala_vermelha",         bedNumber: 1,  isIsolation: false },
@@ -53,35 +60,39 @@ async function ensureSeeded() {
   }
 }
 
-const serializeBed = (bed: typeof bedsTable.$inferSelect, patient?: typeof patientsTable.$inferSelect | null) => ({
+const serializeBed = (
+  bed: typeof bedsTable.$inferSelect,
+  patient?: typeof patientsTable.$inferSelect | null,
+) => ({
   id:              bed.id,
   bedId:           bed.bedId,
   sector:          bed.sector,
   bedNumber:       bed.bedNumber,
   isIsolation:     bed.isIsolation,
+  isExtra:         bed.isExtra,
+  extraReason:     bed.extraReason,
   isOccupied:      bed.isOccupied,
   patientId:       bed.patientId,
+  admissionTime:   bed.admissionTime?.toISOString() ?? null,
   isolationActive: bed.isolationActive,
   isolationType:   bed.isolationType,
   isolationReason: bed.isolationReason,
   patient: patient ? {
-    id:           patient.id,
-    fullName:     patient.fullName,
-    triageLevel:  patient.triageLevel,
-    sector:       patient.sector,
-    diagnosis:    patient.diagnosis,
+    id:          patient.id,
+    fullName:    patient.fullName,
+    triageLevel: patient.triageLevel,
+    sector:      patient.sector,
+    diagnosis:   patient.diagnosis,
   } : null,
 });
 
 router.get("/", async (req, res) => {
   await ensureSeeded();
   const beds = await db.select().from(bedsTable).orderBy(bedsTable.id);
-
   const patientIds = beds.filter(b => b.patientId).map(b => b.patientId!);
   const patients = patientIds.length
     ? await db.select().from(patientsTable).where(inArray(patientsTable.id, patientIds))
     : [];
-
   const pMap = new Map(patients.map(p => [p.id, p]));
   res.json(beds.map(b => serializeBed(b, b.patientId ? pMap.get(b.patientId) : null)));
 });
@@ -91,7 +102,6 @@ router.get("/:id", async (req, res) => {
   const id = Number(req.params["id"]);
   const [bed] = await db.select().from(bedsTable).where(eq(bedsTable.id, id));
   if (!bed) { res.status(404).json({ error: "Leito não encontrado" }); return; }
-
   let patient = null;
   if (bed.patientId) {
     const [p] = await db.select().from(patientsTable).where(eq(patientsTable.id, bed.patientId));
@@ -118,30 +128,40 @@ router.put("/:id", requirePermissao("registrar_sinais_vitais"), async (req, res)
     return;
   }
 
-  const patch: Partial<typeof bedsTable.$inferInsert> = { updatedAt: new Date() };
+  const patch: Record<string, unknown> = { updatedAt: new Date() };
 
-  if (body.isOccupied !== undefined) patch.isOccupied = body.isOccupied;
-  if ("patientId" in body)           patch.patientId  = body.patientId ?? undefined;
-  if (body.isolationActive !== undefined) {
-    patch.isolationActive = body.isolationActive;
-    if (!body.isolationActive) {
-      patch.isolationType   = null;
-      patch.isolationReason = null;
+  if (body.isOccupied !== undefined) patch["isOccupied"] = body.isOccupied;
+
+  if ("patientId" in body) {
+    const newPatientId = body.patientId ?? null;
+    patch["patientId"] = newPatientId;
+    if (newPatientId !== null && current.patientId !== newPatientId) {
+      patch["admissionTime"] = new Date();
     }
   }
-  if ("isolationType"   in body) patch.isolationType   = body.isolationType ?? null;
-  if ("isolationReason" in body) patch.isolationReason = body.isolationReason ?? null;
+
+  if (body.isolationActive !== undefined) {
+    patch["isolationActive"] = body.isolationActive;
+    if (!body.isolationActive) {
+      patch["isolationType"]   = null;
+      patch["isolationReason"] = null;
+    }
+  }
+  if ("isolationType"   in body) patch["isolationType"]   = body.isolationType ?? null;
+  if ("isolationReason" in body) patch["isolationReason"] = body.isolationReason ?? null;
 
   if (body.isOccupied === false) {
-    patch.patientId       = undefined;
-    patch.isolationActive = false;
-    patch.isolationType   = null;
-    patch.isolationReason = null;
+    patch["patientId"]       = null;
+    patch["admissionTime"]   = null;
+    patch["isolationActive"] = false;
+    patch["isolationType"]   = null;
+    patch["isolationReason"] = null;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [updated] = await db
     .update(bedsTable)
-    .set(patch)
+    .set(patch as any)
     .where(eq(bedsTable.id, id))
     .returning();
 
@@ -151,6 +171,61 @@ router.put("/:id", requirePermissao("registrar_sinais_vitais"), async (req, res)
     patient = p ?? null;
   }
   res.json(serializeBed(updated, patient));
+});
+
+router.post("/extra", requirePermissao("registrar_sinais_vitais"), async (req, res) => {
+  const { sector, extra_reason } = req.body as { sector: string; extra_reason?: string };
+  if (!sector || !SECTOR_PREFIXES[sector]) {
+    res.status(400).json({ error: "Setor inválido" });
+    return;
+  }
+
+  const prefix    = SECTOR_PREFIXES[sector]!;
+  const pattern   = `${prefix}-EXT-%`;
+  const existing  = await db
+    .select({ bedId: bedsTable.bedId })
+    .from(bedsTable)
+    .where(and(eq(bedsTable.sector, sector), eq(bedsTable.isExtra, true)));
+
+  const nextNum  = existing.length + 1;
+  let   newBedId = `${prefix}-EXT-${nextNum}`;
+
+  const allIds = await db.select({ bedId: bedsTable.bedId }).from(bedsTable)
+    .where(like(bedsTable.bedId, pattern));
+  const taken = new Set(allIds.map(r => r.bedId));
+  let n = nextNum;
+  while (taken.has(newBedId)) { n++; newBedId = `${prefix}-EXT-${n}`; }
+
+  const maxBedNum = existing.length > 0 ? 1000 + n : 1000;
+
+  const [bed] = await db.insert(bedsTable).values({
+    bedId:       newBedId,
+    sector,
+    bedNumber:   maxBedNum,
+    isIsolation: false,
+    isExtra:     true,
+    extraReason: extra_reason ?? null,
+  }).returning();
+
+  req.log.info({ action: "extra_bed_created", bedId: newBedId, sector, staffId: req.staff?.id }, "Leito extra criado");
+  res.status(201).json(serializeBed(bed, null));
+});
+
+router.delete("/:id", requirePermissao("registrar_sinais_vitais"), async (req, res) => {
+  const id = Number(req.params["id"]);
+  const [bed] = await db.select().from(bedsTable).where(eq(bedsTable.id, id));
+  if (!bed) { res.status(404).json({ error: "Leito não encontrado" }); return; }
+  if (!bed.isExtra) {
+    res.status(400).json({ error: "Apenas leitos extras podem ser removidos." });
+    return;
+  }
+  if (bed.isOccupied) {
+    res.status(400).json({ error: "Não é possível remover leito extra com paciente internado." });
+    return;
+  }
+  await db.delete(bedsTable).where(eq(bedsTable.id, id));
+  req.log.info({ action: "extra_bed_removed", bedId: bed.bedId, sector: bed.sector, staffId: req.staff?.id }, "Leito extra removido");
+  res.status(204).end();
 });
 
 export default router;
