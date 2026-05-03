@@ -26,6 +26,7 @@ const AdminPermissoes     = lazy(() => import("@/pages/admin/permissoes"));
 const AdminFuncionalidades = lazy(() => import("@/pages/admin/funcionalidades"));
 const AdminAuditoria       = lazy(() => import("@/pages/admin/auditoria"));
 
+const LeitosPage   = lazy(() => import("@/pages/leitos"));
 const RecepcaoPage = lazy(() => import("@/pages/recepcao"));
 const VitaisPage   = lazy(() => import("@/pages/vitais"));
 const SocialPage   = lazy(() => import("@/pages/social"));
@@ -149,6 +150,8 @@ function Router() {
 
               <Route path="/patients/:id/notifications/:notificationId/print" component={NotificationPrint} />
               <Route path="/patients/:id" component={PatientDetail} />
+
+              <Route path="/leitos" component={LeitosPage} />
 
               <Route path="/passagem-plantao">
                 <RoleGuard acao="registrar_evolucao"><ShiftHandover /></RoleGuard>

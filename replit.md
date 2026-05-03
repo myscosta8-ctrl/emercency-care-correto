@@ -88,6 +88,22 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - **"Nova Admissão"** button disabled unless `pode("criar_paciente")`
 - Logout button (Power icon, `aria-label="Sair"`) in dashboard header → clears session + navigates to `/login`
 
+### Gestão de Leitos (`/leitos`)
+- **Tabela**: `beds` — `id`, `bed_id` (único), `sector`, `bed_number`, `is_isolation` (fixo, capacidade física), `is_occupied`, `patient_id` (FK → patients), `isolation_active`, `isolation_type` (contact/droplet/airborne), `isolation_reason`, `created_at`, `updated_at`.
+- **Seed automático**: 35 leitos criados na primeira chamada GET se a tabela estiver vazia.
+  - Sala Vermelha: VS-01 a VS-04 (4 leitos, sem isolamento)
+  - Observação Adulto: OA-01 a OA-16 + OA-ISO (17 leitos, 1 isolamento)
+  - Observação Pediátrica: OP-01 a OP-05 + OP-ISO (6 leitos, 1 isolamento)
+  - Pré-Observação: PA-01 a PA-07 + PA-ISO (8 leitos, 1 isolamento)
+- **API**: `GET /api/beds` (lista com dados do paciente), `GET /api/beds/:id`, `PUT /api/beds/:id` (requer `registrar_sinais_vitais`).
+- **Bloqueio servidor**: `PUT` retorna 400 se `isolationActive=true` em leito sem `is_isolation`.
+- **Frontend**: Página `/leitos` acessível a todos os autenticados; botão "Leitos" na barra de navegação do dashboard.
+  - Grade por setor com cards coloridos: verde (livre), amarelo (ocupado), vermelho (crítico/triagem red), roxo (isolamento ativo).
+  - Ícone de biohazard nos leitos com capacidade de isolamento.
+  - Modal ao clicar: exibe paciente, toggle de precaução, tipo (Contato/Gotículas/Aerossóis) e motivo.
+  - Edição restrita a quem tem permissão `registrar_sinais_vitais` (enfermeiro, médico, admin).
+  - Leitos não-isolamento bloqueados no frontend + backend.
+
 ### Password Reset (Esqueci minha senha)
 - **Tabela**: `password_resets` — `id` (UUID), `user_id` (FK staff), `token` (text único), `expires_at` (1h), `used_at` (nullable), `created_at`.
 - **`POST /api/auth/forgot-password`**: body `{ login }` → busca usuário ativo, gera token 32 bytes hex, salva no DB, loga link no console (`[RESET] nome (login) → /reset-password?token=XYZ`). Retorna `{ ok: true }` sempre (evita enumeração de usuários).

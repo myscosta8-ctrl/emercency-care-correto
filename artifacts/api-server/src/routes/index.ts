@@ -11,6 +11,7 @@ import nutritionalAssessmentsRouter from "./nutritional-assessments";
 import pharmacyEntriesRouter from "./pharmacy-entries";
 import transfersRouter from "./transfers";
 import alertsRouter from "./alerts";
+import bedsRouter from "./beds";
 import { requireAuth } from "../middleware/require-auth";
 import { auditWrite } from "../middleware/audit-write";
 
@@ -31,6 +32,7 @@ router.use("/patients/:id/transfers", transfersRouter);
 router.use("/staff", staffRouter);
 router.use("/audit", auditRouter);
 router.use("/alerts", alertsRouter);
+router.use("/beds", bedsRouter);
 router.use("/notifications", sinanNotificationsRouter);
 
 export default router;

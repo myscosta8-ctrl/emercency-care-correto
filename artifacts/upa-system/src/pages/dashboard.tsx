@@ -294,6 +294,12 @@ export default function Dashboard() {
                 </Button>
               </Link>
             )}
+            <Link href="/leitos">
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
+                <BedDouble className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Leitos</span>
+              </Button>
+            </Link>
             {pode("registrar_evolucao") && (
               <Link href="/passagem-plantao">
                 <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
