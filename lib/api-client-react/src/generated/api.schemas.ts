@@ -370,7 +370,7 @@ export interface CreateStaffBody {
   corenCrm?: string;
   sector?: string;
   login: string;
-  password: string;
+  password?: string;
   accessLevels?: string;
   signature?: string;
   stamp?: string;
@@ -465,6 +465,11 @@ export interface AuthUser {
   role: string;
   sector: string;
   corenCrm: string;
+  mustChangePassword: boolean;
+}
+
+export interface ChangePasswordBody {
+  password: string;
 }
 
 export interface SocialNote {
@@ -621,6 +626,10 @@ export interface CreateAuditLogBody {
 
 export type HealthCheck200 = {
   status: string;
+};
+
+export type ChangePassword200 = {
+  ok: boolean;
 };
 
 export type ListAuditLogsParams = {

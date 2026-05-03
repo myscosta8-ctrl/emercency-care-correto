@@ -88,6 +88,15 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - **"Nova Admissão"** button disabled unless `pode("criar_paciente")`
 - Logout button (Power icon, `aria-label="Sair"`) in dashboard header → clears session + navigates to `/login`
 
+### Password & First-Access Flow
+- **Hashing**: Senhas novas armazenadas como `bcrypt(sha256(plain + "upa_salt_2026"), cost=12)`. Usuários legados (SHA-256 puro) continuam funcionando; login detecta pelo prefixo `$2b$`.
+- **Novo usuário**: Senha padrão `1234` aplicada automaticamente pelo servidor; campo senha removido do formulário de criação. `must_change_password = true` para todos os novos usuários.
+- **Fluxo de primeiro acesso**: Login retorna `mustChangePassword: true` → `AuthGuard` intercepta e redireciona para `/change-password` → bloqueia todas as outras rotas até troca concluída.
+- **Tela `/change-password`**: Nova senha + confirmação (mínimo 6 chars). Envia `sha256(nova + salt)` ao `POST /api/auth/change-password`. Servidor guarda `bcrypt(hash)` e zera `must_change_password`. Redireciona para `/`.
+- **UI aviso**: Mensagem âmbar "A senha inicial será 1234. O usuário será solicitado a alterá-la no primeiro acesso." no formulário de criação.
+- **Mensagem na tela**: "Por segurança, você deve alterar sua senha no primeiro acesso."
+- **Todos os perfis**: admin, enfermeiro, técnico, médico, recepcionista — mesma regra.
+
 ### Critical Alert System (Alerta de Paciente Crítico)
 - **Roles**: only `enfermeiro` and `tecnico_enfermagem` see any alert UI — controlled by `ALERT_ROLES = new Set(["enfermeiro","tecnico_enfermagem"])` and `isNurseOrTech` in dashboard.
 - **Alert panel**: `⚠ ATENÇÃO — N PACIENTES CRÍTICOS` shown above patient list when `isNurseOrTech && criticals.length > 0`.

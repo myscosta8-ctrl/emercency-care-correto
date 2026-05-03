@@ -12,6 +12,7 @@ export const staffTable = pgTable("staff", {
   sector: text("sector").notNull().default(""),
   login: text("login").notNull().unique(),
   passwordHash: text("password_hash").notNull().default(""),
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
   accessLevels: text("access_levels").notNull().default(""),
   signature: text("signature").notNull().default(""),
   stamp: text("stamp").notNull().default(""),

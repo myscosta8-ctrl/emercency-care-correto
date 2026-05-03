@@ -561,6 +561,18 @@ export const AuthLoginResponse = zod.object({
   role: zod.string(),
   sector: zod.string(),
   corenCrm: zod.string(),
+  mustChangePassword: zod.boolean(),
+});
+
+/**
+ * @summary Change the authenticated user's password
+ */
+export const ChangePasswordBody = zod.object({
+  password: zod.string(),
+});
+
+export const ChangePasswordResponse = zod.object({
+  ok: zod.boolean(),
 });
 
 /**
@@ -903,7 +915,7 @@ export const CreateStaffBody = zod.object({
   corenCrm: zod.string().optional(),
   sector: zod.string().optional(),
   login: zod.string(),
-  password: zod.string(),
+  password: zod.string().optional(),
   accessLevels: zod.string().optional(),
   signature: zod.string().optional(),
   stamp: zod.string().optional(),

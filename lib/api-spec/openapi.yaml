@@ -481,6 +481,33 @@ paths:
         "401":
           description: Invalid credentials
 
+  /api/auth/change-password:
+    post:
+      operationId: changePassword
+      summary: Change the authenticated user's password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordBody"
+      responses:
+        "200":
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required:
+                  - ok
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+
   /api/patients/{id}/social-notes:
     get:
       operationId: getPatientSocialNotes
@@ -1481,7 +1508,6 @@ components:
         - name
         - role
         - login
-        - password
 
     UpdateStaffBody:
       type: object
@@ -1662,6 +1688,8 @@ components:
           type: string
         corenCrm:
           type: string
+        mustChangePassword:
+          type: boolean
       required:
         - id
         - login
@@ -1669,6 +1697,15 @@ components:
         - role
         - sector
         - corenCrm
+        - mustChangePassword
+
+    ChangePasswordBody:
+      type: object
+      properties:
+        password:
+          type: string
+      required:
+        - password
 
     SocialNote:
       type: object

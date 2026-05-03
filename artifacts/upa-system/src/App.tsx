@@ -17,6 +17,7 @@ const ShiftHandover      = lazy(() => import("@/pages/shift-handover"));
 const StaffPage          = lazy(() => import("@/pages/staff"));
 const NotFound           = lazy(() => import("@/pages/not-found"));
 const LoginPage          = lazy(() => import("@/pages/login"));
+const ChangePasswordPage = lazy(() => import("@/pages/change-password"));
 const AdminDashboard      = lazy(() => import("@/pages/admin/admin-dashboard"));
 const AdminUsuarios       = lazy(() => import("@/pages/admin/usuarios"));
 const AdminPermissoes     = lazy(() => import("@/pages/admin/permissoes"));
@@ -57,13 +58,20 @@ function PageLoader() {
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { activeUser } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!activeUser) setLocation("/login");
-  }, [activeUser, setLocation]);
+    if (!activeUser) {
+      setLocation("/login");
+      return;
+    }
+    if (activeUser.mustChangePassword && location !== "/change-password") {
+      setLocation("/change-password");
+    }
+  }, [activeUser, location, setLocation]);
 
   if (!activeUser) return <PageLoader />;
+  if (activeUser.mustChangePassword && location !== "/change-password") return <PageLoader />;
   return <>{children}</>;
 }
 
@@ -109,6 +117,11 @@ function Router() {
     <Suspense fallback={<PageLoader />}>
       <Switch>
         <Route path="/login" component={LoginPage} />
+        <Route path="/change-password">
+          <AuthGuardChangePassword>
+            <ChangePasswordPage />
+          </AuthGuardChangePassword>
+        </Route>
         <Route>
           <AuthGuard>
             <Switch>
@@ -163,6 +176,18 @@ function Router() {
       </Switch>
     </Suspense>
   );
+}
+
+function AuthGuardChangePassword({ children }: { children: React.ReactNode }) {
+  const { activeUser } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!activeUser) setLocation("/login");
+  }, [activeUser, setLocation]);
+
+  if (!activeUser) return <PageLoader />;
+  return <>{children}</>;
 }
 
 function App() {

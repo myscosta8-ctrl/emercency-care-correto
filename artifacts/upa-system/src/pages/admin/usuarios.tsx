@@ -44,7 +44,6 @@ const SECTOR_OPTIONS = [
 interface FormState {
   name: string;
   login: string;
-  password: string;
   role: Perfil;
   email: string;
   sector: string;
@@ -53,7 +52,7 @@ interface FormState {
 }
 
 const EMPTY_FORM: FormState = {
-  name: "", login: "", password: "", role: "enfermeiro",
+  name: "", login: "", role: "enfermeiro",
   email: "", sector: "todos_os_setores", corenCrm: "", active: true,
 };
 
@@ -85,10 +84,11 @@ function StaffForm({
           <Label className="text-xs">Login *</Label>
           <Input value={form.login} onChange={e => set("login", e.target.value)} placeholder="Ex: maria.silva" />
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs">{isEditing ? "Nova senha (opcional)" : "Senha *"}</Label>
-          <Input type="password" value={form.password} onChange={e => set("password", e.target.value)} placeholder="••••••••" />
-        </div>
+        {!isEditing && (
+          <div className="col-span-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            A senha inicial será <span className="font-bold">1234</span>. O usuário será solicitado a alterá-la no primeiro acesso.
+          </div>
+        )}
         <div className="space-y-1">
           <Label className="text-xs">Perfil *</Label>
           <select
@@ -178,7 +178,6 @@ export default function AdminUsuariosPage() {
         name: form.name, login: form.login, role: form.role,
         email: form.email, sector: form.sector, corenCrm: form.corenCrm, active: form.active,
       };
-      if (form.password) body.password = form.password;
       updateStaff.mutate({ id: editingMember.id, data: body as Parameters<typeof updateStaff.mutate>[0]["data"] }, {
         onSuccess: () => {
           toast({ title: "Funcionário atualizado" });
@@ -190,13 +189,13 @@ export default function AdminUsuariosPage() {
     } else {
       createStaff.mutate({
         data: {
-          name: form.name, login: form.login, password: form.password,
+          name: form.name, login: form.login,
           role: form.role as Parameters<typeof createStaff.mutate>[0]["data"]["role"],
           email: form.email, sector: form.sector, corenCrm: form.corenCrm, active: form.active,
         },
       }, {
         onSuccess: () => {
-          toast({ title: "Funcionário criado com sucesso" });
+          toast({ title: "Funcionário criado. Senha inicial: 1234" });
           setIsFormOpen(false);
           invalidate();
         },
@@ -362,7 +361,6 @@ export default function AdminUsuariosPage() {
             initial={editingMember ? {
               name: editingMember.name,
               login: editingMember.login,
-              password: "",
               role: (editingMember.role as Perfil) ?? "enfermeiro",
               email: editingMember.email ?? "",
               sector: editingMember.sector ?? "todos_os_setores",

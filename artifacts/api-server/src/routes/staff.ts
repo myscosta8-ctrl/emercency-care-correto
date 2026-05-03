@@ -2,12 +2,18 @@ import { Router } from "express";
 import { db, staffTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { createHash } from "crypto";
+import bcrypt from "bcryptjs";
 import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router();
 
-function hashPassword(plain: string): string {
+function sha256Hash(plain: string): string {
   return createHash("sha256").update(plain + "upa_salt_2026").digest("hex");
+}
+
+async function hashDefaultPassword(plain: string): Promise<string> {
+  const sha = sha256Hash(plain);
+  return bcrypt.hash(sha, 12);
 }
 
 const serialize = (s: typeof staffTable.$inferSelect) => ({
@@ -19,6 +25,7 @@ const serialize = (s: typeof staffTable.$inferSelect) => ({
   corenCrm: s.corenCrm,
   sector: s.sector,
   login: s.login,
+  mustChangePassword: s.mustChangePassword,
   accessLevels: s.accessLevels,
   signature: s.signature,
   stamp: s.stamp,
@@ -32,7 +39,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", requirePermissao("gerenciar_usuarios"), async (req, res) => {
-  const { password, ...rest } = req.body as {
+  const { ...rest } = req.body as {
     name: string;
     role: string;
     email?: string;
@@ -40,16 +47,17 @@ router.post("/", requirePermissao("gerenciar_usuarios"), async (req, res) => {
     corenCrm?: string;
     sector?: string;
     login: string;
-    password: string;
     accessLevels?: string;
     signature?: string;
     stamp?: string;
   };
 
-  if (!rest.name || !rest.role || !rest.login || !password) {
-    res.status(400).json({ error: "name, role, login and password are required" });
+  if (!rest.name || !rest.role || !rest.login) {
+    res.status(400).json({ error: "name, role e login são obrigatórios" });
     return;
   }
+
+  const passwordHash = await hashDefaultPassword("1234");
 
   const [created] = await db
     .insert(staffTable)
@@ -61,7 +69,8 @@ router.post("/", requirePermissao("gerenciar_usuarios"), async (req, res) => {
       corenCrm: rest.corenCrm ?? "",
       sector: rest.sector ?? "",
       login: rest.login,
-      passwordHash: hashPassword(password),
+      passwordHash,
+      mustChangePassword: true,
       accessLevels: rest.accessLevels ?? "",
       signature: rest.signature ?? "",
       stamp: rest.stamp ?? "",
@@ -80,7 +89,7 @@ router.get("/:id", async (req, res) => {
 
 router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   const id = Number(req.params["id"]);
-  const { password, role: roleRaw, ...rest } = req.body as {
+  const { role: roleRaw, ...rest } = req.body as {
     name?: string;
     role?: string;
     email?: string;
@@ -88,7 +97,6 @@ router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
     corenCrm?: string;
     sector?: string;
     login?: string;
-    password?: string;
     accessLevels?: string;
     signature?: string;
     stamp?: string;
@@ -97,7 +105,6 @@ router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   const patch: Partial<typeof staffTable.$inferInsert> = {
     ...rest,
     ...(roleRaw ? { role: roleRaw as typeof staffTable.$inferInsert["role"] } : {}),
-    ...(password ? { passwordHash: hashPassword(password) } : {}),
     updatedAt: new Date(),
   };
 
