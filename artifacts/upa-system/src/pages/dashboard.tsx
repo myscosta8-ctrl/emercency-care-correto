@@ -215,12 +215,14 @@ export default function Dashboard() {
                 </Button>
               </Link>
             )}
-            <Link href="/passagem-plantao">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                <ClipboardList className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">Passagem de Plantão</span>
-              </Button>
-            </Link>
+            {pode("registrar_evolucao") && (
+              <Link href="/passagem-plantao">
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
+                  <ClipboardList className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Passagem de Plantão</span>
+                </Button>
+              </Link>
+            )}
             <Button
               onClick={() => setIsNewPatientOpen(true)}
               data-testid="button-new-patient"

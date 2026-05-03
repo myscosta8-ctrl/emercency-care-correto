@@ -11,8 +11,6 @@ declare global {
   }
 }
 
-const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-
 function getStaffId(req: Request): number | null {
   const header = req.headers["x-staff-id"];
   if (!header) return null;
@@ -20,16 +18,16 @@ function getStaffId(req: Request): number | null {
   return isNaN(id) ? null : id;
 }
 
+/**
+ * Loads the authenticated staff member from the x-staff-id header.
+ * Blocks ALL requests (reads and writes) that lack a valid, active staff identity.
+ * Must be applied after the /auth routes so login itself is not blocked.
+ */
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const staffId = getStaffId(req);
-  const isWrite = WRITE_METHODS.has(req.method);
 
   if (staffId === null) {
-    if (isWrite) {
-      res.status(401).json({ error: "Autenticação necessária" });
-      return;
-    }
-    next();
+    res.status(401).json({ error: "Autenticação necessária" });
     return;
   }
 
@@ -39,11 +37,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     .limit(1)
     .then(([staff]) => {
       if (!staff) {
-        if (isWrite) {
-          res.status(401).json({ error: "Usuário não encontrado" });
-          return;
-        }
-        next();
+        res.status(401).json({ error: "Usuário não encontrado" });
         return;
       }
       if (!staff.active) {
@@ -56,6 +50,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     .catch(next);
 }
 
+/**
+ * Checks that the authenticated staff member has the given permission.
+ * Must be used after requireAuth in the middleware chain.
+ */
 export function requirePermissao(acao: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.staff) {

@@ -7,6 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AuthProvider } from "@/lib/auth-context";
 import { useAuth } from "@/lib/use-auth";
 import { FeaturesProvider } from "@/lib/features-context";
+import { getRoleHome } from "@/lib/role-home";
+import type { Acao } from "@/lib/permissions";
 
 const Dashboard          = lazy(() => import("@/pages/dashboard"));
 const PatientDetail      = lazy(() => import("@/pages/patient-detail"));
@@ -65,6 +67,43 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Guards a route by permission. If the user lacks the required action,
+ * they are redirected to their role's home page instead of seeing an error.
+ */
+function RoleGuard({ acao, children }: { acao: Acao; children: React.ReactNode }) {
+  const { pode, activeUser } = useAuth();
+  const [, setLocation] = useLocation();
+  const hasAccess = pode(acao);
+
+  useEffect(() => {
+    if (!hasAccess && activeUser) {
+      setLocation(getRoleHome(activeUser.role ?? ""));
+    }
+  }, [hasAccess, activeUser, setLocation]);
+
+  if (!hasAccess) return <PageLoader />;
+  return <>{children}</>;
+}
+
+/**
+ * Guards admin-only routes by role (administrador).
+ */
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  const { activeUser } = useAuth();
+  const [, setLocation] = useLocation();
+  const isAdmin = activeUser?.role === "administrador";
+
+  useEffect(() => {
+    if (!isAdmin && activeUser) {
+      setLocation(getRoleHome(activeUser.role ?? ""));
+    }
+  }, [isAdmin, activeUser, setLocation]);
+
+  if (!isAdmin) return <PageLoader />;
+  return <>{children}</>;
+}
+
 function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
@@ -74,20 +113,49 @@ function Router() {
           <AuthGuard>
             <Switch>
               <Route path="/" component={Dashboard} />
-              <Route path="/recepcao" component={RecepcaoPage} />
-              <Route path="/vitais" component={VitaisPage} />
-              <Route path="/social" component={SocialPage} />
-              <Route path="/nutricao" component={NutricaoPage} />
-              <Route path="/farmacia" component={FarmaciaPage} />
+
+              <Route path="/recepcao">
+                <RoleGuard acao="criar_paciente"><RecepcaoPage /></RoleGuard>
+              </Route>
+              <Route path="/vitais">
+                <RoleGuard acao="registrar_sinais_vitais"><VitaisPage /></RoleGuard>
+              </Route>
+              <Route path="/social">
+                <RoleGuard acao="registrar_nota_social"><SocialPage /></RoleGuard>
+              </Route>
+              <Route path="/nutricao">
+                <RoleGuard acao="registrar_avaliacao_nutricional"><NutricaoPage /></RoleGuard>
+              </Route>
+              <Route path="/farmacia">
+                <RoleGuard acao="registrar_farmacia"><FarmaciaPage /></RoleGuard>
+              </Route>
+
               <Route path="/patients/:id/notifications/:notificationId/print" component={NotificationPrint} />
               <Route path="/patients/:id" component={PatientDetail} />
-              <Route path="/passagem-plantao" component={ShiftHandover} />
-              <Route path="/funcionarios" component={StaffPage} />
-              <Route path="/admin/dashboard"       component={AdminDashboard} />
-              <Route path="/admin/usuarios"        component={AdminUsuarios} />
-              <Route path="/admin/permissoes"      component={AdminPermissoes} />
-              <Route path="/admin/funcionalidades" component={AdminFuncionalidades} />
-              <Route path="/admin/auditoria"       component={AdminAuditoria} />
+
+              <Route path="/passagem-plantao">
+                <RoleGuard acao="registrar_evolucao"><ShiftHandover /></RoleGuard>
+              </Route>
+              <Route path="/funcionarios">
+                <RoleGuard acao="gerenciar_usuarios"><StaffPage /></RoleGuard>
+              </Route>
+
+              <Route path="/admin/dashboard">
+                <AdminGuard><AdminDashboard /></AdminGuard>
+              </Route>
+              <Route path="/admin/usuarios">
+                <AdminGuard><AdminUsuarios /></AdminGuard>
+              </Route>
+              <Route path="/admin/permissoes">
+                <AdminGuard><AdminPermissoes /></AdminGuard>
+              </Route>
+              <Route path="/admin/funcionalidades">
+                <AdminGuard><AdminFuncionalidades /></AdminGuard>
+              </Route>
+              <Route path="/admin/auditoria">
+                <AdminGuard><AdminAuditoria /></AdminGuard>
+              </Route>
+
               <Route component={NotFound} />
             </Switch>
           </AuthGuard>

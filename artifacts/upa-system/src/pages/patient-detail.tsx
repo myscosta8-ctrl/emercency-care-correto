@@ -521,10 +521,10 @@ export default function PatientDetail() {
           <TabsList className="flex flex-wrap h-auto gap-1 mb-4 bg-muted/30 p-1 rounded-lg overflow-x-auto">
             <TabsTrigger value="identificacao" className="text-xs">Identificação</TabsTrigger>
             <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
-            <TabsTrigger value="evolucao" className="text-xs">Evolução</TabsTrigger>
-            <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>
+            {pode("registrar_evolucao") && <TabsTrigger value="evolucao" className="text-xs">Evolução</TabsTrigger>}
+            {pode("registrar_prescricao") && <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>}
             {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">SINAN</TabsTrigger>}
-            <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>
+            {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
             {pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Social</TabsTrigger>}
             {pode("registrar_avaliacao_nutricional") && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
             {pode("registrar_farmacia") && <TabsTrigger value="farmacia" className="text-xs">Farmácia</TabsTrigger>}
