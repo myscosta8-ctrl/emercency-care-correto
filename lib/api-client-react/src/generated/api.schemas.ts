@@ -453,6 +453,94 @@ export interface CreateSinanNotificationBody {
   pdf_url?: string;
 }
 
+export interface LoginBody {
+  login: string;
+  password: string;
+}
+
+export interface AuthUser {
+  id: number;
+  login: string;
+  name: string;
+  role: string;
+  sector: string;
+  corenCrm: string;
+}
+
+export interface SocialNote {
+  id: number;
+  patientId: number;
+  userId: number;
+  content: string;
+  createdAt: string;
+}
+
+export interface AddSocialNoteBody {
+  userId?: number;
+  content: string;
+}
+
+export interface NutritionalAssessment {
+  id: number;
+  patientId: number;
+  userId: number;
+  content: string;
+  createdAt: string;
+}
+
+export interface AddNutritionalAssessmentBody {
+  userId?: number;
+  content: string;
+}
+
+export type PharmacyEntryStatus =
+  (typeof PharmacyEntryStatus)[keyof typeof PharmacyEntryStatus];
+
+export const PharmacyEntryStatus = {
+  pendente: "pendente",
+  dispensado: "dispensado",
+  devolvido: "devolvido",
+} as const;
+
+export interface PharmacyEntry {
+  id: number;
+  patientId: number;
+  userId: number;
+  medication: string;
+  status: PharmacyEntryStatus;
+  notes: string;
+  createdAt: string;
+}
+
+export type AddPharmacyEntryBodyStatus =
+  (typeof AddPharmacyEntryBodyStatus)[keyof typeof AddPharmacyEntryBodyStatus];
+
+export const AddPharmacyEntryBodyStatus = {
+  pendente: "pendente",
+  dispensado: "dispensado",
+  devolvido: "devolvido",
+} as const;
+
+export interface AddPharmacyEntryBody {
+  userId?: number;
+  medication: string;
+  status?: AddPharmacyEntryBodyStatus;
+  notes?: string;
+}
+
+export type UpdatePharmacyEntryStatusBodyStatus =
+  (typeof UpdatePharmacyEntryStatusBodyStatus)[keyof typeof UpdatePharmacyEntryStatusBodyStatus];
+
+export const UpdatePharmacyEntryStatusBodyStatus = {
+  pendente: "pendente",
+  dispensado: "dispensado",
+  devolvido: "devolvido",
+} as const;
+
+export interface UpdatePharmacyEntryStatusBody {
+  status: UpdatePharmacyEntryStatusBodyStatus;
+}
+
 export interface AuditLog {
   id: number;
   usuario: string;

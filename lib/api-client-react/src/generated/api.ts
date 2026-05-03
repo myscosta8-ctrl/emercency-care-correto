@@ -16,29 +16,38 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AddNutritionalAssessmentBody,
   AddPatientHistoryBody,
   AddPatientNotificationBody,
   AddPatientPrescriptionBody,
   AddPatientTaskBody,
+  AddPharmacyEntryBody,
+  AddSocialNoteBody,
   AuditLog,
+  AuthUser,
   CreateAuditLogBody,
   CreatePatientBody,
   CreateSinanNotificationBody,
   CreateStaffBody,
   HealthCheck200,
   ListAuditLogsParams,
+  LoginBody,
+  NutritionalAssessment,
   Patient,
   PatientHistoryEntry,
   PatientNotification,
   PatientPrescription,
   PatientSummary,
   PatientTask,
+  PharmacyEntry,
   RecordPatientVitalsBody,
   SinanNotificationWithPatient,
+  SocialNote,
   StaffMember,
   UpdatePatientBody,
   UpdatePatientNotificationBody,
   UpdatePatientStatusBody,
+  UpdatePharmacyEntryStatusBody,
   UpdatePrescriptionStatusBody,
   UpdateStaffBody,
   UpdateTaskStatusBody,
@@ -1993,6 +2002,747 @@ export const useDeletePatientNotification = <
   TContext
 > => {
   return useMutation(getDeletePatientNotificationMutationOptions(options));
+};
+
+/**
+ * @summary Authenticate a staff member
+ */
+export const getAuthLoginUrl = () => {
+  return `/api/auth/login`;
+};
+
+export const authLogin = async (
+  loginBody: LoginBody,
+  options?: RequestInit,
+): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getAuthLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(loginBody),
+  });
+};
+
+export const getAuthLoginMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof authLogin>>,
+    TError,
+    { data: BodyType<LoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof authLogin>>,
+  TError,
+  { data: BodyType<LoginBody> },
+  TContext
+> => {
+  const mutationKey = ["authLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof authLogin>>,
+    { data: BodyType<LoginBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return authLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AuthLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authLogin>>
+>;
+export type AuthLoginMutationBody = BodyType<LoginBody>;
+export type AuthLoginMutationError = ErrorType<void>;
+
+/**
+ * @summary Authenticate a staff member
+ */
+export const useAuthLogin = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof authLogin>>,
+    TError,
+    { data: BodyType<LoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof authLogin>>,
+  TError,
+  { data: BodyType<LoginBody> },
+  TContext
+> => {
+  return useMutation(getAuthLoginMutationOptions(options));
+};
+
+/**
+ * @summary Get social notes for a patient
+ */
+export const getGetPatientSocialNotesUrl = (id: number) => {
+  return `/api/patients/${id}/social-notes`;
+};
+
+export const getPatientSocialNotes = async (
+  id: number,
+  options?: RequestInit,
+): Promise<SocialNote[]> => {
+  return customFetch<SocialNote[]>(getGetPatientSocialNotesUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatientSocialNotesQueryKey = (id: number) => {
+  return [`/api/patients/${id}/social-notes`] as const;
+};
+
+export const getGetPatientSocialNotesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientSocialNotes>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientSocialNotes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPatientSocialNotesQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientSocialNotes>>
+  > = ({ signal }) => getPatientSocialNotes(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientSocialNotes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientSocialNotesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientSocialNotes>>
+>;
+export type GetPatientSocialNotesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get social notes for a patient
+ */
+
+export function useGetPatientSocialNotes<
+  TData = Awaited<ReturnType<typeof getPatientSocialNotes>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientSocialNotes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientSocialNotesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a social note for a patient
+ */
+export const getAddPatientSocialNoteUrl = (id: number) => {
+  return `/api/patients/${id}/social-notes`;
+};
+
+export const addPatientSocialNote = async (
+  id: number,
+  addSocialNoteBody: AddSocialNoteBody,
+  options?: RequestInit,
+): Promise<SocialNote> => {
+  return customFetch<SocialNote>(getAddPatientSocialNoteUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addSocialNoteBody),
+  });
+};
+
+export const getAddPatientSocialNoteMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPatientSocialNote>>,
+    TError,
+    { id: number; data: BodyType<AddSocialNoteBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addPatientSocialNote>>,
+  TError,
+  { id: number; data: BodyType<AddSocialNoteBody> },
+  TContext
+> => {
+  const mutationKey = ["addPatientSocialNote"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addPatientSocialNote>>,
+    { id: number; data: BodyType<AddSocialNoteBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addPatientSocialNote(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddPatientSocialNoteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addPatientSocialNote>>
+>;
+export type AddPatientSocialNoteMutationBody = BodyType<AddSocialNoteBody>;
+export type AddPatientSocialNoteMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a social note for a patient
+ */
+export const useAddPatientSocialNote = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPatientSocialNote>>,
+    TError,
+    { id: number; data: BodyType<AddSocialNoteBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addPatientSocialNote>>,
+  TError,
+  { id: number; data: BodyType<AddSocialNoteBody> },
+  TContext
+> => {
+  return useMutation(getAddPatientSocialNoteMutationOptions(options));
+};
+
+/**
+ * @summary Get nutritional assessments for a patient
+ */
+export const getGetPatientNutritionalAssessmentsUrl = (id: number) => {
+  return `/api/patients/${id}/nutritional-assessments`;
+};
+
+export const getPatientNutritionalAssessments = async (
+  id: number,
+  options?: RequestInit,
+): Promise<NutritionalAssessment[]> => {
+  return customFetch<NutritionalAssessment[]>(
+    getGetPatientNutritionalAssessmentsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPatientNutritionalAssessmentsQueryKey = (id: number) => {
+  return [`/api/patients/${id}/nutritional-assessments`] as const;
+};
+
+export const getGetPatientNutritionalAssessmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientNutritionalAssessments>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientNutritionalAssessments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPatientNutritionalAssessmentsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientNutritionalAssessments>>
+  > = ({ signal }) =>
+    getPatientNutritionalAssessments(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientNutritionalAssessments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientNutritionalAssessmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientNutritionalAssessments>>
+>;
+export type GetPatientNutritionalAssessmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get nutritional assessments for a patient
+ */
+
+export function useGetPatientNutritionalAssessments<
+  TData = Awaited<ReturnType<typeof getPatientNutritionalAssessments>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientNutritionalAssessments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientNutritionalAssessmentsQueryOptions(
+    id,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a nutritional assessment for a patient
+ */
+export const getAddPatientNutritionalAssessmentUrl = (id: number) => {
+  return `/api/patients/${id}/nutritional-assessments`;
+};
+
+export const addPatientNutritionalAssessment = async (
+  id: number,
+  addNutritionalAssessmentBody: AddNutritionalAssessmentBody,
+  options?: RequestInit,
+): Promise<NutritionalAssessment> => {
+  return customFetch<NutritionalAssessment>(
+    getAddPatientNutritionalAssessmentUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(addNutritionalAssessmentBody),
+    },
+  );
+};
+
+export const getAddPatientNutritionalAssessmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPatientNutritionalAssessment>>,
+    TError,
+    { id: number; data: BodyType<AddNutritionalAssessmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addPatientNutritionalAssessment>>,
+  TError,
+  { id: number; data: BodyType<AddNutritionalAssessmentBody> },
+  TContext
+> => {
+  const mutationKey = ["addPatientNutritionalAssessment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addPatientNutritionalAssessment>>,
+    { id: number; data: BodyType<AddNutritionalAssessmentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addPatientNutritionalAssessment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddPatientNutritionalAssessmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addPatientNutritionalAssessment>>
+>;
+export type AddPatientNutritionalAssessmentMutationBody =
+  BodyType<AddNutritionalAssessmentBody>;
+export type AddPatientNutritionalAssessmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a nutritional assessment for a patient
+ */
+export const useAddPatientNutritionalAssessment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPatientNutritionalAssessment>>,
+    TError,
+    { id: number; data: BodyType<AddNutritionalAssessmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addPatientNutritionalAssessment>>,
+  TError,
+  { id: number; data: BodyType<AddNutritionalAssessmentBody> },
+  TContext
+> => {
+  return useMutation(
+    getAddPatientNutritionalAssessmentMutationOptions(options),
+  );
+};
+
+/**
+ * @summary Get pharmacy entries for a patient
+ */
+export const getGetPatientPharmacyEntriesUrl = (id: number) => {
+  return `/api/patients/${id}/pharmacy-entries`;
+};
+
+export const getPatientPharmacyEntries = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PharmacyEntry[]> => {
+  return customFetch<PharmacyEntry[]>(getGetPatientPharmacyEntriesUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatientPharmacyEntriesQueryKey = (id: number) => {
+  return [`/api/patients/${id}/pharmacy-entries`] as const;
+};
+
+export const getGetPatientPharmacyEntriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientPharmacyEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientPharmacyEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPatientPharmacyEntriesQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientPharmacyEntries>>
+  > = ({ signal }) =>
+    getPatientPharmacyEntries(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientPharmacyEntries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientPharmacyEntriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientPharmacyEntries>>
+>;
+export type GetPatientPharmacyEntriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get pharmacy entries for a patient
+ */
+
+export function useGetPatientPharmacyEntries<
+  TData = Awaited<ReturnType<typeof getPatientPharmacyEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientPharmacyEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientPharmacyEntriesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a pharmacy entry for a patient
+ */
+export const getAddPatientPharmacyEntryUrl = (id: number) => {
+  return `/api/patients/${id}/pharmacy-entries`;
+};
+
+export const addPatientPharmacyEntry = async (
+  id: number,
+  addPharmacyEntryBody: AddPharmacyEntryBody,
+  options?: RequestInit,
+): Promise<PharmacyEntry> => {
+  return customFetch<PharmacyEntry>(getAddPatientPharmacyEntryUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addPharmacyEntryBody),
+  });
+};
+
+export const getAddPatientPharmacyEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPatientPharmacyEntry>>,
+    TError,
+    { id: number; data: BodyType<AddPharmacyEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addPatientPharmacyEntry>>,
+  TError,
+  { id: number; data: BodyType<AddPharmacyEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["addPatientPharmacyEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addPatientPharmacyEntry>>,
+    { id: number; data: BodyType<AddPharmacyEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addPatientPharmacyEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddPatientPharmacyEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addPatientPharmacyEntry>>
+>;
+export type AddPatientPharmacyEntryMutationBody =
+  BodyType<AddPharmacyEntryBody>;
+export type AddPatientPharmacyEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a pharmacy entry for a patient
+ */
+export const useAddPatientPharmacyEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPatientPharmacyEntry>>,
+    TError,
+    { id: number; data: BodyType<AddPharmacyEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addPatientPharmacyEntry>>,
+  TError,
+  { id: number; data: BodyType<AddPharmacyEntryBody> },
+  TContext
+> => {
+  return useMutation(getAddPatientPharmacyEntryMutationOptions(options));
+};
+
+/**
+ * @summary Update pharmacy entry status
+ */
+export const getUpdatePharmacyEntryStatusUrl = (
+  id: number,
+  entryId: number,
+) => {
+  return `/api/patients/${id}/pharmacy-entries/${entryId}/status`;
+};
+
+export const updatePharmacyEntryStatus = async (
+  id: number,
+  entryId: number,
+  updatePharmacyEntryStatusBody: UpdatePharmacyEntryStatusBody,
+  options?: RequestInit,
+): Promise<PharmacyEntry> => {
+  return customFetch<PharmacyEntry>(
+    getUpdatePharmacyEntryStatusUrl(id, entryId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updatePharmacyEntryStatusBody),
+    },
+  );
+};
+
+export const getUpdatePharmacyEntryStatusMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePharmacyEntryStatus>>,
+    TError,
+    {
+      id: number;
+      entryId: number;
+      data: BodyType<UpdatePharmacyEntryStatusBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePharmacyEntryStatus>>,
+  TError,
+  {
+    id: number;
+    entryId: number;
+    data: BodyType<UpdatePharmacyEntryStatusBody>;
+  },
+  TContext
+> => {
+  const mutationKey = ["updatePharmacyEntryStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePharmacyEntryStatus>>,
+    {
+      id: number;
+      entryId: number;
+      data: BodyType<UpdatePharmacyEntryStatusBody>;
+    }
+  > = (props) => {
+    const { id, entryId, data } = props ?? {};
+
+    return updatePharmacyEntryStatus(id, entryId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePharmacyEntryStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePharmacyEntryStatus>>
+>;
+export type UpdatePharmacyEntryStatusMutationBody =
+  BodyType<UpdatePharmacyEntryStatusBody>;
+export type UpdatePharmacyEntryStatusMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update pharmacy entry status
+ */
+export const useUpdatePharmacyEntryStatus = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePharmacyEntryStatus>>,
+    TError,
+    {
+      id: number;
+      entryId: number;
+      data: BodyType<UpdatePharmacyEntryStatusBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePharmacyEntryStatus>>,
+  TError,
+  {
+    id: number;
+    entryId: number;
+    data: BodyType<UpdatePharmacyEntryStatusBody>;
+  },
+  TContext
+> => {
+  return useMutation(getUpdatePharmacyEntryStatusMutationOptions(options));
 };
 
 /**

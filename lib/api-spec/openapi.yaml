@@ -461,6 +461,181 @@ paths:
         "204":
           description: Deleted
 
+  /api/auth/login:
+    post:
+      operationId: authLogin
+      summary: Authenticate a staff member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Authenticated user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+
+  /api/patients/{id}/social-notes:
+    get:
+      operationId: getPatientSocialNotes
+      summary: Get social notes for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Social notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SocialNote"
+    post:
+      operationId: addPatientSocialNote
+      summary: Add a social note for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSocialNoteBody"
+      responses:
+        "201":
+          description: Created social note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialNote"
+
+  /api/patients/{id}/nutritional-assessments:
+    get:
+      operationId: getPatientNutritionalAssessments
+      summary: Get nutritional assessments for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Nutritional assessments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NutritionalAssessment"
+    post:
+      operationId: addPatientNutritionalAssessment
+      summary: Add a nutritional assessment for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddNutritionalAssessmentBody"
+      responses:
+        "201":
+          description: Created nutritional assessment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionalAssessment"
+
+  /api/patients/{id}/pharmacy-entries:
+    get:
+      operationId: getPatientPharmacyEntries
+      summary: Get pharmacy entries for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Pharmacy entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PharmacyEntry"
+    post:
+      operationId: addPatientPharmacyEntry
+      summary: Add a pharmacy entry for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPharmacyEntryBody"
+      responses:
+        "201":
+          description: Created pharmacy entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyEntry"
+
+  /api/patients/{id}/pharmacy-entries/{entryId}/status:
+    patch:
+      operationId: updatePharmacyEntryStatus
+      summary: Update pharmacy entry status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePharmacyEntryStatusBody"
+      responses:
+        "200":
+          description: Updated pharmacy entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PharmacyEntry"
+
   /api/notifications:
     post:
       operationId: createSinanNotification
@@ -1389,6 +1564,154 @@ components:
           type: string
       required:
         - patient_id
+
+    LoginBody:
+      type: object
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+      required:
+        - login
+        - password
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        login:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+        sector:
+          type: string
+        corenCrm:
+          type: string
+      required:
+        - id
+        - login
+        - name
+        - role
+        - sector
+        - corenCrm
+
+    SocialNote:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        userId:
+          type: integer
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - userId
+        - content
+        - createdAt
+
+    AddSocialNoteBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        content:
+          type: string
+      required:
+        - content
+
+    NutritionalAssessment:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        userId:
+          type: integer
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - userId
+        - content
+        - createdAt
+
+    AddNutritionalAssessmentBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        content:
+          type: string
+      required:
+        - content
+
+    PharmacyEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        userId:
+          type: integer
+        medication:
+          type: string
+        status:
+          type: string
+          enum: [pendente, dispensado, devolvido]
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - userId
+        - medication
+        - status
+        - notes
+        - createdAt
+
+    AddPharmacyEntryBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        medication:
+          type: string
+        status:
+          type: string
+          enum: [pendente, dispensado, devolvido]
+        notes:
+          type: string
+      required:
+        - medication
+
+    UpdatePharmacyEntryStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pendente, dispensado, devolvido]
+      required:
+        - status
 
     AuditLog:
       type: object

@@ -547,6 +547,139 @@ export const DeletePatientNotificationParams = zod.object({
 });
 
 /**
+ * @summary Authenticate a staff member
+ */
+export const AuthLoginBody = zod.object({
+  login: zod.string(),
+  password: zod.string(),
+});
+
+export const AuthLoginResponse = zod.object({
+  id: zod.number(),
+  login: zod.string(),
+  name: zod.string(),
+  role: zod.string(),
+  sector: zod.string(),
+  corenCrm: zod.string(),
+});
+
+/**
+ * @summary Get social notes for a patient
+ */
+export const GetPatientSocialNotesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientSocialNotesResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  userId: zod.number(),
+  content: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const GetPatientSocialNotesResponse = zod.array(
+  GetPatientSocialNotesResponseItem,
+);
+
+/**
+ * @summary Add a social note for a patient
+ */
+export const AddPatientSocialNoteParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddPatientSocialNoteBody = zod.object({
+  userId: zod.number().optional(),
+  content: zod.string(),
+});
+
+/**
+ * @summary Get nutritional assessments for a patient
+ */
+export const GetPatientNutritionalAssessmentsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientNutritionalAssessmentsResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  userId: zod.number(),
+  content: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const GetPatientNutritionalAssessmentsResponse = zod.array(
+  GetPatientNutritionalAssessmentsResponseItem,
+);
+
+/**
+ * @summary Add a nutritional assessment for a patient
+ */
+export const AddPatientNutritionalAssessmentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddPatientNutritionalAssessmentBody = zod.object({
+  userId: zod.number().optional(),
+  content: zod.string(),
+});
+
+/**
+ * @summary Get pharmacy entries for a patient
+ */
+export const GetPatientPharmacyEntriesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientPharmacyEntriesResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  userId: zod.number(),
+  medication: zod.string(),
+  status: zod.enum(["pendente", "dispensado", "devolvido"]),
+  notes: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const GetPatientPharmacyEntriesResponse = zod.array(
+  GetPatientPharmacyEntriesResponseItem,
+);
+
+/**
+ * @summary Add a pharmacy entry for a patient
+ */
+export const AddPatientPharmacyEntryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddPatientPharmacyEntryBody = zod.object({
+  userId: zod.number().optional(),
+  medication: zod.string(),
+  status: zod.enum(["pendente", "dispensado", "devolvido"]).optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update pharmacy entry status
+ */
+export const UpdatePharmacyEntryStatusParams = zod.object({
+  id: zod.coerce.number(),
+  entryId: zod.coerce.number(),
+});
+
+export const UpdatePharmacyEntryStatusBody = zod.object({
+  status: zod.enum(["pendente", "dispensado", "devolvido"]),
+});
+
+export const UpdatePharmacyEntryStatusResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  userId: zod.number(),
+  medication: zod.string(),
+  status: zod.enum(["pendente", "dispensado", "devolvido"]),
+  notes: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
  * @summary Create a SINAN notification (auto-fills from patient)
  */
 export const CreateSinanNotificationBody = zod.object({

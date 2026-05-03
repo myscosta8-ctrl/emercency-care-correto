@@ -1,0 +1,88 @@
+Add a standardized "Encaminhamento / Transferência" section inside:
+- Nursing Evolution
+- Medical Evolution
+- Social Work Notes
+
+1. Create a reusable component called "TransferSection" with structured fields:
+
+- transfer_required (boolean toggle)
+- destination_hospital (dropdown with predefined options):
+  • Hospital Regional Público do Marajó de Breves
+  • Hospital de Clínicas Gaspar Vianna (Belém)
+  • Hospital Abelardo Santos (Belém)
+  • Santa Casa de Misericórdia (Belém)
+  • Hospital Ordem Terceira (Belém)
+  • Hospital Maradei (Belém)
+  • Hospital Metropolitano (Belém)
+
+- specialty (dropdown):
+  • Cardiologia
+  • Psiquiatria
+  • Clínica Médica
+  • Cirurgia
+  • Outros
+
+- reason_for_transfer (text, required if transfer_required = true)
+- transfer_status (dropdown):
+  • Solicitado
+  • Autorizado
+  • Em transferência
+  • Transferido
+  • Recusado
+
+- transport_type (dropdown):
+  • Ambulância básica
+  • Ambulância avançada (UTI)
+  • Outros
+
+- regulation_contact (text)  // NIR/Central de Regulação
+- departure_datetime (datetime)
+- arrival_confirmation (boolean)
+- arrival_datetime (datetime)
+
+2. Behavior:
+- Show this section only when transfer_required = true
+- Validate required fields before saving
+- Save all fields linked to patient_id and user_id
+- Auto-fill:
+  - user_id (professional logged in)
+  - current timestamp for records
+
+3. Display:
+- In patient timeline, show a highlighted block:
+  "ENCAMINHADO PARA: [destination_hospital]"
+  "STATUS: [transfer_status]"
+  "ESPECIALIDADE: [specialty]"
+  "DATA/HORA: [departure_datetime]"
+
+4. Integration:
+- Allow use of TransferSection inside:
+  • Nursing evolution (SOAP)
+  • Medical notes
+  • Social service notes
+
+5. UI:
+- Use clear labels in Brazilian Portuguese
+- Highlight transfer information in yellow/orange
+- Keep layout simple for emergency use
+
+6. Database:
+Create table "transfers":
+- id (UUID)
+- patient_id (FK)
+- user_id (FK)
+- destination_hospital (text)
+- specialty (text)
+- reason_for_transfer (text)
+- transfer_status (text)
+- transport_type (text)
+- regulation_contact (text)
+- departure_datetime (timestamp)
+- arrival_confirmation (boolean)
+- arrival_datetime (timestamp)
+- created_at (timestamp)
+
+7. Ensure:
+- Data persists
+- Editable when needed
+- Visible across all modules

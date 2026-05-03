@@ -6,3 +6,6 @@ export * from "./staff";
 export * from "./vitals";
 export * from "./notifications";
 export * from "./audit";
+export * from "./social-notes";
+export * from "./nutritional-assessments";
+export * from "./pharmacy-entries";
