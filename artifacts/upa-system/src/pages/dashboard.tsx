@@ -203,7 +203,7 @@ export default function Dashboard() {
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [altaPatient, setAltaPatient]     = useState<Patient | null>(null);
   const [search, setSearch]               = useState("");
-  const [sectorFilter, setSectorFilter]   = useState("Todos");
+  const [filtro, setFiltro]               = useState("Todos");
   const [triageFilter, setTriageFilter]   = useState("all");
 
   const debouncedSearch = useDebounce(search, 200);
@@ -219,7 +219,7 @@ export default function Dashboard() {
     const q = debouncedSearch.toLowerCase();
     const base = patients.filter(p => {
       const matchesSearch = !q || p.name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
-      const matchesSector = sectorFilter === "Todos" || p.setor === sectorFilter;
+      const matchesSector = filtro === "Todos" || p.setor === filtro;
       const matchesTriage = triageFilter === "all" || p.status === triageFilter;
       return matchesSearch && matchesSector && matchesTriage;
     });
@@ -229,7 +229,7 @@ export default function Dashboard() {
         .filter(p => p.setor === cfg.key)
         .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99)),
     }));
-  }, [patients, debouncedSearch, sectorFilter, triageFilter]);
+  }, [patients, debouncedSearch, filtro, triageFilter]);
 
   const totalFiltered = grouped ? grouped.reduce((n, g) => n + g.patients.length, 0) : 0;
   const handleEdit    = useCallback((p: Patient) => setEditingPatient(p), []);
@@ -336,10 +336,10 @@ export default function Dashboard() {
               <button
                 key={s}
                 type="button"
-                onClick={() => setSectorFilter(s)}
+                onClick={() => setFiltro(s)}
                 className={cn(
                   "px-2.5 py-1 rounded border text-xs font-medium transition-colors whitespace-nowrap h-8",
-                  sectorFilter === s
+                  filtro === s
                     ? "bg-primary/20 border-primary/50 text-primary"
                     : "border-border/40 text-muted-foreground hover:bg-muted/30"
                 )}
@@ -416,7 +416,7 @@ export default function Dashboard() {
                 <Activity className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                 <h3 className="text-sm font-medium">Nenhum paciente encontrado</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {search || sectorFilter !== "Todos" || triageFilter !== "all"
+                  {search || filtro !== "Todos" || triageFilter !== "all"
                     ? "Ajuste os filtros de busca."
                     : "Clique em 'Nova Admissão' para registrar um paciente."}
                 </p>
