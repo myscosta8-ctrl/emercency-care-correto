@@ -636,6 +636,77 @@ paths:
               schema:
                 $ref: "#/components/schemas/PharmacyEntry"
 
+  /api/patients/{id}/transfers:
+    get:
+      operationId: getPatientTransfers
+      summary: List transfers for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of transfers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transfer"
+    post:
+      operationId: addPatientTransfer
+      summary: Create a transfer record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransferBody"
+      responses:
+        "201":
+          description: Created transfer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transfer"
+
+  /api/patients/{id}/transfers/{transferId}:
+    patch:
+      operationId: updatePatientTransfer
+      summary: Update a transfer record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: transferId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTransferBody"
+      responses:
+        "200":
+          description: Updated transfer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transfer"
+
   /api/notifications:
     post:
       operationId: createSinanNotification
@@ -1712,6 +1783,102 @@ components:
           enum: [pendente, dispensado, devolvido]
       required:
         - status
+
+    Transfer:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        userId:
+          type: integer
+        destinationHospital:
+          type: string
+        specialty:
+          type: string
+        reasonForTransfer:
+          type: string
+        transferStatus:
+          type: string
+        transportType:
+          type: string
+        regulationContact:
+          type: string
+        departureDatetime:
+          type: string
+          format: date-time
+          nullable: true
+        arrivalConfirmation:
+          type: boolean
+        arrivalDatetime:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - userId
+        - destinationHospital
+        - specialty
+        - reasonForTransfer
+        - transferStatus
+        - transportType
+        - regulationContact
+        - departureDatetime
+        - arrivalConfirmation
+        - arrivalDatetime
+        - createdAt
+
+    CreateTransferBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        destinationHospital:
+          type: string
+        specialty:
+          type: string
+        reasonForTransfer:
+          type: string
+        transferStatus:
+          type: string
+          enum: [Solicitado, Autorizado, "Em transferência", Transferido, Recusado]
+        transportType:
+          type: string
+        regulationContact:
+          type: string
+        departureDatetime:
+          type: string
+          format: date-time
+        arrivalConfirmation:
+          type: boolean
+        arrivalDatetime:
+          type: string
+          format: date-time
+      required:
+        - destinationHospital
+        - reasonForTransfer
+
+    UpdateTransferBody:
+      type: object
+      properties:
+        transferStatus:
+          type: string
+          enum: [Solicitado, Autorizado, "Em transferência", Transferido, Recusado]
+        regulationContact:
+          type: string
+        departureDatetime:
+          type: string
+          format: date-time
+        arrivalConfirmation:
+          type: boolean
+        arrivalDatetime:
+          type: string
+          format: date-time
 
     AuditLog:
       type: object

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth-context";
+import { usePode } from "@/hooks/use-pode";
 import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle, Mail, ToggleLeft, ToggleRight } from "lucide-react";
 import { useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
@@ -616,11 +617,11 @@ export default function StaffPage() {
   const [editing, setEditing] = useState<StaffMember | null>(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("todos");
-  const { activeUser, setActiveLogin } = useAuth();
-  const activeRoles = activeUser?.accessLevels?.split(",").filter(Boolean) ?? [];
-  const canEdit = activeRoles.some(r => EDITOR_ROLES.has(r));
+  const { activeUser, logout } = useAuth();
+  const pode = usePode();
+  const canEdit = pode("gerenciar_usuarios");
 
-  const handleSetActive = (login: string) => setActiveLogin(login);
+  const handleSetActive = (_login: string) => {};
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/staff"] });
 
@@ -654,26 +655,14 @@ export default function StaffPage() {
             <h1 className="text-base font-bold tracking-tight">Funcionários</h1>
           </div>
           <div className="flex items-center gap-2">
-            <div className="relative hidden sm:flex items-center gap-1.5">
+            <div className="hidden sm:flex items-center gap-2">
               <UserCircle className="h-4 w-4 text-muted-foreground" />
-              <select
-                value={activeUser?.login ?? ""}
-                onChange={e => handleSetActive(e.target.value)}
-                className="h-8 text-xs bg-background border border-input rounded-md px-2 pr-6 text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-ring max-w-[140px]"
-              >
-                <option value="">Selecionar acesso</option>
-                {(staff ?? []).map(m => (
-                  <option key={m.id} value={m.login}>{m.name}</option>
-                ))}
-              </select>
               {activeUser && (
-                <span className={cn(
-                  "text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wide",
-                  canEdit ? "bg-primary/20 border-primary/40 text-primary" : "bg-muted/30 border-border/40 text-muted-foreground"
-                )}>
-                  {canEdit ? "✓ Editor" : "🔒 Leitura"}
-                </span>
+                <span className="text-xs text-muted-foreground truncate max-w-[140px]">{activeUser.name}</span>
               )}
+              <Button size="sm" variant="ghost" className="h-8 text-xs px-2" onClick={() => logout()}>
+                Sair
+              </Button>
             </div>
             {(canEdit || !staff?.length) && (
               <Button size="sm" className="gap-2" onClick={() => { setEditing(null); setShowForm(true); }}>

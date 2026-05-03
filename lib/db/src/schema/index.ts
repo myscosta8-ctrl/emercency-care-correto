@@ -9,3 +9,4 @@ export * from "./audit";
 export * from "./social-notes";
 export * from "./nutritional-assessments";
 export * from "./pharmacy-entries";
+export * from "./transfers";

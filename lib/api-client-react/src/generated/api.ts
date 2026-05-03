@@ -29,6 +29,7 @@ import type {
   CreatePatientBody,
   CreateSinanNotificationBody,
   CreateStaffBody,
+  CreateTransferBody,
   HealthCheck200,
   ListAuditLogsParams,
   LoginBody,
@@ -44,6 +45,7 @@ import type {
   SinanNotificationWithPatient,
   SocialNote,
   StaffMember,
+  Transfer,
   UpdatePatientBody,
   UpdatePatientNotificationBody,
   UpdatePatientStatusBody,
@@ -51,6 +53,7 @@ import type {
   UpdatePrescriptionStatusBody,
   UpdateStaffBody,
   UpdateTaskStatusBody,
+  UpdateTransferBody,
   Vitals,
 } from "./api.schemas";
 
@@ -2743,6 +2746,268 @@ export const useUpdatePharmacyEntryStatus = <
   TContext
 > => {
   return useMutation(getUpdatePharmacyEntryStatusMutationOptions(options));
+};
+
+/**
+ * @summary List transfers for a patient
+ */
+export const getGetPatientTransfersUrl = (id: number) => {
+  return `/api/patients/${id}/transfers`;
+};
+
+export const getPatientTransfers = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Transfer[]> => {
+  return customFetch<Transfer[]>(getGetPatientTransfersUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatientTransfersQueryKey = (id: number) => {
+  return [`/api/patients/${id}/transfers`] as const;
+};
+
+export const getGetPatientTransfersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientTransfers>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientTransfers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPatientTransfersQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientTransfers>>
+  > = ({ signal }) => getPatientTransfers(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientTransfers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientTransfersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientTransfers>>
+>;
+export type GetPatientTransfersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List transfers for a patient
+ */
+
+export function useGetPatientTransfers<
+  TData = Awaited<ReturnType<typeof getPatientTransfers>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientTransfers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientTransfersQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a transfer record
+ */
+export const getAddPatientTransferUrl = (id: number) => {
+  return `/api/patients/${id}/transfers`;
+};
+
+export const addPatientTransfer = async (
+  id: number,
+  createTransferBody: CreateTransferBody,
+  options?: RequestInit,
+): Promise<Transfer> => {
+  return customFetch<Transfer>(getAddPatientTransferUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createTransferBody),
+  });
+};
+
+export const getAddPatientTransferMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPatientTransfer>>,
+    TError,
+    { id: number; data: BodyType<CreateTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addPatientTransfer>>,
+  TError,
+  { id: number; data: BodyType<CreateTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["addPatientTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addPatientTransfer>>,
+    { id: number; data: BodyType<CreateTransferBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addPatientTransfer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddPatientTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addPatientTransfer>>
+>;
+export type AddPatientTransferMutationBody = BodyType<CreateTransferBody>;
+export type AddPatientTransferMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a transfer record
+ */
+export const useAddPatientTransfer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPatientTransfer>>,
+    TError,
+    { id: number; data: BodyType<CreateTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addPatientTransfer>>,
+  TError,
+  { id: number; data: BodyType<CreateTransferBody> },
+  TContext
+> => {
+  return useMutation(getAddPatientTransferMutationOptions(options));
+};
+
+/**
+ * @summary Update a transfer record
+ */
+export const getUpdatePatientTransferUrl = (id: number, transferId: number) => {
+  return `/api/patients/${id}/transfers/${transferId}`;
+};
+
+export const updatePatientTransfer = async (
+  id: number,
+  transferId: number,
+  updateTransferBody: UpdateTransferBody,
+  options?: RequestInit,
+): Promise<Transfer> => {
+  return customFetch<Transfer>(getUpdatePatientTransferUrl(id, transferId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateTransferBody),
+  });
+};
+
+export const getUpdatePatientTransferMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePatientTransfer>>,
+    TError,
+    { id: number; transferId: number; data: BodyType<UpdateTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePatientTransfer>>,
+  TError,
+  { id: number; transferId: number; data: BodyType<UpdateTransferBody> },
+  TContext
+> => {
+  const mutationKey = ["updatePatientTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePatientTransfer>>,
+    { id: number; transferId: number; data: BodyType<UpdateTransferBody> }
+  > = (props) => {
+    const { id, transferId, data } = props ?? {};
+
+    return updatePatientTransfer(id, transferId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePatientTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePatientTransfer>>
+>;
+export type UpdatePatientTransferMutationBody = BodyType<UpdateTransferBody>;
+export type UpdatePatientTransferMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a transfer record
+ */
+export const useUpdatePatientTransfer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePatientTransfer>>,
+    TError,
+    { id: number; transferId: number; data: BodyType<UpdateTransferBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePatientTransfer>>,
+  TError,
+  { id: number; transferId: number; data: BodyType<UpdateTransferBody> },
+  TContext
+> => {
+  return useMutation(getUpdatePatientTransferMutationOptions(options));
 };
 
 /**

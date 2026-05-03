@@ -680,6 +680,100 @@ export const UpdatePharmacyEntryStatusResponse = zod.object({
 });
 
 /**
+ * @summary List transfers for a patient
+ */
+export const GetPatientTransfersParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientTransfersResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  userId: zod.number(),
+  destinationHospital: zod.string(),
+  specialty: zod.string(),
+  reasonForTransfer: zod.string(),
+  transferStatus: zod.string(),
+  transportType: zod.string(),
+  regulationContact: zod.string(),
+  departureDatetime: zod.coerce.date().nullable(),
+  arrivalConfirmation: zod.boolean(),
+  arrivalDatetime: zod.coerce.date().nullable(),
+  createdAt: zod.coerce.date(),
+});
+export const GetPatientTransfersResponse = zod.array(
+  GetPatientTransfersResponseItem,
+);
+
+/**
+ * @summary Create a transfer record
+ */
+export const AddPatientTransferParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddPatientTransferBody = zod.object({
+  userId: zod.number().optional(),
+  destinationHospital: zod.string(),
+  specialty: zod.string().optional(),
+  reasonForTransfer: zod.string(),
+  transferStatus: zod
+    .enum([
+      "Solicitado",
+      "Autorizado",
+      "Em transferência",
+      "Transferido",
+      "Recusado",
+    ])
+    .optional(),
+  transportType: zod.string().optional(),
+  regulationContact: zod.string().optional(),
+  departureDatetime: zod.coerce.date().optional(),
+  arrivalConfirmation: zod.boolean().optional(),
+  arrivalDatetime: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Update a transfer record
+ */
+export const UpdatePatientTransferParams = zod.object({
+  id: zod.coerce.number(),
+  transferId: zod.coerce.number(),
+});
+
+export const UpdatePatientTransferBody = zod.object({
+  transferStatus: zod
+    .enum([
+      "Solicitado",
+      "Autorizado",
+      "Em transferência",
+      "Transferido",
+      "Recusado",
+    ])
+    .optional(),
+  regulationContact: zod.string().optional(),
+  departureDatetime: zod.coerce.date().optional(),
+  arrivalConfirmation: zod.boolean().optional(),
+  arrivalDatetime: zod.coerce.date().optional(),
+});
+
+export const UpdatePatientTransferResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  userId: zod.number(),
+  destinationHospital: zod.string(),
+  specialty: zod.string(),
+  reasonForTransfer: zod.string(),
+  transferStatus: zod.string(),
+  transportType: zod.string(),
+  regulationContact: zod.string(),
+  departureDatetime: zod.coerce.date().nullable(),
+  arrivalConfirmation: zod.boolean(),
+  arrivalDatetime: zod.coerce.date().nullable(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
  * @summary Create a SINAN notification (auto-fills from patient)
  */
 export const CreateSinanNotificationBody = zod.object({

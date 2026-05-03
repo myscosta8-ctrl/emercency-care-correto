@@ -26,7 +26,7 @@ export type Acao =
   | "gerenciar_usuarios";
 
 export interface Usuario {
-  role: Perfil;
+  role: string;
 }
 
 export const PERFIL_LABELS: Record<Perfil, string> = {
@@ -85,6 +85,7 @@ export const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
 
 export function temPermissao(usuario: Usuario | null | undefined, acao: Acao): boolean {
   if (!usuario) return false;
-  const permissoes = PERMISSOES[usuario.role];
+  const permissoes = PERMISSOES[usuario.role as Perfil];
+  if (!permissoes) return false;
   return permissoes.includes("*") || (permissoes as Acao[]).includes(acao);
 }

@@ -1,47 +1,82 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { useListStaff } from "@workspace/api-client-react";
-import type { StaffMember } from "@workspace/api-client-react";
+import { createContext, useContext, useState, useCallback } from "react";
+import type { AuthUser } from "@workspace/api-client-react";
 import { temPermissao } from "@/lib/permissions";
 import type { Acao } from "@/lib/permissions";
 
+const AUTH_KEY = "upa_auth_user";
+
+async function sha256hex(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data    = encoder.encode(input);
+  const hash    = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function loadUser(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY);
+    return raw ? (JSON.parse(raw) as AuthUser) : null;
+  } catch {
+    return null;
+  }
+}
+
 interface AuthContextValue {
-  activeUser: StaffMember | null;
-  isLoading: boolean;
+  activeUser: AuthUser | null;
+  isLoading:  boolean;
+  login:      (login: string, password: string) => Promise<void>;
+  logout:     () => void;
   setActiveLogin: (login: string) => void;
-  pode: (acao: Acao) => boolean;
+  pode:       (acao: Acao) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue>({
-  activeUser: null,
-  isLoading: true,
+  activeUser:     null,
+  isLoading:      false,
+  login:          async () => {},
+  logout:         () => {},
   setActiveLogin: () => {},
-  pode: () => false,
+  pode:           () => false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data: staff, isLoading } = useListStaff();
-  const [login, setLogin] = useState<string>(
-    () => localStorage.getItem("upa_active_staff") ?? ""
-  );
+  const [activeUser, setActiveUser] = useState<AuthUser | null>(loadUser);
 
-  useEffect(() => {
-    const sync = () => setLogin(localStorage.getItem("upa_active_staff") ?? "");
-    window.addEventListener("upa_auth_change", sync);
-    return () => window.removeEventListener("upa_auth_change", sync);
+  const login = useCallback(async (loginVal: string, password: string) => {
+    const hashed = await sha256hex(password + "upa_salt_2026");
+    const base   = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    const res    = await fetch(`${base}/api/auth/login`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ login: loginVal, password: hashed }),
+    });
+    if (!res.ok) throw new Error("Credenciais inválidas");
+    const user: AuthUser = await res.json();
+    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    setActiveUser(user);
   }, []);
 
-  const handleSetLogin = (l: string) => {
-    setLogin(l);
-    localStorage.setItem("upa_active_staff", l);
-    window.dispatchEvent(new Event("upa_auth_change"));
-  };
+  const logout = useCallback(() => {
+    localStorage.removeItem(AUTH_KEY);
+    setActiveUser(null);
+  }, []);
 
-  const activeUser = (staff ?? []).find(m => m.login === login) ?? null;
-  const pode = (acao: Acao) =>
-    temPermissao(activeUser, acao);
+  const setActiveLogin = useCallback((loginVal: string) => {
+    const stored = loadUser();
+    if (stored && stored.login === loginVal) {
+      setActiveUser(stored);
+    }
+  }, []);
+
+  const pode = useCallback(
+    (acao: Acao) => temPermissao(activeUser, acao),
+    [activeUser],
+  );
 
   return (
-    <AuthContext.Provider value={{ activeUser, isLoading, setActiveLogin: handleSetLogin, pode }}>
+    <AuthContext.Provider value={{ activeUser, isLoading: false, login, logout, setActiveLogin, pode }}>
       {children}
     </AuthContext.Provider>
   );

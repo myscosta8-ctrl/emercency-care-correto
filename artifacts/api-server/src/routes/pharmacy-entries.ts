@@ -3,6 +3,7 @@ import { db, pharmacyEntriesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 
 const router = Router({ mergeParams: true });
+type Params = Record<string, string>;
 
 type PharmacyStatus = "pendente" | "dispensado" | "devolvido";
 
@@ -17,7 +18,7 @@ const serialize = (n: typeof pharmacyEntriesTable.$inferSelect) => ({
 });
 
 router.get("/", async (req, res) => {
-  const patientId = Number(req.params["id"]);
+  const patientId = Number((req.params as Params)["id"]);
   const rows = await db
     .select()
     .from(pharmacyEntriesTable)
@@ -27,7 +28,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const patientId = Number(req.params["id"]);
+  const patientId = Number((req.params as Params)["id"]);
   const { userId, medication, status, notes } = req.body as {
     userId?:     number;
     medication?: string;

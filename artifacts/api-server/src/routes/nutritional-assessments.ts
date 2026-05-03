@@ -3,6 +3,7 @@ import { db, nutritionalAssessmentsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 
 const router = Router({ mergeParams: true });
+type Params = Record<string, string>;
 
 const serialize = (n: typeof nutritionalAssessmentsTable.$inferSelect) => ({
   id:        n.id,
@@ -13,7 +14,7 @@ const serialize = (n: typeof nutritionalAssessmentsTable.$inferSelect) => ({
 });
 
 router.get("/", async (req, res) => {
-  const patientId = Number(req.params["id"]);
+  const patientId = Number((req.params as Params)["id"]);
   const rows = await db
     .select()
     .from(nutritionalAssessmentsTable)
@@ -23,7 +24,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const patientId = Number(req.params["id"]);
+  const patientId = Number((req.params as Params)["id"]);
   const { userId, content } = req.body as { userId?: number; content?: string };
 
   if (!content?.trim()) {

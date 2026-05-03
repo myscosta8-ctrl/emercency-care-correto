@@ -1,13 +1,8 @@
 import { Router } from "express";
 import { db, staffTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { createHash } from "crypto";
 
 const router = Router();
-
-function hashPassword(plain: string): string {
-  return createHash("sha256").update(plain + "upa_salt_2026").digest("hex");
-}
 
 router.post("/login", async (req, res) => {
   const { login, password } = req.body as { login?: string; password?: string };
@@ -17,12 +12,10 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  const hash = hashPassword(password);
-
   const [user] = await db
     .select()
     .from(staffTable)
-    .where(and(eq(staffTable.login, login), eq(staffTable.passwordHash, hash)));
+    .where(and(eq(staffTable.login, login), eq(staffTable.passwordHash, password)));
 
   if (!user) {
     res.status(401).json({ error: "Credenciais inválidas" });

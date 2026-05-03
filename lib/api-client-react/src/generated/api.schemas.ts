@@ -541,6 +541,67 @@ export interface UpdatePharmacyEntryStatusBody {
   status: UpdatePharmacyEntryStatusBodyStatus;
 }
 
+export interface Transfer {
+  id: number;
+  patientId: number;
+  userId: number;
+  destinationHospital: string;
+  specialty: string;
+  reasonForTransfer: string;
+  transferStatus: string;
+  transportType: string;
+  regulationContact: string;
+  /** @nullable */
+  departureDatetime: string | null;
+  arrivalConfirmation: boolean;
+  /** @nullable */
+  arrivalDatetime: string | null;
+  createdAt: string;
+}
+
+export type CreateTransferBodyTransferStatus =
+  (typeof CreateTransferBodyTransferStatus)[keyof typeof CreateTransferBodyTransferStatus];
+
+export const CreateTransferBodyTransferStatus = {
+  Solicitado: "Solicitado",
+  Autorizado: "Autorizado",
+  Em_transferência: "Em transferência",
+  Transferido: "Transferido",
+  Recusado: "Recusado",
+} as const;
+
+export interface CreateTransferBody {
+  userId?: number;
+  destinationHospital: string;
+  specialty?: string;
+  reasonForTransfer: string;
+  transferStatus?: CreateTransferBodyTransferStatus;
+  transportType?: string;
+  regulationContact?: string;
+  departureDatetime?: string;
+  arrivalConfirmation?: boolean;
+  arrivalDatetime?: string;
+}
+
+export type UpdateTransferBodyTransferStatus =
+  (typeof UpdateTransferBodyTransferStatus)[keyof typeof UpdateTransferBodyTransferStatus];
+
+export const UpdateTransferBodyTransferStatus = {
+  Solicitado: "Solicitado",
+  Autorizado: "Autorizado",
+  Em_transferência: "Em transferência",
+  Transferido: "Transferido",
+  Recusado: "Recusado",
+} as const;
+
+export interface UpdateTransferBody {
+  transferStatus?: UpdateTransferBodyTransferStatus;
+  regulationContact?: string;
+  departureDatetime?: string;
+  arrivalConfirmation?: boolean;
+  arrivalDatetime?: string;
+}
+
 export interface AuditLog {
   id: number;
   usuario: string;
