@@ -19,7 +19,7 @@ export const HealthCheckResponse = zod.object({
  */
 export const ListPatientsResponseItem = zod.object({
   id: zod.number(),
-  name: zod.string(),
+  nome: zod.string(),
   birthDate: zod.string(),
   age: zod.number(),
   sex: zod.enum(["M", "F", "O"]),
@@ -81,7 +81,7 @@ export const ListPatientsResponse = zod.array(ListPatientsResponseItem);
  * @summary Create a new patient
  */
 export const CreatePatientBody = zod.object({
-  name: zod.string(),
+  nome: zod.string(),
   birthDate: zod.string().optional(),
   age: zod.number().optional(),
   sex: zod.enum(["M", "F", "O"]).optional(),
@@ -113,14 +113,12 @@ export const CreatePatientBody = zod.object({
   systolicBp: zod.number().optional(),
   diastolicBp: zod.number().optional(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
-  setor: zod
-    .enum([
-      "sala_vermelha",
-      "observacao_adulto",
-      "observacao_pediatrica",
-      "observacao_pre_adulto",
-    ])
-    .optional(),
+  setor: zod.enum([
+    "sala_vermelha",
+    "observacao_adulto",
+    "observacao_pediatrica",
+    "observacao_pre_adulto",
+  ]),
   internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string().optional(),
   attendanceDate: zod.string().optional(),
@@ -157,7 +155,7 @@ export const GetPatientParams = zod.object({
 
 export const GetPatientResponse = zod.object({
   id: zod.number(),
-  name: zod.string(),
+  nome: zod.string(),
   birthDate: zod.string(),
   age: zod.number(),
   sex: zod.enum(["M", "F", "O"]),
@@ -222,7 +220,7 @@ export const UpdatePatientParams = zod.object({
 });
 
 export const UpdatePatientBody = zod.object({
-  name: zod.string(),
+  nome: zod.string(),
   birthDate: zod.string().optional(),
   age: zod.number().optional(),
   sex: zod.enum(["M", "F", "O"]).optional(),
@@ -254,14 +252,12 @@ export const UpdatePatientBody = zod.object({
   systolicBp: zod.number().optional(),
   diastolicBp: zod.number().optional(),
   status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
-  setor: zod
-    .enum([
-      "sala_vermelha",
-      "observacao_adulto",
-      "observacao_pediatrica",
-      "observacao_pre_adulto",
-    ])
-    .optional(),
+  setor: zod.enum([
+    "sala_vermelha",
+    "observacao_adulto",
+    "observacao_pediatrica",
+    "observacao_pre_adulto",
+  ]),
   internmentStatus: zod.enum(["internado", "nao_internado"]),
   nurse: zod.string().optional(),
   attendanceDate: zod.string().optional(),
@@ -279,7 +275,7 @@ export const UpdatePatientBody = zod.object({
 
 export const UpdatePatientResponse = zod.object({
   id: zod.number(),
-  name: zod.string(),
+  nome: zod.string(),
   birthDate: zod.string(),
   age: zod.number(),
   sex: zod.enum(["M", "F", "O"]),
@@ -356,7 +352,7 @@ export const UpdatePatientStatusBody = zod.object({
 
 export const UpdatePatientStatusResponse = zod.object({
   id: zod.number(),
-  name: zod.string(),
+  nome: zod.string(),
   birthDate: zod.string(),
   age: zod.number(),
   sex: zod.enum(["M", "F", "O"]),
@@ -440,7 +436,7 @@ export const AddVitalsBody = zod.object({
 
 export const AddVitalsResponse = zod.object({
   id: zod.number(),
-  name: zod.string(),
+  nome: zod.string(),
   birthDate: zod.string(),
   age: zod.number(),
   sex: zod.enum(["M", "F", "O"]),

@@ -46,7 +46,7 @@ export const PatientInternmentStatus = {
 
 export interface Patient {
   id: number;
-  name: string;
+  nome: string;
   birthDate: string;
   age: number;
   sex: PatientSex;
@@ -126,7 +126,7 @@ export const CreatePatientBodyInternmentStatus = {
 } as const;
 
 export interface CreatePatientBody {
-  name: string;
+  nome: string;
   birthDate?: string;
   age?: number;
   sex?: CreatePatientBodySex;
@@ -158,7 +158,7 @@ export interface CreatePatientBody {
   systolicBp?: number;
   diastolicBp?: number;
   status: TriageStatus;
-  setor?: CreatePatientBodySetor;
+  setor: CreatePatientBodySetor;
   internmentStatus: CreatePatientBodyInternmentStatus;
   nurse?: string;
   attendanceDate?: string;

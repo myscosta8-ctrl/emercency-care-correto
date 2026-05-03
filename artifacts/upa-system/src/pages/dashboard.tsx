@@ -137,7 +137,7 @@ const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: Patient
         {/* Name + age + diagnosis */}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="font-semibold text-sm text-foreground leading-tight truncate">{patient.name}</span>
+            <span className="font-semibold text-sm text-foreground leading-tight truncate">{patient.nome}</span>
             <span className="text-xs text-muted-foreground shrink-0">{patient.age}a</span>
             {patient.internmentStatus === "internado" && (
               <span className="text-[10px] font-bold px-1.5 py-0 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 leading-5">INT</span>
@@ -218,7 +218,7 @@ export default function Dashboard() {
     if (!patients) return null;
     const q = debouncedSearch.toLowerCase();
     const base = patients.filter(p => {
-      const matchesSearch = !q || p.name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
+      const matchesSearch = !q || p.nome.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
       const matchesSector = filtro === "Todos" || p.setor === filtro;
       const matchesTriage = triageFilter === "all" || p.status === triageFilter;
       return matchesSearch && matchesSector && matchesTriage;
@@ -375,7 +375,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="space-y-4">
-            {grouped!.map(sector => (
+            {(grouped ?? []).map(sector => (
               <div key={sector.name}>
                 {/* Sector header */}
                 <div className={cn(
@@ -458,7 +458,7 @@ export default function Dashboard() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Alta</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirma a alta de <strong>{altaPatient?.name}</strong>? O registro será removido permanentemente.
+              Confirma a alta de <strong>{altaPatient?.nome}</strong>? O registro será removido permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

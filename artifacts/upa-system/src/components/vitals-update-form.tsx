@@ -151,7 +151,7 @@ export function VitalsUpdateForm({ patient, onSuccess, onCancel }: VitalsUpdateF
               {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
             </span>
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">Paciente: <strong className="text-foreground">{patient.name}</strong></p>
+          <p className="text-xs text-muted-foreground mt-0.5">Paciente: <strong className="text-foreground">{patient.nome}</strong></p>
         </div>
 
         <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-1">

@@ -106,7 +106,7 @@ function PatientRow({ patient, idx, evenCls, state, onChange }: PatientRowProps)
     )}>
       {/* Paciente */}
       <td className="px-3 py-2 print:px-2 print:py-1.5">
-        <div className="font-semibold text-sm text-foreground print:text-black leading-tight">{patient.name}</div>
+        <div className="font-semibold text-sm text-foreground print:text-black leading-tight">{patient.nome}</div>
         <div className={cn("text-xs font-medium", TRIAGE_COLOR[patient.status], "print:text-gray-600")}>
           {TRIAGE_LABEL[patient.status]}
         </div>

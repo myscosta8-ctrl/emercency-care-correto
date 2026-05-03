@@ -6,7 +6,7 @@ export const patientsTable = pgTable("patients", {
   id: serial("id").primaryKey(),
 
   // ── identificação ───────────────────────────────────────────────────────────
-  name:         text("name").notNull(),
+  nome:         text("nome").notNull(),
   birthDate:    text("birth_date").notNull().default(""),
   age:          integer("age").notNull().default(0),
   sex:          text("sex", { enum: ["M", "F", "O"] }).notNull().default("O"),

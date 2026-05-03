@@ -559,7 +559,7 @@ components:
       properties:
         id:
           type: integer
-        name:
+        nome:
           type: string
         birthDate:
           type: string
@@ -666,7 +666,7 @@ components:
           format: date-time
       required:
         - id
-        - name
+        - nome
         - birthDate
         - age
         - sex
@@ -720,7 +720,7 @@ components:
     CreatePatientBody:
       type: object
       properties:
-        name:
+        nome:
           type: string
         birthDate:
           type: string
@@ -816,9 +816,9 @@ components:
         criterioConfirmacao:
           type: string
       required:
-        - name
+        - nome
         - status
-        - sector
+        - setor
         - internmentStatus
 
     UpdatePatientStatusBody:

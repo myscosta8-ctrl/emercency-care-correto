@@ -72,7 +72,7 @@ function computeAge(birthDate: string): number {
 
 const formSchema = z.object({
   // identificação
-  name:       z.string().min(1, "Informe o nome completo do paciente"),
+  nome:       z.string().min(1, "Informe o nome completo do paciente"),
   birthDate:  z.string().default(""),
   age:        z.coerce.number().min(0).default(0),
   sex:        z.enum(["M", "F", "O"]).default("O"),
@@ -153,7 +153,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name:       patient?.name ?? "",
+      nome:       patient?.nome ?? "",
       birthDate:  patient?.birthDate ?? "",
       age:        patient?.age ?? 0,
       sex:        (patient?.sex as FormValues["sex"]) ?? "O",
@@ -262,7 +262,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           <SectionTitle>Dados do Paciente</SectionTitle>
 
           {/* Nome — full width, required */}
-          <FormField control={form.control} name="name" render={({ field }) => (
+          <FormField control={form.control} name="nome" render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Nome Completo</FormLabel>
               <FormControl><Input placeholder="Nome completo" data-testid="input-name" {...field} /></FormControl>

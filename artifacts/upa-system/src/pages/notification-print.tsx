@@ -352,7 +352,7 @@ function NotificacaoIndividual({ patient }: { patient: Patient }) {
                 <tr>
                   <td style={S.td} colSpan={3}>
                     <span style={S.fieldLabel}>8 Nome do Paciente</span>
-                    <span style={S.fieldValue}>{patient.name}</span>
+                    <span style={S.fieldValue}>{patient.nome}</span>
                   </td>
                   <td style={S.td}>
                     <span style={S.fieldLabel}>9 Data de Nascimento</span>

@@ -52,7 +52,7 @@ function ageFromBirthDate(birthDate: string): number {
 function buildPatientData(body: typeof CreatePatientBody._type) {
   const age = body.birthDate ? ageFromBirthDate(body.birthDate) : (body.age ?? 0);
   return {
-    name:            body.name,
+    nome:            body.nome,
     birthDate:       body.birthDate ?? "",
     age,
     sex:             (body.sex ?? "O") as "M" | "F" | "O",

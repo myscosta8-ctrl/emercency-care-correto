@@ -298,7 +298,7 @@ export default function PatientDetail() {
                 setDownloadingFicha(true);
                 try {
                   await downloadIdentificacaoPdf({
-                    name: patient.name,
+                    nome: patient.nome,
                     birthDate: patient.birthDate,
                     age: patient.age,
                     sex: patient.sex,
@@ -356,7 +356,7 @@ export default function PatientDetail() {
               <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-3">
                   <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-primary">{patient.name}</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-primary">{patient.nome}</h2>
                     <p className="text-sm mt-1 text-muted-foreground flex flex-wrap items-center gap-2">
                       <span>{patient.age} anos</span>
                       {patient.sex && patient.sex !== "O" && (
@@ -1206,7 +1206,7 @@ export default function PatientDetail() {
           </DialogHeader>
           <PrescriptionForm
             patientId={id}
-            patientName={patient.name}
+            patientName={patient.nome}
             onSuccess={() => setIsPrescriptionOpen(false)}
             onCancel={() => setIsPrescriptionOpen(false)}
           />
@@ -1221,7 +1221,7 @@ export default function PatientDetail() {
           </DialogHeader>
           <TasksForm
             patientId={id}
-            patientName={patient.name}
+            patientName={patient.nome}
             defaultResponsible={patient.nurse ?? ""}
             onSuccess={() => setIsTasksOpen(false)}
             onCancel={() => setIsTasksOpen(false)}
@@ -1280,7 +1280,7 @@ export default function PatientDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>Alta / Remoção do Paciente</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirma a alta ou remoção de <strong>{patient.name}</strong> do sistema? O registro será excluído permanentemente.
+              Confirma a alta ou remoção de <strong>{patient.nome}</strong> do sistema? O registro será excluído permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1318,7 +1318,7 @@ export default function PatientDetail() {
             <tbody>
               <tr>
                 <th style={{ width: "15%", textAlign: "left" }}>Paciente</th>
-                <td style={{ width: "35%" }}><strong>{patient.name}</strong></td>
+                <td style={{ width: "35%" }}><strong>{patient.nome}</strong></td>
                 <th style={{ width: "10%", textAlign: "left" }}>Idade</th>
                 <td style={{ width: "10%" }}>{patient.age} anos</td>
                 <th style={{ width: "10%", textAlign: "left" }}>Leito</th>

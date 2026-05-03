@@ -114,7 +114,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {patient.name} · {dateLabel}
+            {patient.nome} · {dateLabel}
           </p>
         </div>
 
