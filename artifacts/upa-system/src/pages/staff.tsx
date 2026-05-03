@@ -26,12 +26,20 @@ const ACCESS_LEVELS = [
 
 const EDITOR_ROLES = new Set(["admin", "coordenacao_enfermagem"]);
 
+const SECTOR_LABEL: Record<string, string> = {
+  sala_vermelha:         "Sala Vermelha",
+  observacao_adulto:     "Observação Adulto",
+  observacao_pediatrica: "Observação Pediátrica",
+  observacao_pre_adulto: "Observação Pré-Adulto",
+  todos_os_setores:      "Todos os Setores",
+};
+
 const SECTORS = [
-  "Sala Vermelha",
-  "Observação Adulto",
-  "Observação Pediátrica",
-  "Observação Pré-Adulto",
-  "Todos os Setores",
+  { value: "sala_vermelha",         label: "Sala Vermelha"         },
+  { value: "observacao_adulto",     label: "Observação Adulto"     },
+  { value: "observacao_pediatrica", label: "Observação Pediátrica" },
+  { value: "observacao_pre_adulto", label: "Observação Pré-Adulto" },
+  { value: "todos_os_setores",      label: "Todos os Setores"      },
 ];
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -318,7 +326,7 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
                 className="w-full h-10 bg-background border border-input rounded-md px-3 pr-8 text-sm text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-ring"
               >
                 <option value="">Selecione o setor</option>
-                {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
+                {SECTORS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
               <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
             </div>
@@ -464,7 +472,7 @@ function StaffCard({ member, onEdit, onDelete, canEdit }: StaffCardProps) {
             {member.corenCrm && (
               <p>{COREN_LABEL[member.category]}: <span className="text-foreground font-mono">{member.corenCrm}</span></p>
             )}
-            {member.sector && <p>Setor: <span className="text-foreground">{member.sector}</span></p>}
+            {member.sector && <p>Setor: <span className="text-foreground">{SECTOR_LABEL[member.sector] ?? member.sector}</span></p>}
             <p>Login: <span className="text-foreground font-mono">{member.login}</span></p>
           </div>
           {levels.length > 0 && (

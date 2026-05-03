@@ -33,10 +33,10 @@ const TRIAGE_OPTIONS = [
 ] as const;
 
 const SECTOR_OPTIONS = [
-  "Sala Vermelha",
-  "Observação Adulto",
-  "Observação Pediátrica",
-  "Observação Pré-Adulto",
+  { value: "sala_vermelha",         label: "Sala Vermelha"         },
+  { value: "observacao_adulto",     label: "Observação Adulto"     },
+  { value: "observacao_pediatrica", label: "Observação Pediátrica" },
+  { value: "observacao_pre_adulto", label: "Observação Pré-Adulto" },
 ];
 
 const INTERNMENT_OPTIONS = [
@@ -547,7 +547,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {SECTOR_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {SECTOR_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                 </SelectContent>
               </Select>
               <FormMessage />

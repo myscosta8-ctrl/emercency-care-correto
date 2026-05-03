@@ -49,13 +49,14 @@ const TRIAGE_OPTIONS = [
 ];
 
 const SECTOR_CONFIG = [
-  { name: "Sala Vermelha",        emoji: "🔴", headerCls: "bg-red-950/60 border-red-700/50 text-red-300",       emptyBorder: "border-red-900/30"    },
-  { name: "Observação Adulto",    emoji: "🟡", headerCls: "bg-yellow-950/40 border-yellow-700/40 text-yellow-300", emptyBorder: "border-yellow-900/30" },
-  { name: "Observação Pediátrica",emoji: "🟢", headerCls: "bg-green-950/40 border-green-700/40 text-green-300",   emptyBorder: "border-green-900/30"  },
-  { name: "Observação Pré-Adulto",emoji: "🔵", headerCls: "bg-blue-950/40 border-blue-700/40 text-blue-300",      emptyBorder: "border-blue-900/30"   },
+  { key: "sala_vermelha",         name: "Sala Vermelha",         emoji: "🔴", headerCls: "bg-red-950/60 border-red-700/50 text-red-300",        emptyBorder: "border-red-900/30"    },
+  { key: "observacao_adulto",     name: "Observação Adulto",     emoji: "🟡", headerCls: "bg-yellow-950/40 border-yellow-700/40 text-yellow-300", emptyBorder: "border-yellow-900/30" },
+  { key: "observacao_pediatrica", name: "Observação Pediátrica", emoji: "🟢", headerCls: "bg-green-950/40 border-green-700/40 text-green-300",   emptyBorder: "border-green-900/30"  },
+  { key: "observacao_pre_adulto", name: "Observação Pré-Adulto", emoji: "🔵", headerCls: "bg-blue-950/40 border-blue-700/40 text-blue-300",      emptyBorder: "border-blue-900/30"   },
 ];
 
-const SECTOR_NAMES = SECTOR_CONFIG.map(s => s.name);
+const SECTOR_NAMES  = SECTOR_CONFIG.map(s => s.key);
+const SECTOR_LABEL  = Object.fromEntries(SECTOR_CONFIG.map(s => [s.key, s.name]));
 
 // ── vitals helpers ────────────────────────────────────────────────────────────
 
@@ -225,7 +226,7 @@ export default function Dashboard() {
     return SECTOR_CONFIG.map(cfg => ({
       ...cfg,
       patients: base
-        .filter(p => p.sector === cfg.name)
+        .filter(p => p.sector === cfg.key)
         .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99)),
     }));
   }, [patients, debouncedSearch, sectorFilter, triageFilter]);
@@ -343,7 +344,7 @@ export default function Dashboard() {
                     : "border-border/40 text-muted-foreground hover:bg-muted/30"
                 )}
               >
-                {s === "Todos" ? "Todos" : s.replace("Observação ", "Obs. ")}
+                {s === "Todos" ? "Todos" : (SECTOR_LABEL[s] ?? s).replace("Observação ", "Obs. ")}
               </button>
             ))}
           </div>

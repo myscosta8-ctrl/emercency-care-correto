@@ -626,6 +626,7 @@ components:
           $ref: "#/components/schemas/TriageStatus"
         sector:
           type: string
+          enum: [sala_vermelha, observacao_adulto, observacao_pediatrica, observacao_pre_adulto]
         internmentStatus:
           type: string
           enum: [internado, nao_internado]
@@ -786,6 +787,7 @@ components:
           $ref: "#/components/schemas/TriageStatus"
         sector:
           type: string
+          enum: [sala_vermelha, observacao_adulto, observacao_pediatrica, observacao_pre_adulto]
         internmentStatus:
           type: string
           enum: [internado, nao_internado]

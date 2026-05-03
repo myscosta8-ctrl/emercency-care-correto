@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const SECTORS = [
   {
+    key: "sala_vermelha",
     name: "Sala Vermelha",
     emoji: "🔴",
     label: "SALA VERMELHA",
@@ -24,6 +25,7 @@ const SECTORS = [
     printHeaderColor: "#991b1b",
   },
   {
+    key: "observacao_adulto",
     name: "Observação Adulto",
     emoji: "🟡",
     label: "OBSERVAÇÃO ADULTO",
@@ -34,6 +36,7 @@ const SECTORS = [
     printHeaderColor: "#854d0e",
   },
   {
+    key: "observacao_pediatrica",
     name: "Observação Pediátrica",
     emoji: "🟢",
     label: "OBSERVAÇÃO PEDIÁTRICA",
@@ -44,6 +47,7 @@ const SECTORS = [
     printHeaderColor: "#166534",
   },
   {
+    key: "observacao_pre_adulto",
     name: "Observação Pré-Adulto",
     emoji: "🔵",
     label: "OBSERVAÇÃO PRÉ-ADULTO",
@@ -195,7 +199,7 @@ export default function ShiftHandover() {
   const grouped = SECTORS.map(s => ({
     ...s,
     patients: (patients ?? [])
-      .filter(p => p.sector === s.name)
+      .filter(p => p.sector === s.key)
       .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99)),
   }));
 
