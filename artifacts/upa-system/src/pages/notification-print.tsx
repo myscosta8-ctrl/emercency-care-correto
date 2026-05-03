@@ -25,8 +25,13 @@ function fmtDatetime(s?: string | null): string {
   const [date, time] = s.split("T");
   return `${fmtDate(date)}${time ? "  " + time.slice(0, 5) : ""}`;
 }
-function parseTypes(types: string): string[] {
-  try { return JSON.parse(types) as string[]; } catch { return []; }
+function diseaseToType(disease?: string | null): string {
+  const d = (disease ?? "").toLowerCase();
+  if (d.includes("dengue") || d.includes("chikungunya")) return "dengue";
+  if (d.includes("covid") || d.includes("coronavírus") || d.includes("srag")) return "covid19";
+  if (d.includes("tuberc")) return "tuberculose";
+  if (d.includes("violên") || d.includes("violenci")) return "violencia";
+  return "outros";
 }
 
 // ── constants ─────────────────────────────────────────────────────────────────
@@ -744,11 +749,7 @@ function Assinatura({ responsible }: { responsible?: string | null }) {
   );
 }
 
-function UpaDataBox({ patient, notif, types }: { patient: Patient; notif: PatientNotification; types: string[] }) {
-  const TYPE_LABELS: Record<string, string> = {
-    dengue: "Dengue", covid19: "COVID-19", tuberculose: "Tuberculose",
-    violencia: "Violência", outros: notif.otherType || "Outros",
-  };
+function UpaDataBox({ patient, notif }: { patient: Patient; notif: PatientNotification }) {
   return (
     <div style={{ border: "2px dashed #666", padding: "6pt", marginTop: "10pt", background: "#fafafa", pageBreakInside: "avoid" }}>
       <div style={{ fontWeight: 700, fontSize: "9pt", marginBottom: "4pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>
@@ -758,30 +759,16 @@ function UpaDataBox({ patient, notif, types }: { patient: Patient; notif: Patien
         <tbody>
           <tr>
             <td style={S.td}>
-              <span style={S.fieldLabel}>Tipo(s) de Notificação</span>
-              <span style={{ fontWeight: 700 }}>{types.map(t => TYPE_LABELS[t] ?? t).join(" / ")}</span>
+              <span style={S.fieldLabel}>Doença / Agravo</span>
+              <span style={{ fontWeight: 700 }}>{notif.disease || patient.diagnosis || "—"}</span>
             </td>
             <td style={S.td}>
-              <span style={S.fieldLabel}>Situação</span>
-              <span style={{ fontWeight: 700 }}>{notif.situation === "notificado" ? "Notificado" : "Pendente"}</span>
+              <span style={S.fieldLabel}>Classificação</span>
+              <span style={{ fontWeight: 700 }}>{notif.classification || "—"}</span>
             </td>
             <td style={S.td}>
-              <span style={S.fieldLabel}>Data/Hora da Notificação (UPA)</span>
-              <span style={{ fontWeight: 700 }}>{notif.notifiedAt ? fmtDatetime(notif.notifiedAt) : "—"}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style={S.td}>
-              <span style={S.fieldLabel}>Hipótese Diagnóstica (da UPA)</span>
-              <span style={{ fontWeight: 700 }}>{notif.diagnosis || patient.diagnosis || "—"}</span>
-            </td>
-            <td style={S.td}>
-              <span style={S.fieldLabel}>Data Início dos Sintomas</span>
-              <span style={{ fontWeight: 700 }}>{notif.symptomOnsetDate ? fmtDate(notif.symptomOnsetDate) : "—"}</span>
-            </td>
-            <td style={S.td}>
-              <span style={S.fieldLabel}>Profissional Responsável</span>
-              <span style={{ fontWeight: 700 }}>{notif.responsible || "—"}</span>
+              <span style={S.fieldLabel}>Data/Hora do Registro (UPA)</span>
+              <span style={{ fontWeight: 700 }}>{fmtDatetime(notif.createdAt)}</span>
             </td>
           </tr>
           {patient.cpf && (
@@ -843,11 +830,11 @@ export default function NotificationPrintPage() {
 
   const [downloading, setDownloading] = useState(false);
 
-  const types        = parseTypes(notif.types);
-  const primaryType  = types[0] ?? "outros";
+  const primaryType  = diseaseToType(notif.disease);
+  const types        = [primaryType];
   const meta         = FORM_META[primaryType] ?? FORM_META.outros;
-  const notifDate    = notif.notifiedAt ? fmtDate(notif.notifiedAt) : fmtDate(notif.createdAt);
-  const symptomDate  = notif.symptomOnsetDate ? fmtDate(notif.symptomOnsetDate) : "";
+  const notifDate    = fmtDate(notif.createdAt);
+  const symptomDate  = "";
 
   return (
     <>
@@ -893,17 +880,17 @@ export default function NotificationPrintPage() {
               <DadosResidencia patient={patient} />
 
               {/* disease-specific clinical data */}
-              {type === "dengue"      && <SectionDengue      diagnosis={notif.diagnosis ?? patient.diagnosis} />}
-              {type === "covid19"     && <SectionCovid       diagnosis={notif.diagnosis ?? patient.diagnosis} />}
-              {type === "tuberculose" && <SectionTuberculose diagnosis={notif.diagnosis ?? patient.diagnosis} />}
-              {(type === "violencia" || type === "outros") && <SectionGeneric diagnosis={notif.diagnosis ?? patient.diagnosis} />}
+              {type === "dengue"      && <SectionDengue      diagnosis={notif.disease ?? patient.diagnosis} />}
+              {type === "covid19"     && <SectionCovid       diagnosis={notif.disease ?? patient.diagnosis} />}
+              {type === "tuberculose" && <SectionTuberculose diagnosis={notif.disease ?? patient.diagnosis} />}
+              {(type === "violencia" || type === "outros") && <SectionGeneric diagnosis={notif.disease ?? patient.diagnosis} />}
 
               <Encerramento />
-              <Assinatura responsible={notif.responsible} />
+              <Assinatura responsible={undefined} />
 
               {/* UPA data box only on last sheet */}
               {idx === types.length - 1 && (
-                <UpaDataBox patient={patient} notif={notif} types={types} />
+                <UpaDataBox patient={patient} notif={notif} />
               )}
 
               <div style={{ fontSize: "7pt", color: "#888", textAlign: "right", marginTop: "6pt", borderTop: "1px solid #ddd", paddingTop: "3pt" }}>

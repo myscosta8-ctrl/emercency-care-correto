@@ -1120,90 +1120,40 @@ components:
           type: integer
         patientId:
           type: integer
-        types:
+        disease:
           type: string
-        otherType:
-          type: string
-        diagnosis:
-          type: string
-        symptomOnsetDate:
-          type: string
-        situation:
-          type: string
-          enum: [pendente, notificado]
-        notifiedAt:
-          type: string
-        responsible:
-          type: string
-        notes:
+        classification:
           type: string
         pdfUrl:
           type: string
         createdAt:
           type: string
           format: date-time
-        updatedAt:
-          type: string
-          format: date-time
       required:
         - id
         - patientId
-        - types
-        - otherType
-        - diagnosis
-        - symptomOnsetDate
-        - situation
-        - notifiedAt
-        - responsible
-        - notes
+        - disease
+        - classification
         - pdfUrl
         - createdAt
-        - updatedAt
 
     AddPatientNotificationBody:
       type: object
       properties:
-        types:
+        disease:
           type: string
-        otherType:
-          type: string
-        diagnosis:
-          type: string
-        symptomOnsetDate:
-          type: string
-        situation:
-          type: string
-          enum: [pendente, notificado]
-        notifiedAt:
-          type: string
-        responsible:
-          type: string
-        notes:
+        classification:
           type: string
       required:
-        - types
-        - situation
-        - responsible
+        - disease
+        - classification
 
     UpdatePatientNotificationBody:
       type: object
       properties:
-        types:
+        disease:
           type: string
-        otherType:
-          type: string
-        diagnosis:
-          type: string
-        symptomOnsetDate:
-          type: string
-        situation:
-          type: string
-          enum: [pendente, notificado]
-        notifiedAt:
-          type: string
-        responsible:
-          type: string
-        notes:
+        classification:
           type: string
         pdfUrl:
           type: string

@@ -34,7 +34,6 @@ export function validateCPF(cpf: string): boolean {
 const serializeNotif = (n: typeof patientNotificationsTable.$inferSelect) => ({
   ...n,
   createdAt: n.createdAt.toISOString(),
-  updatedAt: n.updatedAt.toISOString(),
 });
 
 const serializePatient = (p: typeof patientsTable.$inferSelect) => ({
@@ -59,19 +58,11 @@ router.post("/", async (req, res) => {
     patient_id,
     disease,
     classification,
-    symptom_date,
-    notification_date,
-    health_unit,
-    professional,
     pdf_url,
   } = req.body as {
     patient_id: number;
     disease?: string;
     classification?: string;
-    symptom_date?: string;
-    notification_date?: string;
-    health_unit?: string;
-    professional?: string;
     pdf_url?: string;
   };
 
@@ -80,7 +71,6 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  // Auto-fetch patient and fill fields
   const [patient] = await db
     .select()
     .from(patientsTable)
@@ -91,26 +81,16 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  const resolvedHealthUnit  = health_unit  ?? patient.healthUnit  ?? "UPA Breves";
-  const resolvedProfessional = professional ?? patient.responsibleProfessional ?? "";
-  const resolvedDisease       = disease      ?? patient.diagnosis  ?? "";
+  const resolvedDisease        = disease        ?? patient.diagnosis          ?? "";
   const resolvedClassification = classification ?? patient.classificacaoFinal ?? "";
 
   const [notif] = await db
     .insert(patientNotificationsTable)
     .values({
-      patientId:       patient_id,
-      disease:         resolvedDisease,
-      classification:  resolvedClassification,
-      diagnosis:       resolvedDisease,
-      symptomOnsetDate: symptom_date        ?? patient.symptomOnsetDate ?? "",
-      notifiedAt:      notification_date   ?? patient.dataNotificacao  ?? "",
-      healthUnit:      resolvedHealthUnit,
-      pdfUrl:          pdf_url             ?? "",
-      responsible:     resolvedProfessional,
-      types:           "[]",
-      situation:       "pendente",
-      updatedAt:       new Date(),
+      patientId:      patient_id,
+      disease:        resolvedDisease,
+      classification: resolvedClassification,
+      pdfUrl:         pdf_url ?? "",
     })
     .returning();
 

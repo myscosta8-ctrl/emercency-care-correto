@@ -12,7 +12,6 @@ type Params = Record<string, string>;
 const serializeNotif = (n: typeof patientNotificationsTable.$inferSelect) => ({
   ...n,
   createdAt: n.createdAt.toISOString(),
-  updatedAt: n.updatedAt.toISOString(),
 });
 
 router.get("/", async (req, res) => {
@@ -32,14 +31,9 @@ router.post("/", async (req, res) => {
     .insert(patientNotificationsTable)
     .values({
       patientId,
-      types:            body.types ?? "[]",
-      otherType:        body.otherType ?? "",
-      diagnosis:        body.diagnosis ?? "",
-      symptomOnsetDate: body.symptomOnsetDate ?? "",
-      situation:        body.situation,
-      responsible:      body.responsible,
-      notifiedAt:       body.notifiedAt ?? "",
-      updatedAt:        new Date(),
+      disease:        body.disease,
+      classification: body.classification,
+      pdfUrl:         "",
     })
     .returning();
   res.status(201).json(serializeNotif(notif));
@@ -50,17 +44,10 @@ router.patch("/:notificationId", async (req, res) => {
   const notificationId = Number((req.params as Params)["notificationId"]);
   const body = UpdatePatientNotificationBody.parse(req.body);
 
-  const patch: Partial<typeof patientNotificationsTable.$inferInsert> = {
-    updatedAt: new Date(),
-  };
-  if (body.types            !== undefined) patch.types            = body.types;
-  if (body.otherType        !== undefined) patch.otherType        = body.otherType;
-  if (body.diagnosis        !== undefined) patch.diagnosis        = body.diagnosis;
-  if (body.symptomOnsetDate !== undefined) patch.symptomOnsetDate = body.symptomOnsetDate;
-  if (body.situation        !== undefined) patch.situation        = body.situation;
-  if (body.responsible      !== undefined) patch.responsible      = body.responsible;
-  if (body.notifiedAt       !== undefined) patch.notifiedAt       = body.notifiedAt;
-  if (body.pdfUrl           !== undefined) patch.pdfUrl           = body.pdfUrl;
+  const patch: Partial<typeof patientNotificationsTable.$inferInsert> = {};
+  if (body.disease        !== undefined) patch.disease        = body.disease;
+  if (body.classification !== undefined) patch.classification = body.classification;
+  if (body.pdfUrl         !== undefined) patch.pdfUrl         = body.pdfUrl;
 
   const [notif] = await db
     .update(patientNotificationsTable)

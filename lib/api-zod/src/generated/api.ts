@@ -494,17 +494,10 @@ export const GetPatientNotificationsParams = zod.object({
 export const GetPatientNotificationsResponseItem = zod.object({
   id: zod.number(),
   patientId: zod.number(),
-  types: zod.string(),
-  otherType: zod.string(),
-  diagnosis: zod.string(),
-  symptomOnsetDate: zod.string(),
-  situation: zod.enum(["pendente", "notificado"]),
-  notifiedAt: zod.string(),
-  responsible: zod.string(),
-  notes: zod.string(),
+  disease: zod.string(),
+  classification: zod.string(),
   pdfUrl: zod.string(),
   createdAt: zod.coerce.date(),
-  updatedAt: zod.coerce.date(),
 });
 export const GetPatientNotificationsResponse = zod.array(
   GetPatientNotificationsResponseItem,
@@ -518,14 +511,8 @@ export const AddPatientNotificationParams = zod.object({
 });
 
 export const AddPatientNotificationBody = zod.object({
-  types: zod.string(),
-  otherType: zod.string().optional(),
-  diagnosis: zod.string().optional(),
-  symptomOnsetDate: zod.string().optional(),
-  situation: zod.enum(["pendente", "notificado"]),
-  notifiedAt: zod.string().optional(),
-  responsible: zod.string(),
-  notes: zod.string().optional(),
+  disease: zod.string(),
+  classification: zod.string(),
 });
 
 /**
@@ -537,31 +524,18 @@ export const UpdatePatientNotificationParams = zod.object({
 });
 
 export const UpdatePatientNotificationBody = zod.object({
-  types: zod.string().optional(),
-  otherType: zod.string().optional(),
-  diagnosis: zod.string().optional(),
-  symptomOnsetDate: zod.string().optional(),
-  situation: zod.enum(["pendente", "notificado"]).optional(),
-  notifiedAt: zod.string().optional(),
-  responsible: zod.string().optional(),
-  notes: zod.string().optional(),
+  disease: zod.string().optional(),
+  classification: zod.string().optional(),
   pdfUrl: zod.string().optional(),
 });
 
 export const UpdatePatientNotificationResponse = zod.object({
   id: zod.number(),
   patientId: zod.number(),
-  types: zod.string(),
-  otherType: zod.string(),
-  diagnosis: zod.string(),
-  symptomOnsetDate: zod.string(),
-  situation: zod.enum(["pendente", "notificado"]),
-  notifiedAt: zod.string(),
-  responsible: zod.string(),
-  notes: zod.string(),
+  disease: zod.string(),
+  classification: zod.string(),
   pdfUrl: zod.string(),
   createdAt: zod.coerce.date(),
-  updatedAt: zod.coerce.date(),
 });
 
 /**

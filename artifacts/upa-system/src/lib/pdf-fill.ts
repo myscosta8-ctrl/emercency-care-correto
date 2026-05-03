@@ -41,12 +41,8 @@ export interface PdfPatient {
 }
 
 export interface PdfNotification {
-  types: string;
-  otherType?: string | null;
-  diagnosis?: string | null;
-  symptomOnsetDate?: string | null;
-  notifiedAt?: string | null;
-  responsible?: string | null;
+  disease?: string | null;
+  classification?: string | null;
 }
 
 interface TextPos { x: number; y: number; maxWidth?: number; }
@@ -621,14 +617,21 @@ async function fillTemplate(
  * Generates a merged SINAN PDF for all notification types and returns it as a
  * Blob without triggering a browser download.
  */
+function diseaseToType(disease?: string | null): string {
+  const d = (disease ?? "").toLowerCase();
+  if (d.includes("dengue") || d.includes("chikungunya")) return "dengue";
+  if (d.includes("covid") || d.includes("coronavírus") || d.includes("srag")) return "covid19";
+  if (d.includes("tuberc")) return "tuberculose";
+  if (d.includes("violên") || d.includes("violenci")) return "violencia";
+  return "outros";
+}
+
 export async function generateSinanPdfBlob(
   patient: PdfPatient,
   notif: PdfNotification,
   baseUrl: string,
 ): Promise<Blob> {
-  let types: string[] = [];
-  try { types = JSON.parse(notif.types) as string[]; } catch { /* ignore */ }
-  if (!types.length) types = ["outros"];
+  const types = [diseaseToType(notif.disease)];
 
   const merged = await PDFDocument.create();
 
@@ -952,6 +955,6 @@ export async function preencherPDF(
 ): Promise<void> {
   const tipos = Array.isArray(tipoDoenca) ? tipoDoenca : [tipoDoenca];
   const patient = dadosParaPdfPatient(dadosPaciente);
-  const notif: PdfNotification = { types: JSON.stringify(tipos) };
+  const notif: PdfNotification = { disease: tipos[0] ?? "outros" };
   await downloadSinanPdf(patient, notif, baseUrl);
 }

@@ -298,66 +298,23 @@ export interface UpdateTaskStatusBody {
   responsible?: string;
 }
 
-export type PatientNotificationSituation =
-  (typeof PatientNotificationSituation)[keyof typeof PatientNotificationSituation];
-
-export const PatientNotificationSituation = {
-  pendente: "pendente",
-  notificado: "notificado",
-} as const;
-
 export interface PatientNotification {
   id: number;
   patientId: number;
-  types: string;
-  otherType: string;
-  diagnosis: string;
-  symptomOnsetDate: string;
-  situation: PatientNotificationSituation;
-  notifiedAt: string;
-  responsible: string;
-  notes: string;
+  disease: string;
+  classification: string;
   pdfUrl: string;
   createdAt: string;
-  updatedAt: string;
 }
-
-export type AddPatientNotificationBodySituation =
-  (typeof AddPatientNotificationBodySituation)[keyof typeof AddPatientNotificationBodySituation];
-
-export const AddPatientNotificationBodySituation = {
-  pendente: "pendente",
-  notificado: "notificado",
-} as const;
 
 export interface AddPatientNotificationBody {
-  types: string;
-  otherType?: string;
-  diagnosis?: string;
-  symptomOnsetDate?: string;
-  situation: AddPatientNotificationBodySituation;
-  notifiedAt?: string;
-  responsible: string;
-  notes?: string;
+  disease: string;
+  classification: string;
 }
 
-export type UpdatePatientNotificationBodySituation =
-  (typeof UpdatePatientNotificationBodySituation)[keyof typeof UpdatePatientNotificationBodySituation];
-
-export const UpdatePatientNotificationBodySituation = {
-  pendente: "pendente",
-  notificado: "notificado",
-} as const;
-
 export interface UpdatePatientNotificationBody {
-  types?: string;
-  otherType?: string;
-  diagnosis?: string;
-  symptomOnsetDate?: string;
-  situation?: UpdatePatientNotificationBodySituation;
-  notifiedAt?: string;
-  responsible?: string;
-  notes?: string;
+  disease?: string;
+  classification?: string;
   pdfUrl?: string;
 }
 

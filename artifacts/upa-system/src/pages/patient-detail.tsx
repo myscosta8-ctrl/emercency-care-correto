@@ -787,9 +787,9 @@ export default function PatientDetail() {
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                     <Bell className="h-4 w-4 text-amber-400" /> Notificações Compulsórias
                   </h3>
-                  {notifications && notifications.filter(n => n.situation === "pendente").length > 0 && (
+                  {notifications && notifications.length > 0 && (
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                      {notifications.filter(n => n.situation === "pendente").length} pendente{notifications.filter(n => n.situation === "pendente").length > 1 ? "s" : ""}
+                      {notifications.length}
                     </span>
                   )}
                 </div>
@@ -815,54 +815,28 @@ export default function PatientDetail() {
               ) : (
                 <div className="space-y-3">
                   {notifications.map(notif => {
-                    const types: string[] = (() => { try { return JSON.parse(notif.types); } catch { return []; } })();
-                    const typeLabels: Record<string, string> = {
-                      dengue: "Dengue", covid19: "COVID-19", tuberculose: "Tuberculose",
-                      violencia: "Violência", outros: notif.otherType || "Outros",
-                    };
-                    const isPendente = notif.situation === "pendente";
                     return (
-                      <div key={notif.id} className={cn(
-                        "bg-card rounded-lg border overflow-hidden",
-                        isPendente ? "border-amber-500/40" : "border-border/50"
-                      )}>
+                      <div key={notif.id} className="bg-card rounded-lg border border-amber-500/30 overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={cn(
-                              "text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider",
-                              isPendente
-                                ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                                : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                            )}>
-                              {isPendente ? "Pendente" : "Notificado"}
-                            </span>
-                            {types.map(t => (
-                              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground border border-border/40">
-                                {typeLabels[t] ?? t}
+                            {notif.disease && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider bg-amber-500/20 text-amber-400 border-amber-500/30">
+                                {notif.disease}
                               </span>
-                            ))}
+                            )}
+                            {notif.classification && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground border border-border/40">
+                                {notif.classification}
+                              </span>
+                            )}
                           </div>
                           <span className="text-xs text-muted-foreground shrink-0">
                             {format(new Date(notif.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
                           </span>
                         </div>
                         <div className="px-4 py-3 space-y-1.5">
-                          {notif.diagnosis && (
-                            <p className="text-sm"><span className="text-muted-foreground text-xs">Diagnóstico: </span>{notif.diagnosis}</p>
-                          )}
-                          {notif.symptomOnsetDate && (
-                            <p className="text-xs text-muted-foreground">
-                              Início dos sintomas: <strong className="text-foreground">{notif.symptomOnsetDate.split("-").reverse().join("/")}</strong>
-                            </p>
-                          )}
-                          {notif.notifiedAt && (
-                            <p className="text-xs text-muted-foreground">
-                              Data/Hora: <strong className="text-foreground">{notif.notifiedAt.replace("T", " ").slice(0, 16)}</strong>
-                            </p>
-                          )}
                           <div className="flex items-center justify-between pt-1.5 border-t border-border/40 mt-1.5">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">— {notif.responsible}</span>
                               {notif.pdfUrl && (
                                 <a
                                   href={notif.pdfUrl}
