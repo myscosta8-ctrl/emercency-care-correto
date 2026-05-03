@@ -47,8 +47,11 @@ function validateCPF(cpf: string): boolean {
 
 const serialize = (p: typeof patientsTable.$inferSelect) => ({
   ...p,
-  createdAt: p.createdAt.toISOString(),
-  updatedAt: p.updatedAt.toISOString(),
+  // snake_case aliases to match OpenAPI spec and generated TypeScript types
+  full_name:    p.fullName,
+  triage_level: p.triageLevel,
+  createdAt:    p.createdAt.toISOString(),
+  updatedAt:    p.updatedAt.toISOString(),
 });
 
 const serializeEvolution = (e: typeof patientEvolutionsTable.$inferSelect) => ({

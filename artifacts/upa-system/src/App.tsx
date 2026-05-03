@@ -21,6 +21,12 @@ const AdminPermissoes     = lazy(() => import("@/pages/admin/permissoes"));
 const AdminFuncionalidades = lazy(() => import("@/pages/admin/funcionalidades"));
 const AdminAuditoria       = lazy(() => import("@/pages/admin/auditoria"));
 
+const RecepcaoPage = lazy(() => import("@/pages/recepcao"));
+const VitaisPage   = lazy(() => import("@/pages/vitais"));
+const SocialPage   = lazy(() => import("@/pages/social"));
+const NutricaoPage = lazy(() => import("@/pages/nutricao"));
+const FarmaciaPage = lazy(() => import("@/pages/farmacia"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -68,6 +74,11 @@ function Router() {
           <AuthGuard>
             <Switch>
               <Route path="/" component={Dashboard} />
+              <Route path="/recepcao" component={RecepcaoPage} />
+              <Route path="/vitais" component={VitaisPage} />
+              <Route path="/social" component={SocialPage} />
+              <Route path="/nutricao" component={NutricaoPage} />
+              <Route path="/farmacia" component={FarmaciaPage} />
               <Route path="/patients/:id/notifications/:notificationId/print" component={NotificationPrint} />
               <Route path="/patients/:id" component={PatientDetail} />
               <Route path="/passagem-plantao" component={ShiftHandover} />

@@ -9,7 +9,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -247,6 +247,49 @@ export default function Dashboard() {
       </header>
 
       <main className="flex-1 container mx-auto px-4 py-4 max-w-5xl">
+
+        {/* ── critical patients alert ────────────────────────────────── */}
+        {(() => {
+          const criticals = (patients ?? []).filter(p => p.triage_level === "red" || p.triage_level === "orange");
+          if (criticals.length === 0) return null;
+          return (
+            <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/5 overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-red-500/15 border-b border-red-500/30">
+                <AlertTriangle className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
+                  Atenção — {criticals.length} paciente{criticals.length !== 1 ? "s" : ""} crítico{criticals.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="divide-y divide-red-500/20">
+                {criticals
+                  .sort((a, b) => (a.triage_level === "red" ? -1 : 1) - (b.triage_level === "red" ? -1 : 1))
+                  .map(p => {
+                    const isRed = p.triage_level === "red";
+                    return (
+                      <Link key={p.id} href={`/patients/${p.id}`}>
+                        <div className="flex items-center gap-3 px-3 py-2 hover:bg-red-500/10 transition-colors cursor-pointer">
+                          <span className={cn("h-2.5 w-2.5 rounded-full shrink-0 animate-pulse", isRed ? "bg-red-500" : "bg-orange-500")} />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-semibold truncate">{p.full_name}</span>
+                            {p.diagnosis && <span className="text-xs text-muted-foreground ml-2 truncate hidden sm:inline">{p.diagnosis}</span>}
+                          </div>
+                          {p.bed && (
+                            <span className="text-xs text-muted-foreground shrink-0">Leito {p.bed}</span>
+                          )}
+                          <span className={cn(
+                            "text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider shrink-0",
+                            isRed ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-orange-500/20 text-orange-400 border-orange-500/30"
+                          )}>
+                            {isRed ? "EMERGÊNCIA" : "MUITO URG."}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── summary strip ──────────────────────────────────────────── */}
         <div className="flex items-center gap-1 mb-4 flex-wrap">

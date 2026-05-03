@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/use-auth";
+import { getRoleHome } from "@/lib/role-home";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (activeUser) setLocation("/");
+    if (activeUser) setLocation(getRoleHome(activeUser.role));
   }, [activeUser, setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +31,6 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login(loginVal.trim(), password);
-      setLocation("/");
     } catch {
       setError("Login ou senha incorretos. Verifique suas credenciais.");
     } finally {
