@@ -567,23 +567,25 @@ export default function PatientDetail() {
                             </div>
                           )}
 
-                          {/* O — Objetivo: Vitals */}
-                          {hasVitals && (
+                          {/* O — Objetivo: Vitals + Achados */}
+                          {(hasVitals || entry.objective) && (
                             <div className="flex gap-2.5 items-start">
                               <SoapBadge letter="O" colorClass="bg-green-500/20 text-green-400" />
-                              <div className="flex-1">
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                  {entry.systolicBp && entry.diastolicBp && (
-                                    <span>PA: <strong className="text-foreground">{entry.systolicBp}/{entry.diastolicBp}</strong> mmHg</span>
-                                  )}
-                                  {entry.heartRate ? <span>FC: <strong className="text-foreground">{entry.heartRate}</strong> bpm</span> : null}
-                                  {entry.respiratoryRate ? <span>FR: <strong className="text-foreground">{entry.respiratoryRate}</strong> irpm</span> : null}
-                                  {entry.spO2 ? <span>SpO₂: <strong className="text-foreground">{entry.spO2}</strong>%</span> : null}
-                                  {entry.temperature ? <span>Temp: <strong className="text-foreground">{entry.temperature}</strong>°C</span> : null}
-                                  {entry.glucose ? <span>HGT: <strong className="text-foreground">{entry.glucose}</strong> mg/dL</span> : null}
-                                </div>
+                              <div className="flex-1 space-y-1">
+                                {hasVitals && (
+                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                    {entry.systolicBp && entry.diastolicBp && (
+                                      <span>PA: <strong className="text-foreground">{entry.systolicBp}/{entry.diastolicBp}</strong> mmHg</span>
+                                    )}
+                                    {entry.heartRate ? <span>FC: <strong className="text-foreground">{entry.heartRate}</strong> bpm</span> : null}
+                                    {entry.respiratoryRate ? <span>FR: <strong className="text-foreground">{entry.respiratoryRate}</strong> irpm</span> : null}
+                                    {entry.spO2 ? <span>SpO₂: <strong className="text-foreground">{entry.spO2}</strong>%</span> : null}
+                                    {entry.temperature ? <span>Temp: <strong className="text-foreground">{entry.temperature}</strong>°C</span> : null}
+                                    {entry.glucose ? <span>HGT: <strong className="text-foreground">{entry.glucose}</strong> mg/dL</span> : null}
+                                  </div>
+                                )}
                                 {(entry.generalCondition || entry.consciousnessLevel || entry.painScale != null) && (
-                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
+                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                                     {entry.generalCondition && (
                                       <span>Estado: <strong className="text-foreground capitalize">{entry.generalCondition}</strong></span>
                                     )}
@@ -597,6 +599,9 @@ export default function PatientDetail() {
                                       )}>{entry.painScale}/10</strong></span>
                                     )}
                                   </div>
+                                )}
+                                {entry.objective && (
+                                  <p className="text-sm text-foreground">{entry.objective}</p>
                                 )}
                               </div>
                             </div>

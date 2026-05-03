@@ -220,6 +220,7 @@ export interface PatientHistoryEntry {
   consciousnessLevel?: string;
   generalCondition?: string;
   subjective: string;
+  objective: string;
   assessment: string;
   plan: string;
   responsible: string;
@@ -245,6 +246,7 @@ export interface RecordPatientVitalsBody {
   consciousnessLevel?: string;
   generalCondition?: string;
   subjective?: string;
+  objective?: string;
   assessment?: string;
   plan?: string;
   responsible: string;

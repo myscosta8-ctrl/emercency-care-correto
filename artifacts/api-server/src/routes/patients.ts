@@ -313,6 +313,7 @@ router.post("/:id/vitals", async (req, res) => {
     responsible:       body.responsible,
     note:              body.note              ?? "",
     subjective:        body.subjective        ?? "",
+    objective:         body.objective         ?? "",
     assessment:        body.assessment        ?? "",
     plan:              body.plan              ?? "",
     painScale:         body.painScale         ?? null,

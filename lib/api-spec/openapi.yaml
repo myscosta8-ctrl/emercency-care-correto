@@ -1021,6 +1021,8 @@ components:
           type: string
         subjective:
           type: string
+        objective:
+          type: string
         assessment:
           type: string
         plan:
@@ -1038,6 +1040,7 @@ components:
         - id
         - patientId
         - subjective
+        - objective
         - assessment
         - plan
         - responsible
@@ -1080,6 +1083,8 @@ components:
         generalCondition:
           type: string
         subjective:
+          type: string
+        objective:
           type: string
         assessment:
           type: string

@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Printer, ClipboardList, HeartPulse, Wind, Droplet, Thermometer, Gauge, Activity } from "lucide-react";
+import {
+  ArrowLeft, Printer, ClipboardList,
+  HeartPulse, Wind, Droplet, Thermometer, Gauge, Activity,
+} from "lucide-react";
 import { useListPatients } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
 import { useNurse } from "@/hooks/use-nurse";
@@ -10,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-// ── sector config ─────────────────────────────────────────────────────────────
+// ── sector config ──────────────────────────────────────────────────────────────
 
 const SECTORS = [
   {
@@ -19,8 +22,6 @@ const SECTORS = [
     sub: "Leitos críticos",
     headerCls: "bg-red-950/70 border-red-700/50 text-red-200",
     accentCls: "border-l-red-500",
-    printHeaderBg: "#fef2f2",
-    printHeaderColor: "#991b1b",
   },
   {
     key: "observacao_adulto",
@@ -28,8 +29,6 @@ const SECTORS = [
     sub: "",
     headerCls: "bg-yellow-950/50 border-yellow-700/40 text-yellow-200",
     accentCls: "border-l-yellow-500",
-    printHeaderBg: "#fefce8",
-    printHeaderColor: "#854d0e",
   },
   {
     key: "observacao_pediatrica",
@@ -37,8 +36,6 @@ const SECTORS = [
     sub: "",
     headerCls: "bg-green-950/50 border-green-700/40 text-green-200",
     accentCls: "border-l-green-500",
-    printHeaderBg: "#f0fdf4",
-    printHeaderColor: "#166534",
   },
   {
     key: "observacao_pre_adulto",
@@ -46,8 +43,6 @@ const SECTORS = [
     sub: "",
     headerCls: "bg-blue-950/50 border-blue-700/40 text-blue-200",
     accentCls: "border-l-blue-500",
-    printHeaderBg: "#eff6ff",
-    printHeaderColor: "#1e40af",
   },
 ] as const;
 
@@ -58,15 +53,14 @@ const TRIAGE_SEVERITY: Record<string, number> = {
   red: 1, orange: 2, yellow: 3, green: 4, blue: 5,
 };
 const TRIAGE_COLOR_SCREEN: Record<string, string> = {
-  red: "text-red-400 bg-red-500/15 border-red-500/30",
+  red:    "text-red-400 bg-red-500/15 border-red-500/30",
   orange: "text-orange-400 bg-orange-500/15 border-orange-500/30",
   yellow: "text-yellow-400 bg-yellow-500/15 border-yellow-500/30",
-  green: "text-green-400 bg-green-500/15 border-green-500/30",
-  blue: "text-blue-400 bg-blue-500/15 border-blue-500/30",
+  green:  "text-green-400 bg-green-500/15 border-green-500/30",
+  blue:   "text-blue-400 bg-blue-500/15 border-blue-500/30",
 };
 
 const TURNOS = ["Manhã", "Tarde", "Noite"] as const;
-
 function detectTurno(): (typeof TURNOS)[number] {
   const h = new Date().getHours();
   if (h >= 7 && h < 13) return "Manhã";
@@ -74,13 +68,42 @@ function detectTurno(): (typeof TURNOS)[number] {
   return "Noite";
 }
 
-// ── row state ─────────────────────────────────────────────────────────────────
+// ── pendências estruturadas ────────────────────────────────────────────────────
 
-type RowState = { estado: string; pendencias: string; notif: "ok" | "pendente" | null };
-const defaultRow = (): RowState => ({ estado: "", pendencias: "", notif: null });
+const PEND_ITEMS = [
+  { key: "acesso_venoso",    label: "Acesso venoso" },
+  { key: "sonda_uretral",    label: "Sonda uretral" },
+  { key: "sonda_nasogastrica", label: "Sonda nasogástrica" },
+  { key: "sonda_vesical",    label: "Sonda vesical" },
+  { key: "exames_laboratorio", label: "Exames laboratoriais" },
+  { key: "exames_imagem",    label: "Exames de imagem" },
+  { key: "procedimento",     label: "Procedimento pendente" },
+  { key: "medicacao",        label: "Medicação" },
+] as const;
+
+type PendKey = (typeof PEND_ITEMS)[number]["key"];
+
+// ── row state ──────────────────────────────────────────────────────────────────
+
+interface RowState {
+  estado:     string;
+  soap_s:     string;
+  soap_o:     string;
+  soap_a:     string;
+  soap_p:     string;
+  pends:      Set<PendKey>;
+  pend_obs:   string;
+  notif:      "ok" | "pendente" | null;
+}
+
+const defaultRow = (): RowState => ({
+  estado: "", soap_s: "", soap_o: "", soap_a: "", soap_p: "",
+  pends: new Set(), pend_obs: "", notif: null,
+});
+
 const ESTADO_OPTIONS = ["Estável", "Grave", "Instável", "Crítico"];
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+// ── helpers ────────────────────────────────────────────────────────────────────
 
 function val(v: string | number | null | undefined, fallback = "—"): string {
   if (v === null || v === undefined || v === "" || v === 0) return fallback;
@@ -89,39 +112,84 @@ function val(v: string | number | null | undefined, fallback = "—"): string {
 
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  const parts = iso.slice(0, 10).split("-");
-  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : iso;
+  const p = iso.slice(0, 10).split("-");
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
 }
 
 function endereco(p: Patient): string {
-  const parts = [p.street, p.addressNumber, p.addressComplement, p.neighborhood].filter(Boolean);
-  return parts.join(", ") || "—";
+  return [p.street, p.addressNumber, p.addressComplement, p.neighborhood].filter(Boolean).join(", ") || "—";
 }
 
-// ── vitals row ────────────────────────────────────────────────────────────────
+// ── vital cell ─────────────────────────────────────────────────────────────────
 
-interface VitalCellProps { label: string; value: string; alert?: boolean; icon?: React.ReactNode }
-function VitalCell({ label, value, alert, icon }: VitalCellProps) {
+function VitalCell({ label, value, alert, icon }: {
+  label: string; value: string; alert?: boolean; icon?: React.ReactNode;
+}) {
   return (
     <div className={cn(
-      "flex flex-col items-center justify-center rounded border py-1 px-1.5 min-w-[52px]",
+      "flex flex-col items-center justify-center rounded border py-1 px-1.5 min-w-[50px]",
       "bg-muted/10 border-border/30 print:bg-white print:border-gray-300",
-      alert ? "border-red-500/50 bg-red-950/20 print:border-red-400" : ""
+      alert ? "border-red-500/50 bg-red-950/20 print:border-red-400" : "",
     )}>
       <span className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground print:text-gray-500 leading-none mb-0.5 flex items-center gap-0.5">
         {icon}<span>{label}</span>
       </span>
       <span className={cn(
         "text-sm font-bold font-mono leading-none print:text-black",
-        alert ? "text-red-400 print:text-red-700" : "text-foreground"
-      )}>
-        {value}
-      </span>
+        alert ? "text-red-400 print:text-red-700" : "text-foreground",
+      )}>{value}</span>
     </div>
   );
 }
 
-// ── patient card ──────────────────────────────────────────────────────────────
+// ── soap badge ─────────────────────────────────────────────────────────────────
+
+const SOAP_CFG = {
+  S: { color: "bg-blue-500/20 text-blue-300 border-blue-500/40",   border: "border-l-blue-500/60",   placeholder: "Paciente refere... queixas, sintomas, evolução subjetiva." },
+  O: { color: "bg-green-500/20 text-green-300 border-green-500/40", border: "border-l-green-500/60",  placeholder: "Achados clínicos, exame físico, sinais objetivos observados." },
+  A: { color: "bg-orange-500/20 text-orange-300 border-orange-500/40", border: "border-l-orange-500/60", placeholder: "Análise e avaliação do quadro clínico atual." },
+  P: { color: "bg-purple-500/20 text-purple-300 border-purple-500/40", border: "border-l-purple-500/60", placeholder: "- Manter monitorização\n- Administrar medicação conforme prescrição\n- Reavaliar em ___ min" },
+} as const;
+
+type SoapKey = keyof typeof SOAP_CFG;
+
+function SoapField({ letter, value, onChange }: {
+  letter: SoapKey; value: string; onChange: (v: string) => void;
+}) {
+  const cfg = SOAP_CFG[letter];
+  return (
+    <div className={cn("border-l-2 pl-2", cfg.border)}>
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <span className={cn(
+          "inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold border shrink-0",
+          cfg.color, "print:bg-transparent print:border-gray-400 print:text-black",
+        )}>{letter}</span>
+        <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-500">
+          {{ S: "Subjetivo", O: "Objetivo", A: "Avaliação", P: "Plano" }[letter]}
+        </span>
+      </div>
+      <textarea
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        rows={letter === "P" ? 3 : 2}
+        placeholder={cfg.placeholder}
+        className={cn(
+          "w-full bg-transparent border border-border/30 rounded px-2 py-1 text-xs text-foreground",
+          "placeholder:text-muted-foreground/50 resize-none outline-none focus:border-primary/50",
+          "print:hidden",
+        )}
+      />
+      <div className={cn(
+        "hidden print:block text-[8pt] text-black whitespace-pre-wrap min-h-[28px] border-b border-gray-300 pb-0.5",
+        letter === "P" ? "min-h-[48px]" : "",
+      )}>
+        {value || ""}
+      </div>
+    </div>
+  );
+}
+
+// ── patient card ───────────────────────────────────────────────────────────────
 
 interface PatientCardProps {
   patient: Patient;
@@ -132,38 +200,46 @@ interface PatientCardProps {
 
 function PatientCard({ patient: p, accentCls, state, onChange }: PatientCardProps) {
   const triage = TRIAGE_COLOR_SCREEN[p.status] ?? TRIAGE_COLOR_SCREEN.blue;
-  const pa = (p.systolicBp && p.diastolicBp) ? `${p.systolicBp}/${p.diastolicBp}` : "—";
-  const fc = p.heartRate ? String(p.heartRate) : "—";
-  const fr = p.respiratoryRate ? String(p.respiratoryRate) : "—";
-  const spo2 = p.spO2 ? `${p.spO2}%` : "—";
-  const temp = p.temperature ? `${p.temperature}°C` : "—";
-  const hgt = p.glucose ? `${p.glucose}` : "—";
-  const dataHora = [p.attendanceDate ? fmtDate(p.attendanceDate) : "", p.attendanceTime || ""].filter(Boolean).join(" ") || "—";
-  const profissional = val(p.responsibleProfessional);
 
-  const fcAlert = p.heartRate > 100 || p.heartRate < 50;
+  const pa   = (p.systolicBp && p.diastolicBp) ? `${p.systolicBp}/${p.diastolicBp}` : "—";
+  const fc   = p.heartRate        ? String(p.heartRate)        : "—";
+  const fr   = p.respiratoryRate  ? String(p.respiratoryRate)  : "—";
+  const spo2 = p.spO2             ? `${p.spO2}%`              : "—";
+  const temp = p.temperature      ? `${p.temperature}°C`      : "—";
+  const hgt  = p.glucose          ? `${p.glucose} mg/dL`      : "—";
+
+  const fcAlert   = p.heartRate > 100 || (p.heartRate > 0 && p.heartRate < 50);
   const spo2Alert = p.spO2 > 0 && p.spO2 < 94;
   const tempAlert = p.temperature > 37.8 || (p.temperature > 0 && p.temperature < 35.5);
+
+  const dataHora    = [p.attendanceDate ? fmtDate(p.attendanceDate) : "", p.attendanceTime || ""].filter(Boolean).join(" ") || "—";
+  const profissional = val(p.responsibleProfessional);
+
+  function togglePend(key: PendKey) {
+    const next = new Set(state.pends);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    onChange({ pends: next });
+  }
 
   return (
     <div className={cn(
       "rounded-lg border border-border/40 border-l-4 overflow-hidden",
       "print:border print:border-gray-300 print:border-l-4 print:rounded-none print:mb-2",
-      accentCls
+      accentCls,
     )}>
 
-      {/* ── card header: nome + classificação ──────────────────────────── */}
-      <div className="flex items-center justify-between gap-3 px-3 py-2 bg-muted/20 print:bg-gray-50 print:px-2 print:py-1.5 border-b border-border/30 print:border-gray-200">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="font-bold text-sm text-foreground print:text-black truncate">{p.nome}</span>
+      {/* ── cabeçalho ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 px-3 py-2 bg-muted/20 print:bg-gray-50 print:px-2 print:py-1 border-b border-border/30 print:border-gray-200">
+        <div className="min-w-0">
+          <span className="font-bold text-sm text-foreground print:text-black">{p.nome}</span>
           {p.diagnosis && (
-            <span className="text-xs text-muted-foreground print:text-gray-500 truncate hidden sm:inline">— {p.diagnosis}</span>
+            <span className="ml-2 text-xs text-muted-foreground print:text-gray-500 hidden sm:inline">— {p.diagnosis}</span>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className={cn(
             "text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wide",
-            triage, "print:text-gray-800 print:bg-gray-100 print:border-gray-400"
+            triage, "print:text-gray-800 print:bg-gray-100 print:border-gray-400",
           )}>
             {TRIAGE_LABEL[p.status] ?? p.status}
           </span>
@@ -173,82 +249,123 @@ function PatientCard({ patient: p, accentCls, state, onChange }: PatientCardProp
         </div>
       </div>
 
-      {/* ── body: dois painéis ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] print:grid-cols-[1fr_auto] gap-0 divide-y md:divide-y-0 md:divide-x divide-border/30 print:divide-x print:divide-gray-200">
+      {/* ── identificação + vitais ─────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] print:grid-cols-[1fr_auto] gap-0 divide-y md:divide-y-0 md:divide-x divide-border/20 print:divide-x print:divide-gray-200">
 
-        {/* ── painel esquerdo: identificação ──────────────────────────── */}
-        <div className="px-3 py-2 print:px-2 print:py-1.5">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-1.5">Identificação</p>
+        {/* identificação */}
+        <div className="px-3 py-2 print:px-2 print:py-1">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-1">Identificação</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 print:grid-cols-3 gap-x-4 gap-y-0.5 text-xs">
-            <Field label="Mãe" value={val(p.motherName)} />
-            <Field label="Nasc." value={fmtDate(p.birthDate)} />
-            <Field label="Idade" value={p.age ? `${p.age} anos` : "—"} />
-            <Field label="Sexo" value={p.sex === "M" ? "Masculino" : p.sex === "F" ? "Feminino" : val(p.sex)} />
-            <Field label="CPF" value={val(p.cpf)} mono />
-            <Field label="RG" value={val(p.rg)} mono />
-            <Field label="CNS" value={val(p.cns)} mono />
-            <Field label="Setor" value={val(p.setor).replace(/_/g, " ")} className="capitalize" />
-            <Field label="Endereço" value={endereco(p)} className="col-span-2 sm:col-span-1 print:col-span-1" />
+            <F label="Mãe"      value={val(p.motherName)} />
+            <F label="Nasc."    value={fmtDate(p.birthDate)} />
+            <F label="Idade"    value={p.age ? `${p.age} anos` : "—"} />
+            <F label="Sexo"     value={p.sex === "M" ? "Masculino" : p.sex === "F" ? "Feminino" : val(p.sex)} />
+            <F label="CPF"      value={val(p.cpf)} mono />
+            <F label="RG"       value={val(p.rg)} mono />
+            <F label="CNS"      value={val(p.cns)} mono />
+            <F label="Setor"    value={val(p.setor).replace(/_/g, " ")} />
+            <F label="Endereço" value={endereco(p)} className="col-span-2 sm:col-span-1 print:col-span-1" />
           </div>
         </div>
 
-        {/* ── painel direito: sinais vitais ────────────────────────────── */}
-        <div className="px-3 py-2 print:px-2 print:py-1.5 md:w-[300px] print:w-[280px]">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-1.5">Sinais Vitais</p>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            <VitalCell label="PA" value={pa} icon={<Gauge className="h-2 w-2 mr-0.5" />} />
-            <VitalCell label="FC" value={fc} alert={fcAlert} icon={<HeartPulse className="h-2 w-2 mr-0.5" />} />
-            <VitalCell label="FR" value={fr} icon={<Wind className="h-2 w-2 mr-0.5" />} />
-            <VitalCell label="SpO₂" value={spo2} alert={spo2Alert} icon={<Droplet className="h-2 w-2 mr-0.5" />} />
+        {/* sinais vitais */}
+        <div className="px-3 py-2 print:px-2 print:py-1 md:w-[290px] print:w-[275px]">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-1">Sinais Vitais</p>
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            <VitalCell label="PA"    value={pa}   icon={<Gauge       className="h-2 w-2 mr-0.5" />} />
+            <VitalCell label="FC"    value={fc}   alert={fcAlert}   icon={<HeartPulse  className="h-2 w-2 mr-0.5" />} />
+            <VitalCell label="FR"    value={fr}   icon={<Wind        className="h-2 w-2 mr-0.5" />} />
+            <VitalCell label="SpO₂"  value={spo2} alert={spo2Alert} icon={<Droplet     className="h-2 w-2 mr-0.5" />} />
             <VitalCell label="Temp." value={temp} alert={tempAlert} icon={<Thermometer className="h-2 w-2 mr-0.5" />} />
-            <VitalCell label="HGT" value={hgt === "—" ? hgt : `${hgt} mg/dL`} icon={<Activity className="h-2 w-2 mr-0.5" />} />
+            <VitalCell label="HGT"   value={hgt}  icon={<Activity    className="h-2 w-2 mr-0.5" />} />
           </div>
-          <div className="flex gap-3 text-xs">
-            <div className="min-w-0">
-              <span className="text-muted-foreground print:text-gray-500 font-semibold uppercase text-[9px]">Data/Hora: </span>
-              <span className="text-foreground print:text-black font-mono">{dataHora}</span>
-            </div>
-            <div className="min-w-0 truncate">
-              <span className="text-muted-foreground print:text-gray-500 font-semibold uppercase text-[9px]">Profissional: </span>
-              <span className="text-foreground print:text-black">{profissional}</span>
-            </div>
+          <div className="flex gap-3 text-[10px] text-muted-foreground print:text-gray-500">
+            <span><span className="font-semibold uppercase">Data/Hora:</span> <span className="font-mono text-foreground print:text-black">{dataHora}</span></span>
+            <span className="truncate"><span className="font-semibold uppercase">Prof.:</span> <span className="text-foreground print:text-black">{profissional}</span></span>
           </div>
         </div>
       </div>
 
-      {/* ── rodapé: estado / pendências / notificação ─────────────────── */}
-      <div className="grid grid-cols-[130px_1fr_auto] gap-2 px-3 py-2 print:px-2 print:py-1.5 border-t border-border/20 print:border-gray-200 bg-muted/5 print:bg-white items-start">
+      {/* ── SOAP ──────────────────────────────────────────────────────── */}
+      <div className="px-3 py-2 print:px-2 print:py-1 border-t border-border/20 print:border-gray-200">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-1.5">Evolução SOAP</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-x-4 gap-y-2">
+          {(["S", "O", "A", "P"] as SoapKey[]).map(letter => (
+            <SoapField
+              key={letter}
+              letter={letter}
+              value={state[`soap_${letter.toLowerCase()}` as "soap_s" | "soap_o" | "soap_a" | "soap_p"]}
+              onChange={v => onChange({ [`soap_${letter.toLowerCase()}`]: v } as Partial<RowState>)}
+            />
+          ))}
+        </div>
+      </div>
 
-        {/* Estado */}
-        <div>
-          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-0.5">Estado</p>
+      {/* ── pendências estruturadas ────────────────────────────────────── */}
+      <div className="px-3 py-2 print:px-2 print:py-1 border-t border-border/20 print:border-gray-200">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-1.5">Pendências</p>
+
+        {/* checkboxes */}
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 print:hidden">
+          {PEND_ITEMS.map(item => (
+            <label key={item.key} className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={state.pends.has(item.key)}
+                onChange={() => togglePend(item.key)}
+                className="accent-primary h-3.5 w-3.5 rounded"
+              />
+              <span className={cn(
+                "text-xs transition-colors",
+                state.pends.has(item.key) ? "text-foreground font-semibold" : "text-muted-foreground",
+              )}>
+                {item.label}
+              </span>
+            </label>
+          ))}
+        </div>
+
+        {/* print version checkboxes */}
+        <div className="hidden print:flex flex-wrap gap-x-4 gap-y-0.5 mb-1.5">
+          {PEND_ITEMS.map(item => (
+            <span key={item.key} className="text-[8pt] text-black">
+              ({state.pends.has(item.key) ? "✓" : " "}) {item.label}
+            </span>
+          ))}
+        </div>
+
+        {/* obs livre */}
+        <input
+          type="text"
+          value={state.pend_obs}
+          onChange={e => onChange({ pend_obs: e.target.value })}
+          placeholder="Outras pendências / observações..."
+          className="w-full bg-transparent border-b border-border/40 print:border-gray-400 outline-none text-xs text-foreground print:text-black placeholder:text-muted-foreground/50 py-0.5 print:hidden"
+        />
+        <div className="hidden print:block text-[8pt] text-black border-b border-gray-300 min-h-[14px]">
+          {state.pend_obs || ""}
+        </div>
+      </div>
+
+      {/* ── rodapé: estado + notificação ──────────────────────────────── */}
+      <div className="flex items-center gap-4 px-3 py-1.5 print:px-2 print:py-1 border-t border-border/20 print:border-gray-200 bg-muted/5 print:bg-white">
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 shrink-0">Estado:</span>
           <select
             value={state.estado}
             onChange={e => onChange({ estado: e.target.value })}
-            className="w-full bg-transparent border border-border/40 rounded px-1.5 py-1 text-xs text-foreground print:hidden focus:outline-none focus:border-primary/60"
+            className="bg-transparent border border-border/40 rounded px-1.5 py-0.5 text-xs text-foreground print:hidden focus:outline-none focus:border-primary/60"
           >
             <option value="">—</option>
             {ESTADO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
-          <span className="hidden print:inline text-sm text-black">{state.estado || "___________"}</span>
+          <span className="hidden print:inline text-xs text-black font-semibold">
+            {state.estado || "___________"}
+          </span>
         </div>
 
-        {/* Pendências */}
-        <div>
-          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-0.5">Pendências</p>
-          <input
-            type="text"
-            value={state.pendencias}
-            onChange={e => onChange({ pendencias: e.target.value })}
-            placeholder="Registrar pendência..."
-            className="w-full bg-transparent border-b border-border/40 print:border-gray-400 outline-none text-xs text-foreground print:text-black placeholder:text-muted-foreground/60 py-0.5 print:hidden"
-          />
-          <span className="hidden print:inline text-sm text-black">{state.pendencias || "____________________________________________"}</span>
-        </div>
-
-        {/* Notificação */}
-        <div>
-          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400 mb-0.5">Notificação</p>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground print:text-gray-400">Notificação:</span>
           <div className="flex gap-1 print:hidden">
             {(["ok", "pendente"] as const).map(v => (
               <button
@@ -256,51 +373,50 @@ function PatientCard({ patient: p, accentCls, state, onChange }: PatientCardProp
                 type="button"
                 onClick={() => onChange({ notif: state.notif === v ? null : v })}
                 className={cn(
-                  "px-2 py-1 rounded text-[11px] font-semibold border transition-colors",
+                  "px-2 py-0.5 rounded text-[11px] font-semibold border transition-colors",
                   state.notif === v
                     ? v === "ok"
                       ? "bg-emerald-500/20 border-emerald-500/60 text-emerald-300"
                       : "bg-red-500/20 border-red-500/60 text-red-300"
-                    : "border-border/40 text-muted-foreground hover:bg-muted/30"
+                    : "border-border/40 text-muted-foreground hover:bg-muted/30",
                 )}
               >
                 {v === "ok" ? "OK" : "Pend."}
               </button>
             ))}
           </div>
-          <div className="hidden print:flex gap-2 text-xs text-black">
-            <span>({state.notif === "ok" ? "✓" : " "}) OK</span>
-            <span>({state.notif === "pendente" ? "✓" : " "}) Pend.</span>
-          </div>
+          <span className="hidden print:inline text-xs text-black">
+            ({state.notif === "ok" ? "✓" : " "}) OK  ({state.notif === "pendente" ? "✓" : " "}) Pend.
+          </span>
         </div>
       </div>
     </div>
   );
 }
 
-// ── field helper ──────────────────────────────────────────────────────────────
+// ── field helper ───────────────────────────────────────────────────────────────
 
-function Field({ label, value, mono, className }: { label: string; value: string; mono?: boolean; className?: string }) {
+function F({ label, value, mono, className }: { label: string; value: string; mono?: boolean; className?: string }) {
   return (
     <div className={cn("leading-snug", className)}>
-      <span className="text-muted-foreground print:text-gray-500 text-[9px] font-semibold uppercase tracking-wide">{label}: </span>
+      <span className="text-muted-foreground print:text-gray-500 text-[9px] font-semibold uppercase">{label}: </span>
       <span className={cn("text-foreground print:text-black", mono ? "font-mono" : "")}>{value}</span>
     </div>
   );
 }
 
-// ── main page ─────────────────────────────────────────────────────────────────
+// ── main page ──────────────────────────────────────────────────────────────────
 
 export default function ShiftHandover() {
   const { nurseName: nurse } = useNurse();
   const today = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
 
-  const [date, setDate]        = useState(today);
-  const [turno, setTurno]      = useState<(typeof TURNOS)[number]>(detectTurno());
-  const [responsible, setResp] = useState(nurse);
-  const [rowStates, setRowStates] = useState<Record<number, RowState>>({});
-  const [pendenciasGerais, setPendenciasGerais] = useState("");
-  const [obsGerais, setObsGerais] = useState("");
+  const [date,        setDate]      = useState(today);
+  const [turno,       setTurno]     = useState<(typeof TURNOS)[number]>(detectTurno());
+  const [responsible, setResp]      = useState(nurse);
+  const [rowStates,   setRowStates] = useState<Record<number, RowState>>({});
+  const [pendGerais,  setPendGerais] = useState("");
+  const [obsGerais,   setObsGerais] = useState("");
 
   const { data: patients, isLoading } = useListPatients();
 
@@ -314,7 +430,7 @@ export default function ShiftHandover() {
   const totalPatients = grouped.reduce((n, g) => n + g.patients.length, 0);
   const criticalCount = (patients ?? []).filter(p => p.status === "red" || p.status === "orange").length;
 
-  const getRow = (id: number): RowState => rowStates[id] ?? defaultRow();
+  const getRow    = (id: number): RowState => rowStates[id] ?? defaultRow();
   const updateRow = (id: number, patch: Partial<RowState>) =>
     setRowStates(prev => ({ ...prev, [id]: { ...getRow(id), ...patch } }));
 
@@ -322,7 +438,7 @@ export default function ShiftHandover() {
     <>
       <style>{`
         @media print {
-          @page { margin: 8mm 10mm; size: A4; }
+          @page { margin: 7mm 9mm; size: A4; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           body { background: white !important; color: black !important; font-size: 8pt !important; line-height: 1.3; }
           .print-hide { display: none !important; }
@@ -349,8 +465,7 @@ export default function ShiftHandover() {
                 <span className="text-red-400 font-semibold">{criticalCount} críticos</span>
               )}
               <Button onClick={() => window.print()} size="sm" className="gap-2 ml-2">
-                <Printer className="h-3.5 w-3.5" />
-                Imprimir
+                <Printer className="h-3.5 w-3.5" /> Imprimir
               </Button>
             </div>
           </div>
@@ -358,7 +473,7 @@ export default function ShiftHandover() {
 
         <main className="container mx-auto px-4 py-5 max-w-5xl print:px-0 print:py-0 print:max-w-none">
 
-          {/* ── título (só impressão) ────────────────────────────────── */}
+          {/* ── título impressão ─────────────────────────────────────── */}
           <div className="hidden print:block text-center mb-3 pb-2 border-b-2 border-gray-600">
             <h1 className="text-base font-bold text-black uppercase tracking-wider">
               PASSAGEM DE PLANTÃO — UPA BREVES
@@ -419,12 +534,9 @@ export default function ShiftHandover() {
             <div className="space-y-6 print:space-y-4">
               {grouped.map(sector => (
                 <div key={sector.key}>
-
-                  {/* sector header */}
                   <div className={cn(
                     "flex items-center justify-between gap-3 px-4 py-2 rounded-t-lg border",
-                    sector.headerCls,
-                    "print:rounded-none"
+                    sector.headerCls, "print:rounded-none",
                   )}>
                     <span className="font-bold text-sm tracking-wide">{sector.label}</span>
                     {sector.sub && <span className="text-xs opacity-70">({sector.sub})</span>}
@@ -433,7 +545,6 @@ export default function ShiftHandover() {
                     </span>
                   </div>
 
-                  {/* patients */}
                   {sector.patients.length === 0 ? (
                     <div className="border border-t-0 border-border/30 print:border-gray-300 rounded-b-lg px-4 py-3 text-sm text-muted-foreground italic print:text-gray-400">
                       Nenhum paciente neste setor.
@@ -469,7 +580,7 @@ export default function ShiftHandover() {
                     <span className="text-xs text-muted-foreground print:text-gray-500 uppercase font-semibold">Críticos (Vermelho/Laranja): </span>
                     <span className={cn(
                       "text-xl font-bold",
-                      criticalCount > 0 ? "text-red-400 print:text-red-700" : "text-foreground print:text-black"
+                      criticalCount > 0 ? "text-red-400 print:text-red-700" : "text-foreground print:text-black",
                     )}>{criticalCount}</span>
                   </div>
                 </div>
@@ -479,14 +590,14 @@ export default function ShiftHandover() {
                     Pendências Gerais
                   </label>
                   <Textarea
-                    className="text-sm min-h-[80px] print:hidden"
+                    className="text-sm min-h-[70px] print:hidden"
                     placeholder={"- \n- \n- "}
-                    value={pendenciasGerais}
-                    onChange={e => setPendenciasGerais(e.target.value)}
+                    value={pendGerais}
+                    onChange={e => setPendGerais(e.target.value)}
                   />
                   <div className="hidden print:block text-sm text-black space-y-1.5">
-                    {pendenciasGerais
-                      ? pendenciasGerais.split("\n").map((line, i) => <div key={i}>{line || "—"}</div>)
+                    {pendGerais
+                      ? pendGerais.split("\n").map((line, i) => <div key={i}>{line || "—"}</div>)
                       : [0, 1, 2].map(i => <div key={i} className="border-b border-gray-300 h-5" />)
                     }
                   </div>
@@ -497,7 +608,7 @@ export default function ShiftHandover() {
                     Observações Importantes
                   </label>
                   <Textarea
-                    className="text-sm min-h-[60px] print:hidden"
+                    className="text-sm min-h-[50px] print:hidden"
                     placeholder="Registre observações relevantes para o próximo turno..."
                     value={obsGerais}
                     onChange={e => setObsGerais(e.target.value)}

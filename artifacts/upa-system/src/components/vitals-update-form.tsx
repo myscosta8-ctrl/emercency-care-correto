@@ -26,6 +26,7 @@ const DEFAULT_PLAN =
 
 const schema = z.object({
   subjective: z.string().default(""),
+  objective: z.string().default(""),
   systolicBp: z.coerce.number().min(0).default(0),
   diastolicBp: z.coerce.number().min(0).default(0),
   heartRate: z.coerce.number().min(0).default(0),
@@ -103,6 +104,7 @@ export function VitalsUpdateForm({ patient, onSuccess, onCancel }: VitalsUpdateF
     resolver: zodResolver(schema),
     defaultValues: {
       subjective: "",
+      objective: "",
       systolicBp: patient.systolicBp || 0,
       diastolicBp: patient.diastolicBp || 0,
       heartRate: patient.heartRate || 0,
@@ -236,6 +238,26 @@ export function VitalsUpdateForm({ patient, onSuccess, onCancel }: VitalsUpdateF
                   </FormItem>
                 )} />
               </div>
+
+              {/* Achados Clínicos */}
+              <FormField
+                control={form.control}
+                name="objective"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs text-muted-foreground">Achados clínicos / exame físico</FormLabel>
+                    <FormControl>
+                      <textarea
+                        {...field}
+                        rows={2}
+                        placeholder="Ex.: edema ++ em MMII, ausculta com murmúrio vesicular reduzido à esquerda, abdômen distendido..."
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Estado Geral */}
               <div>

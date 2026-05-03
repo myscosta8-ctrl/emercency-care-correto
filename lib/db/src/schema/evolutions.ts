@@ -15,6 +15,7 @@ export const patientEvolutionsTable = pgTable("patient_evolutions", {
   consciousnessLevel: text("consciousness_level"),
   generalCondition: text("general_condition"),
   subjective: text("subjective").notNull().default(""),
+  objective: text("objective").notNull().default(""),
   assessment: text("assessment").notNull().default(""),
   plan: text("plan").notNull().default(""),
   responsible: text("responsible").notNull().default(""),
