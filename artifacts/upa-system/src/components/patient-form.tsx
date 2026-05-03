@@ -51,11 +51,6 @@ const SEX_OPTIONS = [
   { value: "O", label: "Não inf." },
 ] as const;
 
-const ESTADOS_BR = [
-  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA",
-  "PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
-];
-
 // ── age helper ────────────────────────────────────────────────────────────────
 
 function computeAge(birthDate: string): number {
@@ -72,62 +67,37 @@ function computeAge(birthDate: string): number {
 // ── form schema ───────────────────────────────────────────────────────────────
 
 const formSchema = z.object({
-  // identificação
-  nome:       z.string().min(1, "Informe o nome completo do paciente"),
+  full_name:  z.string().min(1, "Informe o nome completo do paciente"),
   birthDate:  z.string().default(""),
   age:        z.coerce.number().min(0).default(0),
   sex:        z.enum(["M", "F", "O"]).default("O"),
   motherName: z.string().default(""),
 
-  // documentos
   cns:    z.string().default(""),
   cpf:    z.string().default(""),
   rg:     z.string().default(""),
-  weight: z.coerce.number().min(0).default(0),
-  height: z.coerce.number().min(0).default(0),
 
-  // contato
-  phone:        z.string().default(""),
-  email:        z.string().default(""),
-  guardianName: z.string().default(""),
+  address: z.string().default(""),
+  phone:   z.string().default(""),
+  email:   z.string().default(""),
 
-  // endereço
-  street:            z.string().default(""),
-  addressNumber:     z.string().default(""),
-  addressComplement: z.string().default(""),
-  neighborhood:      z.string().default(""),
-  city:         z.string().default(""),
-  addressState: z.string().default(""),
-  zipCode:      z.string().default(""),
-
-  // dados clínicos
-  status:           z.enum(["red", "orange", "yellow", "green", "blue"], {
+  triage_level:     z.enum(["red", "orange", "yellow", "green", "blue"], {
     errorMap: () => ({ message: "Selecione a classificação de triagem" }),
   }),
-  setor:            z.string().min(1, "Selecione o setor de atendimento"),
+  sector:           z.string().min(1, "Selecione o setor de atendimento"),
   internmentStatus: z.enum(["internado", "nao_internado"], {
     errorMap: () => ({ message: "Selecione o status de internação" }),
   }),
   nurse:     z.string().default(""),
-  bed:              z.string().default(""),
-  diagnosis:        z.string().default(""),
-  symptoms:         z.string().default(""),
-  symptomOnsetDate: z.string().default(""),
+  bed:       z.string().default(""),
+  diagnosis: z.string().default(""),
+  symptoms:  z.string().default(""),
+  symptomOnsetDate:        z.string().default(""),
   attendanceDate:          z.string().default(""),
   attendanceTime:          z.string().default(""),
   healthUnit:              z.string().default("UPA Breves - Breves/PA"),
   responsibleProfessional: z.string().default(""),
 
-  // sinais vitais iniciais
-  heartRate:        z.coerce.number().min(0).default(0),
-  respiratoryRate:  z.coerce.number().min(0).default(0),
-  glucose:          z.coerce.number().min(0).default(0),
-  spO2:             z.coerce.number().min(0).max(100).default(0),
-  temperature:      z.coerce.number().min(0).default(0),
-  systolicBp:       z.coerce.number().min(0).default(0),
-  diastolicBp:      z.coerce.number().min(0).default(0),
-
-  // notificação sinan
   agravo:               z.string().default(""),
   dataNotificacao:      z.string().default(""),
   municipioNotificacao: z.string().default(""),
@@ -148,57 +118,39 @@ interface PatientFormProps {
 }
 
 export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) {
-  const { toast }     = useToast();
-  const queryClient   = useQueryClient();
+  const { toast }        = useToast();
+  const queryClient      = useQueryClient();
   const { featureAtiva } = useFeatures();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nome:       patient?.nome ?? "",
-      birthDate:  patient?.birthDate ?? "",
-      age:        patient?.age ?? 0,
+      full_name:  patient?.full_name  ?? "",
+      birthDate:  patient?.birthDate  ?? "",
+      age:        patient?.age        ?? 0,
       sex:        (patient?.sex as FormValues["sex"]) ?? "O",
       motherName: patient?.motherName ?? "",
 
-      cns:    patient?.cns    ?? "",
-      cpf:    patient?.cpf    ?? "",
-      rg:     patient?.rg     ?? "",
-      weight: patient?.weight ?? 0,
-      height: patient?.height ?? 0,
+      cns: patient?.cns ?? "",
+      cpf: patient?.cpf ?? "",
+      rg:  patient?.rg  ?? "",
 
-      phone:        patient?.phone        ?? "",
-      email:        patient?.email        ?? "",
-      guardianName: patient?.guardianName ?? "",
+      address: patient?.address ?? "",
+      phone:   patient?.phone   ?? "",
+      email:   patient?.email   ?? "",
 
-      street:             patient?.street             ?? "",
-      addressNumber:      patient?.addressNumber      ?? "",
-      addressComplement:  patient?.addressComplement  ?? "",
-      neighborhood:       patient?.neighborhood       ?? "",
-      city:          patient?.city          ?? "",
-      addressState:  patient?.addressState  ?? "",
-      zipCode:       patient?.zipCode       ?? "",
-
-      status:           (patient?.status as FormValues["status"]) ?? "yellow",
-      setor:            patient?.setor ?? "",
+      triage_level:     (patient?.triage_level as FormValues["triage_level"]) ?? "yellow",
+      sector:            patient?.sector ?? "",
       internmentStatus: (patient?.internmentStatus as FormValues["internmentStatus"]) ?? "nao_internado",
       nurse:     patient?.nurse     ?? "",
-      bed:              patient?.bed              ?? "",
-      diagnosis:        patient?.diagnosis        ?? "",
-      symptoms:         patient?.symptoms         ?? "",
-      symptomOnsetDate: patient?.symptomOnsetDate ?? "",
+      bed:       patient?.bed       ?? "",
+      diagnosis: patient?.diagnosis ?? "",
+      symptoms:  patient?.symptoms  ?? "",
+      symptomOnsetDate:        patient?.symptomOnsetDate        ?? "",
       attendanceDate:          patient?.attendanceDate          ?? new Date().toISOString().slice(0, 10),
       attendanceTime:          patient?.attendanceTime          ?? "",
       healthUnit:              patient?.healthUnit              ?? "UPA Breves - Breves/PA",
       responsibleProfessional: patient?.responsibleProfessional ?? "",
-
-      heartRate:       patient?.heartRate       ?? 0,
-      respiratoryRate: patient?.respiratoryRate ?? 0,
-      glucose:         patient?.glucose         ?? 0,
-      spO2:            patient?.spO2            ?? 0,
-      temperature:     patient?.temperature     ?? 0,
-      systolicBp:      patient?.systolicBp      ?? 0,
-      diastolicBp:     patient?.diastolicBp     ?? 0,
 
       agravo:               patient?.agravo               ?? "",
       dataNotificacao:      patient?.dataNotificacao      ?? "",
@@ -210,7 +162,6 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
     },
   });
 
-  // Auto-compute age when birthDate changes
   const birthDateValue = form.watch("birthDate");
   useEffect(() => {
     if (birthDateValue) {
@@ -260,11 +211,10 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
 
-          {/* ── DADOS DO PACIENTE ──────────────────────────────────────────── */}
+          {/* ── DADOS DO PACIENTE ──────────────────────────────────────── */}
           <SectionTitle>Dados do Paciente</SectionTitle>
 
-          {/* Nome — full width, required */}
-          <FormField control={form.control} name="nome" render={({ field }) => (
+          <FormField control={form.control} name="full_name" render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Nome Completo</FormLabel>
               <FormControl><Input placeholder="Nome completo" data-testid="input-name" {...field} /></FormControl>
@@ -272,18 +222,14 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
 
-          {/* Data de nascimento */}
           <FormField control={form.control} name="birthDate" render={({ field }) => (
             <FormItem>
               <FormLabel>Data de Nascimento <Opt /></FormLabel>
-              <FormControl>
-                <Input type="date" data-testid="input-birthDate" {...field} />
-              </FormControl>
+              <FormControl><Input type="date" data-testid="input-birthDate" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
 
-          {/* Idade — read-only when birthDate is set */}
           <FormField control={form.control} name="age" render={({ field }) => (
             <FormItem>
               <FormLabel>
@@ -294,8 +240,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
               </FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  min={0}
+                  type="number" min={0}
                   data-testid="input-age"
                   readOnly={!!birthDateValue}
                   className={birthDateValue ? "bg-muted/40 text-muted-foreground cursor-not-allowed" : ""}
@@ -306,7 +251,6 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
 
-          {/* Sexo — button group, full width */}
           <FormField control={form.control} name="sex" render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Sexo <Opt /></FormLabel>
@@ -327,7 +271,6 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
 
-          {/* Nome da mãe */}
           <FormField control={form.control} name="motherName" render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Nome da Mãe <Opt /></FormLabel>
@@ -336,7 +279,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
 
-          {/* ── DOCUMENTOS ────────────────────────────────────────────────── */}
+          {/* ── DOCUMENTOS ────────────────────────────────────────────── */}
           <SectionTitle>Documentos</SectionTitle>
 
           <FormField control={form.control} name="cns" render={({ field }) => (
@@ -363,33 +306,13 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
 
-          <FormField control={form.control} name="weight" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Peso (kg) <Opt /></FormLabel>
-              <FormControl>
-                <Input type="number" min={0} step={0.1} placeholder="Ex: 72.5" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="height" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Altura (cm) <Opt /></FormLabel>
-              <FormControl>
-                <Input type="number" min={0} step={1} placeholder="Ex: 170" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          {/* ── CONTATO ───────────────────────────────────────────────────── */}
+          {/* ── CONTATO / ENDEREÇO ────────────────────────────────────── */}
           <SectionTitle>Contato</SectionTitle>
 
           <FormField control={form.control} name="phone" render={({ field }) => (
             <FormItem>
               <FormLabel>Telefone <Opt /></FormLabel>
-              <FormControl><Input placeholder="(00) 00000-0000" maxLength={15} {...field} /></FormControl>
+              <FormControl><Input placeholder="(91) 9xxxx-xxxx" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -397,159 +320,59 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           <FormField control={form.control} name="email" render={({ field }) => (
             <FormItem>
               <FormLabel>E-mail <Opt /></FormLabel>
-              <FormControl><Input placeholder="paciente@exemplo.com" type="email" {...field} /></FormControl>
+              <FormControl><Input type="email" placeholder="email@exemplo.com" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
 
-          <FormField control={form.control} name="guardianName" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome do Responsável <Opt /></FormLabel>
-              <FormControl><Input placeholder="Para menores ou incapazes" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          {/* ── ENDEREÇO ──────────────────────────────────────────────────── */}
-          <SectionTitle>Endereço</SectionTitle>
-
-          <FormField control={form.control} name="street" render={({ field }) => (
+          <FormField control={form.control} name="address" render={({ field }) => (
             <FormItem className="col-span-2">
-              <FormLabel>Rua <Opt /></FormLabel>
-              <FormControl><Input placeholder="Nome da rua ou avenida" {...field} /></FormControl>
+              <FormLabel>Endereço <Opt /></FormLabel>
+              <FormControl><Input placeholder="Rua, número, bairro, cidade" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
 
-          <FormField control={form.control} name="addressNumber" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Número <Opt /></FormLabel>
-              <FormControl><Input placeholder="Nº / S/N" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
+          {/* ── DADOS CLÍNICOS ────────────────────────────────────────── */}
+          <SectionTitle>Classificação e Setor</SectionTitle>
 
-          <FormField control={form.control} name="addressComplement" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Complemento <Opt /></FormLabel>
-              <FormControl><Input placeholder="Apto, Bloco, Casa…" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="neighborhood" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bairro <Opt /></FormLabel>
-              <FormControl><Input placeholder="Bairro" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="city" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cidade <Opt /></FormLabel>
-              <FormControl><Input placeholder="Município" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="addressState" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Estado <Opt /></FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="UF" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="max-h-48">
-                  {ESTADOS_BR.map(uf => (
-                    <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="zipCode" render={({ field }) => (
-            <FormItem>
-              <FormLabel>CEP <Opt /></FormLabel>
-              <FormControl><Input placeholder="00000-000" maxLength={9} {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          {/* ── DADOS DO ATENDIMENTO ──────────────────────────────────────── */}
-          <SectionTitle>Dados do Atendimento</SectionTitle>
-
-          <FormField control={form.control} name="attendanceDate" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Data do Atendimento</FormLabel>
-              <FormControl><Input type="date" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="attendanceTime" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Hora do Atendimento <Opt /></FormLabel>
-              <FormControl><Input type="time" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="healthUnit" render={({ field }) => (
+          {/* Triagem — button group */}
+          <FormField control={form.control} name="triage_level" render={({ field }) => (
             <FormItem className="col-span-2">
-              <FormLabel>Unidade de Saúde <Opt /></FormLabel>
-              <FormControl><Input placeholder="Nome da unidade de saúde" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="responsibleProfessional" render={({ field }) => (
-            <FormItem className="col-span-2">
-              <FormLabel>Profissional Responsável <Opt /></FormLabel>
-              <FormControl><Input placeholder="Nome do médico ou profissional responsável" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          {/* ── DADOS CLÍNICOS ────────────────────────────────────────────── */}
-          <SectionTitle>Dados Clínicos</SectionTitle>
-
-          {/* Triagem — full width */}
-          <FormField control={form.control} name="status" render={({ field }) => (
-            <FormItem className="col-span-2">
-              <FormLabel>Classificação de Risco (Manchester)</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger data-testid="select-status">
-                    <SelectValue placeholder="Selecione a classificação" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {TRIAGE_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Triagem Manchester</FormLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {TRIAGE_OPTIONS.map(opt => (
+                  <button key={opt.value} type="button"
+                    onClick={() => field.onChange(opt.value)}
+                    className={cn(
+                      "px-3 py-2 rounded-lg border text-sm font-medium transition-colors h-10 text-left",
+                      field.value === opt.value
+                        ? opt.value === "red"    ? "bg-red-500/20 border-red-500 text-red-400"
+                        : opt.value === "orange" ? "bg-orange-500/20 border-orange-500 text-orange-400"
+                        : opt.value === "yellow" ? "bg-yellow-500/20 border-yellow-500 text-yellow-400"
+                        : opt.value === "green"  ? "bg-green-500/20 border-green-500 text-green-400"
+                        :                          "bg-blue-500/20 border-blue-500 text-blue-400"
+                        : "border-border/50 text-muted-foreground hover:bg-muted/30"
+                    )}
+                  >{opt.label}</button>
+                ))}
+              </div>
               <FormMessage />
             </FormItem>
           )} />
 
           {/* Setor */}
-          <FormField control={form.control} name="setor" render={({ field }) => (
+          <FormField control={form.control} name="sector" render={({ field }) => (
             <FormItem>
               <FormLabel>Setor</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger data-testid="select-sector">
-                    <SelectValue placeholder="Selecione o setor" />
-                  </SelectTrigger>
+                  <SelectTrigger data-testid="select-sector"><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {SECTOR_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  {SECTOR_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -560,39 +383,12 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           <FormField control={form.control} name="bed" render={({ field }) => (
             <FormItem>
               <FormLabel>Leito <Opt /></FormLabel>
-              <FormControl><Input placeholder="A1, B3..." data-testid="input-bed" {...field} /></FormControl>
+              <FormControl><Input placeholder="Ex: 01, A3..." data-testid="input-bed" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
 
-          {/* Diagnóstico — full width */}
-          <FormField control={form.control} name="diagnosis" render={({ field }) => (
-            <FormItem className="col-span-2">
-              <FormLabel>Hipótese Diagnóstica <Opt /></FormLabel>
-              <FormControl>
-                <Input placeholder="Queixa principal ou hipótese diagnóstica" data-testid="input-diagnosis" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="symptomOnsetDate" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Data Início dos Sintomas <Opt /></FormLabel>
-              <FormControl><Input type="date" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="symptoms" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Sintomas <Opt /></FormLabel>
-              <FormControl><Input placeholder="Descreva os sintomas principais" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          {/* Internação — full width */}
+          {/* Status de internação */}
           <FormField control={form.control} name="internmentStatus" render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Status de Internação</FormLabel>
@@ -601,7 +397,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
                   <button key={opt.value} type="button"
                     onClick={() => field.onChange(opt.value)}
                     className={cn(
-                      "flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors",
+                      "flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors",
                       field.value === opt.value
                         ? opt.value === "internado"
                           ? "bg-blue-500/20 border-blue-500 text-blue-400"
@@ -629,12 +425,46 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
 
-          {/* Responsável */}
-          <FormField control={form.control} name="nurse" render={({ field }) => (
+          {/* ── ATENDIMENTO ────────────────────────────────────────────── */}
+          <SectionTitle>Atendimento</SectionTitle>
+
+          <FormField control={form.control} name="diagnosis" render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel>Diagnóstico / Queixa principal <Opt /></FormLabel>
+              <FormControl><Input placeholder="Ex: Febre, dor abdominal..." {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="symptoms" render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel>Sintomas <Opt /></FormLabel>
+              <FormControl><Input placeholder="Descreva os sintomas" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="attendanceDate" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data de Atendimento <Opt /></FormLabel>
+              <FormControl><Input type="date" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="attendanceTime" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Hora de Atendimento <Opt /></FormLabel>
+              <FormControl><Input type="time" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="responsibleProfessional" render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Profissional Responsável <Opt /></FormLabel>
               <FormControl>
-                <Input placeholder="Técnico(a) ou Enfermeiro(a) responsável" data-testid="input-nurse" {...field} />
+                <Input placeholder="Nome do profissional responsável" data-testid="input-nurse" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -731,62 +561,6 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
           </>)}
-
-          {/* ── SINAIS VITAIS INICIAIS ─────────────────────────────────── */}
-          <SectionTitle>Sinais Vitais Iniciais <Opt /></SectionTitle>
-
-          <div className="col-span-2 space-y-1">
-            <p className="text-xs text-muted-foreground">PA (mmHg)</p>
-            <div className="flex items-center gap-2">
-              <FormField control={form.control} name="systolicBp" render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormControl><Input type="number" min={0} placeholder="Sistólica" data-testid="input-systolicBp" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <span className="text-muted-foreground">/</span>
-              <FormField control={form.control} name="diastolicBp" render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormControl><Input type="number" min={0} placeholder="Diastólica" data-testid="input-diastolicBp" {...field} /></FormControl>
-                </FormItem>
-              )} />
-            </div>
-          </div>
-
-          <FormField control={form.control} name="heartRate" render={({ field }) => (
-            <FormItem>
-              <FormLabel>FC (bpm)</FormLabel>
-              <FormControl><Input type="number" min={0} data-testid="input-heartRate" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="respiratoryRate" render={({ field }) => (
-            <FormItem>
-              <FormLabel>FR (irpm)</FormLabel>
-              <FormControl><Input type="number" min={0} data-testid="input-respiratoryRate" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="spO2" render={({ field }) => (
-            <FormItem>
-              <FormLabel>SpO₂ (%)</FormLabel>
-              <FormControl><Input type="number" min={0} max={100} data-testid="input-spO2" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="temperature" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Temperatura (°C)</FormLabel>
-              <FormControl><Input type="number" min={0} step="0.1" data-testid="input-temperature" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="glucose" render={({ field }) => (
-            <FormItem className="col-span-2">
-              <FormLabel>HGT (mg/dL)</FormLabel>
-              <FormControl><Input type="number" min={0} step="0.1" data-testid="input-glucose" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
 
         </div>
 

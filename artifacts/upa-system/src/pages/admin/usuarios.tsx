@@ -42,19 +42,19 @@ const SECTOR_OPTIONS = [
 ];
 
 interface FormState {
-  nome: string;
+  name: string;
   login: string;
   password: string;
-  perfil: Perfil;
+  role: Perfil;
   email: string;
   sector: string;
   corenCrm: string;
-  ativo: boolean;
+  active: boolean;
 }
 
 const EMPTY_FORM: FormState = {
-  nome: "", login: "", password: "", perfil: "enfermeiro",
-  email: "", sector: "todos_os_setores", corenCrm: "", ativo: true,
+  name: "", login: "", password: "", role: "enfermeiro",
+  email: "", sector: "todos_os_setores", corenCrm: "", active: true,
 };
 
 function StaffForm({
@@ -79,7 +79,7 @@ function StaffForm({
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2 space-y-1">
           <Label className="text-xs">Nome completo *</Label>
-          <Input value={form.nome} onChange={e => set("nome", e.target.value)} placeholder="Ex: Maria Silva" />
+          <Input value={form.name} onChange={e => set("name", e.target.value)} placeholder="Ex: Maria Silva" />
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Login *</Label>
@@ -92,8 +92,8 @@ function StaffForm({
         <div className="space-y-1">
           <Label className="text-xs">Perfil *</Label>
           <select
-            value={form.perfil}
-            onChange={e => set("perfil", e.target.value)}
+            value={form.role}
+            onChange={e => set("role", e.target.value)}
             className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             {PERFIS.map(p => (
@@ -125,8 +125,8 @@ function StaffForm({
           <input
             type="checkbox"
             id="ativo-check"
-            checked={form.ativo}
-            onChange={e => set("ativo", e.target.checked)}
+            checked={form.active}
+            onChange={e => set("active", e.target.checked)}
             className="h-4 w-4 rounded border-border"
           />
           <Label htmlFor="ativo-check" className="text-xs cursor-pointer">
@@ -136,7 +136,7 @@ function StaffForm({
       </div>
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="outline" size="sm" onClick={onCancel} disabled={isPending}>Cancelar</Button>
-        <Button size="sm" onClick={() => onSave(form)} disabled={isPending || !form.nome || !form.login}>
+        <Button size="sm" onClick={() => onSave(form)} disabled={isPending || !form.name || !form.login}>
           {isPending ? "Salvando…" : isEditing ? "Salvar alterações" : "Criar funcionário"}
         </Button>
       </div>
@@ -164,8 +164,8 @@ export default function AdminUsuariosPage() {
 
   const filtered = (staff ?? []).filter(m => {
     const q = search.toLowerCase();
-    const matchSearch = !q || m.nome.toLowerCase().includes(q) || m.login.toLowerCase().includes(q);
-    const matchPerfil = perfilFilter === "all" || m.perfil === perfilFilter;
+    const matchSearch = !q || m.name.toLowerCase().includes(q) || m.login.toLowerCase().includes(q);
+    const matchPerfil = perfilFilter === "all" || m.role === perfilFilter;
     return matchSearch && matchPerfil;
   });
 
@@ -175,8 +175,8 @@ export default function AdminUsuariosPage() {
   function handleSave(form: FormState) {
     if (editingMember) {
       const body: Record<string, unknown> = {
-        nome: form.nome, login: form.login, perfil: form.perfil,
-        email: form.email, sector: form.sector, corenCrm: form.corenCrm, ativo: form.ativo,
+        name: form.name, login: form.login, role: form.role,
+        email: form.email, sector: form.sector, corenCrm: form.corenCrm, active: form.active,
       };
       if (form.password) body.password = form.password;
       updateStaff.mutate({ id: editingMember.id, data: body as Parameters<typeof updateStaff.mutate>[0]["data"] }, {
@@ -190,9 +190,9 @@ export default function AdminUsuariosPage() {
     } else {
       createStaff.mutate({
         data: {
-          nome: form.nome, login: form.login, password: form.password,
-          perfil: form.perfil as Parameters<typeof createStaff.mutate>[0]["data"]["perfil"],
-          email: form.email, sector: form.sector, corenCrm: form.corenCrm, ativo: form.ativo,
+          name: form.name, login: form.login, password: form.password,
+          role: form.role as Parameters<typeof createStaff.mutate>[0]["data"]["role"],
+          email: form.email, sector: form.sector, corenCrm: form.corenCrm, active: form.active,
         },
       }, {
         onSuccess: () => {
@@ -206,9 +206,9 @@ export default function AdminUsuariosPage() {
   }
 
   function handleToggleAtivo(m: StaffMember) {
-    updateStaff.mutate({ id: m.id, data: { ativo: !m.ativo } as Parameters<typeof updateStaff.mutate>[0]["data"] }, {
+    updateStaff.mutate({ id: m.id, data: { active: !m.active } as Parameters<typeof updateStaff.mutate>[0]["data"] }, {
       onSuccess: () => {
-        toast({ title: m.ativo ? "Usuário desativado" : "Usuário ativado" });
+        toast({ title: m.active ? "Usuário desativado" : "Usuário ativado" });
         invalidate();
       },
       onError: () => toast({ title: "Erro ao alterar status", variant: "destructive" }),
@@ -295,7 +295,7 @@ export default function AdminUsuariosPage() {
                           <UserCircle className="h-4 w-4 text-primary" />
                         </div>
                         <div className="min-w-0">
-                          <p className={cn("text-xs font-medium truncate", !m.ativo && "text-muted-foreground line-through")}>{m.nome}</p>
+                          <p className={cn("text-xs font-medium truncate", !m.active && "text-muted-foreground line-through")}>{m.name}</p>
                           {m.email && <p className="text-[11px] text-muted-foreground truncate">{m.email}</p>}
                         </div>
                       </div>
@@ -303,9 +303,9 @@ export default function AdminUsuariosPage() {
                     <td className="px-3 py-2.5 hidden sm:table-cell">
                       <span className={cn(
                         "text-[11px] font-semibold px-2 py-0.5 rounded border",
-                        PERFIL_COLOR[m.perfil as Perfil] ?? "text-muted-foreground"
+                        PERFIL_COLOR[m.role as Perfil] ?? "text-muted-foreground"
                       )}>
-                        {PERFIL_LABELS[m.perfil as Perfil] ?? m.perfil}
+                        {PERFIL_LABELS[m.role as Perfil] ?? m.role}
                       </span>
                     </td>
                     <td className="px-3 py-2.5 hidden md:table-cell">
@@ -314,10 +314,10 @@ export default function AdminUsuariosPage() {
                     <td className="px-3 py-2.5 text-center">
                       <button
                         onClick={() => handleToggleAtivo(m)}
-                        title={m.ativo ? "Desativar" : "Ativar"}
+                        title={m.active ? "Desativar" : "Ativar"}
                         className="inline-flex items-center justify-center transition-colors"
                       >
-                        {m.ativo
+                        {m.active
                           ? <ToggleRight className="h-5 w-5 text-green-400 hover:text-green-300" />
                           : <ToggleLeft  className="h-5 w-5 text-muted-foreground hover:text-foreground" />}
                       </button>
@@ -354,20 +354,20 @@ export default function AdminUsuariosPage() {
           <DialogHeader>
             <DialogTitle>{editingMember ? "Editar Funcionário" : "Novo Funcionário"}</DialogTitle>
             <DialogDescription>
-              {editingMember ? `Editando ${editingMember.nome}.` : "Preencha os dados do novo funcionário."}
+              {editingMember ? `Editando ${editingMember.name}.` : "Preencha os dados do novo funcionário."}
             </DialogDescription>
           </DialogHeader>
           <StaffForm
             key={editingMember?.id ?? "new"}
             initial={editingMember ? {
-              nome: editingMember.nome,
+              name: editingMember.name,
               login: editingMember.login,
               password: "",
-              perfil: (editingMember.perfil as Perfil) ?? "enfermeiro",
+              role: (editingMember.role as Perfil) ?? "enfermeiro",
               email: editingMember.email ?? "",
               sector: editingMember.sector ?? "todos_os_setores",
               corenCrm: editingMember.corenCrm ?? "",
-              ativo: editingMember.ativo,
+              active: editingMember.active,
             } : EMPTY_FORM}
             isEditing={!!editingMember}
             onSave={handleSave}

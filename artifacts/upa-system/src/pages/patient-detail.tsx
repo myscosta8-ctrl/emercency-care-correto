@@ -16,12 +16,14 @@ import {
   useGetPatientNotifications,
   useDeletePatientNotification,
   useUpdatePatientNotification,
+  useGetPatientVitals,
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
   getGetPatientHistoryQueryKey,
   getGetPatientPrescriptionsQueryKey,
   getGetPatientTasksQueryKey,
   getGetPatientNotificationsQueryKey,
+  getGetPatientVitalsQueryKey,
 } from "@workspace/api-client-react";
 import type { PatientNotification } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -139,6 +141,10 @@ export default function PatientDetail() {
   const { data: notifications, isLoading: isLoadingNotifications } = useGetPatientNotifications(id, {
     query: { enabled: !!id, queryKey: getGetPatientNotificationsQueryKey(id) },
   });
+  const { data: vitals } = useGetPatientVitals(id, {
+    query: { enabled: !!id, queryKey: getGetPatientVitalsQueryKey(id) },
+  });
+  const latestVitals = vitals?.[0];
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -183,7 +189,7 @@ export default function PatientDetail() {
   };
 
   const handleStatusChange = (newStatus: string) => {
-    updateStatus.mutate({ id, data: { status: newStatus as TriageKey } }, {
+    updateStatus.mutate({ id, data: { triage_level: newStatus as TriageKey } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetPatientQueryKey(id) });
         queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
@@ -217,7 +223,7 @@ export default function PatientDetail() {
     );
   }
 
-  const cfg = TRIAGE_CONFIG[patient.status as TriageKey] ?? TRIAGE_CONFIG.blue;
+  const cfg = TRIAGE_CONFIG[patient.triage_level as TriageKey] ?? TRIAGE_CONFIG.blue;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -304,7 +310,7 @@ export default function PatientDetail() {
                 setDownloadingFicha(true);
                 try {
                   await downloadIdentificacaoPdf({
-                    nome: patient.nome,
+                    full_name: patient.full_name,
                     birthDate: patient.birthDate,
                     age: patient.age,
                     sex: patient.sex,
@@ -314,18 +320,18 @@ export default function PatientDetail() {
                     rg: patient.rg,
                     phone: patient.phone,
                     email: patient.email,
-                    street: patient.street,
-                    addressNumber: patient.addressNumber,
-                    addressComplement: patient.addressComplement,
-                    neighborhood: patient.neighborhood,
-                    city: patient.city,
-                    addressState: patient.addressState,
-                    zipCode: patient.zipCode,
-                    weight: patient.weight,
-                    height: patient.height,
+                    street: patient.address ?? "",
+                    addressNumber: "",
+                    addressComplement: "",
+                    neighborhood: "",
+                    city: patient.municipioNotificacao ?? "",
+                    addressState: "",
+                    zipCode: "",
+                    weight: 0,
+                    height: 0,
                     symptoms: patient.symptoms,
                     symptomOnsetDate: patient.symptomOnsetDate,
-                    triageStatus: patient.status,
+                    triageStatus: patient.triage_level,
                     attendanceDate: patient.attendanceDate,
                     attendanceTime: patient.attendanceTime,
                     healthUnit: patient.healthUnit,
@@ -366,7 +372,7 @@ export default function PatientDetail() {
               <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-3">
                   <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-primary">{patient.nome}</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-primary">{patient.full_name}</h2>
                     <p className="text-sm mt-1 text-muted-foreground flex flex-wrap items-center gap-2">
                       <span>{patient.age} anos</span>
                       {patient.sex && patient.sex !== "O" && (
@@ -376,7 +382,7 @@ export default function PatientDetail() {
                         <><span>&bull;</span><span>{patient.birthDate.split("-").reverse().join("/")}</span></>
                       )}
                       <span>&bull;</span>
-                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{patient.setor}</span>
+                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{patient.sector}</span>
                       {patient.bed && (
                         <>
                           <span>&bull;</span>
@@ -455,15 +461,20 @@ export default function PatientDetail() {
                     <CardContent className="py-3 px-4">
                       <div className="flex items-center gap-1.5">
                         <Gauge className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className={cn(
-                          "text-2xl font-mono font-bold",
-                          patient.systolicBp > 0 && (patient.systolicBp > 180 || patient.systolicBp < 80) ? "text-red-400" :
-                          patient.systolicBp > 0 && (patient.systolicBp > 160 || patient.systolicBp < 90) ? "text-orange-400" : ""
-                        )}>
-                          {patient.systolicBp > 0 && patient.diastolicBp > 0
-                            ? <>{patient.systolicBp}<span className="text-muted-foreground text-lg">/</span>{patient.diastolicBp}</>
-                            : "—"}
-                        </span>
+                        {(() => {
+                          const bp = latestVitals?.bp ?? "";
+                          const [sys, dia] = bp.split("/").map(Number);
+                          const valid = sys > 0 && dia > 0;
+                          return (
+                            <span className={cn(
+                              "text-2xl font-mono font-bold",
+                              valid && (sys > 180 || sys < 80) ? "text-red-400" :
+                              valid && (sys > 160 || sys < 90) ? "text-orange-400" : ""
+                            )}>
+                              {valid ? <>{sys}<span className="text-muted-foreground text-lg">/</span>{dia}</> : "—"}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </CardContent>
                   </Card>
@@ -471,55 +482,55 @@ export default function PatientDetail() {
 
                 <VitalCard
                   label="Freq. Cardíaca"
-                  value={patient.heartRate}
+                  value={latestVitals?.hr ?? 0}
                   unit="bpm"
                   icon={<HeartPulse className="h-4 w-4 text-triage-red" />}
                   alertClass={
-                    patient.heartRate > 120 || patient.heartRate < 50 ? "text-red-400" :
-                    patient.heartRate > 100 || patient.heartRate < 60 ? "text-orange-400" : ""
+                    (latestVitals?.hr ?? 0) > 120 || (latestVitals?.hr ?? 0) < 50 ? "text-red-400" :
+                    (latestVitals?.hr ?? 0) > 100 || ((latestVitals?.hr ?? 0) > 0 && (latestVitals?.hr ?? 0) < 60) ? "text-orange-400" : ""
                   }
                 />
                 <VitalCard
                   label="Freq. Respiratória"
-                  value={patient.respiratoryRate}
+                  value={latestVitals?.rr ?? 0}
                   unit="irpm"
                   icon={<Wind className="h-4 w-4 text-triage-blue" />}
                   alertClass={
-                    patient.respiratoryRate > 25 || patient.respiratoryRate < 10 ? "text-red-400" :
-                    patient.respiratoryRate > 20 || patient.respiratoryRate < 12 ? "text-orange-400" : ""
+                    (latestVitals?.rr ?? 0) > 25 || ((latestVitals?.rr ?? 0) > 0 && (latestVitals?.rr ?? 0) < 10) ? "text-red-400" :
+                    (latestVitals?.rr ?? 0) > 20 || ((latestVitals?.rr ?? 0) > 0 && (latestVitals?.rr ?? 0) < 12) ? "text-orange-400" : ""
                   }
                 />
                 <VitalCard
                   label="SpO₂"
-                  value={patient.spO2}
+                  value={latestVitals?.spo2 ?? 0}
                   unit="%"
                   icon={<span className="text-xs font-bold text-sky-400">O₂</span>}
                   alertClass={
-                    patient.spO2 < 90 ? "text-red-400" :
-                    patient.spO2 < 94 ? "text-orange-400" :
-                    patient.spO2 < 97 ? "text-yellow-400" : ""
+                    (latestVitals?.spo2 ?? 0) > 0 && (latestVitals?.spo2 ?? 0) < 90 ? "text-red-400" :
+                    (latestVitals?.spo2 ?? 0) > 0 && (latestVitals?.spo2 ?? 0) < 94 ? "text-orange-400" :
+                    (latestVitals?.spo2 ?? 0) > 0 && (latestVitals?.spo2 ?? 0) < 97 ? "text-yellow-400" : ""
                   }
                 />
                 <VitalCard
                   label="Temperatura"
-                  value={patient.temperature}
+                  value={latestVitals?.temp ?? 0}
                   unit="°C"
                   icon={<Thermometer className="h-4 w-4 text-triage-orange" />}
                   alertClass={
-                    patient.temperature >= 39   ? "text-red-400" :
-                    patient.temperature >= 38   ? "text-orange-400" :
-                    patient.temperature > 37.5  ? "text-yellow-400" :
-                    patient.temperature > 0 && patient.temperature < 36 ? "text-blue-400" : ""
+                    (latestVitals?.temp ?? 0) >= 39   ? "text-red-400" :
+                    (latestVitals?.temp ?? 0) >= 38   ? "text-orange-400" :
+                    (latestVitals?.temp ?? 0) > 37.5  ? "text-yellow-400" :
+                    (latestVitals?.temp ?? 0) > 0 && (latestVitals?.temp ?? 0) < 36 ? "text-blue-400" : ""
                   }
                 />
                 <VitalCard
                   label="Glicemia"
-                  value={patient.glucose}
+                  value={latestVitals?.glucose ?? 0}
                   unit="mg/dL"
                   icon={<Droplet className="h-4 w-4 text-triage-yellow" />}
                   alertClass={
-                    patient.glucose > 400 || patient.glucose < 60 ? "text-red-400" :
-                    patient.glucose > 250 || patient.glucose < 70 ? "text-orange-400" : ""
+                    (latestVitals?.glucose ?? 0) > 400 || ((latestVitals?.glucose ?? 0) > 0 && (latestVitals?.glucose ?? 0) < 60) ? "text-red-400" :
+                    (latestVitals?.glucose ?? 0) > 250 || ((latestVitals?.glucose ?? 0) > 0 && (latestVitals?.glucose ?? 0) < 70) ? "text-orange-400" : ""
                   }
                 />
               </div>
@@ -548,7 +559,7 @@ export default function PatientDetail() {
               ) : (
                 <div className="space-y-3">
                   {history.map(entry => {
-                    const hasVitals = entry.heartRate || entry.respiratoryRate || entry.spO2 || entry.temperature || entry.glucose || (entry.systolicBp && entry.diastolicBp);
+                    const hasVitals = entry.heartRate || entry.respiratoryRate || entry.spO2 || (entry.systolicBp && entry.diastolicBp);
                     const isInitial = entry.note === "Admissão inicial";
                     return (
                       <div key={entry.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
@@ -584,8 +595,6 @@ export default function PatientDetail() {
                                     {entry.heartRate ? <span>FC: <strong className="text-foreground">{entry.heartRate}</strong> bpm</span> : null}
                                     {entry.respiratoryRate ? <span>FR: <strong className="text-foreground">{entry.respiratoryRate}</strong> irpm</span> : null}
                                     {entry.spO2 ? <span>SpO₂: <strong className="text-foreground">{entry.spO2}</strong>%</span> : null}
-                                    {entry.temperature ? <span>Temp: <strong className="text-foreground">{entry.temperature}</strong>°C</span> : null}
-                                    {entry.glucose ? <span>HGT: <strong className="text-foreground">{entry.glucose}</strong> mg/dL</span> : null}
                                   </div>
                                 )}
                                 {(entry.generalCondition || entry.consciousnessLevel || entry.painScale != null) && (
@@ -926,7 +935,7 @@ export default function PatientDetail() {
                               {notif.pdfUrl && (
                                 <a
                                   href={notif.pdfUrl}
-                                  download={`SINAN_${patient.nome.replace(/\s+/g, "_")}.pdf`}
+                                  download={`SINAN_${patient.full_name.replace(/\s+/g, "_")}.pdf`}
                                   className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
                                   title="PDF SINAN gerado — clique para baixar novamente"
                                 >
@@ -964,7 +973,7 @@ export default function PatientDetail() {
                                           const href = URL.createObjectURL(blob);
                                           const a = Object.assign(document.createElement("a"), {
                                             href,
-                                            download: `SINAN_${patient.nome.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`,
+                                            download: `SINAN_${patient.full_name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`,
                                           });
                                           document.body.appendChild(a);
                                           a.click();
@@ -1038,7 +1047,7 @@ export default function PatientDetail() {
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground">Setor</p>
-                    <p className="font-medium">{patient.setor}</p>
+                    <p className="font-medium">{patient.sector}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -1100,7 +1109,7 @@ export default function PatientDetail() {
             </Card>
 
             {/* Patient Demographics */}
-            {(patient.cns || patient.cpf || patient.rg || patient.phone || patient.email || patient.motherName || patient.street) && (
+            {(patient.cns || patient.cpf || patient.rg || patient.phone || patient.email || patient.motherName || patient.address) && (
               <Card className="border-border/50">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -1115,9 +1124,9 @@ export default function PatientDetail() {
                     </div>
                   )}
 
-                  {(patient.cns || patient.cpf || patient.rg || patient.weight > 0) && (
+                  {(patient.cns || patient.cpf || patient.rg) && (
                     <div className="space-y-1.5 pt-1 border-t border-border/40">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Documentos e Dados Físicos</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Documentos</p>
                       {patient.cns && (
                         <div className="flex justify-between items-baseline">
                           <span className="text-xs text-muted-foreground">CNS</span>
@@ -1134,18 +1143,6 @@ export default function PatientDetail() {
                         <div className="flex justify-between items-baseline">
                           <span className="text-xs text-muted-foreground">RG</span>
                           <span className="text-xs font-mono font-medium">{patient.rg}</span>
-                        </div>
-                      )}
-                      {patient.weight > 0 && (
-                        <div className="flex justify-between items-baseline">
-                          <span className="text-xs text-muted-foreground">Peso</span>
-                          <span className="text-xs font-medium">{patient.weight} kg</span>
-                        </div>
-                      )}
-                      {patient.height > 0 && (
-                        <div className="flex justify-between items-baseline">
-                          <span className="text-xs text-muted-foreground">Altura</span>
-                          <span className="text-xs font-medium">{patient.height} cm</span>
                         </div>
                       )}
                     </div>
@@ -1169,22 +1166,10 @@ export default function PatientDetail() {
                     </div>
                   )}
 
-                  {patient.street && (
+                  {patient.address && (
                     <div className="space-y-1 pt-1 border-t border-border/40">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Endereço</p>
-                      <p className="text-xs text-foreground leading-relaxed">
-                        {[
-                          patient.street && patient.addressNumber
-                            ? `${patient.street}, ${patient.addressNumber}`
-                            : patient.street,
-                          patient.addressComplement,
-                          patient.neighborhood,
-                          patient.city && patient.addressState
-                            ? `${patient.city} — ${patient.addressState}`
-                            : patient.city || patient.addressState,
-                          patient.zipCode ? `CEP ${patient.zipCode}` : "",
-                        ].filter(Boolean).join("\n")}
-                      </p>
+                      <p className="text-xs text-foreground leading-relaxed">{patient.address}</p>
                     </div>
                   )}
                 </CardContent>
@@ -1199,7 +1184,7 @@ export default function PatientDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Select value={pendingStatus ?? patient.status} onValueChange={setPendingStatus}>
+                <Select value={pendingStatus ?? patient.triage_level} onValueChange={setPendingStatus}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -1211,7 +1196,7 @@ export default function PatientDetail() {
                 </Select>
                 <Button
                   className="w-full"
-                  disabled={!pendingStatus || pendingStatus === patient.status || updateStatus.isPending}
+                  disabled={!pendingStatus || pendingStatus === patient.triage_level || updateStatus.isPending}
                   onClick={() => pendingStatus && handleStatusChange(pendingStatus)}
                 >
                   {updateStatus.isPending ? "Salvando..." : "Confirmar Reclassificação"}
@@ -1270,7 +1255,7 @@ export default function PatientDetail() {
           </DialogHeader>
           <PrescriptionForm
             patientId={id}
-            patientName={patient.nome}
+            patientName={patient.full_name}
             onSuccess={() => setIsPrescriptionOpen(false)}
             onCancel={() => setIsPrescriptionOpen(false)}
           />
@@ -1285,7 +1270,7 @@ export default function PatientDetail() {
           </DialogHeader>
           <TasksForm
             patientId={id}
-            patientName={patient.nome}
+            patientName={patient.full_name}
             defaultResponsible={patient.responsibleProfessional ?? ""}
             onSuccess={() => setIsTasksOpen(false)}
             onCancel={() => setIsTasksOpen(false)}
@@ -1344,7 +1329,7 @@ export default function PatientDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>Alta / Remoção do Paciente</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirma a alta ou remoção de <strong>{patient.nome}</strong> do sistema? O registro será excluído permanentemente.
+              Confirma a alta ou remoção de <strong>{patient.full_name}</strong> do sistema? O registro será excluído permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1382,7 +1367,7 @@ export default function PatientDetail() {
             <tbody>
               <tr>
                 <th style={{ width: "15%", textAlign: "left" }}>Paciente</th>
-                <td style={{ width: "35%" }}><strong>{patient.nome}</strong></td>
+                <td style={{ width: "35%" }}><strong>{patient.full_name}</strong></td>
                 <th style={{ width: "10%", textAlign: "left" }}>Idade</th>
                 <td style={{ width: "10%" }}>{patient.age} anos</td>
                 <th style={{ width: "10%", textAlign: "left" }}>Leito</th>
@@ -1390,13 +1375,13 @@ export default function PatientDetail() {
               </tr>
               <tr>
                 <th style={{ textAlign: "left" }}>Setor</th>
-                <td>{patient.setor}</td>
+                <td>{patient.sector}</td>
                 <th style={{ textAlign: "left" }}>Triagem</th>
                 <td>
                   <span style={{
                     fontWeight: 700,
-                    color: patient.status === "red" ? "#dc2626" : patient.status === "orange" ? "#ea580c" :
-                           patient.status === "yellow" ? "#ca8a04" : patient.status === "green" ? "#16a34a" : "#2563eb"
+                    color: patient.triage_level === "red" ? "#dc2626" : patient.triage_level === "orange" ? "#ea580c" :
+                           patient.triage_level === "yellow" ? "#ca8a04" : patient.triage_level === "green" ? "#16a34a" : "#2563eb"
                   }}>
                     {cfg.label}
                   </span>
@@ -1438,12 +1423,12 @@ export default function PatientDetail() {
             </thead>
             <tbody>
               <tr style={{ textAlign: "center" }}>
-                <td><strong>{patient.systolicBp > 0 && patient.diastolicBp > 0 ? `${patient.systolicBp}/${patient.diastolicBp}` : "—"}</strong></td>
-                <td><strong>{patient.heartRate > 0 ? patient.heartRate : "—"}</strong></td>
-                <td><strong>{patient.respiratoryRate > 0 ? patient.respiratoryRate : "—"}</strong></td>
-                <td><strong>{patient.spO2 > 0 ? `${patient.spO2}%` : "—"}</strong></td>
-                <td><strong>{patient.temperature > 0 ? `${patient.temperature}°C` : "—"}</strong></td>
-                <td><strong>{patient.glucose > 0 ? `${patient.glucose}` : "—"}</strong></td>
+                <td><strong>{latestVitals?.bp || "—"}</strong></td>
+                <td><strong>{(latestVitals?.hr ?? 0) > 0 ? latestVitals!.hr : "—"}</strong></td>
+                <td><strong>{(latestVitals?.rr ?? 0) > 0 ? latestVitals!.rr : "—"}</strong></td>
+                <td><strong>{(latestVitals?.spo2 ?? 0) > 0 ? `${latestVitals!.spo2}%` : "—"}</strong></td>
+                <td><strong>{(latestVitals?.temp ?? 0) > 0 ? `${latestVitals!.temp}°C` : "—"}</strong></td>
+                <td><strong>{(latestVitals?.glucose ?? 0) > 0 ? `${latestVitals!.glucose}` : "—"}</strong></td>
               </tr>
             </tbody>
           </table>
@@ -1456,7 +1441,7 @@ export default function PatientDetail() {
           </div>
           {history && history.map(entry => {
             const isInitial = entry.note === "Admissão inicial";
-            const hasVitals = entry.heartRate || entry.respiratoryRate || entry.spO2 || entry.temperature || entry.glucose || (entry.systolicBp && entry.diastolicBp);
+            const hasVitals = entry.heartRate || entry.respiratoryRate || entry.spO2 || (entry.systolicBp && entry.diastolicBp);
             return (
               <div key={entry.id} className="soap-entry">
                 <div className="soap-entry-header" style={{ display: "flex", justifyContent: "space-between" }}>
@@ -1480,8 +1465,6 @@ export default function PatientDetail() {
                         {entry.heartRate ? `FC: ${entry.heartRate} bpm  ` : ""}
                         {entry.respiratoryRate ? `FR: ${entry.respiratoryRate} irpm  ` : ""}
                         {entry.spO2 ? `SpO₂: ${entry.spO2}%  ` : ""}
-                        {entry.temperature ? `Temp: ${entry.temperature}°C  ` : ""}
-                        {entry.glucose ? `HGT: ${entry.glucose} mg/dL  ` : ""}
                         {entry.generalCondition ? `| Estado: ${entry.generalCondition}  ` : ""}
                         {entry.consciousnessLevel ? `| Consciência: ${entry.consciousnessLevel}  ` : ""}
                         {entry.painScale != null && entry.painScale > 0 ? `| Dor: ${entry.painScale}/10` : ""}

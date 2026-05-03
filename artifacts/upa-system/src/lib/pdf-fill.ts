@@ -3,7 +3,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 // ── types ─────────────────────────────────────────────────────────────────────
 
 export interface PdfPatient {
-  nome: string;
+  full_name: string;
   birthDate?: string | null;
   age?: number | null;
   sex?: string | null;
@@ -470,7 +470,7 @@ function riskLabel(status?: string | null): string {
 function buildFieldValues(patient: PdfPatient): Record<string, string> {
   return {
     // ── 14 standard patient fields ────────────────────────────────────────
-    nome_paciente:        patient.nome,
+    nome_paciente:        patient.full_name,
     nome_mae:             patient.motherName     ?? "",
     data_nascimento:      fmtDate(patient.birthDate),
     cpf:                  patient.cpf            ?? "",
@@ -664,7 +664,7 @@ export async function downloadSinanPdf(
   const href  = URL.createObjectURL(blob);
   const a     = Object.assign(document.createElement("a"), {
     href,
-    download: `SINAN_${patient.nome.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`,
+    download: `SINAN_${patient.full_name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`,
   });
   document.body.appendChild(a);
   a.click();
@@ -726,7 +726,7 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
 
   // ── 19 field definitions ──────────────────────────────────────────────────
   const fields: Array<{ key: string; label: string; value: string }> = [
-    { key: "nome_paciente",        label: "NOME DO PACIENTE",         value: patient.nome },
+    { key: "nome_paciente",        label: "NOME DO PACIENTE",         value: patient.full_name },
     { key: "nome_mae",             label: "NOME DA MÃE",              value: patient.motherName          ?? "" },
     { key: "data_nascimento",      label: "DATA DE NASCIMENTO",       value: fmtDate(patient.birthDate)  },
     { key: "cpf",                  label: "CPF",                      value: patient.cpf                 ?? "" },
@@ -806,7 +806,7 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
   const href  = URL.createObjectURL(blob);
   const link  = Object.assign(document.createElement("a"), {
     href,
-    download: `Identificacao_${patient.nome.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`,
+    download: `Identificacao_${patient.full_name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`,
   });
   document.body.appendChild(link);
   link.click();
@@ -892,7 +892,7 @@ function dadosParaPdfPatient(d: DadosPaciente): PdfPatient {
     : null;
 
   return {
-    nome:               d.nome_paciente,
+    full_name:          d.nome_paciente,
     motherName:         d.nome_mae             ?? null,
     birthDate:          isoDate,
     cpf:                d.cpf                  ?? null,

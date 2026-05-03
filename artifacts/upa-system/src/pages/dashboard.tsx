@@ -40,15 +40,6 @@ type TriageKey = keyof typeof TRIAGE_CONFIG;
 
 const TRIAGE_SEVERITY: Record<string, number> = { red: 1, orange: 2, yellow: 3, green: 4, blue: 5 };
 
-const TRIAGE_OPTIONS = [
-  { value: "all",    label: "Todos" },
-  { value: "red",    label: "🔴 Vermelho" },
-  { value: "orange", label: "🟠 Laranja" },
-  { value: "yellow", label: "🟡 Amarelo" },
-  { value: "green",  label: "🟢 Verde" },
-  { value: "blue",   label: "🔵 Azul" },
-];
-
 const SECTOR_CONFIG = [
   { key: "sala_vermelha",         name: "Sala Vermelha",         emoji: "🔴", headerCls: "bg-red-950/60 border-red-700/50 text-red-300",        emptyBorder: "border-red-900/30"    },
   { key: "observacao_adulto",     name: "Observação Adulto",     emoji: "🟡", headerCls: "bg-yellow-950/40 border-yellow-700/40 text-yellow-300", emptyBorder: "border-yellow-900/30" },
@@ -56,37 +47,8 @@ const SECTOR_CONFIG = [
   { key: "observacao_pre_adulto", name: "Observação Pré-Adulto", emoji: "🔵", headerCls: "bg-blue-950/40 border-blue-700/40 text-blue-300",      emptyBorder: "border-blue-900/30"   },
 ];
 
-const SECTOR_NAMES  = SECTOR_CONFIG.map(s => s.key);
-const SECTOR_LABEL  = Object.fromEntries(SECTOR_CONFIG.map(s => [s.key, s.name]));
-
-// ── vitals helpers ────────────────────────────────────────────────────────────
-
-function fcClass(v: number) {
-  if (v <= 0) return "";
-  if (v > 120 || v < 50) return "text-red-400 font-bold";
-  if (v > 100 || v < 60) return "text-orange-400 font-semibold";
-  return "text-muted-foreground";
-}
-function spo2Class(v: number) {
-  if (v <= 0) return "";
-  if (v < 90) return "text-red-400 font-bold";
-  if (v < 94) return "text-orange-400 font-semibold";
-  if (v < 97) return "text-yellow-400";
-  return "text-muted-foreground";
-}
-function tempClass(v: number) {
-  if (v <= 0) return "";
-  if (v >= 39) return "text-red-400 font-bold";
-  if (v >= 38) return "text-orange-400 font-semibold";
-  if (v < 36) return "text-blue-400";
-  return "text-muted-foreground";
-}
-function bpClass(sys: number) {
-  if (sys <= 0) return "";
-  if (sys > 180 || sys < 80) return "text-red-400 font-bold";
-  if (sys > 160 || sys < 90) return "text-orange-400 font-semibold";
-  return "text-muted-foreground";
-}
+const SECTOR_NAMES = SECTOR_CONFIG.map(s => s.key);
+const SECTOR_LABEL = Object.fromEntries(SECTOR_CONFIG.map(s => [s.key, s.name]));
 
 // ── debounce ──────────────────────────────────────────────────────────────────
 
@@ -109,25 +71,21 @@ interface PatientRowProps {
 
 const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: PatientRowProps) {
   const { pode } = useAuth();
-  const cfg = TRIAGE_CONFIG[patient.status as TriageKey] ?? TRIAGE_CONFIG.blue;
-  const hasBp = patient.systolicBp > 0 && patient.diastolicBp > 0;
+  const cfg = TRIAGE_CONFIG[patient.triage_level as TriageKey] ?? TRIAGE_CONFIG.blue;
 
   return (
     <div className={cn(
       "group flex items-stretch border-l-4 hover:bg-muted/20 transition-colors border-b border-border/30 last:border-b-0",
       cfg.border,
     )}>
-      {/* Clickable area */}
       <Link href={`/patients/${patient.id}`} className="flex-1 flex items-center gap-3 px-3 py-2.5 min-w-0 cursor-pointer">
 
-        {/* Bed number — most prominent */}
         <div className="w-11 shrink-0 text-center">
           <div className="text-sm font-mono font-bold text-foreground leading-tight">
             {patient.bed || <BedDouble className="h-3.5 w-3.5 text-muted-foreground mx-auto" />}
           </div>
         </div>
 
-        {/* Triage badge */}
         <div className={cn(
           "shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded leading-tight hidden md:block",
           cfg.bg, cfg.text
@@ -136,10 +94,9 @@ const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: Patient
         </div>
         <span className={cn("w-2 h-2 rounded-full shrink-0 md:hidden", cfg.dot)} />
 
-        {/* Name + age + diagnosis */}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="font-semibold text-sm text-foreground leading-tight truncate">{patient.nome}</span>
+            <span className="font-semibold text-sm text-foreground leading-tight truncate">{patient.full_name}</span>
             <span className="text-xs text-muted-foreground shrink-0">{patient.age}a</span>
             {patient.internmentStatus === "internado" && (
               <span className="text-[10px] font-bold px-1.5 py-0 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 leading-5">INT</span>
@@ -149,33 +106,8 @@ const PatientRow = memo(function PatientRow({ patient, onEdit, onAlta }: Patient
             <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{patient.diagnosis}</p>
           )}
         </div>
-
-        {/* Vitals — inline, color-coded */}
-        <div className="hidden sm:flex items-center gap-3 shrink-0">
-          {patient.heartRate > 0 && (
-            <span className={cn("text-xs font-mono tabular-nums", fcClass(patient.heartRate))}>
-              FC <strong>{patient.heartRate}</strong>
-            </span>
-          )}
-          {patient.spO2 > 0 && (
-            <span className={cn("text-xs font-mono tabular-nums", spo2Class(patient.spO2))}>
-              SpO₂ <strong>{patient.spO2}%</strong>
-            </span>
-          )}
-          {patient.temperature > 0 && (
-            <span className={cn("text-xs font-mono tabular-nums", tempClass(patient.temperature))}>
-              <strong>{patient.temperature}°C</strong>
-            </span>
-          )}
-          {hasBp && (
-            <span className={cn("text-xs font-mono tabular-nums", bpClass(patient.systolicBp))}>
-              <strong>{patient.systolicBp}/{patient.diastolicBp}</strong>
-            </span>
-          )}
-        </div>
       </Link>
 
-      {/* Actions */}
       <div className="flex items-center gap-0.5 px-1.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
         {pode("editar_paciente") && (
           <button
@@ -225,16 +157,16 @@ export default function Dashboard() {
     if (!patients) return null;
     const q = debouncedSearch.toLowerCase();
     const base = patients.filter(p => {
-      const matchesSearch = !q || p.nome.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
-      const matchesSector = filtro === "Todos" || p.setor === filtro;
-      const matchesTriage = triageFilter === "all" || p.status === triageFilter;
+      const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
+      const matchesSector = filtro === "Todos" || p.sector === filtro;
+      const matchesTriage = triageFilter === "all" || p.triage_level === triageFilter;
       return matchesSearch && matchesSector && matchesTriage;
     });
     return SECTOR_CONFIG.map(cfg => ({
       ...cfg,
       patients: base
-        .filter(p => p.setor === cfg.key)
-        .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99)),
+        .filter(p => p.sector === cfg.key)
+        .sort((a, b) => (TRIAGE_SEVERITY[a.triage_level] ?? 99) - (TRIAGE_SEVERITY[b.triage_level] ?? 99)),
     }));
   }, [patients, debouncedSearch, filtro, triageFilter]);
 
@@ -266,7 +198,7 @@ export default function Dashboard() {
             <h1 className="text-base font-bold tracking-tight sm:hidden">UPA Breves</h1>
           </div>
           <div className="flex items-center gap-1.5">
-            {activeUser?.perfil === "administrador" && (
+            {activeUser?.role === "administrador" && (
               <Link href="/admin/dashboard">
                 <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
                   <Settings2 className="h-3.5 w-3.5" />
@@ -306,12 +238,12 @@ export default function Dashboard() {
         {/* ── summary strip ──────────────────────────────────────────── */}
         <div className="flex items-center gap-1 mb-4 flex-wrap">
           {[
-            { key: "all",    label: "Total",    value: summary?.total,  cls: "text-foreground",      dot: "" },
-            { key: "red",    label: "Verm.",    value: summary?.red,    cls: "text-red-400",         dot: "bg-red-500" },
-            { key: "orange", label: "Lar.",     value: summary?.orange, cls: "text-orange-400",      dot: "bg-orange-500" },
-            { key: "yellow", label: "Amar.",    value: summary?.yellow, cls: "text-yellow-400",      dot: "bg-yellow-400" },
-            { key: "green",  label: "Verde",    value: summary?.green,  cls: "text-green-400",       dot: "bg-green-500" },
-            { key: "blue",   label: "Azul",     value: summary?.blue,   cls: "text-blue-400",        dot: "bg-blue-500" },
+            { key: "all",    label: "Total",    value: summary?.total,  cls: "text-foreground",   dot: "" },
+            { key: "red",    label: "Verm.",    value: summary?.red,    cls: "text-red-400",      dot: "bg-red-500" },
+            { key: "orange", label: "Lar.",     value: summary?.orange, cls: "text-orange-400",   dot: "bg-orange-500" },
+            { key: "yellow", label: "Amar.",    value: summary?.yellow, cls: "text-yellow-400",   dot: "bg-yellow-400" },
+            { key: "green",  label: "Verde",    value: summary?.green,  cls: "text-green-400",    dot: "bg-green-500" },
+            { key: "blue",   label: "Azul",     value: summary?.blue,   cls: "text-blue-400",     dot: "bg-blue-500" },
           ].map(card => (
             <button
               key={card.key}
@@ -373,7 +305,7 @@ export default function Dashboard() {
             {totalFiltered > 0 && <span className="ml-2 text-foreground font-bold text-sm">{totalFiltered}</span>}
           </span>
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide hidden sm:block">
-            Leito · Nome · Diagnóstico · Sinais vitais
+            Leito · Nome · Diagnóstico
           </span>
         </div>
 
@@ -393,71 +325,65 @@ export default function Dashboard() {
           <div className="space-y-4">
             {(grouped ?? []).map(sector => (
               <div key={sector.name}>
-                {/* Sector header */}
                 <div className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-t-md border mb-0",
                   sector.headerCls
                 )}>
-                  <span className="text-sm leading-none">{sector.emoji}</span>
-                  <span className="font-semibold text-xs tracking-wide uppercase">{sector.name}</span>
-                  <span className="ml-auto text-[11px] font-bold opacity-80 tabular-nums">
-                    {sector.patients.length} {sector.patients.length === 1 ? "pac." : "pac."}
-                  </span>
+                  <span className="text-base leading-none">{sector.emoji}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">{sector.name}</span>
+                  <span className="ml-auto text-xs font-mono opacity-70">{sector.patients.length}</span>
                 </div>
 
-                {sector.patients.length === 0 ? (
-                  <div className={cn(
-                    "rounded-b-md border border-t-0 border-dashed py-2.5 text-center text-xs text-muted-foreground",
-                    sector.emptyBorder
-                  )}>
-                    Setor vazio
-                  </div>
-                ) : (
-                  <div className="rounded-b-md border border-t-0 border-border/30 overflow-hidden">
-                    {sector.patients.map(patient => (
+                <div className="rounded-b-lg border border-t-0 border-border/30 overflow-hidden">
+                  {sector.patients.length === 0 ? (
+                    <div className={cn("py-3 text-center text-xs text-muted-foreground/50 border-l-4", sector.emptyBorder)}>
+                      Nenhum paciente
+                    </div>
+                  ) : (
+                    sector.patients.map(patient => (
                       <PatientRow
                         key={patient.id}
                         patient={patient}
                         onEdit={handleEdit}
                         onAlta={handleAlta}
                       />
-                    ))}
-                  </div>
-                )}
+                    ))
+                  )}
+                </div>
               </div>
             ))}
 
-            {totalFiltered === 0 && !isLoadingPatients && (
-              <div className="text-center py-12 bg-card rounded-lg border border-border/50">
-                <Activity className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <h3 className="text-sm font-medium">Nenhum paciente encontrado</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {search || filtro !== "Todos" || triageFilter !== "all"
-                    ? "Ajuste os filtros de busca."
-                    : "Clique em 'Nova Admissão' para registrar um paciente."}
-                </p>
+            {grouped && grouped.every(g => g.patients.length === 0) && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Users className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">Nenhum paciente encontrado</p>
+                {search && <p className="text-xs mt-1 opacity-60">Tente outro termo de busca</p>}
               </div>
             )}
           </div>
         )}
       </main>
 
-      {/* ── dialogs ──────────────────────────────────────────────────── */}
+      {/* ── new patient dialog ─────────────────────────────────────────── */}
       <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
-        <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nova Admissão</DialogTitle>
-            <DialogDescription>Preencha os dados obrigatórios. Sinais vitais são opcionais.</DialogDescription>
+            <DialogDescription>Preencha os dados do paciente para registrar a admissão.</DialogDescription>
           </DialogHeader>
-          <PatientForm onSuccess={() => setIsNewPatientOpen(false)} onCancel={() => setIsNewPatientOpen(false)} />
+          <PatientForm
+            onSuccess={() => setIsNewPatientOpen(false)}
+            onCancel={() => setIsNewPatientOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editingPatient} onOpenChange={open => { if (!open) setEditingPatient(null); }}>
-        <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
+      {/* ── edit patient dialog ────────────────────────────────────────── */}
+      <Dialog open={!!editingPatient} onOpenChange={open => !open && setEditingPatient(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Prontuário</DialogTitle>
-            <DialogDescription>Atualize os dados clínicos do paciente.</DialogDescription>
+            <DialogDescription>Atualize os dados do paciente.</DialogDescription>
           </DialogHeader>
           {editingPatient && (
             <PatientForm
@@ -469,27 +395,23 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!altaPatient} onOpenChange={open => { if (!open) setAltaPatient(null); }}>
+      {/* ── alta confirmation ──────────────────────────────────────────── */}
+      <AlertDialog open={!!altaPatient} onOpenChange={open => !open && setAltaPatient(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Alta</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirma a alta de <strong>{altaPatient?.nome}</strong>? O registro será removido permanentemente.
+              Confirma a alta de <strong>{altaPatient?.full_name}</strong>? Esta ação removerá o paciente da lista ativa.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletePatient.isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={e => { e.preventDefault(); confirmAlta(); }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deletePatient.isPending}
-            >
-              {deletePatient.isPending ? "Processando..." : "Confirmar Alta"}
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAlta} className="bg-destructive hover:bg-destructive/90">
+              Confirmar Alta
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }

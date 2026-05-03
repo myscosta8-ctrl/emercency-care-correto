@@ -11,10 +11,10 @@ function hashPassword(plain: string): string {
 
 const serialize = (s: typeof staffTable.$inferSelect) => ({
   id: s.id,
-  nome: s.nome,
-  perfil: s.perfil,
+  name: s.name,
+  role: s.role,
   email: s.email,
-  ativo: s.ativo,
+  active: s.active,
   corenCrm: s.corenCrm,
   sector: s.sector,
   login: s.login,
@@ -26,16 +26,16 @@ const serialize = (s: typeof staffTable.$inferSelect) => ({
 });
 
 router.get("/", async (req, res) => {
-  const members = await db.select().from(staffTable).orderBy(staffTable.nome);
+  const members = await db.select().from(staffTable).orderBy(staffTable.name);
   res.json(members.map(serialize));
 });
 
 router.post("/", async (req, res) => {
   const { password, ...rest } = req.body as {
-    nome: string;
-    perfil: string;
+    name: string;
+    role: string;
     email?: string;
-    ativo?: boolean;
+    active?: boolean;
     corenCrm?: string;
     sector?: string;
     login: string;
@@ -45,18 +45,18 @@ router.post("/", async (req, res) => {
     stamp?: string;
   };
 
-  if (!rest.nome || !rest.perfil || !rest.login || !password) {
-    res.status(400).json({ error: "nome, perfil, login and password are required" });
+  if (!rest.name || !rest.role || !rest.login || !password) {
+    res.status(400).json({ error: "name, role, login and password are required" });
     return;
   }
 
   const [created] = await db
     .insert(staffTable)
     .values({
-      nome: rest.nome,
-      perfil: rest.perfil as "recepcionista" | "enfermeiro" | "tecnico_enfermagem" | "medico" | "assistente_social" | "nutricionista" | "farmaceutico" | "administrador",
+      name: rest.name,
+      role: rest.role as typeof staffTable.$inferInsert["role"],
       email: rest.email ?? "",
-      ativo: rest.ativo ?? true,
+      active: rest.active ?? true,
       corenCrm: rest.corenCrm ?? "",
       sector: rest.sector ?? "",
       login: rest.login,
@@ -79,11 +79,11 @@ router.get("/:id", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const id = Number(req.params["id"]);
-  const { password, perfil: perfilRaw, ...rest } = req.body as {
-    nome?: string;
-    perfil?: string;
+  const { password, role: roleRaw, ...rest } = req.body as {
+    name?: string;
+    role?: string;
     email?: string;
-    ativo?: boolean;
+    active?: boolean;
     corenCrm?: string;
     sector?: string;
     login?: string;
@@ -95,7 +95,7 @@ router.put("/:id", async (req, res) => {
 
   const patch: Partial<typeof staffTable.$inferInsert> = {
     ...rest,
-    ...(perfilRaw ? { perfil: perfilRaw as "recepcionista" | "enfermeiro" | "tecnico_enfermagem" | "medico" | "assistente_social" | "nutricionista" | "farmaceutico" | "administrador" } : {}),
+    ...(roleRaw ? { role: roleRaw as typeof staffTable.$inferInsert["role"] } : {}),
     ...(password ? { passwordHash: hashPassword(password) } : {}),
     updatedAt: new Date(),
   };

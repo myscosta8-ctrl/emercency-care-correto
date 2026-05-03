@@ -22,18 +22,18 @@ export type Acao =
   | "registrar_prescricao";
 
 export interface Usuario {
-  perfil: Perfil;
+  role: Perfil;
 }
 
 export const PERFIL_LABELS: Record<Perfil, string> = {
-  recepcionista:    "Recepcionista",
-  enfermeiro:       "Enfermeiro",
-  tecnico_enfermagem: "Técnico de Enfermagem",
-  medico:           "Médico",
+  recepcionista:     "Recepcionista",
+  enfermeiro:        "Enfermeiro",
+  tecnico_enfermagem:"Técnico de Enfermagem",
+  medico:            "Médico",
   assistente_social: "Assistente Social",
-  nutricionista:    "Nutricionista",
-  farmaceutico:     "Farmacêutico",
-  administrador:    "Administrador",
+  nutricionista:     "Nutricionista",
+  farmaceutico:      "Farmacêutico",
+  administrador:     "Administrador",
 };
 
 export const ACAO_LABELS: Record<Acao, string> = {
@@ -63,33 +63,18 @@ export const PERFIS: Perfil[] = [
 ];
 
 export const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
-  recepcionista: [
-    "criar_paciente", "editar_paciente", "visualizar_setores",
-  ],
-  enfermeiro: [
-    "criar_paciente", "editar_paciente", "excluir_paciente",
-    "classificacao_risco", "gerar_pdf", "mudar_setor",
-    "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao",
-  ],
-  tecnico_enfermagem: [
-    "criar_paciente",
-    "registrar_sinais_vitais",
-  ],
-  medico: ["*"],
-  assistente_social: [
-    "visualizar_setores", "visualizar_relatorios", "editar_paciente",
-  ],
-  nutricionista: [
-    "visualizar_setores", "visualizar_relatorios",
-  ],
-  farmaceutico: [
-    "visualizar_setores", "visualizar_relatorios", "registrar_prescricao",
-  ],
-  administrador: ["*"],
+  recepcionista:     ["criar_paciente", "editar_paciente", "visualizar_setores"],
+  enfermeiro:        ["criar_paciente", "editar_paciente", "excluir_paciente", "classificacao_risco", "gerar_pdf", "mudar_setor", "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao"],
+  tecnico_enfermagem:["criar_paciente", "registrar_sinais_vitais"],
+  medico:            ["*"],
+  assistente_social: ["visualizar_setores", "visualizar_relatorios", "editar_paciente"],
+  nutricionista:     ["visualizar_setores", "visualizar_relatorios"],
+  farmaceutico:      ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao"],
+  administrador:     ["*"],
 };
 
 export function temPermissao(usuario: Usuario | null | undefined, acao: Acao): boolean {
   if (!usuario) return false;
-  const permissoes = PERMISSOES[usuario.perfil];
+  const permissoes = PERMISSOES[usuario.role];
   return permissoes.includes("*") || permissoes.includes(acao);
 }

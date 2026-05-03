@@ -11,7 +11,7 @@ export function useAudit() {
       if (!activeUser) return;
       mutate({
         data: {
-          usuario: activeUser.nome,
+          usuario: activeUser.name,
           acao,
           ...(detalhes ? { detalhes } : {}),
         },

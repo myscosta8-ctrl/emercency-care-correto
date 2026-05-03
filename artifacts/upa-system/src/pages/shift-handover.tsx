@@ -130,7 +130,7 @@ function fmtDate(iso: string | null | undefined): string {
 }
 
 function endereco(p: Patient): string {
-  return [p.street, p.addressNumber, p.addressComplement, p.neighborhood].filter(Boolean).join(", ") || "—";
+  return p.address || "—";
 }
 
 // ── vital cell ─────────────────────────────────────────────────────────────────
@@ -212,18 +212,18 @@ interface PatientCardProps {
 }
 
 function PatientCard({ patient: p, accentCls, state, onChange }: PatientCardProps) {
-  const triage = TRIAGE_COLOR_SCREEN[p.status] ?? TRIAGE_COLOR_SCREEN.blue;
+  const triage = TRIAGE_COLOR_SCREEN[p.triage_level] ?? TRIAGE_COLOR_SCREEN.blue;
 
-  const pa   = (p.systolicBp && p.diastolicBp) ? `${p.systolicBp}/${p.diastolicBp}` : "—";
-  const fc   = p.heartRate        ? String(p.heartRate)        : "—";
-  const fr   = p.respiratoryRate  ? String(p.respiratoryRate)  : "—";
-  const spo2 = p.spO2             ? `${p.spO2}%`              : "—";
-  const temp = p.temperature      ? `${p.temperature}°C`      : "—";
-  const hgt  = p.glucose          ? `${p.glucose} mg/dL`      : "—";
+  const pa   = "—";
+  const fc   = "—";
+  const fr   = "—";
+  const spo2 = "—";
+  const temp = "—";
+  const hgt  = "—";
 
-  const fcAlert   = p.heartRate > 100 || (p.heartRate > 0 && p.heartRate < 50);
-  const spo2Alert = p.spO2 > 0 && p.spO2 < 94;
-  const tempAlert = p.temperature > 37.8 || (p.temperature > 0 && p.temperature < 35.5);
+  const fcAlert   = false;
+  const spo2Alert = false;
+  const tempAlert = false;
 
   const dataHora    = [p.attendanceDate ? fmtDate(p.attendanceDate) : "", p.attendanceTime || ""].filter(Boolean).join(" ") || "—";
   const profissional = val(p.responsibleProfessional);
@@ -244,7 +244,7 @@ function PatientCard({ patient: p, accentCls, state, onChange }: PatientCardProp
       {/* ── cabeçalho ─────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3 px-3 py-2 bg-muted/20 print:bg-gray-50 print:px-2 print:py-1 border-b border-border/30 print:border-gray-200">
         <div className="min-w-0">
-          <span className="font-bold text-sm text-foreground print:text-black">{p.nome}</span>
+          <span className="font-bold text-sm text-foreground print:text-black">{p.full_name}</span>
           {p.diagnosis && (
             <span className="ml-2 text-xs text-muted-foreground print:text-gray-500 hidden sm:inline">— {p.diagnosis}</span>
           )}
@@ -254,7 +254,7 @@ function PatientCard({ patient: p, accentCls, state, onChange }: PatientCardProp
             "text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wide",
             triage, "print:text-gray-800 print:bg-gray-100 print:border-gray-400",
           )}>
-            {TRIAGE_LABEL[p.status] ?? p.status}
+            {TRIAGE_LABEL[p.triage_level] ?? p.triage_level}
           </span>
           <span className="text-xs font-mono font-semibold text-foreground print:text-black bg-muted/40 print:bg-gray-100 border border-border/40 print:border-gray-300 rounded px-1.5 py-0.5">
             Leito {val(p.bed)}
@@ -276,7 +276,7 @@ function PatientCard({ patient: p, accentCls, state, onChange }: PatientCardProp
             <F label="CPF"      value={val(p.cpf)} mono />
             <F label="RG"       value={val(p.rg)} mono />
             <F label="CNS"      value={val(p.cns)} mono />
-            <F label="Setor"    value={val(p.setor).replace(/_/g, " ")} />
+            <F label="Setor"    value={val(p.sector).replace(/_/g, " ")} />
             <F label="Endereço" value={endereco(p)} className="col-span-2 sm:col-span-1 print:col-span-1" />
           </div>
         </div>
@@ -436,16 +436,16 @@ export default function ShiftHandover() {
   const grouped = SECTORS.map(s => ({
     ...s,
     patients: (patients ?? [])
-      .filter(p => p.setor === s.key)
-      .sort((a, b) => (TRIAGE_SEVERITY[a.status] ?? 99) - (TRIAGE_SEVERITY[b.status] ?? 99)),
+      .filter(p => p.sector === s.key)
+      .sort((a, b) => (TRIAGE_SEVERITY[a.triage_level] ?? 99) - (TRIAGE_SEVERITY[b.triage_level] ?? 99)),
   }));
 
   const totalPatients = grouped.reduce((n, g) => n + g.patients.length, 0);
-  const criticalCount = (patients ?? []).filter(p => p.status === "red" || p.status === "orange").length;
+  const criticalCount = (patients ?? []).filter(p => p.triage_level === "red" || p.triage_level === "orange").length;
 
-  const getRow    = (id: number, status = ""): RowState => rowStates[id] ?? defaultRow(status);
-  const updateRow = (id: number, status: string, patch: Partial<RowState>) =>
-    setRowStates(prev => ({ ...prev, [id]: { ...getRow(id, status), ...patch } }));
+  const getRow    = (id: number, triage_level = ""): RowState => rowStates[id] ?? defaultRow(triage_level);
+  const updateRow = (id: number, triage_level: string, patch: Partial<RowState>) =>
+    setRowStates(prev => ({ ...prev, [id]: { ...getRow(id, triage_level), ...patch } }));
 
   return (
     <>
@@ -569,8 +569,8 @@ export default function ShiftHandover() {
                           key={p.id}
                           patient={p}
                           accentCls={sector.accentCls}
-                          state={getRow(p.id, p.status)}
-                          onChange={patch => updateRow(p.id, p.status, patch)}
+                          state={getRow(p.id, p.triage_level)}
+                          onChange={patch => updateRow(p.id, p.triage_level, patch)}
                         />
                       ))}
                     </div>

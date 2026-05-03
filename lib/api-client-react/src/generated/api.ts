@@ -42,6 +42,7 @@ import type {
   UpdatePrescriptionStatusBody,
   UpdateStaffBody,
   UpdateTaskStatusBody,
+  Vitals,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -882,6 +883,93 @@ export const useAddPatientHistory = <
 > => {
   return useMutation(getAddPatientHistoryMutationOptions(options));
 };
+
+/**
+ * @summary Get patient vitals history
+ */
+export const getGetPatientVitalsUrl = (id: number) => {
+  return `/api/patients/${id}/vitals`;
+};
+
+export const getPatientVitals = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Vitals[]> => {
+  return customFetch<Vitals[]>(getGetPatientVitalsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatientVitalsQueryKey = (id: number) => {
+  return [`/api/patients/${id}/vitals`] as const;
+};
+
+export const getGetPatientVitalsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientVitals>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientVitals>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPatientVitalsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientVitals>>
+  > = ({ signal }) => getPatientVitals(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientVitals>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientVitalsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientVitals>>
+>;
+export type GetPatientVitalsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get patient vitals history
+ */
+
+export function useGetPatientVitals<
+  TData = Awaited<ReturnType<typeof getPatientVitals>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientVitals>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientVitalsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Record patient vitals

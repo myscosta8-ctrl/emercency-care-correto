@@ -54,13 +54,13 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      systolicBp:     patient.systolicBp ?? 0,
-      diastolicBp:    patient.diastolicBp ?? 0,
-      heartRate:      patient.heartRate ?? 0,
-      respiratoryRate: patient.respiratoryRate ?? 0,
-      spO2:           patient.spO2 ?? 0,
-      temperature:    patient.temperature ?? 0,
-      glucose:        patient.glucose ?? 0,
+      systolicBp:     0,
+      diastolicBp:    0,
+      heartRate:      0,
+      respiratoryRate: 0,
+      spO2:           0,
+      temperature:    0,
+      glucose:        0,
       note:           "",
       responsible:    nurseName || (patient.responsibleProfessional ?? ""),
     },
@@ -71,18 +71,16 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
       {
         id: patient.id,
         data: {
-          systolicBp:     data.systolicBp || undefined,
-          diastolicBp:    data.diastolicBp || undefined,
-          heartRate:      data.heartRate || undefined,
-          respiratoryRate: data.respiratoryRate || undefined,
-          spO2:           data.spO2 || undefined,
-          temperature:    data.temperature || undefined,
-          glucose:        data.glucose || undefined,
-          note:           data.note,
-          responsible:    data.responsible,
-          subjective:     "",
-          assessment:     "",
-          plan:           "",
+          bp: (data.systolicBp && data.diastolicBp)
+            ? `${data.systolicBp}/${data.diastolicBp}`
+            : undefined,
+          hr:   data.heartRate || undefined,
+          rr:   data.respiratoryRate || undefined,
+          spo2: data.spO2 || undefined,
+          temp: data.temperature || undefined,
+          glucose: data.glucose || undefined,
+          note:       data.note,
+          responsible: data.responsible,
         },
       },
       {
@@ -114,7 +112,7 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {patient.nome} · {dateLabel}
+            {patient.full_name} · {dateLabel}
           </p>
         </div>
 

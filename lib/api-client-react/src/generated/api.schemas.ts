@@ -4,9 +4,10 @@
  * Api
  * OpenAPI spec version: 1.0.0
  */
-export type PatientStatus = (typeof PatientStatus)[keyof typeof PatientStatus];
+export type PatientTriageLevel =
+  (typeof PatientTriageLevel)[keyof typeof PatientTriageLevel];
 
-export const PatientStatus = {
+export const PatientTriageLevel = {
   red: "red",
   orange: "orange",
   yellow: "yellow",
@@ -14,9 +15,9 @@ export const PatientStatus = {
   blue: "blue",
 } as const;
 
-export type PatientSetor = (typeof PatientSetor)[keyof typeof PatientSetor];
+export type PatientSector = (typeof PatientSector)[keyof typeof PatientSector];
 
-export const PatientSetor = {
+export const PatientSector = {
   sala_vermelha: "sala_vermelha",
   observacao_adulto: "observacao_adulto",
   observacao_pediatrica: "observacao_pediatrica",
@@ -34,7 +35,7 @@ export const PatientInternmentStatus = {
 
 export interface Patient {
   id: number;
-  nome: string;
+  full_name: string;
   birthDate: string;
   age: number;
   sex: string;
@@ -44,21 +45,12 @@ export interface Patient {
   rg: string;
   phone: string;
   email: string;
-  street: string;
-  addressNumber: string;
-  addressComplement: string;
-  neighborhood: string;
-  city: string;
-  addressState: string;
-  zipCode: string;
-  weight: number;
-  height: number;
   symptoms: string;
   symptomOnsetDate: string;
   diagnosis: string;
-  status: PatientStatus;
+  triage_level: PatientTriageLevel;
   bed: string;
-  setor: PatientSetor;
+  sector: PatientSector;
   internmentStatus: PatientInternmentStatus;
   nurse: string;
   responsibleProfessional: string;
@@ -72,20 +64,13 @@ export interface Patient {
   evolucaoCaso: string;
   classificacaoFinal: string;
   criterioConfirmacao: string;
-  guardianName: string;
-  systolicBp: number;
-  diastolicBp: number;
-  heartRate: number;
-  respiratoryRate: number;
-  spO2: number;
-  temperature: number;
-  glucose: number;
+  address?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreatePatientBody {
-  nome: string;
+  full_name: string;
   birthDate?: string;
   age?: number;
   sex?: string;
@@ -95,21 +80,12 @@ export interface CreatePatientBody {
   rg?: string;
   phone?: string;
   email?: string;
-  street?: string;
-  addressNumber?: string;
-  addressComplement?: string;
-  neighborhood?: string;
-  city?: string;
-  addressState?: string;
-  zipCode?: string;
-  weight?: number;
-  height?: number;
   symptoms?: string;
   symptomOnsetDate?: string;
   diagnosis?: string;
-  status?: string;
+  triage_level?: string;
   bed?: string;
-  setor: string;
+  sector: string;
   internmentStatus?: string;
   nurse?: string;
   responsibleProfessional?: string;
@@ -123,18 +99,10 @@ export interface CreatePatientBody {
   evolucaoCaso?: string;
   classificacaoFinal?: string;
   criterioConfirmacao?: string;
-  guardianName?: string;
-  systolicBp?: number;
-  diastolicBp?: number;
-  heartRate?: number;
-  respiratoryRate?: number;
-  spO2?: number;
-  temperature?: number;
-  glucose?: number;
 }
 
 export interface UpdatePatientBody {
-  nome?: string;
+  full_name?: string;
   birthDate?: string;
   age?: number;
   sex?: string;
@@ -144,21 +112,12 @@ export interface UpdatePatientBody {
   rg?: string;
   phone?: string;
   email?: string;
-  street?: string;
-  addressNumber?: string;
-  addressComplement?: string;
-  neighborhood?: string;
-  city?: string;
-  addressState?: string;
-  zipCode?: string;
-  weight?: number;
-  height?: number;
   symptoms?: string;
   symptomOnsetDate?: string;
   diagnosis?: string;
-  status?: string;
+  triage_level?: string;
   bed?: string;
-  setor?: string;
+  sector?: string;
   internmentStatus?: string;
   nurse?: string;
   responsibleProfessional?: string;
@@ -172,20 +131,12 @@ export interface UpdatePatientBody {
   evolucaoCaso?: string;
   classificacaoFinal?: string;
   criterioConfirmacao?: string;
-  guardianName?: string;
-  systolicBp?: number;
-  diastolicBp?: number;
-  heartRate?: number;
-  respiratoryRate?: number;
-  spO2?: number;
-  temperature?: number;
-  glucose?: number;
 }
 
-export type UpdatePatientStatusBodyStatus =
-  (typeof UpdatePatientStatusBodyStatus)[keyof typeof UpdatePatientStatusBodyStatus];
+export type UpdatePatientStatusBodyTriageLevel =
+  (typeof UpdatePatientStatusBodyTriageLevel)[keyof typeof UpdatePatientStatusBodyTriageLevel];
 
-export const UpdatePatientStatusBodyStatus = {
+export const UpdatePatientStatusBodyTriageLevel = {
   red: "red",
   orange: "orange",
   yellow: "yellow",
@@ -194,7 +145,7 @@ export const UpdatePatientStatusBodyStatus = {
 } as const;
 
 export interface UpdatePatientStatusBody {
-  status: UpdatePatientStatusBodyStatus;
+  triage_level?: UpdatePatientStatusBodyTriageLevel;
 }
 
 export interface PatientSummary {
@@ -211,11 +162,9 @@ export interface PatientHistoryEntry {
   patientId: number;
   heartRate?: number;
   respiratoryRate?: number;
-  glucose?: number;
   systolicBp?: number;
   diastolicBp?: number;
   spO2?: number;
-  temperature?: number;
   painScale?: number;
   consciousnessLevel?: string;
   generalCondition?: string;
@@ -235,12 +184,11 @@ export interface AddPatientHistoryBody {
 }
 
 export interface RecordPatientVitalsBody {
-  systolicBp?: number;
-  diastolicBp?: number;
-  heartRate?: number;
-  respiratoryRate?: number;
-  spO2?: number;
-  temperature?: number;
+  bp?: string;
+  hr?: number;
+  rr?: number;
+  spo2?: number;
+  temp?: number;
   glucose?: number;
   painScale?: number;
   consciousnessLevel?: string;
@@ -251,6 +199,20 @@ export interface RecordPatientVitalsBody {
   plan?: string;
   responsible: string;
   note?: string;
+}
+
+export interface Vitals {
+  id: number;
+  patientId: number;
+  userId: number;
+  bp: string;
+  hr: number;
+  rr: number;
+  spo2: number;
+  temp: number;
+  glucose: number;
+  note: string;
+  createdAt: string;
 }
 
 export type PatientPrescriptionStatus =
@@ -399,10 +361,10 @@ export interface UpdatePatientNotificationBody {
   pdfUrl?: string;
 }
 
-export type StaffMemberPerfil =
-  (typeof StaffMemberPerfil)[keyof typeof StaffMemberPerfil];
+export type StaffMemberRole =
+  (typeof StaffMemberRole)[keyof typeof StaffMemberRole];
 
-export const StaffMemberPerfil = {
+export const StaffMemberRole = {
   recepcionista: "recepcionista",
   enfermeiro: "enfermeiro",
   tecnico_enfermagem: "tecnico_enfermagem",
@@ -415,10 +377,10 @@ export const StaffMemberPerfil = {
 
 export interface StaffMember {
   id: number;
-  nome: string;
-  perfil: StaffMemberPerfil;
+  name: string;
+  role: StaffMemberRole;
   email: string;
-  ativo: boolean;
+  active: boolean;
   corenCrm: string;
   sector: string;
   login: string;
@@ -429,10 +391,10 @@ export interface StaffMember {
   updatedAt: string;
 }
 
-export type CreateStaffBodyPerfil =
-  (typeof CreateStaffBodyPerfil)[keyof typeof CreateStaffBodyPerfil];
+export type CreateStaffBodyRole =
+  (typeof CreateStaffBodyRole)[keyof typeof CreateStaffBodyRole];
 
-export const CreateStaffBodyPerfil = {
+export const CreateStaffBodyRole = {
   recepcionista: "recepcionista",
   enfermeiro: "enfermeiro",
   tecnico_enfermagem: "tecnico_enfermagem",
@@ -444,10 +406,10 @@ export const CreateStaffBodyPerfil = {
 } as const;
 
 export interface CreateStaffBody {
-  nome: string;
-  perfil: CreateStaffBodyPerfil;
+  name: string;
+  role: CreateStaffBodyRole;
   email?: string;
-  ativo?: boolean;
+  active?: boolean;
   corenCrm?: string;
   sector?: string;
   login: string;
@@ -457,10 +419,10 @@ export interface CreateStaffBody {
   stamp?: string;
 }
 
-export type UpdateStaffBodyPerfil =
-  (typeof UpdateStaffBodyPerfil)[keyof typeof UpdateStaffBodyPerfil];
+export type UpdateStaffBodyRole =
+  (typeof UpdateStaffBodyRole)[keyof typeof UpdateStaffBodyRole];
 
-export const UpdateStaffBodyPerfil = {
+export const UpdateStaffBodyRole = {
   recepcionista: "recepcionista",
   enfermeiro: "enfermeiro",
   tecnico_enfermagem: "tecnico_enfermagem",
@@ -472,10 +434,10 @@ export const UpdateStaffBodyPerfil = {
 } as const;
 
 export interface UpdateStaffBody {
-  nome?: string;
-  perfil?: UpdateStaffBodyPerfil;
+  name?: string;
+  role?: UpdateStaffBodyRole;
   email?: string;
-  ativo?: boolean;
+  active?: boolean;
   corenCrm?: string;
   sector?: string;
   login?: string;

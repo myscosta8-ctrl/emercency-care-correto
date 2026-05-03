@@ -18,7 +18,7 @@ export const HealthCheckResponse = zod.object({
  */
 export const ListPatientsResponseItem = zod.object({
   id: zod.number(),
-  nome: zod.string(),
+  full_name: zod.string(),
   birthDate: zod.string(),
   age: zod.number(),
   sex: zod.string(),
@@ -28,21 +28,12 @@ export const ListPatientsResponseItem = zod.object({
   rg: zod.string(),
   phone: zod.string(),
   email: zod.string(),
-  street: zod.string(),
-  addressNumber: zod.string(),
-  addressComplement: zod.string(),
-  neighborhood: zod.string(),
-  city: zod.string(),
-  addressState: zod.string(),
-  zipCode: zod.string(),
-  weight: zod.number(),
-  height: zod.number(),
   symptoms: zod.string(),
   symptomOnsetDate: zod.string(),
   diagnosis: zod.string(),
-  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+  triage_level: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   bed: zod.string(),
-  setor: zod.enum([
+  sector: zod.enum([
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -61,14 +52,7 @@ export const ListPatientsResponseItem = zod.object({
   evolucaoCaso: zod.string(),
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
-  guardianName: zod.string(),
-  systolicBp: zod.number(),
-  diastolicBp: zod.number(),
-  heartRate: zod.number(),
-  respiratoryRate: zod.number(),
-  spO2: zod.number(),
-  temperature: zod.number(),
-  glucose: zod.number(),
+  address: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -78,7 +62,7 @@ export const ListPatientsResponse = zod.array(ListPatientsResponseItem);
  * @summary Create a new patient
  */
 export const CreatePatientBody = zod.object({
-  nome: zod.string(),
+  full_name: zod.string(),
   birthDate: zod.string().optional(),
   age: zod.number().optional(),
   sex: zod.string().optional(),
@@ -88,21 +72,12 @@ export const CreatePatientBody = zod.object({
   rg: zod.string().optional(),
   phone: zod.string().optional(),
   email: zod.string().optional(),
-  street: zod.string().optional(),
-  addressNumber: zod.string().optional(),
-  addressComplement: zod.string().optional(),
-  neighborhood: zod.string().optional(),
-  city: zod.string().optional(),
-  addressState: zod.string().optional(),
-  zipCode: zod.string().optional(),
-  weight: zod.number().optional(),
-  height: zod.number().optional(),
   symptoms: zod.string().optional(),
   symptomOnsetDate: zod.string().optional(),
   diagnosis: zod.string().optional(),
-  status: zod.string().optional(),
+  triage_level: zod.string().optional(),
   bed: zod.string().optional(),
-  setor: zod.string(),
+  sector: zod.string(),
   internmentStatus: zod.string().optional(),
   nurse: zod.string().optional(),
   responsibleProfessional: zod.string().optional(),
@@ -116,14 +91,6 @@ export const CreatePatientBody = zod.object({
   evolucaoCaso: zod.string().optional(),
   classificacaoFinal: zod.string().optional(),
   criterioConfirmacao: zod.string().optional(),
-  guardianName: zod.string().optional(),
-  systolicBp: zod.number().optional(),
-  diastolicBp: zod.number().optional(),
-  heartRate: zod.number().optional(),
-  respiratoryRate: zod.number().optional(),
-  spO2: zod.number().optional(),
-  temperature: zod.number().optional(),
-  glucose: zod.number().optional(),
 });
 
 /**
@@ -147,7 +114,7 @@ export const GetPatientParams = zod.object({
 
 export const GetPatientResponse = zod.object({
   id: zod.number(),
-  nome: zod.string(),
+  full_name: zod.string(),
   birthDate: zod.string(),
   age: zod.number(),
   sex: zod.string(),
@@ -157,21 +124,12 @@ export const GetPatientResponse = zod.object({
   rg: zod.string(),
   phone: zod.string(),
   email: zod.string(),
-  street: zod.string(),
-  addressNumber: zod.string(),
-  addressComplement: zod.string(),
-  neighborhood: zod.string(),
-  city: zod.string(),
-  addressState: zod.string(),
-  zipCode: zod.string(),
-  weight: zod.number(),
-  height: zod.number(),
   symptoms: zod.string(),
   symptomOnsetDate: zod.string(),
   diagnosis: zod.string(),
-  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+  triage_level: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   bed: zod.string(),
-  setor: zod.enum([
+  sector: zod.enum([
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -190,14 +148,7 @@ export const GetPatientResponse = zod.object({
   evolucaoCaso: zod.string(),
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
-  guardianName: zod.string(),
-  systolicBp: zod.number(),
-  diastolicBp: zod.number(),
-  heartRate: zod.number(),
-  respiratoryRate: zod.number(),
-  spO2: zod.number(),
-  temperature: zod.number(),
-  glucose: zod.number(),
+  address: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -210,7 +161,7 @@ export const UpdatePatientParams = zod.object({
 });
 
 export const UpdatePatientBody = zod.object({
-  nome: zod.string().optional(),
+  full_name: zod.string().optional(),
   birthDate: zod.string().optional(),
   age: zod.number().optional(),
   sex: zod.string().optional(),
@@ -220,21 +171,12 @@ export const UpdatePatientBody = zod.object({
   rg: zod.string().optional(),
   phone: zod.string().optional(),
   email: zod.string().optional(),
-  street: zod.string().optional(),
-  addressNumber: zod.string().optional(),
-  addressComplement: zod.string().optional(),
-  neighborhood: zod.string().optional(),
-  city: zod.string().optional(),
-  addressState: zod.string().optional(),
-  zipCode: zod.string().optional(),
-  weight: zod.number().optional(),
-  height: zod.number().optional(),
   symptoms: zod.string().optional(),
   symptomOnsetDate: zod.string().optional(),
   diagnosis: zod.string().optional(),
-  status: zod.string().optional(),
+  triage_level: zod.string().optional(),
   bed: zod.string().optional(),
-  setor: zod.string().optional(),
+  sector: zod.string().optional(),
   internmentStatus: zod.string().optional(),
   nurse: zod.string().optional(),
   responsibleProfessional: zod.string().optional(),
@@ -248,19 +190,11 @@ export const UpdatePatientBody = zod.object({
   evolucaoCaso: zod.string().optional(),
   classificacaoFinal: zod.string().optional(),
   criterioConfirmacao: zod.string().optional(),
-  guardianName: zod.string().optional(),
-  systolicBp: zod.number().optional(),
-  diastolicBp: zod.number().optional(),
-  heartRate: zod.number().optional(),
-  respiratoryRate: zod.number().optional(),
-  spO2: zod.number().optional(),
-  temperature: zod.number().optional(),
-  glucose: zod.number().optional(),
 });
 
 export const UpdatePatientResponse = zod.object({
   id: zod.number(),
-  nome: zod.string(),
+  full_name: zod.string(),
   birthDate: zod.string(),
   age: zod.number(),
   sex: zod.string(),
@@ -270,21 +204,12 @@ export const UpdatePatientResponse = zod.object({
   rg: zod.string(),
   phone: zod.string(),
   email: zod.string(),
-  street: zod.string(),
-  addressNumber: zod.string(),
-  addressComplement: zod.string(),
-  neighborhood: zod.string(),
-  city: zod.string(),
-  addressState: zod.string(),
-  zipCode: zod.string(),
-  weight: zod.number(),
-  height: zod.number(),
   symptoms: zod.string(),
   symptomOnsetDate: zod.string(),
   diagnosis: zod.string(),
-  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+  triage_level: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   bed: zod.string(),
-  setor: zod.enum([
+  sector: zod.enum([
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -303,14 +228,7 @@ export const UpdatePatientResponse = zod.object({
   evolucaoCaso: zod.string(),
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
-  guardianName: zod.string(),
-  systolicBp: zod.number(),
-  diastolicBp: zod.number(),
-  heartRate: zod.number(),
-  respiratoryRate: zod.number(),
-  spO2: zod.number(),
-  temperature: zod.number(),
-  glucose: zod.number(),
+  address: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -330,12 +248,14 @@ export const UpdatePatientStatusParams = zod.object({
 });
 
 export const UpdatePatientStatusBody = zod.object({
-  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+  triage_level: zod
+    .enum(["red", "orange", "yellow", "green", "blue"])
+    .optional(),
 });
 
 export const UpdatePatientStatusResponse = zod.object({
   id: zod.number(),
-  nome: zod.string(),
+  full_name: zod.string(),
   birthDate: zod.string(),
   age: zod.number(),
   sex: zod.string(),
@@ -345,21 +265,12 @@ export const UpdatePatientStatusResponse = zod.object({
   rg: zod.string(),
   phone: zod.string(),
   email: zod.string(),
-  street: zod.string(),
-  addressNumber: zod.string(),
-  addressComplement: zod.string(),
-  neighborhood: zod.string(),
-  city: zod.string(),
-  addressState: zod.string(),
-  zipCode: zod.string(),
-  weight: zod.number(),
-  height: zod.number(),
   symptoms: zod.string(),
   symptomOnsetDate: zod.string(),
   diagnosis: zod.string(),
-  status: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+  triage_level: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   bed: zod.string(),
-  setor: zod.enum([
+  sector: zod.enum([
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -378,14 +289,7 @@ export const UpdatePatientStatusResponse = zod.object({
   evolucaoCaso: zod.string(),
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
-  guardianName: zod.string(),
-  systolicBp: zod.number(),
-  diastolicBp: zod.number(),
-  heartRate: zod.number(),
-  respiratoryRate: zod.number(),
-  spO2: zod.number(),
-  temperature: zod.number(),
-  glucose: zod.number(),
+  address: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -402,11 +306,9 @@ export const GetPatientHistoryResponseItem = zod.object({
   patientId: zod.number(),
   heartRate: zod.number().optional(),
   respiratoryRate: zod.number().optional(),
-  glucose: zod.number().optional(),
   systolicBp: zod.number().optional(),
   diastolicBp: zod.number().optional(),
   spO2: zod.number().optional(),
-  temperature: zod.number().optional(),
   painScale: zod.number().optional(),
   consciousnessLevel: zod.string().optional(),
   generalCondition: zod.string().optional(),
@@ -436,6 +338,28 @@ export const AddPatientHistoryBody = zod.object({
 });
 
 /**
+ * @summary Get patient vitals history
+ */
+export const GetPatientVitalsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientVitalsResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  userId: zod.number(),
+  bp: zod.string(),
+  hr: zod.number(),
+  rr: zod.number(),
+  spo2: zod.number(),
+  temp: zod.number(),
+  glucose: zod.number(),
+  note: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const GetPatientVitalsResponse = zod.array(GetPatientVitalsResponseItem);
+
+/**
  * @summary Record patient vitals
  */
 export const RecordPatientVitalsParams = zod.object({
@@ -443,12 +367,11 @@ export const RecordPatientVitalsParams = zod.object({
 });
 
 export const RecordPatientVitalsBody = zod.object({
-  systolicBp: zod.number().optional(),
-  diastolicBp: zod.number().optional(),
-  heartRate: zod.number().optional(),
-  respiratoryRate: zod.number().optional(),
-  spO2: zod.number().optional(),
-  temperature: zod.number().optional(),
+  bp: zod.string().optional(),
+  hr: zod.number().optional(),
+  rr: zod.number().optional(),
+  spo2: zod.number().optional(),
+  temp: zod.number().optional(),
   glucose: zod.number().optional(),
   painScale: zod.number().optional(),
   consciousnessLevel: zod.string().optional(),
@@ -753,8 +676,8 @@ export const CreateAuditLogBody = zod.object({
  */
 export const ListStaffResponseItem = zod.object({
   id: zod.number(),
-  nome: zod.string(),
-  perfil: zod.enum([
+  name: zod.string(),
+  role: zod.enum([
     "recepcionista",
     "enfermeiro",
     "tecnico_enfermagem",
@@ -765,7 +688,7 @@ export const ListStaffResponseItem = zod.object({
     "administrador",
   ]),
   email: zod.string(),
-  ativo: zod.boolean(),
+  active: zod.boolean(),
   corenCrm: zod.string(),
   sector: zod.string(),
   login: zod.string(),
@@ -781,8 +704,8 @@ export const ListStaffResponse = zod.array(ListStaffResponseItem);
  * @summary Create a staff member
  */
 export const CreateStaffBody = zod.object({
-  nome: zod.string(),
-  perfil: zod.enum([
+  name: zod.string(),
+  role: zod.enum([
     "recepcionista",
     "enfermeiro",
     "tecnico_enfermagem",
@@ -793,7 +716,7 @@ export const CreateStaffBody = zod.object({
     "administrador",
   ]),
   email: zod.string().optional(),
-  ativo: zod.boolean().optional(),
+  active: zod.boolean().optional(),
   corenCrm: zod.string().optional(),
   sector: zod.string().optional(),
   login: zod.string(),
@@ -812,8 +735,8 @@ export const GetStaffParams = zod.object({
 
 export const GetStaffResponse = zod.object({
   id: zod.number(),
-  nome: zod.string(),
-  perfil: zod.enum([
+  name: zod.string(),
+  role: zod.enum([
     "recepcionista",
     "enfermeiro",
     "tecnico_enfermagem",
@@ -824,7 +747,7 @@ export const GetStaffResponse = zod.object({
     "administrador",
   ]),
   email: zod.string(),
-  ativo: zod.boolean(),
+  active: zod.boolean(),
   corenCrm: zod.string(),
   sector: zod.string(),
   login: zod.string(),
@@ -843,8 +766,8 @@ export const UpdateStaffParams = zod.object({
 });
 
 export const UpdateStaffBody = zod.object({
-  nome: zod.string().optional(),
-  perfil: zod
+  name: zod.string().optional(),
+  role: zod
     .enum([
       "recepcionista",
       "enfermeiro",
@@ -857,7 +780,7 @@ export const UpdateStaffBody = zod.object({
     ])
     .optional(),
   email: zod.string().optional(),
-  ativo: zod.boolean().optional(),
+  active: zod.boolean().optional(),
   corenCrm: zod.string().optional(),
   sector: zod.string().optional(),
   login: zod.string().optional(),
@@ -869,8 +792,8 @@ export const UpdateStaffBody = zod.object({
 
 export const UpdateStaffResponse = zod.object({
   id: zod.number(),
-  nome: zod.string(),
-  perfil: zod.enum([
+  name: zod.string(),
+  role: zod.enum([
     "recepcionista",
     "enfermeiro",
     "tecnico_enfermagem",
@@ -881,7 +804,7 @@ export const UpdateStaffResponse = zod.object({
     "administrador",
   ]),
   email: zod.string(),
-  ativo: zod.boolean(),
+  active: zod.boolean(),
   corenCrm: zod.string(),
   sector: zod.string(),
   login: zod.string(),

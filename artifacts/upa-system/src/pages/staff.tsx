@@ -184,10 +184,10 @@ function SignaturePad({ value, onChange }: SignaturePadProps) {
 // ── staff form ─────────────────────────────────────────────────────────────────
 
 interface FormData {
-  nome: string;
-  perfil: "recepcionista" | "enfermeiro" | "tecnico_enfermagem" | "medico" | "assistente_social" | "nutricionista" | "farmaceutico" | "administrador";
+  name: string;
+  role: "recepcionista" | "enfermeiro" | "tecnico_enfermagem" | "medico" | "assistente_social" | "nutricionista" | "farmaceutico" | "administrador";
   email: string;
-  ativo: boolean;
+  active: boolean;
   corenCrm: string;
   sector: string;
   login: string;
@@ -198,10 +198,10 @@ interface FormData {
 }
 
 const defaultForm = (): FormData => ({
-  nome: "",
-  perfil: "recepcionista",
+  name: "",
+  role: "recepcionista",
   email: "",
-  ativo: true,
+  active: true,
   corenCrm: "",
   sector: "",
   login: "",
@@ -212,10 +212,10 @@ const defaultForm = (): FormData => ({
 });
 
 function buildStamp(f: FormData): string {
-  const catLabel = CATEGORIES.find(c => c.value === f.perfil)?.label ?? "";
-  const corenLabel = COREN_LABEL[f.perfil] ?? "Reg.";
+  const catLabel = CATEGORIES.find(c => c.value === f.role)?.label ?? "";
+  const corenLabel = COREN_LABEL[f.role] ?? "Reg.";
   return [
-    f.nome,
+    f.name,
     catLabel,
     f.corenCrm ? `${corenLabel}: ${f.corenCrm}` : "",
     f.sector,
@@ -236,10 +236,10 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
   const [form, setForm] = useState<FormData>(() => {
     if (!initial) return defaultForm();
     return {
-      nome: initial.nome,
-      perfil: initial.perfil as FormData["perfil"],
+      name: initial.name,
+      role: initial.role as FormData["role"],
       email: initial.email,
-      ativo: initial.ativo,
+      active: initial.active,
       corenCrm: initial.corenCrm,
       sector: initial.sector,
       login: initial.login,
@@ -260,16 +260,16 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nome || !form.login || (!initial && !form.password)) {
+    if (!form.name || !form.login || (!initial && !form.password)) {
       toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
       return;
     }
 
     const payload = {
-      nome: form.nome,
-      perfil: form.perfil,
+      name: form.name,
+      role: form.role,
       email: form.email,
-      ativo: form.ativo,
+      active: form.active,
       corenCrm: form.corenCrm,
       sector: form.sector,
       login: form.login,
@@ -313,26 +313,26 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
             <div className="flex-1 space-y-1.5">
               <Label>Nome completo <span className="text-red-400">*</span></Label>
               <Input
-                value={form.nome}
-                onChange={e => set({ nome: e.target.value })}
+                value={form.name}
+                onChange={e => set({ name: e.target.value })}
                 placeholder="Nome completo do funcionário"
                 autoFocus
               />
             </div>
             <button
               type="button"
-              onClick={() => set({ ativo: !form.ativo })}
+              onClick={() => set({ active: !form.active })}
               className={cn(
                 "flex items-center gap-1.5 h-10 px-3 rounded-md border text-sm font-medium transition-colors shrink-0",
-                form.ativo
+                form.active
                   ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20"
                   : "border-border/50 text-muted-foreground bg-muted/20 hover:bg-muted/40"
               )}
             >
-              {form.ativo
+              {form.active
                 ? <ToggleRight className="h-4 w-4" />
                 : <ToggleLeft className="h-4 w-4" />}
-              {form.ativo ? "Ativo" : "Inativo"}
+              {form.active ? "Ativo" : "Inativo"}
             </button>
           </div>
 
@@ -357,8 +357,8 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
               <Label>Categoria <span className="text-red-400">*</span></Label>
               <div className="relative">
                 <select
-                  value={form.perfil}
-                  onChange={e => set({ perfil: e.target.value as FormData["perfil"] })}
+                  value={form.role}
+                  onChange={e => set({ role: e.target.value as FormData["role"] })}
                   className="w-full h-10 bg-background border border-input rounded-md px-3 pr-8 text-sm text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -367,11 +367,11 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>{COREN_LABEL[form.perfil] ?? "Registro"}</Label>
+              <Label>{COREN_LABEL[form.role] ?? "Registro"}</Label>
               <Input
                 value={form.corenCrm}
                 onChange={e => set({ corenCrm: e.target.value })}
-                placeholder={`Nº do ${COREN_LABEL[form.perfil]}`}
+                placeholder={`Nº do ${COREN_LABEL[form.role]}`}
               />
             </div>
           </div>
@@ -520,22 +520,22 @@ function StaffCard({ member, onEdit, onDelete, canEdit }: StaffCardProps) {
         {/* info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="font-semibold text-sm text-foreground truncate">{member.nome}</h3>
-            {!member.ativo && (
+            <h3 className="font-semibold text-sm text-foreground truncate">{member.name}</h3>
+            {!member.active && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-muted-foreground/30 text-muted-foreground bg-muted/20 shrink-0">
                 Inativo
               </span>
             )}
             <span className={cn(
               "px-2 py-0.5 rounded-full text-[11px] font-semibold border shrink-0",
-              CATEGORY_COLOR[member.perfil]
+              CATEGORY_COLOR[member.role]
             )}>
-              {CATEGORY_LABEL[member.perfil]}
+              {CATEGORY_LABEL[member.role]}
             </span>
           </div>
           <div className="text-xs text-muted-foreground space-y-0.5">
             {member.corenCrm && (
-              <p>{COREN_LABEL[member.perfil]}: <span className="text-foreground font-mono">{member.corenCrm}</span></p>
+              <p>{COREN_LABEL[member.role]}: <span className="text-foreground font-mono">{member.corenCrm}</span></p>
             )}
             {member.sector && <p>Setor: <span className="text-foreground">{SECTOR_LABEL[member.sector] ?? member.sector}</span></p>}
             {member.email && <p className="flex items-center gap-1"><Mail className="h-3 w-3 shrink-0" /><span className="text-foreground">{member.email}</span></p>}
@@ -625,17 +625,17 @@ export default function StaffPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/staff"] });
 
   const handleDelete = async (m: StaffMember) => {
-    if (!confirm(`Remover ${m.nome}?`)) return;
+    if (!confirm(`Remover ${m.name}?`)) return;
     await deleteMut.mutateAsync({ id: m.id });
     toast({ title: "Funcionário removido" });
     invalidate();
   };
 
   const filtered = (staff ?? []).filter(m => {
-    const matchSearch = m.nome.toLowerCase().includes(search.toLowerCase()) ||
+    const matchSearch = m.name.toLowerCase().includes(search.toLowerCase()) ||
       m.login.toLowerCase().includes(search.toLowerCase()) ||
       m.corenCrm.toLowerCase().includes(search.toLowerCase());
-    const matchCat = filterCat === "todos" || m.perfil === filterCat;
+    const matchCat = filterCat === "todos" || m.role === filterCat;
     return matchSearch && matchCat;
   });
 
@@ -663,7 +663,7 @@ export default function StaffPage() {
               >
                 <option value="">Selecionar acesso</option>
                 {(staff ?? []).map(m => (
-                  <option key={m.id} value={m.login}>{m.nome}</option>
+                  <option key={m.id} value={m.login}>{m.name}</option>
                 ))}
               </select>
               {activeUser && (
@@ -719,14 +719,14 @@ export default function StaffPage() {
         <div className="flex flex-wrap gap-4 mb-5">
           {[
             { label: "Total", count: staff?.length ?? 0, cls: "text-foreground" },
-            { label: "Recep.", count: staff?.filter(m => m.perfil === "recepcionista").length ?? 0, cls: "text-pink-400" },
-            { label: "Enferm.", count: staff?.filter(m => m.perfil === "enfermeiro").length ?? 0, cls: "text-cyan-400" },
-            { label: "Técnicos", count: staff?.filter(m => m.perfil === "tecnico_enfermagem").length ?? 0, cls: "text-blue-400" },
-            { label: "Médicos", count: staff?.filter(m => m.perfil === "medico").length ?? 0, cls: "text-emerald-400" },
-            { label: "Assist.", count: staff?.filter(m => m.perfil === "assistente_social").length ?? 0, cls: "text-purple-400" },
-            { label: "Nutri.", count: staff?.filter(m => m.perfil === "nutricionista").length ?? 0, cls: "text-lime-400" },
-            { label: "Farmac.", count: staff?.filter(m => m.perfil === "farmaceutico").length ?? 0, cls: "text-amber-400" },
-            { label: "Admin.", count: staff?.filter(m => m.perfil === "administrador").length ?? 0, cls: "text-yellow-400" },
+            { label: "Recep.", count: staff?.filter(m => m.role === "recepcionista").length ?? 0, cls: "text-pink-400" },
+            { label: "Enferm.", count: staff?.filter(m => m.role === "enfermeiro").length ?? 0, cls: "text-cyan-400" },
+            { label: "Técnicos", count: staff?.filter(m => m.role === "tecnico_enfermagem").length ?? 0, cls: "text-blue-400" },
+            { label: "Médicos", count: staff?.filter(m => m.role === "medico").length ?? 0, cls: "text-emerald-400" },
+            { label: "Assist.", count: staff?.filter(m => m.role === "assistente_social").length ?? 0, cls: "text-purple-400" },
+            { label: "Nutri.", count: staff?.filter(m => m.role === "nutricionista").length ?? 0, cls: "text-lime-400" },
+            { label: "Farmac.", count: staff?.filter(m => m.role === "farmaceutico").length ?? 0, cls: "text-amber-400" },
+            { label: "Admin.", count: staff?.filter(m => m.role === "administrador").length ?? 0, cls: "text-yellow-400" },
           ].map(s => (
             <div key={s.label} className="bg-card border border-border/30 rounded-xl px-4 py-2.5 min-w-[80px]">
               <p className="text-xs text-muted-foreground">{s.label}</p>

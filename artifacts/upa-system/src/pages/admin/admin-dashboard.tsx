@@ -35,12 +35,12 @@ export default function AdminDashboardPage() {
   const { features } = useFeatures();
 
   const totalStaff    = staff?.length ?? 0;
-  const activeStaff   = staff?.filter(s => s.ativo).length ?? 0;
+  const activeStaff   = staff?.filter(s => s.active).length ?? 0;
   const totalPatients = patients?.length ?? 0;
 
   const byPerfil = PERFIS.map(p => ({
     perfil: p,
-    count: (staff ?? []).filter(s => s.perfil === p).length,
+    count: (staff ?? []).filter(s => s.role === p).length,
   }));
 
   const featureList = Object.entries(features) as [FeatureKey, boolean][];

@@ -352,7 +352,7 @@ function NotificacaoIndividual({ patient }: { patient: Patient }) {
                 <tr>
                   <td style={S.td} colSpan={3}>
                     <span style={S.fieldLabel}>8 Nome do Paciente</span>
-                    <span style={S.fieldValue}>{patient.nome}</span>
+                    <span style={S.fieldValue}>{patient.full_name}</span>
                   </td>
                   <td style={S.td}>
                     <span style={S.fieldLabel}>9 Data de Nascimento</span>
@@ -422,14 +422,12 @@ function DadosResidencia({ patient }: { patient: Patient }) {
                 <tr>
                   <td style={{ ...S.td, width: "8%" }}>
                     <span style={S.fieldLabel}>17 UF</span>
-                    <span style={patient.addressState ? S.fieldValue : S.fieldEmpty}>
-                      {patient.addressState || "__"}
-                    </span>
+                    <span style={S.fieldEmpty}>__</span>
                   </td>
                   <td style={S.td} colSpan={2}>
                     <span style={S.fieldLabel}>18 Município de Residência</span>
-                    <span style={patient.city ? S.fieldValue : S.fieldEmpty}>
-                      {patient.city || "___"}
+                    <span style={patient.municipioNotificacao ? S.fieldValue : S.fieldEmpty}>
+                      {patient.municipioNotificacao || "___"}
                     </span>
                   </td>
                   <td style={S.td}>
@@ -440,23 +438,19 @@ function DadosResidencia({ patient }: { patient: Patient }) {
                 <tr>
                   <td style={S.td} colSpan={2}>
                     <span style={S.fieldLabel}>20 Bairro</span>
-                    <span style={patient.neighborhood ? S.fieldValue : S.fieldEmpty}>
-                      {patient.neighborhood || "___"}
-                    </span>
+                    <span style={S.fieldEmpty}>___</span>
                   </td>
                   <td style={S.td} colSpan={2}>
-                    <span style={S.fieldLabel}>21 Logradouro (rua, avenida,...)</span>
-                    <span style={patient.street ? S.fieldValue : S.fieldEmpty}>
-                      {patient.street || "___"}
+                    <span style={S.fieldLabel}>21 Logradouro (endereço)</span>
+                    <span style={patient.address ? S.fieldValue : S.fieldEmpty}>
+                      {patient.address || "___"}
                     </span>
                   </td>
                 </tr>
                 <tr>
                   <td style={{ ...S.td, width: "15%" }}>
                     <span style={S.fieldLabel}>22 Número</span>
-                    <span style={patient.addressNumber ? S.fieldValue : S.fieldEmpty}>
-                      {patient.addressNumber || "___"}
-                    </span>
+                    <span style={S.fieldEmpty}>___</span>
                   </td>
                   <td style={S.td} colSpan={2}>
                     <span style={S.fieldLabel}>23 Complemento (apto., casa,...)</span>
@@ -464,9 +458,7 @@ function DadosResidencia({ patient }: { patient: Patient }) {
                   </td>
                   <td style={S.td}>
                     <span style={S.fieldLabel}>27 CEP</span>
-                    <span style={{ ...(patient.zipCode ? S.fieldValue : S.fieldEmpty), fontFamily: "monospace" }}>
-                      {patient.zipCode || "_ _ _ _ _-_ _ _"}
-                    </span>
+                    <span style={{ ...S.fieldEmpty, fontFamily: "monospace" }}>_ _ _ _ _-_ _ _</span>
                   </td>
                 </tr>
                 <tr>
@@ -800,12 +792,12 @@ function UpaDataBox({ patient, notif, types }: { patient: Patient; notif: Patien
               </td>
               <td style={S.td}>
                 <span style={S.fieldLabel}>Leito / Setor</span>
-                <span style={{ fontWeight: 700 }}>{patient.bed} — {patient.setor}</span>
+                <span style={{ fontWeight: 700 }}>{patient.bed} — {patient.sector}</span>
               </td>
               <td style={S.td}>
                 <span style={S.fieldLabel}>Triagem Manchester</span>
                 <span style={{ fontWeight: 700 }}>{
-                  { red: "Vermelho (Emergência)", orange: "Laranja (Muito Urgente)", yellow: "Amarelo (Urgente)", green: "Verde (Pouco Urgente)", blue: "Azul (Não Urgente)" }[patient.status] ?? patient.status
+                  { red: "Vermelho (Emergência)", orange: "Laranja (Muito Urgente)", yellow: "Amarelo (Urgente)", green: "Verde (Pouco Urgente)", blue: "Azul (Não Urgente)" }[patient.triage_level] ?? patient.triage_level
                 }</span>
               </td>
             </tr>

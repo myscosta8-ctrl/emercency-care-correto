@@ -190,6 +190,24 @@ paths:
                 $ref: "#/components/schemas/PatientHistoryEntry"
 
   /api/patients/{id}/vitals:
+    get:
+      operationId: getPatientVitals
+      summary: Get patient vitals history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vitals history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vitals'
     post:
       operationId: recordPatientVitals
       summary: Record patient vitals
@@ -613,7 +631,7 @@ components:
       properties:
         id:
           type: integer
-        nome:
+        full_name:
           type: string
         birthDate:
           type: string
@@ -633,36 +651,18 @@ components:
           type: string
         email:
           type: string
-        street:
-          type: string
-        addressNumber:
-          type: string
-        addressComplement:
-          type: string
-        neighborhood:
-          type: string
-        city:
-          type: string
-        addressState:
-          type: string
-        zipCode:
-          type: string
-        weight:
-          type: number
-        height:
-          type: number
         symptoms:
           type: string
         symptomOnsetDate:
           type: string
         diagnosis:
           type: string
-        status:
+        triage_level:
           type: string
           enum: [red, orange, yellow, green, blue]
         bed:
           type: string
-        setor:
+        sector:
           type: string
           enum: [sala_vermelha, observacao_adulto, observacao_pediatrica, observacao_pre_adulto]
         internmentStatus:
@@ -692,22 +692,8 @@ components:
           type: string
         criterioConfirmacao:
           type: string
-        guardianName:
+        address:
           type: string
-        systolicBp:
-          type: number
-        diastolicBp:
-          type: number
-        heartRate:
-          type: number
-        respiratoryRate:
-          type: number
-        spO2:
-          type: number
-        temperature:
-          type: number
-        glucose:
-          type: number
         createdAt:
           type: string
           format: date-time
@@ -716,7 +702,7 @@ components:
           format: date-time
       required:
         - id
-        - nome
+        - full_name
         - birthDate
         - age
         - sex
@@ -726,21 +712,12 @@ components:
         - rg
         - phone
         - email
-        - street
-        - addressNumber
-        - addressComplement
-        - neighborhood
-        - city
-        - addressState
-        - zipCode
-        - weight
-        - height
         - symptoms
         - symptomOnsetDate
         - diagnosis
-        - status
+        - triage_level
         - bed
-        - setor
+        - sector
         - internmentStatus
         - nurse
         - responsibleProfessional
@@ -754,21 +731,13 @@ components:
         - evolucaoCaso
         - classificacaoFinal
         - criterioConfirmacao
-        - guardianName
-        - systolicBp
-        - diastolicBp
-        - heartRate
-        - respiratoryRate
-        - spO2
-        - temperature
-        - glucose
         - createdAt
         - updatedAt
 
     CreatePatientBody:
       type: object
       properties:
-        nome:
+        full_name:
           type: string
         birthDate:
           type: string
@@ -788,35 +757,17 @@ components:
           type: string
         email:
           type: string
-        street:
-          type: string
-        addressNumber:
-          type: string
-        addressComplement:
-          type: string
-        neighborhood:
-          type: string
-        city:
-          type: string
-        addressState:
-          type: string
-        zipCode:
-          type: string
-        weight:
-          type: number
-        height:
-          type: number
         symptoms:
           type: string
         symptomOnsetDate:
           type: string
         diagnosis:
           type: string
-        status:
+        triage_level:
           type: string
         bed:
           type: string
-        setor:
+        sector:
           type: string
         internmentStatus:
           type: string
@@ -844,30 +795,14 @@ components:
           type: string
         criterioConfirmacao:
           type: string
-        guardianName:
-          type: string
-        systolicBp:
-          type: number
-        diastolicBp:
-          type: number
-        heartRate:
-          type: number
-        respiratoryRate:
-          type: number
-        spO2:
-          type: number
-        temperature:
-          type: number
-        glucose:
-          type: number
       required:
-        - nome
-        - setor
+        - full_name
+        - sector
 
     UpdatePatientBody:
       type: object
       properties:
-        nome:
+        full_name:
           type: string
         birthDate:
           type: string
@@ -887,35 +822,17 @@ components:
           type: string
         email:
           type: string
-        street:
-          type: string
-        addressNumber:
-          type: string
-        addressComplement:
-          type: string
-        neighborhood:
-          type: string
-        city:
-          type: string
-        addressState:
-          type: string
-        zipCode:
-          type: string
-        weight:
-          type: number
-        height:
-          type: number
         symptoms:
           type: string
         symptomOnsetDate:
           type: string
         diagnosis:
           type: string
-        status:
+        triage_level:
           type: string
         bed:
           type: string
-        setor:
+        sector:
           type: string
         internmentStatus:
           type: string
@@ -943,27 +860,11 @@ components:
           type: string
         criterioConfirmacao:
           type: string
-        guardianName:
-          type: string
-        systolicBp:
-          type: number
-        diastolicBp:
-          type: number
-        heartRate:
-          type: number
-        respiratoryRate:
-          type: number
-        spO2:
-          type: number
-        temperature:
-          type: number
-        glucose:
-          type: number
 
     UpdatePatientStatusBody:
       type: object
       properties:
-        status:
+        triage_level:
           type: string
           enum: [red, orange, yellow, green, blue]
       required:
@@ -1003,16 +904,12 @@ components:
           type: integer
         respiratoryRate:
           type: integer
-        glucose:
-          type: number
         systolicBp:
           type: integer
         diastolicBp:
           type: integer
         spO2:
           type: integer
-        temperature:
-          type: number
         painScale:
           type: integer
         consciousnessLevel:
@@ -1062,17 +959,15 @@ components:
     RecordPatientVitalsBody:
       type: object
       properties:
-        systolicBp:
-          type: number
-        diastolicBp:
-          type: number
-        heartRate:
-          type: number
-        respiratoryRate:
-          type: number
-        spO2:
-          type: number
-        temperature:
+        bp:
+          type: string
+        hr:
+          type: integer
+        rr:
+          type: integer
+        spo2:
+          type: integer
+        temp:
           type: number
         glucose:
           type: number
@@ -1096,6 +991,45 @@ components:
           type: string
       required:
         - responsible
+
+    Vitals:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        userId:
+          type: integer
+        bp:
+          type: string
+        hr:
+          type: integer
+        rr:
+          type: integer
+        spo2:
+          type: integer
+        temp:
+          type: number
+        glucose:
+          type: number
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - userId
+        - bp
+        - hr
+        - rr
+        - spo2
+        - temp
+        - glucose
+        - note
+        - createdAt
 
     PatientPrescription:
       type: object
@@ -1316,14 +1250,14 @@ components:
       properties:
         id:
           type: integer
-        nome:
+        name:
           type: string
-        perfil:
+        role:
           type: string
           enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador]
         email:
           type: string
-        ativo:
+        active:
           type: boolean
         corenCrm:
           type: string
@@ -1345,10 +1279,10 @@ components:
           format: date-time
       required:
         - id
-        - nome
-        - perfil
+        - name
+        - role
         - email
-        - ativo
+        - active
         - corenCrm
         - sector
         - login
@@ -1361,14 +1295,14 @@ components:
     CreateStaffBody:
       type: object
       properties:
-        nome:
+        name:
           type: string
-        perfil:
+        role:
           type: string
           enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador]
         email:
           type: string
-        ativo:
+        active:
           type: boolean
         corenCrm:
           type: string
@@ -1385,22 +1319,22 @@ components:
         stamp:
           type: string
       required:
-        - nome
-        - perfil
+        - name
+        - role
         - login
         - password
 
     UpdateStaffBody:
       type: object
       properties:
-        nome:
+        name:
           type: string
-        perfil:
+        role:
           type: string
           enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador]
         email:
           type: string
-        ativo:
+        active:
           type: boolean
         corenCrm:
           type: string

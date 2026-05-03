@@ -140,7 +140,7 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
         <div className="bg-muted/20 rounded-lg border border-border/40 p-3 space-y-1 text-sm">
           <div className="flex gap-4">
             <span className="text-muted-foreground w-32 shrink-0">Paciente</span>
-            <span className="font-medium">{patient.nome}</span>
+            <span className="font-medium">{patient.full_name}</span>
           </div>
           {patient.birthDate && (
             <div className="flex gap-4">
@@ -166,19 +166,16 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
               <span className="font-mono">{patient.cns}</span>
             </div>
           )}
-          {patient.street && (
+          {patient.address && (
             <div className="flex gap-4">
               <span className="text-muted-foreground w-32 shrink-0">Endereço</span>
-              <span>
-                {[patient.street, patient.addressNumber].filter(Boolean).join(", ")}
-                {patient.neighborhood ? `, ${patient.neighborhood}` : ""}
-              </span>
+              <span>{patient.address}</span>
             </div>
           )}
-          {patient.city && (
+          {patient.municipioNotificacao && (
             <div className="flex gap-4">
               <span className="text-muted-foreground w-32 shrink-0">Município</span>
-              <span>{patient.city}{patient.addressState ? ` — ${patient.addressState}` : ""}</span>
+              <span>{patient.municipioNotificacao}</span>
             </div>
           )}
         </div>
