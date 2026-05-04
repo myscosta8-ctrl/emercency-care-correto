@@ -5,7 +5,8 @@ import { FEATURE_LABELS } from "@/lib/features";
 import type { FeatureKey } from "@/lib/features";
 import { PERFIL_LABELS, PERFIS } from "@/lib/permissions";
 import type { Perfil } from "@/lib/permissions";
-import { Users, BedDouble, Activity, CheckCircle2, XCircle, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { Link } from "wouter";
+import { Users, BedDouble, Activity, CheckCircle2, XCircle, ShieldCheck, SlidersHorizontal, ArrowRight, ClipboardList } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +108,26 @@ export default function AdminDashboardPage() {
             <p className="text-2xl font-bold">{activeFeatures}<span className="text-sm text-muted-foreground font-normal">/{featureList.length}</span></p>
             <p className="text-xs text-muted-foreground">ativas</p>
           </div>
+        </div>
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { href: "/admin/usuarios",        icon: Users,          label: "Gerenciar Usuários",   desc: "Criar, editar e desativar funcionários"    },
+            { href: "/admin/permissoes",       icon: ShieldCheck,    label: "Permissões por Cargo", desc: "Ver o que cada perfil pode acessar"        },
+            { href: "/admin/auditoria",        icon: ClipboardList,  label: "Log de Auditoria",     desc: "Histórico completo de ações no sistema"   },
+          ].map(({ href, icon: Icon, label, desc }) => (
+            <Link key={href} href={href}>
+              <div className="rounded-lg border border-border bg-card p-4 hover:bg-muted/20 transition-colors cursor-pointer group">
+                <div className="flex items-start justify-between">
+                  <Icon className="h-5 w-5 text-primary mb-2" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+                <p className="text-sm font-semibold">{label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+              </div>
+            </Link>
+          ))}
         </div>
 
         {/* Staff by perfil */}

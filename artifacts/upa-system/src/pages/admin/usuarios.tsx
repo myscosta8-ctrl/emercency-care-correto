@@ -5,7 +5,7 @@ import {
 } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Search, UserCircle, Check, X, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, UserCircle, Check, Minus, ToggleLeft, ToggleRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { PERFIL_LABELS, PERFIS } from "@/lib/permissions";
+import { PERFIL_LABELS, PERFIS, PERMISSOES, ACOES, ACAO_LABELS } from "@/lib/permissions";
 import type { Perfil } from "@/lib/permissions";
 
 const PERFIL_COLOR: Record<Perfil, string> = {
@@ -55,6 +55,37 @@ const EMPTY_FORM: FormState = {
   name: "", login: "", role: "enfermeiro",
   email: "", sector: "todos_os_setores", corenCrm: "", active: true,
 };
+
+function PermissoesPreview({ perfil }: { perfil: Perfil }) {
+  const perms = PERMISSOES[perfil] ?? [];
+  const isAdmin = perms.includes("*");
+
+  return (
+    <div className="rounded-md border border-border bg-muted/10 p-3 space-y-2">
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+        <ShieldCheck className="h-3.5 w-3.5" />
+        Permissões deste perfil
+      </div>
+      {isAdmin ? (
+        <p className="text-xs text-yellow-400 font-semibold">Acesso total a todas as funções do sistema.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-1">
+          {ACOES.map(acao => {
+            const tem = perms.includes(acao);
+            return (
+              <div key={acao} className={cn("flex items-center gap-2 text-[11px]", tem ? "text-foreground" : "text-muted-foreground/40")}>
+                {tem
+                  ? <Check className="h-3 w-3 text-green-400 shrink-0" />
+                  : <Minus className="h-3 w-3 shrink-0" />}
+                {ACAO_LABELS[acao]}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StaffForm({
   initial,
@@ -132,6 +163,9 @@ function StaffForm({
           <Label htmlFor="ativo-check" className="text-xs cursor-pointer">
             Usuário ativo (pode fazer login)
           </Label>
+        </div>
+        <div className="col-span-2">
+          <PermissoesPreview perfil={form.role as Perfil} />
         </div>
       </div>
       <div className="flex justify-end gap-2 pt-1">
