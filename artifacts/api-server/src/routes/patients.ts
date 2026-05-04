@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requirePermissao } from "../middleware/require-auth";
-import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable } from "@workspace/db";
-import { eq, sql, desc, and } from "drizzle-orm";
+import { db, pool, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable } from "@workspace/db";
+import { eq, sql, desc, and, inArray } from "drizzle-orm";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   CreatePatientBody,
@@ -26,6 +26,7 @@ import {
   AddPatientExamRequestBody,
   UpdateExamRequestStatusParams,
   UpdateExamRequestStatusBody,
+  ListPatientsQueryParams,
 } from "@workspace/api-zod";
 
 const router = Router();
@@ -191,8 +192,117 @@ function buildPatientPatch(body: typeof UpdatePatientBody._type): Partial<typeof
 // ── routes ────────────────────────────────────────────────────────────────────
 
 router.get("/", async (req, res) => {
-  const patients = await db.select().from(patientsTable).orderBy(patientsTable.createdAt);
-  res.json(patients.map(serialize));
+  const parsed = ListPatientsQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid query parameters", details: parsed.error.flatten() });
+    return;
+  }
+  const { exam, examType, examStatus, examPriority } = parsed.data;
+
+  const hasExamFilter = exam || examType || examStatus || examPriority;
+
+  if (!hasExamFilter) {
+    const patients = await db.select().from(patientsTable).orderBy(patientsTable.createdAt);
+    res.json(patients.map(serialize));
+    return;
+  }
+
+  // Build parameterized conditions for exam_requests
+  const conditions: string[] = [];
+  const values: string[] = [];
+
+  // Default to "pending" (solicitado or coletado) when no explicit status is provided
+  // so that `exam=Hemograma` returns patients with *pending* exam, not completed ones
+  if (examStatus) {
+    conditions.push(`er.status = $${values.length + 1}`);
+    values.push(examStatus);
+  } else {
+    conditions.push(`er.status != 'laudado'`);
+  }
+
+  if (examPriority) {
+    conditions.push(`er.prioridade = $${values.length + 1}`);
+    values.push(examPriority);
+  }
+
+  if (exam) {
+    if (examType === "imagem") {
+      conditions.push(`er.imagem @> $${values.length + 1}::jsonb`);
+      values.push(JSON.stringify([exam]));
+    } else if (examType === "laboratorial") {
+      conditions.push(`er.laboratoriais @> $${values.length + 1}::jsonb`);
+      values.push(JSON.stringify([exam]));
+    } else {
+      // Match either array
+      conditions.push(`(er.laboratoriais @> $${values.length + 1}::jsonb OR er.imagem @> $${values.length + 1}::jsonb)`);
+      values.push(JSON.stringify([exam]));
+    }
+  } else if (examType) {
+    if (examType === "imagem") {
+      conditions.push(`jsonb_array_length(er.imagem) > 0`);
+    } else {
+      conditions.push(`jsonb_array_length(er.laboratoriais) > 0`);
+    }
+  }
+
+  const whereClause = `WHERE ${conditions.join(" AND ")}`;
+
+  // Fetch patient IDs with distinct match, then fetch their matching exam requests
+  const matchingRows = await pool.query(
+    `SELECT DISTINCT patient_id FROM patient_exam_requests er ${whereClause}`,
+    values,
+  );
+  const matchingIds = (matchingRows.rows as { patient_id: number }[]).map(r => r.patient_id);
+
+  if (matchingIds.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  // Fetch patient records
+  const patients = await db.select().from(patientsTable)
+    .where(inArray(patientsTable.id, matchingIds))
+    .orderBy(patientsTable.createdAt);
+
+  // Fetch the matching pending exam requests for each patient
+  const examRows = await pool.query(
+    `SELECT id, patient_id, laboratoriais, imagem, prioridade, status, created_at
+     FROM patient_exam_requests er
+     ${whereClause}
+     AND er.patient_id = ANY($${values.length + 1}::int[])
+     ORDER BY created_at DESC`,
+    [...values, `{${matchingIds.join(",")}}`],
+  );
+
+  type ExamRow = {
+    id: number;
+    patient_id: number;
+    laboratoriais: string[];
+    imagem: string[];
+    prioridade: string;
+    status: string;
+    created_at: string;
+  };
+
+  // Group exam requests by patient id
+  const examsByPatient = new Map<number, ExamRow[]>();
+  for (const row of examRows.rows as ExamRow[]) {
+    const list = examsByPatient.get(row.patient_id) ?? [];
+    list.push(row);
+    examsByPatient.set(row.patient_id, list);
+  }
+
+  res.json(patients.map(p => ({
+    ...serialize(p),
+    pendingExams: (examsByPatient.get(p.id) ?? []).map(e => ({
+      id:           e.id,
+      laboratoriais: e.laboratoriais as string[],
+      imagem:       e.imagem as string[],
+      prioridade:   e.prioridade,
+      status:       e.status,
+      createdAt:    e.created_at,
+    })),
+  })));
 });
 
 router.get("/summary", async (req, res) => {

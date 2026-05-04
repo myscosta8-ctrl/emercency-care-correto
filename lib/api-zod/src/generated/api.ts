@@ -16,6 +16,25 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary List all patients
  */
+export const ListPatientsQueryParams = zod.object({
+  exam: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter patients who have a pending exam matching this name"),
+  examType: zod
+    .enum(["laboratorial", "imagem"])
+    .optional()
+    .describe("Filter by exam type"),
+  examStatus: zod
+    .enum(["solicitado", "coletado", "laudado"])
+    .optional()
+    .describe("Filter by exam request status"),
+  examPriority: zod
+    .enum(["urgente", "rotina", "eletivo"])
+    .optional()
+    .describe("Filter by exam request priority"),
+});
+
 export const ListPatientsResponseItem = zod.object({
   id: zod.number(),
   full_name: zod.string(),
@@ -68,6 +87,21 @@ export const ListPatientsResponseItem = zod.object({
   address: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  pendingExams: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        laboratoriais: zod.array(zod.string()),
+        imagem: zod.array(zod.string()),
+        prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
+        status: zod.enum(["solicitado", "coletado", "laudado"]),
+        createdAt: zod.coerce.date(),
+      }),
+    )
+    .optional()
+    .describe(
+      "Matching pending exam requests (only present when exam filter params are used)",
+    ),
 });
 export const ListPatientsResponse = zod.array(ListPatientsResponseItem);
 
@@ -190,6 +224,21 @@ export const GetPatientResponse = zod.object({
   address: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  pendingExams: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        laboratoriais: zod.array(zod.string()),
+        imagem: zod.array(zod.string()),
+        prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
+        status: zod.enum(["solicitado", "coletado", "laudado"]),
+        createdAt: zod.coerce.date(),
+      }),
+    )
+    .optional()
+    .describe(
+      "Matching pending exam requests (only present when exam filter params are used)",
+    ),
 });
 
 /**
@@ -296,6 +345,21 @@ export const UpdatePatientResponse = zod.object({
   address: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  pendingExams: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        laboratoriais: zod.array(zod.string()),
+        imagem: zod.array(zod.string()),
+        prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
+        status: zod.enum(["solicitado", "coletado", "laudado"]),
+        createdAt: zod.coerce.date(),
+      }),
+    )
+    .optional()
+    .describe(
+      "Matching pending exam requests (only present when exam filter params are used)",
+    ),
 });
 
 /**
@@ -383,6 +447,21 @@ export const UpdatePatientStatusResponse = zod.object({
   address: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  pendingExams: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        laboratoriais: zod.array(zod.string()),
+        imagem: zod.array(zod.string()),
+        prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
+        status: zod.enum(["solicitado", "coletado", "laudado"]),
+        createdAt: zod.coerce.date(),
+      }),
+    )
+    .optional()
+    .describe(
+      "Matching pending exam requests (only present when exam filter params are used)",
+    ),
 });
 
 /**

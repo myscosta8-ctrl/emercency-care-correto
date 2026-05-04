@@ -47,6 +47,33 @@ export const PatientCareStatus = {
   Alta: "Alta",
 } as const;
 
+export type PatientPendingExamsItemPrioridade =
+  (typeof PatientPendingExamsItemPrioridade)[keyof typeof PatientPendingExamsItemPrioridade];
+
+export const PatientPendingExamsItemPrioridade = {
+  urgente: "urgente",
+  rotina: "rotina",
+  eletivo: "eletivo",
+} as const;
+
+export type PatientPendingExamsItemStatus =
+  (typeof PatientPendingExamsItemStatus)[keyof typeof PatientPendingExamsItemStatus];
+
+export const PatientPendingExamsItemStatus = {
+  solicitado: "solicitado",
+  coletado: "coletado",
+  laudado: "laudado",
+} as const;
+
+export type PatientPendingExamsItem = {
+  id: number;
+  laboratoriais: string[];
+  imagem: string[];
+  prioridade: PatientPendingExamsItemPrioridade;
+  status: PatientPendingExamsItemStatus;
+  createdAt: string;
+};
+
 export interface Patient {
   id: number;
   full_name: string;
@@ -85,6 +112,8 @@ export interface Patient {
   address?: string;
   createdAt: string;
   updatedAt: string;
+  /** Matching pending exam requests (only present when exam filter params are used) */
+  pendingExams?: PatientPendingExamsItem[];
 }
 
 export type CreatePatientBodyCareStatus =
@@ -936,6 +965,51 @@ export interface UpdateExamRequestStatusBody {
 export type HealthCheck200 = {
   status: string;
 };
+
+export type ListPatientsParams = {
+  /**
+   * Filter patients who have a pending exam matching this name
+   */
+  exam?: string;
+  /**
+   * Filter by exam type
+   */
+  examType?: ListPatientsExamType;
+  /**
+   * Filter by exam request status
+   */
+  examStatus?: ListPatientsExamStatus;
+  /**
+   * Filter by exam request priority
+   */
+  examPriority?: ListPatientsExamPriority;
+};
+
+export type ListPatientsExamType =
+  (typeof ListPatientsExamType)[keyof typeof ListPatientsExamType];
+
+export const ListPatientsExamType = {
+  laboratorial: "laboratorial",
+  imagem: "imagem",
+} as const;
+
+export type ListPatientsExamStatus =
+  (typeof ListPatientsExamStatus)[keyof typeof ListPatientsExamStatus];
+
+export const ListPatientsExamStatus = {
+  solicitado: "solicitado",
+  coletado: "coletado",
+  laudado: "laudado",
+} as const;
+
+export type ListPatientsExamPriority =
+  (typeof ListPatientsExamPriority)[keyof typeof ListPatientsExamPriority];
+
+export const ListPatientsExamPriority = {
+  urgente: "urgente",
+  rotina: "rotina",
+  eletivo: "eletivo",
+} as const;
 
 export type GetPatientDevicesParams = {
   active?: boolean;

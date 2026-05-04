@@ -25,6 +25,34 @@ paths:
     get:
       operationId: listPatients
       summary: List all patients
+      parameters:
+        - name: exam
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter patients who have a pending exam matching this name
+        - name: examType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [laboratorial, imagem]
+          description: Filter by exam type
+        - name: examStatus
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [solicitado, coletado, laudado]
+          description: Filter by exam request status
+        - name: examPriority
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [urgente, rotina, eletivo]
+          description: Filter by exam request priority
       responses:
         "200":
           description: List of patients
@@ -1252,6 +1280,38 @@ components:
         updatedAt:
           type: string
           format: date-time
+        pendingExams:
+          type: array
+          description: Matching pending exam requests (only present when exam filter params are used)
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              laboratoriais:
+                type: array
+                items:
+                  type: string
+              imagem:
+                type: array
+                items:
+                  type: string
+              prioridade:
+                type: string
+                enum: [urgente, rotina, eletivo]
+              status:
+                type: string
+                enum: [solicitado, coletado, laudado]
+              createdAt:
+                type: string
+                format: date-time
+            required:
+              - id
+              - laboratoriais
+              - imagem
+              - prioridade
+              - status
+              - createdAt
       required:
         - id
         - full_name

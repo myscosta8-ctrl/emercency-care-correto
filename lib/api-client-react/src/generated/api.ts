@@ -41,6 +41,7 @@ import type {
   HealthCheck200,
   LiberarExamResultBody,
   ListAuditLogsParams,
+  ListPatientsParams,
   LoginBody,
   NutritionalAssessment,
   Patient,
@@ -156,41 +157,57 @@ export function useHealthCheck<
 /**
  * @summary List all patients
  */
-export const getListPatientsUrl = () => {
-  return `/api/patients`;
+export const getListPatientsUrl = (params?: ListPatientsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/patients?${stringifiedParams}`
+    : `/api/patients`;
 };
 
 export const listPatients = async (
+  params?: ListPatientsParams,
   options?: RequestInit,
 ): Promise<Patient[]> => {
-  return customFetch<Patient[]>(getListPatientsUrl(), {
+  return customFetch<Patient[]>(getListPatientsUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListPatientsQueryKey = () => {
-  return [`/api/patients`] as const;
+export const getListPatientsQueryKey = (params?: ListPatientsParams) => {
+  return [`/api/patients`, ...(params ? [params] : [])] as const;
 };
 
 export const getListPatientsQueryOptions = <
   TData = Awaited<ReturnType<typeof listPatients>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listPatients>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListPatientsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPatients>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListPatientsQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getListPatientsQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listPatients>>> = ({
     signal,
-  }) => listPatients({ signal, ...requestOptions });
+  }) => listPatients(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listPatients>>,
@@ -211,15 +228,18 @@ export type ListPatientsQueryError = ErrorType<unknown>;
 export function useListPatients<
   TData = Awaited<ReturnType<typeof listPatients>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listPatients>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListPatientsQueryOptions(options);
+>(
+  params?: ListPatientsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPatients>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPatientsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

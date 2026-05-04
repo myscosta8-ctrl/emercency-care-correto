@@ -10,8 +10,8 @@ import {
   getListPatientsQueryKey,
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
-import type { Patient } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical } from "lucide-react";
+import type { Patient, ListPatientsParams, PatientPendingExamsItem } from "@workspace/api-client-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -117,10 +117,11 @@ interface PatientRowProps {
   onReclassify: (p: Patient) => void;
   isCritical?: boolean;
   criticalDetail?: string;
+  pendingExams?: PatientPendingExamsItem[];
 }
 
 const PatientRow = memo(function PatientRow({
-  patient, onEdit, onAlta, onReclassify, isCritical = false, criticalDetail,
+  patient, onEdit, onAlta, onReclassify, isCritical = false, criticalDetail, pendingExams,
 }: PatientRowProps) {
   const { pode } = useAuth();
   const cfg = TRIAGE_CONFIG[patient.triage_level as TriageKey] ?? TRIAGE_CONFIG.blue;
@@ -206,6 +207,31 @@ const PatientRow = memo(function PatientRow({
           ) : patient.diagnosis ? (
             <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{patient.diagnosis}</p>
           ) : null}
+          {/* Pending exam badges — show actual exam names from API */}
+          {pendingExams && pendingExams.length > 0 && (
+            <div className="flex flex-wrap gap-0.5 mt-0.5">
+              {pendingExams.slice(0, 3).map(ex => {
+                const names = [...ex.laboratoriais, ...ex.imagem];
+                const label = names.length > 0 ? names.slice(0, 2).join(", ") : (ex.laboratoriais.length > 0 ? "Lab" : "Imagem");
+                const urgentCls = ex.prioridade === "urgente"
+                  ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                  : "bg-cyan-500/15 text-cyan-400 border-cyan-500/30";
+                return (
+                  <span key={ex.id} className={cn(
+                    "inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0 rounded border leading-5",
+                    urgentCls,
+                  )}>
+                    <FlaskConical className="h-2.5 w-2.5" />
+                    {label}
+                    {ex.prioridade === "urgente" && <span className="ml-0.5 opacity-80">⚡</span>}
+                  </span>
+                );
+              })}
+              {pendingExams.length > 3 && (
+                <span className="text-[10px] text-cyan-400/70 leading-5">+{pendingExams.length - 3}</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* PACIENTE CRÍTICO badge (desktop) */}
@@ -372,6 +398,11 @@ export default function Dashboard() {
   const [filtro, setFiltro]                         = useState("Todos");
   const [triageFilter, setTriageFilter]             = useState("all");
   const [viewMode, setViewMode]                     = useState<"setor" | "status">("setor");
+  const [examSearch, setExamSearch]                 = useState("");
+  const [examType, setExamType]                     = useState<"" | "laboratorial" | "imagem">("");
+  const [examStatus, setExamStatus]                 = useState<"" | "solicitado" | "coletado" | "laudado">("");
+  const [examPriority, setExamPriority]             = useState<"" | "urgente" | "rotina" | "eletivo">("");
+  const [showExamFilters, setShowExamFilters]       = useState(false);
 
   // ── setor e feature flag ───────────────────────────────────────────────────
   const preAdultoAtivo = featureAtiva("setor_pre_adulto");
@@ -397,9 +428,33 @@ export default function Dashboard() {
   const SECTOR_NAMES = SECTOR_CONFIG.map(s => s.key);
   const SECTOR_LABEL = Object.fromEntries(SECTOR_CONFIG.map(s => [s.key, s.name]));
 
-  const debouncedSearch = useDebounce(search, 200);
+  const debouncedSearch     = useDebounce(search, 200);
+  const debouncedExamSearch = useDebounce(examSearch, 400);
 
-  const { data: patients, isLoading: isLoadingPatients } = useListPatients();
+  const examParams = useMemo((): ListPatientsParams | undefined => {
+    const p: ListPatientsParams = {};
+    if (debouncedExamSearch) p.exam = debouncedExamSearch;
+    if (examType)    p.examType     = examType     as ListPatientsParams["examType"];
+    if (examStatus)  p.examStatus   = examStatus   as ListPatientsParams["examStatus"];
+    if (examPriority) p.examPriority = examPriority as ListPatientsParams["examPriority"];
+    return Object.keys(p).length > 0 ? p : undefined;
+  }, [debouncedExamSearch, examType, examStatus, examPriority]);
+
+  const hasExamFilter = !!examParams;
+
+  const examFilterLabel = useMemo(() => {
+    const parts: string[] = [];
+    if (debouncedExamSearch) parts.push(debouncedExamSearch);
+    else if (examType === "laboratorial") parts.push("Laboratorial");
+    else if (examType === "imagem") parts.push("Imagem");
+    if (examStatus === "solicitado") parts.push("Solicitado");
+    else if (examStatus === "coletado") parts.push("Coletado");
+    else if (examStatus === "laudado") parts.push("Laudado");
+    if (examPriority === "urgente") parts.push("Urgente");
+    return parts.join(" · ") || "Exame";
+  }, [debouncedExamSearch, examType, examStatus, examPriority]);
+
+  const { data: patients, isLoading: isLoadingPatients } = useListPatients(examParams);
   const { data: summary, isLoading: isLoadingSummary }   = useGetPatientsSummary();
   const deletePatient = useDeletePatient();
   const queryClient   = useQueryClient();
@@ -681,6 +736,24 @@ export default function Dashboard() {
               data-testid="input-search"
             />
           </div>
+          {/* Exam filter toggle */}
+          <button
+            type="button"
+            data-testid="btn-exam-filter"
+            onClick={() => setShowExamFilters(v => !v)}
+            className={cn(
+              "h-8 px-2.5 rounded-md border text-xs font-medium flex items-center gap-1.5 transition-colors",
+              showExamFilters || hasExamFilter
+                ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-400"
+                : "border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/30",
+            )}
+          >
+            <Filter className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Exames</span>
+            {hasExamFilter && (
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block" />
+            )}
+          </button>
           {/* View mode toggle */}
           <div className="flex gap-0.5 border border-border/40 rounded-md p-0.5 bg-card h-8">
             <button
@@ -701,6 +774,86 @@ export default function Dashboard() {
             >Por Status</button>
           </div>
         </div>
+
+        {/* ── exam filter panel ──────────────────────────────────────── */}
+        {showExamFilters && (
+          <div className="mb-3 rounded-md border border-cyan-500/30 bg-cyan-500/5 p-3 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                <FlaskConical className="h-3.5 w-3.5" />
+                Filtrar por Exame Pendente
+              </span>
+              {hasExamFilter && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExamSearch("");
+                    setExamType("");
+                    setExamStatus("");
+                    setExamPriority("");
+                  }}
+                  className="text-[11px] text-cyan-400/70 hover:text-cyan-400 flex items-center gap-0.5 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Exam name search */}
+              <div className="relative sm:col-span-2">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  className="pl-8 h-8 text-sm bg-background"
+                  placeholder="Nome do exame (ex: Hemograma, RX Tórax...)"
+                  value={examSearch}
+                  onChange={e => setExamSearch(e.target.value)}
+                  data-testid="input-exam-search"
+                />
+              </div>
+              {/* Exam type */}
+              <select
+                value={examType}
+                onChange={e => setExamType(e.target.value as typeof examType)}
+                data-testid="select-exam-type"
+                className="h-8 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Tipo: Todos</option>
+                <option value="laboratorial">Laboratorial</option>
+                <option value="imagem">Imagem</option>
+              </select>
+              {/* Exam status */}
+              <select
+                value={examStatus}
+                onChange={e => setExamStatus(e.target.value as typeof examStatus)}
+                data-testid="select-exam-status"
+                className="h-8 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Status: Todos</option>
+                <option value="solicitado">Solicitado</option>
+                <option value="coletado">Coletado</option>
+                <option value="laudado">Laudado</option>
+              </select>
+              {/* Exam priority */}
+              <select
+                value={examPriority}
+                onChange={e => setExamPriority(e.target.value as typeof examPriority)}
+                data-testid="select-exam-priority"
+                className="h-8 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Prioridade: Todas</option>
+                <option value="urgente">Urgente</option>
+                <option value="rotina">Rotina</option>
+                <option value="eletivo">Eletivo</option>
+              </select>
+            </div>
+            {hasExamFilter && (
+              <p className="text-[11px] text-cyan-400/70">
+                Mostrando pacientes com exame pendente: <strong className="text-cyan-400">{examFilterLabel}</strong>
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Sector filters — only in "setor" mode */}
         {viewMode === "setor" && (
@@ -779,6 +932,7 @@ export default function Dashboard() {
                         onReclassify={handleReclassify}
                         isCritical={isNurseOrTech && criticalPatientIds.has(patient.id)}
                         criticalDetail={isNurseOrTech ? criticalDetailMap.get(patient.id) : undefined}
+                        pendingExams={patient.pendingExams}
                       />
                     ))
                   )}
@@ -840,6 +994,7 @@ export default function Dashboard() {
                         onReclassify={handleReclassify}
                         isCritical={isNurseOrTech && criticalPatientIds.has(patient.id)}
                         criticalDetail={isNurseOrTech ? criticalDetailMap.get(patient.id) : undefined}
+                        pendingExams={patient.pendingExams}
                       />
                     ))
                   )}
