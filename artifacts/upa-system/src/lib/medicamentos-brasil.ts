@@ -1,3 +1,185 @@
+/* ── Exames ─────────────────────────────────────────────────────────── */
+export interface GrupoExames {
+  grupo: string;
+  exames: string[];
+}
+
+export const PRIORIDADES_EXAME = [
+  { value: "urgente",  label: "Urgente",  color: "border-red-500/60 bg-red-500/10 text-red-400" },
+  { value: "rotina",   label: "Rotina",   color: "border-yellow-500/60 bg-yellow-500/10 text-yellow-400" },
+  { value: "eletivo",  label: "Eletivo",  color: "border-muted-foreground/40 bg-muted/10 text-muted-foreground" },
+] as const;
+
+export const EXAMES_LABORATORIAIS: GrupoExames[] = [
+  {
+    grupo: "Hemograma / Coagulação",
+    exames: [
+      "Hemograma completo", "Contagem de plaquetas", "Reticulócitos",
+      "TP (TAP) / RNI", "TTPA", "Fibrinogênio", "D-Dímero",
+      "Hematoscopia", "Tipagem sanguínea ABO/Rh",
+    ],
+  },
+  {
+    grupo: "Bioquímica Geral",
+    exames: [
+      "Glicemia de jejum", "Glicemia capilar (HGT)", "Hemoglobina glicada (HbA1c)",
+      "Ureia", "Creatinina", "TFG estimada", "Ácido úrico",
+      "Sódio (Na+)", "Potássio (K+)", "Cloro (Cl-)", "Cálcio total", "Cálcio iônico",
+      "Magnésio", "Fósforo", "Ferro sérico", "Ferritina",
+    ],
+  },
+  {
+    grupo: "Função Hepática / Pancreática",
+    exames: [
+      "TGO (AST)", "TGP (ALT)", "GGT", "Fosfatase alcalina",
+      "Bilirrubina total e frações", "Albumina", "Proteínas totais e frações",
+      "Amilase", "Lipase", "LDH",
+    ],
+  },
+  {
+    grupo: "Cardíaco / Inflamação",
+    exames: [
+      "Troponina I / T", "CK-MB (massa)", "CK total", "BNP / NT-proBNP",
+      "PCR (Proteína C Reativa)", "PCR ultrassensível", "VHS",
+      "Procalcitonina", "Interleucina-6", "Lactato sérico",
+    ],
+  },
+  {
+    grupo: "Hormônios / Tireóide",
+    exames: [
+      "TSH", "T4 livre", "T4 total", "T3 livre",
+      "Cortisol basal", "PTH (paratormônio)",
+      "Beta-HCG quantitativo", "Beta-HCG qualitativo",
+    ],
+  },
+  {
+    grupo: "Gasometria / Eletrólitos",
+    exames: [
+      "Gasometria arterial", "Gasometria venosa",
+      "Eletrólitos completos (Na, K, Cl, Ca, Mg, P)",
+      "Bicarbonato sérico", "Ânion-gap",
+    ],
+  },
+  {
+    grupo: "Urina / Renal",
+    exames: [
+      "EAS (Urina tipo 1)", "Urina de 24h (proteína)", "Urina de 24h (creatinina)",
+      "Urocultura + antibiograma", "Sedimento urinário",
+      "Beta-2 microglobulina", "Microalbuminúria",
+    ],
+  },
+  {
+    grupo: "Microbiologia / Infecções",
+    exames: [
+      "Hemocultura (2 amostras)", "Cultura de secreção", "Cultura de urina",
+      "Coprocultura", "Líquor (cultura + citológico)",
+      "PCR para SARS-CoV-2 (COVID-19)", "Antígeno para Influenza A/B",
+      "Dengue NS1 / IgM / IgG", "Malária (gota espessa + esfregaço)",
+      "VDRL / RPR (sífilis)", "Anti-HIV 1 e 2",
+      "HBsAg", "Anti-HCV", "Anti-HBc total",
+      "Widal / Weil-Felix", "PPD (Mantoux)",
+    ],
+  },
+  {
+    grupo: "Líquidos Corporais",
+    exames: [
+      "Líquor (LCR) — análise completa", "Líquido pleural (análise)",
+      "Líquido ascítico (análise)", "Líquido sinovial (análise)",
+      "Pesquisa de BAAR (escarro)", "Cultura de escarro",
+    ],
+  },
+  {
+    grupo: "Toxicologia / Drogas",
+    exames: [
+      "Etilômetro / Alcoolemia", "Triagem toxicológica urina",
+      "Dosagem de paracetamol", "Dosagem de salicilato",
+      "Digoxinemia", "Fenitoína sérica", "Vancocinemia",
+    ],
+  },
+];
+
+export const EXAMES_IMAGEM: GrupoExames[] = [
+  {
+    grupo: "Radiologia Convencional (RX)",
+    exames: [
+      "RX de tórax (PA + Perfil)", "RX de tórax (AP — leito)",
+      "RX de abdome (simples — decúbito)", "RX de abdome (ortostático)",
+      "RX de crânio (AP + Perfil)", "RX de coluna cervical",
+      "RX de coluna lombar", "RX de coluna torácica",
+      "RX de pelve", "RX de bacia (AP)",
+      "RX de mão", "RX de punho", "RX de antebraço",
+      "RX de cotovelo", "RX de ombro",
+      "RX de pé", "RX de tornozelo", "RX de perna",
+      "RX de joelho", "RX de fêmur",
+    ],
+  },
+  {
+    grupo: "Ultrassonografia (USG)",
+    exames: [
+      "USG de abdome total", "USG de abdome superior",
+      "USG pélvica (transvaginal)", "USG pélvica (via abdominal)",
+      "USG de vias urinárias (rins e bexiga)",
+      "USG de tireoide e paratireoide",
+      "USG de partes moles", "USG de bolsa escrotal",
+      "USG doppler de membros inferiores (TVP)",
+      "USG doppler de carótidas",
+      "USG de mama", "USG obstétrica",
+      "FAST (Focused Assessment with Sonography in Trauma)",
+    ],
+  },
+  {
+    grupo: "Tomografia Computadorizada (TC)",
+    exames: [
+      "TC de crânio sem contraste",
+      "TC de crânio com contraste",
+      "TC de tórax sem contraste",
+      "TC de tórax com contraste (angioTC — TEP)",
+      "TC de abdome e pelve sem contraste",
+      "TC de abdome e pelve com contraste",
+      "TC de coluna cervical", "TC de coluna torácica",
+      "TC de coluna lombar", "TC de face e seios paranasais",
+      "TC de órbitas", "TC de mastoides",
+      "TC de pelve", "TC de membros",
+    ],
+  },
+  {
+    grupo: "Ressonância Magnética (RM)",
+    exames: [
+      "RM de crânio sem contraste",
+      "RM de crânio com contraste",
+      "RM de coluna cervical",
+      "RM de coluna torácica",
+      "RM de coluna lombar",
+      "RM de joelho", "RM de ombro", "RM de quadril",
+      "RM de abdome", "RM de pelve",
+    ],
+  },
+  {
+    grupo: "Cardiologia / Vascular",
+    exames: [
+      "Eletrocardiograma (ECG) — 12 derivações",
+      "Ecocardiograma transtorácico",
+      "Ecocardiograma transesofágico",
+      "Holter 24h", "MAPA 24h",
+      "Teste ergométrico (esforço)",
+      "Angiografia / Arteriografia",
+      "Angiotomografia de aorta",
+    ],
+  },
+  {
+    grupo: "Endoscopia / Outros",
+    exames: [
+      "Endoscopia digestiva alta (EDA)",
+      "Colonoscopia",
+      "Broncoscopia",
+      "Eletroencefalograma (EEG)",
+      "Eletromiografia (EMG)",
+      "Espirometria",
+      "Mapeamento de retina",
+    ],
+  },
+];
+
 export interface Medicamento {
   nome: string;
   apresentacoes: string[];
