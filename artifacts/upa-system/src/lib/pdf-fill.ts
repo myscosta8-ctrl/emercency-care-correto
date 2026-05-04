@@ -43,6 +43,17 @@ export interface PdfPatient {
 export interface PdfNotification {
   disease?: string | null;
   classification?: string | null;
+  agravoCode?: string | null;
+  dataNotificacao?: string | null;
+  dataInicioSintomas?: string | null;
+  logradouro?: string | null;
+  numeroEndereco?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  municipioResidencia?: string | null;
+  ufResidencia?: string | null;
+  cep?: string | null;
+  formData?: string | null;
 }
 
 interface TextPos { x: number; y: number; maxWidth?: number; }
@@ -463,7 +474,22 @@ function riskLabel(status?: string | null): string {
 // 3 SINAN-context keys (coord boxes exist on SINAN forms; not on Ficha ID):
 //   idade  sexo  telefone
 
-function buildFieldValues(patient: PdfPatient): Record<string, string> {
+function buildFieldValues(patient: PdfPatient, notif?: PdfNotification): Record<string, string> {
+  // parse any extra disease-specific fields stored in formData
+  let formExtra: Record<string, string> = {};
+  if (notif?.formData) {
+    try { formExtra = JSON.parse(notif.formData); } catch { /* ignore */ }
+  }
+
+  // helper: use notification override first, then patient fallback
+  const addr = (notifVal: string | null | undefined, patientVal: string | null | undefined) =>
+    (notifVal && notifVal.trim()) ? notifVal : (patientVal ?? "");
+
+  // agravo label: prefer structured code label, then patient.agravo, then disease text
+  const agravoLabel = notif?.agravoCode
+    ? (AGRAVO_LABELS[notif.agravoCode] ?? notif.agravoCode)
+    : (patient.agravo ?? notif?.disease ?? "");
+
   return {
     // ── 14 standard patient fields ────────────────────────────────────────
     nome_paciente:        patient.full_name,
@@ -472,41 +498,59 @@ function buildFieldValues(patient: PdfPatient): Record<string, string> {
     cpf:                  patient.cpf            ?? "",
     rg:                   patient.rg             ?? "",
     cns:                  patient.cns            ?? "",
-    endereco_rua:         patient.street         ?? "",
-    endereco_numero:      patient.addressNumber  ?? "",
-    endereco_complemento: patient.addressComplement ?? "",
-    bairro:               patient.neighborhood   ?? "",
-    cidade:               patient.city           ?? "",
-    uf:                   patient.addressState   ?? "",
-    cep:                  patient.zipCode        ?? "",
+    // address: use notification overrides if provided, fallback to patient fields
+    endereco_rua:         addr(notif?.logradouro,          patient.street),
+    endereco_numero:      addr(notif?.numeroEndereco,      patient.addressNumber),
+    endereco_complemento: addr(notif?.complemento,         patient.addressComplement),
+    bairro:               addr(notif?.bairro,              patient.neighborhood),
+    cidade:               addr(notif?.municipioResidencia, patient.city),
+    uf:                   addr(notif?.ufResidencia,        patient.addressState),
+    cep:                  addr(notif?.cep,                 patient.zipCode),
     peso:                 patient.weight != null ? `${patient.weight}` : "",
     altura:               patient.height ? `${patient.height} cm` : "",
-    // ── SINAN-context fields (have coord boxes on SINAN forms; not on Ficha ID)
+    // ── SINAN-context fields
     raca_cor:             patient.race           ?? "",
     idade:                patient.age ? `${patient.age} anos` : "",
     sexo:                 sexLabel(patient.sex),
     telefone:             patient.phone          ?? "",
     email:                patient.email          ?? "",
-    // ── clinical fields (coord boxes in SINAN clinical section; also on Ficha ID)
-    data_inicio_sintomas: fmtDate(patient.symptomOnsetDate),
+    // ── clinical fields
+    data_inicio_sintomas: fmtDate(notif?.dataInicioSintomas ?? patient.symptomOnsetDate),
     sintomas:             patient.symptoms       ?? "",
     classificacao_risco:  riskLabel(patient.triageStatus),
-    // ── atendimento fields (header + footer of SINAN forms; also on Ficha ID)
-    unidade_saude:           patient.healthUnit             ?? "",
-    data_atendimento:        fmtDate(patient.attendanceDate),
-    hora_atendimento:        patient.attendanceTime          ?? "",
+    // ── atendimento fields
+    unidade_saude:            patient.healthUnit              ?? "",
+    data_atendimento:         fmtDate(patient.attendanceDate),
+    hora_atendimento:         patient.attendanceTime           ?? "",
     profissional_responsavel: patient.responsibleProfessional ?? "",
     // ── SINAN notification header
-    agravo_notificacao:   patient.agravo               ?? "",
-    data_notificacao:     fmtDate(patient.dataNotificacao),
+    agravo_notificacao:    agravoLabel,
+    data_notificacao:      fmtDate(notif?.dataNotificacao ?? patient.dataNotificacao),
     municipio_notificacao: patient.municipioNotificacao ?? "",
-    codigo_ibge:          patient.codigoIbge            ?? "",
+    codigo_ibge:           patient.codigoIbge            ?? "",
     // ── SINAN investigation/conclusion
-    evolucao_caso:        patient.evolucaoCaso          ?? "",
-    classificacao_final:  patient.classificacaoFinal    ?? "",
-    criterio_confirmacao: patient.criterioConfirmacao   ?? "",
+    evolucao_caso:        patient.evolucaoCaso                     ?? "",
+    classificacao_final:  notif?.classification ?? patient.classificacaoFinal ?? "",
+    criterio_confirmacao: patient.criterioConfirmacao              ?? "",
+    // ── extra disease-specific fields from formData
+    ...Object.fromEntries(Object.entries(formExtra).map(([k, v]) => [k, String(v ?? "")])),
   };
 }
+
+// quick lookup map for agravo code → label (subset; full list in sinan-agravos.ts)
+const AGRAVO_LABELS: Record<string, string> = {
+  dengue: "Dengue", dengue_grave: "Dengue Grave", chikungunya: "Chikungunya",
+  covid19: "COVID-19", srag: "SRAG Hospitalizado",
+  tuberculose: "Tuberculose", meningite: "Meningite",
+  febre_amarela: "Febre Amarela", febre_tifoide: "Febre Tifóide",
+  sarampo: "Sarampo", rubeola: "Rubéola", aids_adulto: "AIDS – Adulto",
+  violencia: "Violência Doméstica/Sexual",
+  leptospirose: "Leptospirose", hanseniase: "Hanseníase",
+  malaria: "Malária", raiva: "Raiva Humana", hepatite_a: "Hepatite A",
+  hepatite_b: "Hepatite B", hepatite_c: "Hepatite C",
+  hiv: "Infecção pelo HIV", zika: "Zika Vírus",
+  mpox: "Monkeypox / MPOX", botulismo: "Botulismo",
+};
 
 // ── core fill function ────────────────────────────────────────────────────────
 // Strategy:
@@ -521,6 +565,7 @@ async function fillTemplate(
   templateBytes: ArrayBuffer,
   patient: PdfPatient,
   type: string,
+  notif?: PdfNotification,
 ): Promise<Uint8Array> {
   const doc    = await PDFDocument.load(templateBytes);
   const font   = await doc.embedFont(StandardFonts.Helvetica);
@@ -530,7 +575,7 @@ async function fillTemplate(
   const coords = COORDS[type] ?? COORDS_NOTIF_INDIVIDUAL;
   const page   = doc.getPages()[0];
 
-  const values = buildFieldValues(patient);
+  const values = buildFieldValues(patient, notif);
 
   // ── 1. Fill AcroForm fields ───────────────────────────────────────────────
   const form = doc.getForm();
@@ -617,11 +662,35 @@ async function fillTemplate(
  * Generates a merged SINAN PDF for all notification types and returns it as a
  * Blob without triggering a browser download.
  */
-function diseaseToType(disease?: string | null): string {
-  const d = (disease ?? "").toLowerCase();
+function diseaseToType(notif: PdfNotification): string {
+  // prefer the structured agravo code
+  if (notif.agravoCode) {
+    const MAP: Record<string, string> = {
+      dengue: "dengue", dengue_grave: "dengue", chikungunya: "dengue",
+      zika: "outros",
+      covid19: "covid19",
+      srag: "srag", influenza_pandemia: "srag",
+      tuberculose: "tuberculose",
+      meningite: "meningite",
+      febre_amarela: "febre_amarela",
+      febre_tifoide: "febre_tifoide",
+      sarampo: "exantematica", rubeola: "exantematica",
+      aids_adulto: "aids_adulto",
+      violencia: "violencia",
+    };
+    return MAP[notif.agravoCode] ?? "outros";
+  }
+  // fallback to text matching
+  const d = (notif.disease ?? "").toLowerCase();
   if (d.includes("dengue") || d.includes("chikungunya")) return "dengue";
-  if (d.includes("covid") || d.includes("coronavírus") || d.includes("srag")) return "covid19";
+  if (d.includes("covid") || d.includes("coronavírus")) return "covid19";
+  if (d.includes("srag")) return "srag";
   if (d.includes("tuberc")) return "tuberculose";
+  if (d.includes("meningite")) return "meningite";
+  if (d.includes("febre amarela")) return "febre_amarela";
+  if (d.includes("febre tif")) return "febre_tifoide";
+  if (d.includes("sarampo") || d.includes("rubéola") || d.includes("rubeola")) return "exantematica";
+  if (d.includes("aids")) return "aids_adulto";
   if (d.includes("violên") || d.includes("violenci")) return "violencia";
   return "outros";
 }
@@ -631,7 +700,7 @@ export async function generateSinanPdfBlob(
   notif: PdfNotification,
   baseUrl: string,
 ): Promise<Blob> {
-  const types = [diseaseToType(notif.disease)];
+  const types = [diseaseToType(notif)];
 
   const merged = await PDFDocument.create();
 
@@ -644,7 +713,7 @@ export async function generateSinanPdfBlob(
       templateBytes = await res.arrayBuffer();
     } catch { continue; }
 
-    const filledBytes = await fillTemplate(templateBytes, patient, type);
+    const filledBytes = await fillTemplate(templateBytes, patient, type, notif);
     const filled      = await PDFDocument.load(filledBytes);
     const copied      = await merged.copyPages(filled, filled.getPageIndices());
     copied.forEach(p => merged.addPage(p));

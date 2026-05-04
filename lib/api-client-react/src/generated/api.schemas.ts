@@ -439,18 +439,54 @@ export interface PatientNotification {
   disease: string;
   classification: string;
   pdfUrl: string;
+  agravoCode: string;
+  cid10: string;
+  dataNotificacao: string;
+  dataInicioSintomas: string;
+  logradouro: string;
+  numeroEndereco: string;
+  complemento: string;
+  bairro: string;
+  municipioResidencia: string;
+  ufResidencia: string;
+  cep: string;
+  formData: string;
   createdAt: string;
 }
 
 export interface AddPatientNotificationBody {
   disease: string;
   classification: string;
+  agravoCode?: string;
+  cid10?: string;
+  dataNotificacao?: string;
+  dataInicioSintomas?: string;
+  logradouro?: string;
+  numeroEndereco?: string;
+  complemento?: string;
+  bairro?: string;
+  municipioResidencia?: string;
+  ufResidencia?: string;
+  cep?: string;
+  formData?: string;
 }
 
 export interface UpdatePatientNotificationBody {
   disease?: string;
   classification?: string;
   pdfUrl?: string;
+  agravoCode?: string;
+  cid10?: string;
+  dataNotificacao?: string;
+  dataInicioSintomas?: string;
+  logradouro?: string;
+  numeroEndereco?: string;
+  complemento?: string;
+  bairro?: string;
+  municipioResidencia?: string;
+  ufResidencia?: string;
+  cep?: string;
+  formData?: string;
 }
 
 export type StaffMemberRole =

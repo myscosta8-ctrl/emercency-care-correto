@@ -31,9 +31,21 @@ router.post("/", async (req, res) => {
     .insert(patientNotificationsTable)
     .values({
       patientId,
-      disease:        body.disease,
-      classification: body.classification,
-      pdfUrl:         "",
+      disease:             body.disease,
+      classification:      body.classification,
+      pdfUrl:              "",
+      agravoCode:          body.agravoCode          ?? "",
+      cid10:               body.cid10               ?? "",
+      dataNotificacao:     body.dataNotificacao      ?? "",
+      dataInicioSintomas:  body.dataInicioSintomas   ?? "",
+      logradouro:          body.logradouro           ?? "",
+      numeroEndereco:      body.numeroEndereco        ?? "",
+      complemento:         body.complemento          ?? "",
+      bairro:              body.bairro               ?? "",
+      municipioResidencia: body.municipioResidencia  ?? "",
+      ufResidencia:        body.ufResidencia         ?? "",
+      cep:                 body.cep                  ?? "",
+      formData:            body.formData             ?? "{}",
     })
     .returning();
   res.status(201).json(serializeNotif(notif));
@@ -45,9 +57,21 @@ router.patch("/:notificationId", async (req, res) => {
   const body = UpdatePatientNotificationBody.parse(req.body);
 
   const patch: Partial<typeof patientNotificationsTable.$inferInsert> = {};
-  if (body.disease        !== undefined) patch.disease        = body.disease;
-  if (body.classification !== undefined) patch.classification = body.classification;
-  if (body.pdfUrl         !== undefined) patch.pdfUrl         = body.pdfUrl;
+  if (body.disease             !== undefined) patch.disease             = body.disease;
+  if (body.classification      !== undefined) patch.classification      = body.classification;
+  if (body.pdfUrl              !== undefined) patch.pdfUrl              = body.pdfUrl;
+  if (body.agravoCode          !== undefined) patch.agravoCode          = body.agravoCode;
+  if (body.cid10               !== undefined) patch.cid10               = body.cid10;
+  if (body.dataNotificacao     !== undefined) patch.dataNotificacao     = body.dataNotificacao;
+  if (body.dataInicioSintomas  !== undefined) patch.dataInicioSintomas  = body.dataInicioSintomas;
+  if (body.logradouro          !== undefined) patch.logradouro          = body.logradouro;
+  if (body.numeroEndereco      !== undefined) patch.numeroEndereco       = body.numeroEndereco;
+  if (body.complemento         !== undefined) patch.complemento         = body.complemento;
+  if (body.bairro              !== undefined) patch.bairro              = body.bairro;
+  if (body.municipioResidencia !== undefined) patch.municipioResidencia  = body.municipioResidencia;
+  if (body.ufResidencia        !== undefined) patch.ufResidencia        = body.ufResidencia;
+  if (body.cep                 !== undefined) patch.cep                 = body.cep;
+  if (body.formData            !== undefined) patch.formData            = body.formData;
 
   const [notif] = await db
     .update(patientNotificationsTable)

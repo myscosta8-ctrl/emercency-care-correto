@@ -1669,6 +1669,30 @@ components:
           type: string
         pdfUrl:
           type: string
+        agravoCode:
+          type: string
+        cid10:
+          type: string
+        dataNotificacao:
+          type: string
+        dataInicioSintomas:
+          type: string
+        logradouro:
+          type: string
+        numeroEndereco:
+          type: string
+        complemento:
+          type: string
+        bairro:
+          type: string
+        municipioResidencia:
+          type: string
+        ufResidencia:
+          type: string
+        cep:
+          type: string
+        formData:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -1678,6 +1702,18 @@ components:
         - disease
         - classification
         - pdfUrl
+        - agravoCode
+        - cid10
+        - dataNotificacao
+        - dataInicioSintomas
+        - logradouro
+        - numeroEndereco
+        - complemento
+        - bairro
+        - municipioResidencia
+        - ufResidencia
+        - cep
+        - formData
         - createdAt
 
     AddPatientNotificationBody:
@@ -1686,6 +1722,30 @@ components:
         disease:
           type: string
         classification:
+          type: string
+        agravoCode:
+          type: string
+        cid10:
+          type: string
+        dataNotificacao:
+          type: string
+        dataInicioSintomas:
+          type: string
+        logradouro:
+          type: string
+        numeroEndereco:
+          type: string
+        complemento:
+          type: string
+        bairro:
+          type: string
+        municipioResidencia:
+          type: string
+        ufResidencia:
+          type: string
+        cep:
+          type: string
+        formData:
           type: string
       required:
         - disease
@@ -1699,6 +1759,30 @@ components:
         classification:
           type: string
         pdfUrl:
+          type: string
+        agravoCode:
+          type: string
+        cid10:
+          type: string
+        dataNotificacao:
+          type: string
+        dataInicioSintomas:
+          type: string
+        logradouro:
+          type: string
+        numeroEndereco:
+          type: string
+        complemento:
+          type: string
+        bairro:
+          type: string
+        municipioResidencia:
+          type: string
+        ufResidencia:
+          type: string
+        cep:
+          type: string
+        formData:
           type: string
 
     StaffMember:

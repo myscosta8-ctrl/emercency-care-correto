@@ -586,6 +586,18 @@ export const GetPatientNotificationsResponseItem = zod.object({
   disease: zod.string(),
   classification: zod.string(),
   pdfUrl: zod.string(),
+  agravoCode: zod.string(),
+  cid10: zod.string(),
+  dataNotificacao: zod.string(),
+  dataInicioSintomas: zod.string(),
+  logradouro: zod.string(),
+  numeroEndereco: zod.string(),
+  complemento: zod.string(),
+  bairro: zod.string(),
+  municipioResidencia: zod.string(),
+  ufResidencia: zod.string(),
+  cep: zod.string(),
+  formData: zod.string(),
   createdAt: zod.coerce.date(),
 });
 export const GetPatientNotificationsResponse = zod.array(
@@ -602,6 +614,18 @@ export const AddPatientNotificationParams = zod.object({
 export const AddPatientNotificationBody = zod.object({
   disease: zod.string(),
   classification: zod.string(),
+  agravoCode: zod.string().optional(),
+  cid10: zod.string().optional(),
+  dataNotificacao: zod.string().optional(),
+  dataInicioSintomas: zod.string().optional(),
+  logradouro: zod.string().optional(),
+  numeroEndereco: zod.string().optional(),
+  complemento: zod.string().optional(),
+  bairro: zod.string().optional(),
+  municipioResidencia: zod.string().optional(),
+  ufResidencia: zod.string().optional(),
+  cep: zod.string().optional(),
+  formData: zod.string().optional(),
 });
 
 /**
@@ -616,6 +640,18 @@ export const UpdatePatientNotificationBody = zod.object({
   disease: zod.string().optional(),
   classification: zod.string().optional(),
   pdfUrl: zod.string().optional(),
+  agravoCode: zod.string().optional(),
+  cid10: zod.string().optional(),
+  dataNotificacao: zod.string().optional(),
+  dataInicioSintomas: zod.string().optional(),
+  logradouro: zod.string().optional(),
+  numeroEndereco: zod.string().optional(),
+  complemento: zod.string().optional(),
+  bairro: zod.string().optional(),
+  municipioResidencia: zod.string().optional(),
+  ufResidencia: zod.string().optional(),
+  cep: zod.string().optional(),
+  formData: zod.string().optional(),
 });
 
 export const UpdatePatientNotificationResponse = zod.object({
@@ -624,6 +660,18 @@ export const UpdatePatientNotificationResponse = zod.object({
   disease: zod.string(),
   classification: zod.string(),
   pdfUrl: zod.string(),
+  agravoCode: zod.string(),
+  cid10: zod.string(),
+  dataNotificacao: zod.string(),
+  dataInicioSintomas: zod.string(),
+  logradouro: zod.string(),
+  numeroEndereco: zod.string(),
+  complemento: zod.string(),
+  bairro: zod.string(),
+  municipioResidencia: zod.string(),
+  ufResidencia: zod.string(),
+  cep: zod.string(),
+  formData: zod.string(),
   createdAt: zod.coerce.date(),
 });
 
