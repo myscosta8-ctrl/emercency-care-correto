@@ -194,15 +194,17 @@ export const VIAS_ADMINISTRACAO = [
 export type ViaAdministracao = typeof VIAS_ADMINISTRACAO[number];
 
 export const FREQUENCIAS = [
-  { value: "1x/dia",         label: "1x ao dia"         },
-  { value: "2x/dia",         label: "2x ao dia (12/12h)" },
-  { value: "3x/dia",         label: "3x ao dia (8/8h)"   },
-  { value: "4x/dia",         label: "4x ao dia (6/6h)"   },
-  { value: "6x/dia",         label: "6x ao dia (4/4h)"   },
-  { value: "SOS",            label: "SOS / Se necessário" },
-  { value: "Dose única",     label: "Dose única"          },
-  { value: "Contínuo",       label: "Infusão contínua"    },
-  { value: "ACM",            label: "A critério médico"   },
+  { value: "1x/dia",     label: "1x/dia"           },
+  { value: "2x/dia",     label: "2x/dia — 12/12h"  },
+  { value: "3x/dia",     label: "3x/dia — 8/8h"    },
+  { value: "4x/dia",     label: "4x/dia — 6/6h"    },
+  { value: "6x/dia",     label: "6x/dia — 4/4h"    },
+  { value: "8x/dia",     label: "8x/dia — 3/3h"    },
+  { value: "SN",         label: "SN — Se necessário"   },
+  { value: "SOS",        label: "SOS — Se necessário"  },
+  { value: "ACM",        label: "ACM — A critério médico" },
+  { value: "Dose única", label: "Dose única"           },
+  { value: "Contínuo",   label: "Infusão contínua"     },
 ] as const;
 
 export const FREQ_CURATIVOS = [

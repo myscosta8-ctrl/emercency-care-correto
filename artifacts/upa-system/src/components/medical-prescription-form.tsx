@@ -80,25 +80,33 @@ function MedSearch({ value, onChange }: { value: string; onChange: (v: string) =
   );
 }
 
+const VIA_RAPIDAS = ["EV", "IM", "VO"] as const;
+const FREQ_RAPIDAS = ["SN", "SOS", "ACM"] as const;
+
 /* ── Seção Medicamentos ────────────────────────────────────────────── */
 function SecaoMedicamentos({ items, onChange }: { items: ItemMedicamento[]; onChange: (items: ItemMedicamento[]) => void }) {
   function add() { onChange([...items, { id: uid(), nome: "", dose: "", unidade: "mg", via: "EV", frequencia: "1x/dia", obs: "" }]); }
   function remove(id: string) { onChange(items.filter(i => i.id !== id)); }
   function update(id: string, patch: Partial<ItemMedicamento>) { onChange(items.map(i => i.id === id ? { ...i, ...patch } : i)); }
   const getVias = (nome: string) => { const m = MEDICAMENTOS.find(m => m.nome === nome); return m ? m.vias : [...VIAS_ADMINISTRACAO]; };
+
   return (
     <div className="space-y-3">
       {items.map((item, idx) => (
-        <div key={item.id} className="rounded-lg border border-border/60 bg-card/30 p-3 space-y-2">
+        <div key={item.id} className="rounded-lg border border-border/60 bg-card/30 p-3 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">#{idx + 1}</span>
             <button type="button" onClick={() => remove(item.id)} className="text-muted-foreground hover:text-destructive transition-colors"><X className="h-3.5 w-3.5" /></button>
           </div>
+
           <MedSearch value={item.nome} onChange={v => update(item.id, { nome: v })} />
-          <div className="grid grid-cols-3 gap-2">
+
+          {/* Dose + Unidade */}
+          <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-[10px] text-muted-foreground">Dose</Label>
-              <Input value={item.dose} onChange={e => update(item.id, { dose: e.target.value })} placeholder="Ex: 500" className="h-7 text-xs" />
+              <Input value={item.dose} onChange={e => update(item.id, { dose: e.target.value })}
+                placeholder="Ex: 500" className="h-7 text-xs" />
             </div>
             <div className="space-y-1">
               <Label className="text-[10px] text-muted-foreground">Unidade</Label>
@@ -107,28 +115,65 @@ function SecaoMedicamentos({ items, onChange }: { items: ItemMedicamento[]; onCh
                 {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Via</Label>
+          </div>
+
+          {/* Via */}
+          <div className="space-y-1.5">
+            <Label className="text-[10px] text-muted-foreground">Via de administração</Label>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* Quick-pick EV / IM / VO */}
+              {VIA_RAPIDAS.map(v => (
+                <button key={v} type="button" onClick={() => update(item.id, { via: v })}
+                  className={cn(
+                    "px-3 py-1 rounded text-xs font-semibold border transition-all",
+                    item.via === v
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  )}>
+                  {v}
+                </button>
+              ))}
+              <span className="text-[10px] text-muted-foreground/40 select-none">|</span>
+              {/* Full dropdown for other routes */}
               <select value={item.via} onChange={e => update(item.id, { via: e.target.value as ViaAdministracao })}
-                className="w-full h-7 rounded-md border border-input bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring">
+                className="h-7 rounded-md border border-input bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring flex-1 min-w-[110px]">
                 {getVias(item.nome).map(v => <option key={v} value={v}>{v}</option>)}
                 {!getVias(item.nome).includes(item.via as ViaAdministracao) && item.via && <option value={item.via}>{item.via}</option>}
                 {VIAS_ADMINISTRACAO.filter(v => !getVias(item.nome).includes(v)).map(v => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Frequência</Label>
+
+          {/* Frequência */}
+          <div className="space-y-1.5">
+            <Label className="text-[10px] text-muted-foreground">Frequência</Label>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* Quick-pick SN / SOS / ACM */}
+              {FREQ_RAPIDAS.map(f => (
+                <button key={f} type="button" onClick={() => update(item.id, { frequencia: f })}
+                  className={cn(
+                    "px-3 py-1 rounded text-xs font-semibold border transition-all",
+                    item.frequencia === f
+                      ? "border-amber-500/60 bg-amber-500/10 text-amber-400"
+                      : "border-border/60 text-muted-foreground hover:border-amber-500/40 hover:text-foreground"
+                  )}>
+                  {f}
+                </button>
+              ))}
+              <span className="text-[10px] text-muted-foreground/40 select-none">|</span>
+              {/* Full dropdown */}
               <select value={item.frequencia} onChange={e => update(item.id, { frequencia: e.target.value })}
-                className="w-full h-7 rounded-md border border-input bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring">
+                className="h-7 rounded-md border border-input bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring flex-1 min-w-[150px]">
                 {FREQUENCIAS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Observação</Label>
-              <Input value={item.obs} onChange={e => update(item.id, { obs: e.target.value })} placeholder="Ex: diluir em SF, lento…" className="h-7 text-xs" />
-            </div>
+          </div>
+
+          {/* Observação */}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Observação</Label>
+            <Input value={item.obs} onChange={e => update(item.id, { obs: e.target.value })}
+              placeholder="Ex: diluir em 100 mL SF 0,9%, infundir em 30 min…" className="h-7 text-xs" />
           </div>
         </div>
       ))}
