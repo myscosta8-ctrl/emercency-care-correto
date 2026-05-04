@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef, memo } from "react";
 import { useAuth } from "@/lib/use-auth";
 import { useFeatures } from "@/lib/features-context";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import {
   useListPatients,
   useGetPatientsSummary,
@@ -387,10 +387,21 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
 
 // ── main page ─────────────────────────────────────────────────────────────────
 
+function parseExamFiltersFromSearch(qs: string) {
+  const params = new URLSearchParams(qs);
+  return {
+    examSearch:   params.get("exam")         ?? "",
+    examType:     (params.get("examType")     ?? "") as "" | "laboratorial" | "imagem",
+    examStatus:   (params.get("examStatus")   ?? "") as "" | "solicitado" | "coletado" | "laudado",
+    examPriority: (params.get("examPriority") ?? "") as "" | "urgente" | "rotina" | "eletivo",
+  };
+}
+
 export default function Dashboard() {
   const { pode, activeUser, logout } = useAuth();
   const { featureAtiva } = useFeatures();
   const [, setLocation] = useLocation();
+  const currentSearch = useSearch();
   const [isNewPatientOpen, setIsNewPatientOpen]     = useState(false);
   const [editingPatient, setEditingPatient]         = useState<Patient | null>(null);
   const [altaPatient, setAltaPatient]               = useState<Patient | null>(null);
@@ -399,11 +410,15 @@ export default function Dashboard() {
   const [filtro, setFiltro]                         = useState("Todos");
   const [triageFilter, setTriageFilter]             = useState("all");
   const [viewMode, setViewMode]                     = useState<"setor" | "status" | "exames">("setor");
-  const [examSearch, setExamSearch]                 = useState("");
-  const [examType, setExamType]                     = useState<"" | "laboratorial" | "imagem">("");
-  const [examStatus, setExamStatus]                 = useState<"" | "solicitado" | "coletado" | "laudado">("");
-  const [examPriority, setExamPriority]             = useState<"" | "urgente" | "rotina" | "eletivo">("");
-  const [showExamFilters, setShowExamFilters]       = useState(false);
+
+  const initialFilters = useMemo(() => parseExamFiltersFromSearch(currentSearch), []);
+  const [examSearch, setExamSearch]     = useState(initialFilters.examSearch);
+  const [examType, setExamType]         = useState(initialFilters.examType);
+  const [examStatus, setExamStatus]     = useState(initialFilters.examStatus);
+  const [examPriority, setExamPriority] = useState(initialFilters.examPriority);
+  const [showExamFilters, setShowExamFilters] = useState(
+    !!(initialFilters.examSearch || initialFilters.examType || initialFilters.examStatus || initialFilters.examPriority)
+  );
   const [showSaveBookmark, setShowSaveBookmark]     = useState(false);
   const [bookmarkLabel, setBookmarkLabel]           = useState("");
 
@@ -456,6 +471,26 @@ export default function Dashboard() {
       setFiltro("Todos");
     }
   }, [hasExamFilter]);
+
+  // Sync exam filter state → URL query params (replace history so reload restores the filter).
+  // Start from the current params so unrelated query params are preserved.
+  useEffect(() => {
+    const params = new URLSearchParams(currentSearch);
+    if (debouncedExamSearch) params.set("exam", debouncedExamSearch);
+    else                     params.delete("exam");
+    if (examType)            params.set("examType", examType);
+    else                     params.delete("examType");
+    if (examStatus)          params.set("examStatus", examStatus);
+    else                     params.delete("examStatus");
+    if (examPriority)        params.set("examPriority", examPriority);
+    else                     params.delete("examPriority");
+    const qs = params.toString();
+    const newPath = qs ? `/?${qs}` : "/";
+    const currentQs = currentSearch.replace(/^\?/, "");
+    if (qs !== currentQs) {
+      setLocation(newPath, { replace: true });
+    }
+  }, [debouncedExamSearch, examType, examStatus, examPriority]);
 
   const examFilterLabel = useMemo(() => {
     const parts: string[] = [];
