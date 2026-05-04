@@ -11,7 +11,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient, ListPatientsParams, PatientPendingExamsItem } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List } from "lucide-react";
 import { useExamFilterBookmarks } from "@/lib/use-exam-filter-bookmarks";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -398,7 +398,7 @@ export default function Dashboard() {
   const [search, setSearch]                         = useState("");
   const [filtro, setFiltro]                         = useState("Todos");
   const [triageFilter, setTriageFilter]             = useState("all");
-  const [viewMode, setViewMode]                     = useState<"setor" | "status">("setor");
+  const [viewMode, setViewMode]                     = useState<"setor" | "status" | "exames">("setor");
   const [examSearch, setExamSearch]                 = useState("");
   const [examType, setExamType]                     = useState<"" | "laboratorial" | "imagem">("");
   const [examStatus, setExamStatus]                 = useState<"" | "solicitado" | "coletado" | "laudado">("");
@@ -446,6 +446,16 @@ export default function Dashboard() {
   }, [debouncedExamSearch, examType, examStatus, examPriority]);
 
   const hasExamFilter = !!examParams;
+
+  // Auto-fallback: if exam filter becomes inactive while in exam list mode, reset to sector view
+  // When exam filter activates, clear any lingering sector selection to avoid hidden constraints
+  useEffect(() => {
+    if (!hasExamFilter) {
+      setViewMode(v => v === "exames" ? "setor" : v);
+    } else {
+      setFiltro("Todos");
+    }
+  }, [hasExamFilter]);
 
   const examFilterLabel = useMemo(() => {
     const parts: string[] = [];
@@ -527,9 +537,50 @@ export default function Dashboard() {
     return { grouped, groupedByStatus };
   }, [patients, debouncedSearch, filtro, triageFilter, criticalPatientIds]);
 
+  // ── flat exam list (for "exames" view mode) ────────────────────────────────
+  interface ExamFlatEntry {
+    patient: Patient;
+    exam: PatientPendingExamsItem;
+    examNames: string[];
+  }
+
+  const examFlatList = useMemo((): ExamFlatEntry[] => {
+    if (!patients) return [];
+    const q = debouncedSearch.toLowerCase();
+    const base = patients.filter(p => {
+      const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
+      const matchesTriage = triageFilter === "all" || p.triage_level === triageFilter;
+      const matchesSector = !setoresPermitidos || !p.sector || setoresPermitidos.has(p.sector);
+      return matchesSearch && matchesTriage && matchesSector;
+    });
+
+    const entries: ExamFlatEntry[] = [];
+    for (const patient of base) {
+      for (const exam of patient.pendingExams ?? []) {
+        const examNames = [...exam.laboratoriais, ...exam.imagem];
+        entries.push({ patient, exam, examNames });
+      }
+    }
+
+    entries.sort((a, b) => {
+      const aCrit = criticalPatientIds.has(a.patient.id) ? 0 : 1;
+      const bCrit = criticalPatientIds.has(b.patient.id) ? 0 : 1;
+      if (aCrit !== bCrit) return aCrit - bCrit;
+      const PRIO: Record<string, number> = { urgente: 0, rotina: 1, eletivo: 2 };
+      const pA = PRIO[a.exam.prioridade] ?? 9;
+      const pB = PRIO[b.exam.prioridade] ?? 9;
+      if (pA !== pB) return pA - pB;
+      return (TRIAGE_SEVERITY[a.patient.triage_level] ?? 99) - (TRIAGE_SEVERITY[b.patient.triage_level] ?? 99);
+    });
+
+    return entries;
+  }, [patients, debouncedSearch, triageFilter, criticalPatientIds, setoresPermitidos]);
+
   const totalFiltered = viewMode === "setor"
     ? (grouped  ? grouped.reduce((n, g) => n + g.patients.length, 0)        : 0)
-    : (groupedByStatus ? groupedByStatus.reduce((n, g) => n + g.patients.length, 0) : 0);
+    : viewMode === "status"
+    ? (groupedByStatus ? groupedByStatus.reduce((n, g) => n + g.patients.length, 0) : 0)
+    : examFlatList.length;
 
   const handleEdit        = useCallback((p: Patient) => setEditingPatient(p), []);
   const handleAlta        = useCallback((p: Patient) => setAltaPatient(p), []);
@@ -825,6 +876,23 @@ export default function Dashboard() {
                 viewMode === "status" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
               )}
             >Por Status</button>
+            {hasExamFilter && (
+              <button
+                type="button"
+                data-testid="btn-exam-list-view"
+                onClick={() => setViewMode("exames")}
+                title="Lista de Exames"
+                className={cn(
+                  "px-2.5 rounded text-xs font-medium transition-colors flex items-center gap-1",
+                  viewMode === "exames"
+                    ? "bg-cyan-500/20 text-cyan-400"
+                    : "text-muted-foreground hover:text-cyan-400",
+                )}
+              >
+                <List className="h-3 w-3" />
+                <span className="hidden sm:inline">Lista de Exames</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -859,6 +927,7 @@ export default function Dashboard() {
                       setExamStatus("");
                       setExamPriority("");
                       setShowSaveBookmark(false);
+                      setViewMode(v => v === "exames" ? "setor" : v);
                     }}
                     className="text-[11px] text-cyan-400/70 hover:text-cyan-400 flex items-center gap-0.5 transition-colors"
                   >
@@ -965,7 +1034,7 @@ export default function Dashboard() {
         )}
 
         {/* Sector filters — only in "setor" mode */}
-        {viewMode === "setor" && (
+        {viewMode === "setor" && !hasExamFilter && (
           <div className="flex gap-1 mb-4 flex-wrap">
             {["Todos", ...SECTOR_NAMES].map(s => (
               <button
@@ -988,11 +1057,13 @@ export default function Dashboard() {
         {/* ── patient label ──────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Pacientes Ativos
+            {viewMode === "exames" ? "Exames Pendentes" : "Pacientes Ativos"}
             {totalFiltered > 0 && <span className="ml-2 text-foreground font-bold text-sm">{totalFiltered}</span>}
           </span>
           <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide hidden sm:block">
-            Leito · Nome · Status · Diagnóstico
+            {viewMode === "exames"
+              ? "Leito · Paciente · Exame · Status · Prioridade"
+              : "Leito · Nome · Status · Diagnóstico"}
           </span>
         </div>
 
@@ -1054,6 +1125,104 @@ export default function Dashboard() {
                 <p className="text-sm">Nenhum paciente encontrado</p>
                 {search && <p className="text-xs mt-1 opacity-60">Tente outro termo de busca</p>}
               </div>
+            )}
+          </div>
+        ) : viewMode === "exames" ? (
+          /* ── "Lista de Exames" flat view ── */
+          <div className="rounded-lg border border-border/30 overflow-hidden">
+            {examFlatList.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FlaskConical className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">Nenhum exame pendente encontrado</p>
+                {search && <p className="text-xs mt-1 opacity-60">Tente outro termo de busca</p>}
+              </div>
+            ) : (
+              examFlatList.map(({ patient, exam, examNames }) => {
+                const cfg = TRIAGE_CONFIG[patient.triage_level as TriageKey] ?? TRIAGE_CONFIG.blue;
+                const isCritical = isNurseOrTech && criticalPatientIds.has(patient.id);
+                const EXAM_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+                  solicitado: { label: "Solicitado", cls: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
+                  coletado:   { label: "Coletado",   cls: "bg-blue-500/15 text-blue-400 border-blue-500/30"   },
+                  laudado:    { label: "Laudado",     cls: "bg-green-500/15 text-green-400 border-green-500/30" },
+                };
+                const EXAM_PRIO_LABEL: Record<string, { label: string; cls: string }> = {
+                  urgente: { label: "Urgente ⚡", cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+                  rotina:  { label: "Rotina",     cls: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30"   },
+                  eletivo: { label: "Eletivo",    cls: "bg-slate-500/15 text-slate-400 border-slate-500/30" },
+                };
+                const statusCfg = EXAM_STATUS_LABEL[exam.status] ?? { label: exam.status, cls: "bg-muted/20 text-muted-foreground border-border/40" };
+                const prioCfg   = EXAM_PRIO_LABEL[exam.prioridade] ?? { label: exam.prioridade, cls: "bg-muted/20 text-muted-foreground border-border/40" };
+                const examType  = exam.imagem.length > 0 && exam.laboratoriais.length === 0 ? "imagem" : "laboratorial";
+                return (
+                  <Link
+                    key={`${patient.id}-${exam.id}`}
+                    href={`/patients/${patient.id}`}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 border-b border-border/25 last:border-b-0 transition-colors cursor-pointer border-l-4",
+                      isCritical
+                        ? "border-l-red-500 bg-red-500/10 hover:bg-red-500/15"
+                        : cn(cfg.border, "hover:bg-muted/20"),
+                    )}
+                  >
+                    {/* Bed */}
+                    <div className="w-10 shrink-0 text-center">
+                      {isCritical ? (
+                        <AlertTriangle className="h-4 w-4 text-red-400 mx-auto animate-pulse" />
+                      ) : (
+                        <span className="text-sm font-mono font-bold text-foreground">
+                          {patient.bed || <BedDouble className="h-3.5 w-3.5 text-muted-foreground mx-auto" />}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Triage badge */}
+                    <div className={cn(
+                      "shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded leading-tight hidden sm:block",
+                      isCritical ? "bg-red-500/20 text-red-400" : cn(cfg.bg, cfg.text),
+                    )}>
+                      {isCritical ? "⚠ CRÍTICO" : cfg.label}
+                    </div>
+                    <span className={cn(
+                      "w-2 h-2 rounded-full shrink-0 sm:hidden",
+                      isCritical ? "bg-red-500 animate-pulse" : cfg.dot,
+                    )} />
+
+                    {/* Patient name */}
+                    <div className="flex-1 min-w-0">
+                      <span className={cn(
+                        "font-semibold text-sm leading-tight truncate block",
+                        isCritical ? "text-red-300" : "text-foreground",
+                      )}>
+                        {patient.full_name}
+                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">{patient.age}a</span>
+                      </span>
+                      {/* Exam names */}
+                      <div className="flex flex-wrap gap-0.5 mt-0.5">
+                        <FlaskConical className={cn("h-3 w-3 shrink-0 mt-0.5", examType === "imagem" ? "text-violet-400" : "text-cyan-400")} />
+                        <span className="text-xs text-muted-foreground truncate">
+                          {examNames.length > 0 ? examNames.join(", ") : (examType === "imagem" ? "Imagem" : "Laboratorial")}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Status + priority badges */}
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                      <span className={cn(
+                        "text-[10px] font-bold px-1.5 py-0 rounded border leading-5",
+                        statusCfg.cls,
+                      )}>
+                        {statusCfg.label}
+                      </span>
+                      <span className={cn(
+                        "text-[10px] font-bold px-1.5 py-0 rounded border leading-5",
+                        prioCfg.cls,
+                      )}>
+                        {prioCfg.label}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })
             )}
           </div>
         ) : (
