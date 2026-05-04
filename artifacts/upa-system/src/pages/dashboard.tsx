@@ -11,7 +11,8 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient, ListPatientsParams, PatientPendingExamsItem } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck } from "lucide-react";
+import { useExamFilterBookmarks } from "@/lib/use-exam-filter-bookmarks";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -403,6 +404,10 @@ export default function Dashboard() {
   const [examStatus, setExamStatus]                 = useState<"" | "solicitado" | "coletado" | "laudado">("");
   const [examPriority, setExamPriority]             = useState<"" | "urgente" | "rotina" | "eletivo">("");
   const [showExamFilters, setShowExamFilters]       = useState(false);
+  const [showSaveBookmark, setShowSaveBookmark]     = useState(false);
+  const [bookmarkLabel, setBookmarkLabel]           = useState("");
+
+  const { bookmarks, saveBookmark, deleteBookmark } = useExamFilterBookmarks();
 
   // ── setor e feature flag ───────────────────────────────────────────────────
   const preAdultoAtivo = featureAtiva("setor_pre_adulto");
@@ -732,6 +737,46 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* ── exam filter bookmarks ──────────────────────────────────── */}
+        {bookmarks.length > 0 && (
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0 flex items-center gap-1">
+              <Bookmark className="h-3 w-3" />
+              Favoritos:
+            </span>
+            {bookmarks.map(bk => (
+              <span
+                key={bk.id}
+                className="group inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 rounded-full border border-cyan-500/35 bg-cyan-500/8 text-cyan-400 text-[11px] font-medium"
+              >
+                <button
+                  type="button"
+                  title={`Aplicar filtro: ${bk.label}`}
+                  onClick={() => {
+                    setExamSearch(bk.examSearch);
+                    setExamType(bk.examType);
+                    setExamStatus(bk.examStatus);
+                    setExamPriority(bk.examPriority);
+                    setShowExamFilters(true);
+                    setShowSaveBookmark(false);
+                  }}
+                  className="hover:text-cyan-300 transition-colors"
+                >
+                  {bk.label}
+                </button>
+                <button
+                  type="button"
+                  title="Remover favorito"
+                  onClick={() => deleteBookmark(bk.id)}
+                  className="ml-0.5 h-4 w-4 flex items-center justify-center rounded-full opacity-40 group-hover:opacity-100 focus:opacity-100 hover:bg-cyan-500/20 focus:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 focus:text-cyan-300 transition-all focus:outline-none"
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* ── search + filters ───────────────────────────────────────── */}
         <div className="flex gap-2 mb-3 flex-wrap">
           <div className="relative flex-1 min-w-[160px]">
@@ -791,22 +836,78 @@ export default function Dashboard() {
                 <FlaskConical className="h-3.5 w-3.5" />
                 Filtrar por Exame Pendente
               </span>
-              {hasExamFilter && (
+              <div className="flex items-center gap-2">
+                {hasExamFilter && !showSaveBookmark && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBookmarkLabel(examFilterLabel !== "Exame" ? examFilterLabel : "");
+                      setShowSaveBookmark(true);
+                    }}
+                    className="text-[11px] text-cyan-400/70 hover:text-cyan-400 flex items-center gap-0.5 transition-colors"
+                  >
+                    <Bookmark className="h-3 w-3" />
+                    Salvar filtro
+                  </button>
+                )}
+                {hasExamFilter && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExamSearch("");
+                      setExamType("");
+                      setExamStatus("");
+                      setExamPriority("");
+                      setShowSaveBookmark(false);
+                    }}
+                    className="text-[11px] text-cyan-400/70 hover:text-cyan-400 flex items-center gap-0.5 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                    Limpar filtros
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Save bookmark inline form */}
+            {showSaveBookmark && (
+              <form
+                className="flex items-center gap-2 rounded-md border border-cyan-500/25 bg-background px-2.5 py-1.5"
+                onSubmit={e => {
+                  e.preventDefault();
+                  if (!bookmarkLabel.trim() || !hasExamFilter) return;
+                  saveBookmark(bookmarkLabel, { examSearch, examType, examStatus, examPriority });
+                  setShowSaveBookmark(false);
+                  setBookmarkLabel("");
+                }}
+              >
+                <BookmarkCheck className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+                <input
+                  autoFocus
+                  type="text"
+                  value={bookmarkLabel}
+                  onChange={e => setBookmarkLabel(e.target.value)}
+                  placeholder="Nome do favorito (ex: Urgentes Lab)"
+                  maxLength={40}
+                  className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={!bookmarkLabel.trim()}
+                  className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Salvar
+                </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setExamSearch("");
-                    setExamType("");
-                    setExamStatus("");
-                    setExamPriority("");
-                  }}
-                  className="text-[11px] text-cyan-400/70 hover:text-cyan-400 flex items-center gap-0.5 transition-colors"
+                  onClick={() => setShowSaveBookmark(false)}
+                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <X className="h-3 w-3" />
-                  Limpar filtros
+                  Cancelar
                 </button>
-              )}
-            </div>
+              </form>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {/* Exam name search */}
               <div className="relative sm:col-span-2">
