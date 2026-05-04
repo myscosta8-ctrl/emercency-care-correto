@@ -51,7 +51,7 @@ router.post("/", async (req, res) => {
   res.status(201).json(serializeNotif(notif));
 });
 
-router.patch("/:notificationId", async (req, res) => {
+router.put("/:notificationId", async (req, res) => {
   const patientId      = Number((req.params as Params)["id"]);
   const notificationId = Number((req.params as Params)["notificationId"]);
   const body = UpdatePatientNotificationBody.parse(req.body);

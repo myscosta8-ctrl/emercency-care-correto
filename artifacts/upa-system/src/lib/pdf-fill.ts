@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFPage, PDFFont, StandardFonts, rgb } from "pdf-lib";
 
 // ── types ─────────────────────────────────────────────────────────────────────
 
@@ -537,6 +537,291 @@ function buildFieldValues(patient: PdfPatient, notif?: PdfNotification): Record<
   };
 }
 
+// ── Disease-specific clinical field filler ────────────────────────────────────
+// Draws checkbox marks and text values for investigation/clinical sections that
+// are unique to each SINAN disease template. Coordinates verified via
+// pdftotext -bbox + python row-grouping against each PDF template.
+//
+// Convention:
+//   mark(x, y)        → draws "X" (bold, 7.5 pt) at position — used for checkboxes
+//   write(x, y, text) → draws text value (regular, 7.5 pt) clipped to maxW
+//
+// Checkbox x = label_x − 12  (label_x from pdftotext bbox xMin)
+// Confirmed coords:
+//   DENGUE   sinais row1 y=260-266, row2 y=245-250; hosp-opts y=783; classif y=648/639; evo y=621
+//   TB       entrada y=361/352; forma y=302/293; bacil y=229/220; HIV y=228/219; assoc y=257/244
+//   F.AMAR   vacinado-opts y=235; hosp-opts y=127
+//   F.TIF    atendimento-opts y=100
+//   MENING   classif codes y=527-473; evo-opts y=352/343
+//   EXANT    classif y=488-471; evo-opts y=327/318
+//   AIDS     evo-opts y=437
+
+function fillClinical(
+  page: PDFPage,
+  font: PDFFont,
+  bold: PDFFont,
+  type: string,
+  fd: Record<string, string>,
+  ink: ReturnType<typeof rgb>,
+): void {
+  const SZ = 7.5;
+
+  function mark(x: number, y: number) {
+    page.drawText("X", { x, y, font: bold, size: SZ, color: ink });
+  }
+
+  function write(x: number, y: number, text: string, maxW = 200) {
+    if (!text?.trim()) return;
+    let t = text;
+    while (t.length > 1 && font.widthOfTextAtSize(t, SZ) > maxW) t = t.slice(0, -1);
+    page.drawText(t, { x, y, font, size: SZ, color: ink });
+  }
+
+  const sinais = new Set((fd.sinais ?? "").split(",").filter(Boolean));
+
+  // ── DENGUE ─────────────────────────────────────────────────────────────────
+  if (type === "dengue") {
+    // Sinais e Sintomas — row 1 (y≈260-266): labels at x=71,115,174,317,404,486
+    if (sinais.has("febre"))      mark(59,  260);
+    if (sinais.has("cefaleia"))   mark(103, 262);
+    if (sinais.has("vomito"))     mark(162, 260);
+    if (sinais.has("artrite"))    mark(305, 262);
+    if (sinais.has("petequias"))  mark(392, 264);
+    if (sinais.has("prova_laco")) mark(474, 266);
+    // row 2 (y≈245-250): labels at x=70,115,173,314,402,486
+    if (sinais.has("mialgia"))    mark(58,  247);
+    if (sinais.has("exantema"))   mark(103, 247);
+    if (sinais.has("nauseas"))    mark(161, 247);
+    if (sinais.has("artralgia"))  mark(302, 248);
+    if (sinais.has("leucopenia")) mark(390, 250);
+    if (sinais.has("dor_retro"))  mark(474, 245);
+
+    // Hospitalização (50) — options at y=783: "1"@60 "2"@90 "9"@119
+    if      (fd.internacao === "sim")      mark(55,  783);
+    else if (fd.internacao === "nao")      mark(85,  783);
+    else if (fd.internacao === "ignorado") mark(114, 783);
+
+    // Classificação Final (63) — y=648: "5-"@58 "10-"@113 "11-"@160; y=639: "12-"@58 "13-"@127
+    const fc = (fd.forma_clinica ?? "").toLowerCase();
+    if      (fc === "1" || fc === "dengue")         mark(108, 648); // 10-Dengue
+    else if (fc === "2" || fc.includes("alarme"))   mark(155, 648); // 11-Dengue c/ Sinais de Alarme
+    else if (fc === "3" || fc.includes("grave"))    mark(53,  639); // 12-Dengue Grave
+    else if (fc === "4" || fc.includes("chik"))     mark(122, 639); // 13-Chikungunya
+    else if (fc === "5" || fc.includes("descart"))  mark(53,  648); // 5-Descartado
+
+    // Evolução do Caso (65) — label at y=621; write value after it
+    if (fd.evolucao) write(168, 621, fd.evolucao, 130);
+  }
+
+  // ── TUBERCULOSE ────────────────────────────────────────────────────────────
+  if (type === "tuberculose") {
+    // Tipo de Entrada (32) — y=361: "1"@222 "2"@288 "3"@346 "4"@473; y=352: "5-Transf"@222 "6"@278
+    const entMap: Record<string, [number, number]> = {
+      caso_novo:     [210, 361],
+      recidiva:      [276, 361],
+      reingresso:    [334, 361],
+      nao_sabe:      [461, 361],
+      transferencia: [210, 352],
+      pos_obito:     [266, 352],
+    };
+    if (fd.tipo_entrada && entMap[fd.tipo_entrada]) {
+      const [ex, ey] = entMap[fd.tipo_entrada];
+      mark(ex, ey);
+    }
+
+    // Forma (35) — y=302: "1"@94 "2"@147; y=293: "3"@94
+    if      (fd.forma === "pulmonar")                   mark(82,  302);
+    else if (fd.forma === "extrapulmonar")               mark(135, 302);
+    else if (fd.forma === "pulmonar_extrapulmonar")      mark(82,  293);
+
+    // Doenças e Agravos Associados (37)
+    // Row 1 headers at y=271 → Sim boxes at y=257 (same row as "1-Sim" legend x=57)
+    if (fd.aids          === "sim") mark(205, 257);
+    if (fd.alcoolismo    === "sim") mark(249, 257);
+    if (fd.diabetes      === "sim") mark(320, 257);
+    if (fd.doenca_mental === "sim") mark(384, 257);
+    // Row 2 headers at y=255 → Sim boxes at y=244
+    if (fd.drogas        === "sim") mark(205, 244);
+    if (fd.tabagismo     === "sim") mark(341, 244);
+
+    // Baciloscopia de Escarro (38) — y=229: "1"@62 "2"@109; y=220: "3"@62 "4"@130
+    const bacilMap: Record<string, [number, number]> = {
+      positiva:      [50,  229],
+      negativa:      [97,  229],
+      nao_realizada: [50,  220],
+      nao_aplica:    [118, 220],
+    };
+    if (fd.baciloscopia && bacilMap[fd.baciloscopia]) {
+      const [bx, by] = bacilMap[fd.baciloscopia];
+      mark(bx, by);
+    }
+
+    // HIV (40) — y=228: "1-Positivo"@415 "3-Em Andamento"@463; y=219: "2-Negativo"@415
+    const hivMap: Record<string, [number, number]> = {
+      positivo:      [412, 228],
+      negativo:      [412, 219],
+      andamento:     [460, 228],
+      nao_realizado: [460, 219],
+    };
+    if (fd.hiv && hivMap[fd.hiv]) {
+      const [hx, hy] = hivMap[fd.hiv];
+      mark(hx, hy);
+    }
+
+    // Evolução — write after label (existing coord from COORDS_TUBERCULOSE)
+    if (fd.evolucao) write(160, 325, fd.evolucao, 150);
+  }
+
+  // ── FEBRE AMARELA ──────────────────────────────────────────────────────────
+  if (type === "febre_amarela") {
+    // Vacinado (34) — options at y=235: "1-Sim"@203 "2-Não"@241 "9-Ignorado"@279
+    if      (fd.vacinado === "sim")       mark(200, 235);
+    else if (fd.vacinado === "nao")       mark(238, 235);
+    else if (fd.vacinado === "ignorado")  mark(276, 235);
+
+    // Hospitalização (40) — options at y=127: "1-Sim"@165 "2-Não"@194 "9-Ignorado"@224
+    if      (fd.hospitalizacao === "sim")       mark(162, 127);
+    else if (fd.hospitalizacao === "nao")       mark(191, 127);
+    else if (fd.hospitalizacao === "ignorado")  mark(221, 127);
+
+    // Evolução — write at footer area (bottom of form, after lab data)
+    if (fd.evolucao) write(160, 84, fd.evolucao, 160);
+  }
+
+  // ── FEBRE TIFÓIDE ──────────────────────────────────────────────────────────
+  if (type === "febre_tifoide") {
+    // Tipo de Atendimento (39) — y=100: "1-Hospitalar"@69 "2-Ambulatorial"@134
+    //   "3-Domiciliar"@197 "4-Nenhum"@259 "9-Ignorado"@314
+    const atenMap: Record<string, number> = {
+      hospitalar: 57, ambulatorial: 122, domiciliar: 185, nenhum: 247, ignorado: 302,
+    };
+    const atenOpt = fd.tipo_atendimento;
+    if (atenOpt && atenMap[atenOpt] !== undefined) mark(atenMap[atenOpt], 100);
+
+    // Hospitalização — write text (no dedicated field coord extracted yet)
+    if (fd.hospitalizacao === "sim") write(200, 112, "1 - Sim", 80);
+    else if (fd.hospitalizacao === "nao") write(200, 112, "2 - Não", 80);
+
+    // Evolução — write value (no dedicated coord; use generic area)
+    if (fd.evolucao) write(160, 488, fd.evolucao, 160);
+  }
+
+  // ── MENINGITE ──────────────────────────────────────────────────────────────
+  if (type === "meningite") {
+    // Hospitalização — write text value in header area
+    if      (fd.hospitalizacao === "sim")      write(220, 797, "1 - Sim", 90);
+    else if (fd.hospitalizacao === "nao")      write(220, 797, "2 - Não", 90);
+    else if (fd.hospitalizacao === "ignorado") write(220, 797, "9 - Ignorado", 90);
+
+    // Classificação / Agente Etiológico (50/51)
+    // Codes (mark 12pt left of label x=168 for left col, x=363 for right col):
+    //   y=527: 1-Meningococemia | 6-Não especificada
+    //   y=513: 2-Meningite Meningocócica | 7-Asséptica (viral)
+    //   y=500: 3-MM+Meningococemia | 8-Outra etiologia
+    //   y=486: 4-Meningite Tuberculosa | 9-Hemófilo
+    //   y=473: 5-Outras bactérias | 10-Pneumococos
+    const agenteMap: Record<string, [number, number]> = {
+      meningococo:  [155, 513],
+      pneumococo:   [350, 473],
+      haemophilus:  [350, 486],
+      listeria:     [155, 473],
+      outros:       [350, 500],
+      ignorado:     [350, 527],
+    };
+    if (fd.agente && agenteMap[fd.agente]) {
+      const [ax, ay] = agenteMap[fd.agente];
+      mark(ax, ay);
+    }
+    // tipo_meningite as supplemental text label
+    if (fd.tipo_meningite && fd.tipo_meningite !== "ignorado") {
+      write(68, 543, fd.tipo_meningite, 80);
+    }
+
+    // Critério de Confirmação (52) — y=452: "1-Cultura"@80 "4-Clínico"@139 "7-Clínico-epid"@218
+    const criterioMening: Record<string, [number, number]> = {
+      cultura:          [67, 452],
+      cie:              [67, 443],
+      ag_latex:         [67, 434],
+      clinico:          [127, 452],
+      bacterioscopia:   [127, 443],
+      quimiocitologico: [127, 433],
+      clinico_epid:     [205, 452],
+      pcr:              [205, 434],
+      outros:           [203, 408],
+    };
+    if (fd.criterio_mening && criterioMening[fd.criterio_mening]) {
+      const [cx, cy] = criterioMening[fd.criterio_mening];
+      mark(cx, cy);
+    }
+
+    // Evolução do Caso (58) — y=352: "1-Alta"@90 "2-Óbito por meningite"@185
+    //                          y=343: "3-Óbito outra"@90 "9-Ignorado"@185
+    const evo = (fd.evolucao ?? "").toLowerCase();
+    if      (evo === "cura" || evo === "alta")   mark(87,  352);
+    else if (evo.includes("menin"))              mark(182, 352);
+    else if (evo.includes("obito") || evo.includes("óbito")) mark(87, 343);
+    else if (evo === "ignorado")                 mark(182, 343);
+    else if (fd.evolucao)                        write(120, 352, fd.evolucao, 100);
+  }
+
+  // ── EXANTEMÁTICA (Sarampo / Rubéola) ──────────────────────────────────────
+  if (type === "exantematica") {
+    // Hospitalização — write text (no specific coord extracted; use header area)
+    if      (fd.hospitalizacao === "sim")      write(230, 799, "1 - Sim", 90);
+    else if (fd.hospitalizacao === "nao")      write(230, 799, "2 - Não", 90);
+
+    // Classificação Final (54) — y=488: "1-Sarampo"@119; y=480: "2-Rubéola"@119; y=471: "3-Descartado"@119
+    const exantClass = (fd.classificacao_exant ?? "").toLowerCase();
+    if      (exantClass === "sarampo"  || exantClass === "1") mark(106, 488);
+    else if (exantClass === "rubeola"  || exantClass === "2") mark(106, 480);
+    else if (exantClass === "descartado" || exantClass === "3") mark(106, 471);
+
+    // Critério de Confirmação (55) — y=479: "1-Laboratorial"@236 "2-Clínico-epid"@304 "3-Clínico"@409
+    const critExant: Record<string, [number, number]> = {
+      laboratorial:    [223, 479],
+      clinico_epid:    [291, 479],
+      clinico:         [396, 479],
+    };
+    if (fd.criterio_exant && critExant[fd.criterio_exant]) {
+      const [qx, qy] = critExant[fd.criterio_exant];
+      mark(qx, qy);
+    }
+
+    // Evolução do Caso (63) — y=327: "1-Cura"@76 "2-Óbito por doenças exantemáticas"@116
+    //                          y=318: "3-Óbito por outras causas"@76 "9-Ignorado"@192
+    const evoEx = (fd.evolucao ?? "").toLowerCase();
+    if      (evoEx === "cura")                   mark(73,  327);
+    else if (evoEx.includes("exant"))            mark(113, 327);
+    else if (evoEx.includes("obito") || evoEx.includes("óbito")) mark(73, 318);
+    else if (evoEx === "ignorado")               mark(189, 318);
+    else if (fd.evolucao)                        write(105, 327, fd.evolucao, 110);
+  }
+
+  // ── AIDS ADULTO ────────────────────────────────────────────────────────────
+  if (type === "aids_adulto") {
+    // Evolução do Caso (47) — y=437: "1-Vivo"@102 "2-Óbito por Aids"@142 "3-Óbito outras"@218
+    const evoAids = (fd.evolucao ?? "").toLowerCase();
+    if      (evoAids === "vivo" || evoAids === "cura") mark(99,  437);
+    else if (evoAids.includes("aids"))                  mark(139, 437);
+    else if (evoAids.includes("obito") || evoAids.includes("óbito")) mark(215, 437);
+    else if (fd.evolucao)                               write(110, 437, fd.evolucao, 90);
+  }
+
+  // ── COVID-19 / SRAG (raster proxy — notificacao-individual) ────────────────
+  if (type === "covid19" || type === "srag") {
+    // These use the notificacao-individual proxy PDF (raster images).
+    // Write key clinical values as text near the form's general area.
+    if (fd.hospitalizacao === "sim") write(200, 400, "Hospitalização: Sim", 160);
+    else if (fd.hospitalizacao === "nao") write(200, 400, "Hospitalização: Não", 160);
+    if (fd.uti === "sim") write(200, 388, "UTI: Sim", 160);
+    if (fd.evolucao) write(200, 376, `Evolução: ${fd.evolucao}`, 200);
+    // List selected symptoms
+    if (sinais.size > 0) {
+      write(200, 364, `Sintomas: ${[...sinais].join(", ")}`, 330);
+    }
+  }
+}
+
 // quick lookup map for agravo code → label (subset; full list in sinan-agravos.ts)
 const AGRAVO_LABELS: Record<string, string> = {
   dengue: "Dengue", dengue_grave: "Dengue Grave", chikungunya: "Chikungunya",
@@ -645,6 +930,13 @@ async function fillTemplate(
   draw("evolucao_caso");
   draw("classificacao_final");
   draw("criterio_confirmacao");
+
+  // ── 3. Disease-specific clinical fields (checkboxes, radio marks, text) ──
+  let formExtra: Record<string, string> = {};
+  if (notif?.formData) {
+    try { formExtra = JSON.parse(notif.formData); } catch { /* ignore */ }
+  }
+  fillClinical(page, font, bold, type, formExtra, INK);
 
   return doc.save();
 }
