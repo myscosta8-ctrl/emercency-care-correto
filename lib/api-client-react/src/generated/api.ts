@@ -38,9 +38,11 @@ import type {
   ExamRequest,
   ExamResult,
   GetPatientDevicesParams,
+  GlobalExamRequest,
   HealthCheck200,
   LiberarExamResultBody,
   ListAuditLogsParams,
+  ListExamRequestsParams,
   ListPatientsParams,
   LoginBody,
   NutritionalAssessment,
@@ -3497,6 +3499,103 @@ export const useUpdatePatientTransfer = <
 > => {
   return useMutation(getUpdatePatientTransferMutationOptions(options));
 };
+
+/**
+ * @summary List all exam requests across all patients
+ */
+export const getListExamRequestsUrl = (params?: ListExamRequestsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/exam-requests?${stringifiedParams}`
+    : `/api/exam-requests`;
+};
+
+export const listExamRequests = async (
+  params?: ListExamRequestsParams,
+  options?: RequestInit,
+): Promise<GlobalExamRequest[]> => {
+  return customFetch<GlobalExamRequest[]>(getListExamRequestsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListExamRequestsQueryKey = (
+  params?: ListExamRequestsParams,
+) => {
+  return [`/api/exam-requests`, ...(params ? [params] : [])] as const;
+};
+
+export const getListExamRequestsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listExamRequests>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListExamRequestsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listExamRequests>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListExamRequestsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listExamRequests>>
+  > = ({ signal }) => listExamRequests(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listExamRequests>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListExamRequestsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listExamRequests>>
+>;
+export type ListExamRequestsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all exam requests across all patients
+ */
+
+export function useListExamRequests<
+  TData = Awaited<ReturnType<typeof listExamRequests>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListExamRequestsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listExamRequests>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListExamRequestsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get exam requests for a patient

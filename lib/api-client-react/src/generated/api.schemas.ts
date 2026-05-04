@@ -888,6 +888,55 @@ export interface CreateAuditLogBody {
   detalhes?: string;
 }
 
+export type GlobalExamRequestPatientTriageLevel =
+  (typeof GlobalExamRequestPatientTriageLevel)[keyof typeof GlobalExamRequestPatientTriageLevel];
+
+export const GlobalExamRequestPatientTriageLevel = {
+  red: "red",
+  orange: "orange",
+  yellow: "yellow",
+  green: "green",
+  blue: "blue",
+} as const;
+
+export type GlobalExamRequestPrioridade =
+  (typeof GlobalExamRequestPrioridade)[keyof typeof GlobalExamRequestPrioridade];
+
+export const GlobalExamRequestPrioridade = {
+  urgente: "urgente",
+  rotina: "rotina",
+  eletivo: "eletivo",
+} as const;
+
+export type GlobalExamRequestStatus =
+  (typeof GlobalExamRequestStatus)[keyof typeof GlobalExamRequestStatus];
+
+export const GlobalExamRequestStatus = {
+  solicitado: "solicitado",
+  coletado: "coletado",
+  laudado: "laudado",
+} as const;
+
+export interface GlobalExamRequest {
+  id: number;
+  patientId: number;
+  patientName: string;
+  patientBed: string;
+  patientTriageLevel: GlobalExamRequestPatientTriageLevel;
+  patientCareStatus: string;
+  /** @nullable */
+  prescriptionId?: number | null;
+  laboratoriais: string[];
+  imagem: string[];
+  prioridade: GlobalExamRequestPrioridade;
+  justificativa: string;
+  status: GlobalExamRequestStatus;
+  resultText: string;
+  resultFileName: string;
+  resultFileMime: string;
+  createdAt: string;
+}
+
 export type ExamRequestPrioridade =
   (typeof ExamRequestPrioridade)[keyof typeof ExamRequestPrioridade];
 
@@ -1078,6 +1127,36 @@ export type GetPatientDevicesParams = {
 export type ChangePassword200 = {
   ok: boolean;
 };
+
+export type ListExamRequestsParams = {
+  /**
+   * Filter by exam request status. Defaults to open pendencies only (excludes laudado). Pass "all" to include laudado.
+   */
+  status?: ListExamRequestsStatus;
+  /**
+   * Filter by exam request priority
+   */
+  priority?: ListExamRequestsPriority;
+};
+
+export type ListExamRequestsStatus =
+  (typeof ListExamRequestsStatus)[keyof typeof ListExamRequestsStatus];
+
+export const ListExamRequestsStatus = {
+  solicitado: "solicitado",
+  coletado: "coletado",
+  laudado: "laudado",
+  all: "all",
+} as const;
+
+export type ListExamRequestsPriority =
+  (typeof ListExamRequestsPriority)[keyof typeof ListExamRequestsPriority];
+
+export const ListExamRequestsPriority = {
+  urgente: "urgente",
+  rotina: "rotina",
+  eletivo: "eletivo",
+} as const;
 
 export type ListAuditLogsParams = {
   limit?: number;

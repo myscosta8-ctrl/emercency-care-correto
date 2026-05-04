@@ -11,7 +11,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient, ListPatientsParams, PatientPendingExamsItem } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -589,6 +589,14 @@ export default function Dashboard() {
                 <span className="hidden md:inline">Laboratório</span>
               </Button>
             </Link>
+            {pode("registrar_exames") && (
+              <Link href="/exames">
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
+                  <Microscope className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Pendências</span>
+                </Button>
+              </Link>
+            )}
             <Link href="/leitos">
               <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
                 <BedDouble className="h-3.5 w-3.5" />

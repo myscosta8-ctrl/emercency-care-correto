@@ -855,6 +855,35 @@ paths:
               schema:
                 $ref: "#/components/schemas/Transfer"
 
+  /api/exam-requests:
+    get:
+      operationId: listExamRequests
+      summary: List all exam requests across all patients
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [solicitado, coletado, laudado, all]
+          description: Filter by exam request status. Defaults to open pendencies only (excludes laudado). Pass "all" to include laudado.
+        - name: priority
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [urgente, rotina, eletivo]
+          description: Filter by exam request priority
+      responses:
+        "200":
+          description: List of exam requests with patient info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GlobalExamRequest"
+
   /api/patients/{id}/exam-requests:
     get:
       operationId: getPatientExamRequests
@@ -2520,6 +2549,67 @@ components:
       required:
         - usuario
         - acao
+
+    GlobalExamRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        patientName:
+          type: string
+        patientBed:
+          type: string
+        patientTriageLevel:
+          type: string
+          enum: [red, orange, yellow, green, blue]
+        patientCareStatus:
+          type: string
+        prescriptionId:
+          type: integer
+          nullable: true
+        laboratoriais:
+          type: array
+          items:
+            type: string
+        imagem:
+          type: array
+          items:
+            type: string
+        prioridade:
+          type: string
+          enum: [urgente, rotina, eletivo]
+        justificativa:
+          type: string
+        status:
+          type: string
+          enum: [solicitado, coletado, laudado]
+        resultText:
+          type: string
+        resultFileName:
+          type: string
+        resultFileMime:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - patientName
+        - patientBed
+        - patientTriageLevel
+        - patientCareStatus
+        - laboratoriais
+        - imagem
+        - prioridade
+        - justificativa
+        - status
+        - resultText
+        - resultFileName
+        - resultFileMime
+        - createdAt
 
     ExamRequest:
       type: object

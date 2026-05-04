@@ -1129,6 +1129,42 @@ export const UpdatePatientTransferResponse = zod.object({
 });
 
 /**
+ * @summary List all exam requests across all patients
+ */
+export const ListExamRequestsQueryParams = zod.object({
+  status: zod
+    .enum(["solicitado", "coletado", "laudado", "all"])
+    .optional()
+    .describe(
+      'Filter by exam request status. Defaults to open pendencies only (excludes laudado). Pass \"all\" to include laudado.',
+    ),
+  priority: zod
+    .enum(["urgente", "rotina", "eletivo"])
+    .optional()
+    .describe("Filter by exam request priority"),
+});
+
+export const ListExamRequestsResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  patientName: zod.string(),
+  patientBed: zod.string(),
+  patientTriageLevel: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+  patientCareStatus: zod.string(),
+  prescriptionId: zod.number().nullish(),
+  laboratoriais: zod.array(zod.string()),
+  imagem: zod.array(zod.string()),
+  prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
+  justificativa: zod.string(),
+  status: zod.enum(["solicitado", "coletado", "laudado"]),
+  resultText: zod.string(),
+  resultFileName: zod.string(),
+  resultFileMime: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListExamRequestsResponse = zod.array(ListExamRequestsResponseItem);
+
+/**
  * @summary Get exam requests for a patient
  */
 export const GetPatientExamRequestsParams = zod.object({
