@@ -58,6 +58,14 @@ The project is built as a pnpm workspace monorepo using TypeScript, facilitating
 *   **Patient Form Sections:** Standardized admission and edit forms structured into logical sections.
 *   **Audit Fields:** `createdBy` and `updatedBy` for tracking changes on critical tables.
 
+# Banco de Dados & Persistência
+
+*   **Banco primário (desenvolvimento):** PostgreSQL do Replit — acessado via `DATABASE_URL`.
+*   **Banco externo (Supabase):** Configurado via `SUPABASE_DATABASE_URL`. Quando essa variável estiver definida, o sistema se conecta ao Supabase em vez do banco local. Isso é configurado automaticamente no deploy.
+*   **Prioridade de conexão:** `SUPABASE_DATABASE_URL` > `DATABASE_URL` (em `lib/db/src/index.ts`).
+*   **Arquivo de migração:** `scripts/supabase_migration.sql` — execute esse arquivo no SQL Editor do Supabase para criar o schema e importar os dados.
+*   **Backup de dados:** `GET /api/backup/export` (requer permissão `admin`) — retorna JSON com todos os dados do sistema para download.
+
 # External Dependencies
 
 *   **Access Control:**
