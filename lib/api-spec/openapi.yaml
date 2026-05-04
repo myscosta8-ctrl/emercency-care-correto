@@ -2518,6 +2518,14 @@ components:
         status:
           type: string
           enum: [solicitado, coletado, laudado]
+        resultText:
+          type: string
+        resultFileName:
+          type: string
+        resultFileData:
+          type: string
+        resultFileMime:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -2529,6 +2537,10 @@ components:
         - prioridade
         - justificativa
         - status
+        - resultText
+        - resultFileName
+        - resultFileData
+        - resultFileMime
         - createdAt
 
     PatientDevice:
@@ -2652,5 +2664,13 @@ components:
         status:
           type: string
           enum: [solicitado, coletado, laudado]
+        resultText:
+          type: string
+        resultFileName:
+          type: string
+        resultFileData:
+          type: string
+        resultFileMime:
+          type: string
       required:
         - status

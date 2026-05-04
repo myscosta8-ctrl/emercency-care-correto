@@ -18,5 +18,9 @@ export const patientExamRequestsTable = pgTable("patient_exam_requests", {
   status: text("status", { enum: ["solicitado", "coletado", "laudado"] })
     .notNull()
     .default("solicitado"),
+  resultText: text("result_text").notNull().default(""),
+  resultFileName: text("result_file_name").notNull().default(""),
+  resultFileData: text("result_file_data").notNull().default(""),
+  resultFileMime: text("result_file_mime").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

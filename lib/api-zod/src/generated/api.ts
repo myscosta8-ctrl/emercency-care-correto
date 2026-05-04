@@ -1136,6 +1136,10 @@ export const GetPatientExamRequestsResponseItem = zod.object({
   prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
   justificativa: zod.string(),
   status: zod.enum(["solicitado", "coletado", "laudado"]),
+  resultText: zod.string(),
+  resultFileName: zod.string(),
+  resultFileData: zod.string(),
+  resultFileMime: zod.string(),
   createdAt: zod.coerce.date(),
 });
 export const GetPatientExamRequestsResponse = zod.array(
@@ -1167,6 +1171,10 @@ export const UpdateExamRequestStatusParams = zod.object({
 
 export const UpdateExamRequestStatusBody = zod.object({
   status: zod.enum(["solicitado", "coletado", "laudado"]),
+  resultText: zod.string().optional(),
+  resultFileName: zod.string().optional(),
+  resultFileData: zod.string().optional(),
+  resultFileMime: zod.string().optional(),
 });
 
 export const UpdateExamRequestStatusResponse = zod.object({
@@ -1178,6 +1186,10 @@ export const UpdateExamRequestStatusResponse = zod.object({
   prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
   justificativa: zod.string(),
   status: zod.enum(["solicitado", "coletado", "laudado"]),
+  resultText: zod.string(),
+  resultFileName: zod.string(),
+  resultFileData: zod.string(),
+  resultFileMime: zod.string(),
   createdAt: zod.coerce.date(),
 });
 

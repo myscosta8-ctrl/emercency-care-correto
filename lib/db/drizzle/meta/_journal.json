@@ -15,6 +15,13 @@
       "when": 1746318000000,
       "tag": "0001_add_patient_exam_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1746576000000,
+      "tag": "0002_add_exam_request_result_fields",
+      "breakpoints": true
     }
   ]
 }

@@ -726,8 +726,47 @@ router.patch("/:id/exam-requests/:examRequestId/status", requirePermissao("regis
     examRequestId: Number(req.params.examRequestId),
   });
   const body = UpdateExamRequestStatusBody.parse(req.body);
+
+  const ALLOWED_MIMES = new Set([
+    "application/pdf",
+    "image/png", "image/jpeg", "image/gif", "image/webp",
+  ]);
+  const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB base64-decoded limit
+
+  if (body.resultFileData || body.resultFileName || body.resultFileMime) {
+    const hasAll = body.resultFileData && body.resultFileName && body.resultFileMime;
+    if (!hasAll) {
+      res.status(422).json({ error: "Para anexar um arquivo, informe nome, dados e tipo MIME juntos." });
+      return;
+    }
+    if (!ALLOWED_MIMES.has(body.resultFileMime!)) {
+      res.status(422).json({ error: "Tipo de arquivo não permitido. Use PDF, PNG, JPG, GIF ou WebP." });
+      return;
+    }
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(body.resultFileData!)) {
+      res.status(422).json({ error: "Dados do arquivo inválidos (base64 malformado)." });
+      return;
+    }
+    const byteLength = Math.ceil(body.resultFileData!.length * 0.75);
+    if (byteLength > MAX_FILE_BYTES) {
+      res.status(422).json({ error: "Arquivo muito grande. O limite é 5 MB." });
+      return;
+    }
+  }
+
+  const patch: Partial<typeof patientExamRequestsTable.$inferInsert> = {
+    status: body.status as "solicitado" | "coletado" | "laudado",
+  };
+
+  if (body.status === "laudado") {
+    if (body.resultText !== undefined)     patch.resultText     = body.resultText;
+    if (body.resultFileName !== undefined) patch.resultFileName = body.resultFileName;
+    if (body.resultFileData !== undefined) patch.resultFileData = body.resultFileData;
+    if (body.resultFileMime !== undefined) patch.resultFileMime = body.resultFileMime;
+  }
+
   const [examRequest] = await db.update(patientExamRequestsTable)
-    .set({ status: body.status as "solicitado" | "coletado" | "laudado" })
+    .set(patch)
     .where(and(
       eq(patientExamRequestsTable.id, examRequestId),
       eq(patientExamRequestsTable.patientId, id),

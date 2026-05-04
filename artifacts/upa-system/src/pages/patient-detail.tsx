@@ -249,6 +249,15 @@ export default function PatientDetail() {
   const [deviceNotes, setDeviceNotes]         = useState("");
   const [removingDeviceId, setRemovingDeviceId] = useState<number | null>(null);
 
+  const [isLaudarOpen, setIsLaudarOpen] = useState(false);
+  const [laudarExamId, setLaudarExamId] = useState<number | null>(null);
+  const [laudarResultText, setLaudarResultText] = useState("");
+  const [laudarFileName, setLaudarFileName] = useState("");
+  const [laudarFileData, setLaudarFileData] = useState("");
+  const [laudarFileMime, setLaudarFileMime] = useState("");
+  const [laudarSubmitting, setLaudarSubmitting] = useState(false);
+  const [laudarFileReading, setLaudarFileReading] = useState(false);
+
   const [socialText, setSocialText]           = useState("");
   const [nutritionText, setNutritionText]     = useState("");
   const [pharmacyMed, setPharmacyMed]         = useState("");
@@ -1509,6 +1518,24 @@ export default function PatientDetail() {
                             {exam.justificativa && (
                               <p className="text-xs text-muted-foreground italic">Justificativa: {exam.justificativa}</p>
                             )}
+                            {exam.status === "laudado" && (exam.resultText || exam.resultFileName) && (
+                              <div className="mt-2 p-3 rounded-md bg-green-500/5 border border-green-500/20 space-y-2">
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-green-400">Laudo / Resultado</p>
+                                {exam.resultText && (
+                                  <p className="text-xs text-foreground/80 whitespace-pre-wrap">{exam.resultText}</p>
+                                )}
+                                {exam.resultFileName && exam.resultFileData && (
+                                  <a
+                                    href={`data:${exam.resultFileMime || "application/octet-stream"};base64,${exam.resultFileData}`}
+                                    download={exam.resultFileName}
+                                    className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded border border-green-500/30 bg-green-500/10 text-green-300 hover:bg-green-500/20 transition-colors"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                    {exam.resultFileName}
+                                  </a>
+                                )}
+                              </div>
+                            )}
                             {exam.status !== "laudado" && (
                               <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/40">
                                 {exam.status === "solicitado" && (
@@ -1520,11 +1547,14 @@ export default function PatientDetail() {
                                     )}>Marcar Coletado</Button>
                                 )}
                                 <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
-                                  onClick={() => updateExamStatus.mutate(
-                                    { id, examRequestId: exam.id, data: { status: "laudado" } },
-                                    { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) }),
-                                      onError: () => toast({ title: "Erro ao atualizar exame", variant: "destructive" }) }
-                                  )}>Marcar Laudado</Button>
+                                  onClick={() => {
+                                    setLaudarExamId(exam.id);
+                                    setLaudarResultText("");
+                                    setLaudarFileName("");
+                                    setLaudarFileData("");
+                                    setLaudarFileMime("");
+                                    setIsLaudarOpen(true);
+                                  }}>Marcar Laudado</Button>
                               </div>
                             )}
                           </div>
@@ -1643,6 +1673,100 @@ export default function PatientDetail() {
       </main>
 
       {/* ── DIALOGS ──────────────────────────────────────────────────── */}
+      {/* ── LAUDAR DIALOG ─────────────────────────────────────────── */}
+      <Dialog open={isLaudarOpen} onOpenChange={open => { if (!laudarSubmitting) setIsLaudarOpen(open); }}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FlaskConical className="h-4 w-4 text-green-400" /> Registrar Laudo
+            </DialogTitle>
+            <DialogDescription>Adicione o resultado em texto e/ou anexe um arquivo (PDF, imagem). Ambos são opcionais.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Resultado / Laudo em Texto <span className="text-muted-foreground text-xs">(opcional)</span></label>
+              <Textarea
+                placeholder="Ex: Hemoglobina 12,5 g/dL, Leucócitos 8.200/μL..."
+                value={laudarResultText}
+                onChange={e => setLaudarResultText(e.target.value)}
+                rows={4}
+                className="text-sm resize-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Arquivo Anexo <span className="text-muted-foreground text-xs">(opcional)</span></label>
+              <input
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.gif,.webp"
+                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-input file:bg-muted file:text-sm file:font-medium hover:file:bg-muted/80 cursor-pointer"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (!file) { setLaudarFileName(""); setLaudarFileData(""); setLaudarFileMime(""); return; }
+                  setLaudarFileName(file.name);
+                  setLaudarFileMime(file.type);
+                  setLaudarFileReading(true);
+                  const reader = new FileReader();
+                  reader.onload = ev => {
+                    const result = ev.target?.result as string;
+                    const base64 = result.split(",")[1] ?? "";
+                    setLaudarFileData(base64);
+                    setLaudarFileReading(false);
+                  };
+                  reader.onerror = () => setLaudarFileReading(false);
+                  reader.readAsDataURL(file);
+                }}
+              />
+              {laudarFileName && (
+                <p className="text-xs text-green-400 flex items-center gap-1.5">
+                  <Download className="h-3 w-3" /> {laudarFileName}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setIsLaudarOpen(false)} disabled={laudarSubmitting}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={laudarSubmitting || laudarFileReading}
+              onClick={() => {
+                if (laudarExamId == null) return;
+                setLaudarSubmitting(true);
+                updateExamStatus.mutate(
+                  {
+                    id,
+                    examRequestId: laudarExamId,
+                    data: {
+                      status: "laudado",
+                      resultText: laudarResultText,
+                      resultFileName: laudarFileName,
+                      resultFileData: laudarFileData,
+                      resultFileMime: laudarFileMime,
+                    },
+                  },
+                  {
+                    onSuccess: () => {
+                      queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) });
+                      toast({ title: "Laudo registrado com sucesso" });
+                      setIsLaudarOpen(false);
+                    },
+                    onError: (err: unknown) => {
+                      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+                      toast({ title: msg ?? "Erro ao registrar laudo", variant: "destructive" });
+                    },
+                    onSettled: () => setLaudarSubmitting(false),
+                  }
+                );
+              }}
+            >
+              {laudarSubmitting ? "Salvando..." : "Confirmar Laudo"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ── ADD DEVICE DIALOG ─────────────────────────────────────── */}
       <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
         <DialogContent className="sm:max-w-[440px]">

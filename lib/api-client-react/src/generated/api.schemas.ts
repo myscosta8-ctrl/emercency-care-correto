@@ -864,6 +864,10 @@ export interface ExamRequest {
   prioridade: ExamRequestPrioridade;
   justificativa: string;
   status: ExamRequestStatus;
+  resultText: string;
+  resultFileName: string;
+  resultFileData: string;
+  resultFileMime: string;
   createdAt: string;
 }
 
@@ -960,6 +964,10 @@ export const UpdateExamRequestStatusBodyStatus = {
 
 export interface UpdateExamRequestStatusBody {
   status: UpdateExamRequestStatusBodyStatus;
+  resultText?: string;
+  resultFileName?: string;
+  resultFileData?: string;
+  resultFileMime?: string;
 }
 
 export type HealthCheck200 = {
