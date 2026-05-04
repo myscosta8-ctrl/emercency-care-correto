@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PrintHeader } from "@/components/print-header";
 import { usePode } from "@/hooks/use-pode";
 import { useRoute, useLocation, Link } from "wouter";
 import { format, formatDistanceToNow } from "date-fns";
@@ -1842,43 +1843,30 @@ export default function PatientDetail() {
 
       {/* ── PRINT-ONLY EVOLUTION REPORT ──────────────────────────────── */}
       <div className="print-only" style={{ fontFamily: "Arial, sans-serif", color: "#000", background: "#fff" }}>
-        <div className="print-section" style={{ textAlign: "center", borderBottom: "2px solid #374151", paddingBottom: "10pt", marginBottom: "12pt" }}>
-          <div style={{ fontSize: "15pt", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>UPA 24H - Breves</div>
-          <div style={{ fontSize: "11pt", fontWeight: 600, marginTop: "3pt", letterSpacing: "0.04em", textTransform: "uppercase" }}>Evolução de Enfermagem</div>
-          <div style={{ fontSize: "9pt", color: "#6b7280", marginTop: "4pt" }}>
-            Emitido em: {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-          </div>
-        </div>
-        <div className="print-section">
-          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "5pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>Dados do Paciente</div>
-          <table className="print-table">
-            <tbody>
-              <tr>
-                <th style={{ width: "15%", textAlign: "left" }}>Paciente</th>
-                <td style={{ width: "35%" }}><strong>{patient.full_name}</strong></td>
-                <th style={{ width: "10%", textAlign: "left" }}>Idade</th>
-                <td style={{ width: "10%" }}>{patient.age} anos</td>
-                <th style={{ width: "10%", textAlign: "left" }}>Leito</th>
-                <td style={{ width: "20%" }}>{patient.bed || "—"}</td>
-              </tr>
-              <tr>
-                <th style={{ textAlign: "left" }}>Setor</th>
-                <td>{patient.sector}</td>
-                <th style={{ textAlign: "left" }}>Triagem</th>
-                <td>
-                  <span style={{ fontWeight: 700, color: patient.triage_level === "red" ? "#dc2626" : patient.triage_level === "orange" ? "#ea580c" : patient.triage_level === "yellow" ? "#ca8a04" : patient.triage_level === "green" ? "#16a34a" : "#2563eb" }}>
-                    {cfg.label}
-                  </span>
-                </td>
-                <th style={{ textAlign: "left" }}>Responsável</th>
-                <td>{patient.responsibleProfessional || "—"}</td>
-              </tr>
-              {patient.diagnosis && (
-                <tr><th style={{ textAlign: "left" }}>Diagnóstico</th><td colSpan={5}>{patient.diagnosis}</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <PrintHeader
+          baseUrl={import.meta.env.BASE_URL}
+          title="Evolução de Enfermagem"
+          emittedAt={new Date()}
+          patient={{
+            full_name:         patient.full_name,
+            prontuarioNumber:  patient.prontuarioNumber,
+            atendimentoNumber: patient.atendimentoNumber,
+            motherName:        patient.motherName,
+            birthDate:         patient.birthDate,
+            age:               patient.age,
+            sex:               patient.sex,
+            cpf:               patient.cpf,
+            cns:               patient.cns,
+            rg:                patient.rg,
+            phone:             patient.phone,
+            address:           patient.address,
+            bed:               patient.bed,
+            sector:            patient.sector,
+            attendanceDate:    patient.attendanceDate,
+            attendanceTime:    patient.attendanceTime,
+            careStatus:        patient.careStatus,
+          }}
+        />
         <div className="print-section">
           <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "5pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>Sinais Vitais</div>
           <table className="print-table">

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { PrintHeader } from "@/components/print-header";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -492,10 +493,11 @@ export default function ShiftHandover() {
         <main className="container mx-auto px-4 py-5 max-w-5xl print:px-0 print:py-0 print:max-w-none">
 
           {/* ── título impressão ─────────────────────────────────────── */}
-          <div className="hidden print:block text-center mb-3 pb-2 border-b-2 border-gray-600">
-            <h1 className="text-base font-bold text-black uppercase tracking-wider">
-              PASSAGEM DE PLANTÃO — UPA BREVES
-            </h1>
+          <div className="hidden print:block mb-3">
+            <PrintHeader
+              baseUrl={import.meta.env.BASE_URL}
+              title="Passagem de Plantão"
+            />
           </div>
 
           {/* ── meta row ─────────────────────────────────────────────── */}
