@@ -26,12 +26,14 @@ const AdminPermissoes     = lazy(() => import("@/pages/admin/permissoes"));
 const AdminFuncionalidades = lazy(() => import("@/pages/admin/funcionalidades"));
 const AdminAuditoria       = lazy(() => import("@/pages/admin/auditoria"));
 
-const LeitosPage   = lazy(() => import("@/pages/leitos"));
-const RecepcaoPage = lazy(() => import("@/pages/recepcao"));
-const VitaisPage   = lazy(() => import("@/pages/vitais"));
-const SocialPage   = lazy(() => import("@/pages/social"));
-const NutricaoPage = lazy(() => import("@/pages/nutricao"));
-const FarmaciaPage = lazy(() => import("@/pages/farmacia"));
+const LeitosPage      = lazy(() => import("@/pages/leitos"));
+const RecepcaoPage    = lazy(() => import("@/pages/recepcao"));
+const VitaisPage      = lazy(() => import("@/pages/vitais"));
+const SocialPage      = lazy(() => import("@/pages/social"));
+const NutricaoPage    = lazy(() => import("@/pages/nutricao"));
+const FarmaciaPage    = lazy(() => import("@/pages/farmacia"));
+const FilaMedicoPage  = lazy(() => import("@/pages/fila-medico"));
+const LaboratorioPage = lazy(() => import("@/pages/laboratorio"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -152,6 +154,13 @@ function Router() {
               <Route path="/patients/:id" component={PatientDetail} />
 
               <Route path="/leitos" component={LeitosPage} />
+
+              <Route path="/fila-medico">
+                <RoleGuard acao="registrar_prescricao"><FilaMedicoPage /></RoleGuard>
+              </Route>
+              <Route path="/laboratorio">
+                <RoleGuard acao="registrar_exames"><LaboratorioPage /></RoleGuard>
+              </Route>
 
               <Route path="/passagem-plantao">
                 <RoleGuard acao="registrar_evolucao"><ShiftHandover /></RoleGuard>

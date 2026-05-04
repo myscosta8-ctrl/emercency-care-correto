@@ -40,9 +40,13 @@ export const ListPatientsResponseItem = zod.object({
     "observacao_pre_adulto",
   ]),
   internmentStatus: zod.enum(["observacao", "internado", "alta"]),
+  prontuarioNumber: zod.string().optional(),
+  atendimentoNumber: zod.string().optional(),
   careStatus: zod.enum([
     "Em Triagem",
     "Aguardando Atendimento",
+    "Em Atendimento (Cons. 1)",
+    "Em Atendimento (Cons. 2)",
     "Em Observação",
     "Internado",
     "Em Transferência",
@@ -93,6 +97,8 @@ export const CreatePatientBody = zod.object({
     .enum([
       "Em Triagem",
       "Aguardando Atendimento",
+      "Em Atendimento (Cons. 1)",
+      "Em Atendimento (Cons. 2)",
       "Em Observação",
       "Internado",
       "Em Transferência",
@@ -156,9 +162,13 @@ export const GetPatientResponse = zod.object({
     "observacao_pre_adulto",
   ]),
   internmentStatus: zod.enum(["observacao", "internado", "alta"]),
+  prontuarioNumber: zod.string().optional(),
+  atendimentoNumber: zod.string().optional(),
   careStatus: zod.enum([
     "Em Triagem",
     "Aguardando Atendimento",
+    "Em Atendimento (Cons. 1)",
+    "Em Atendimento (Cons. 2)",
     "Em Observação",
     "Internado",
     "Em Transferência",
@@ -212,6 +222,8 @@ export const UpdatePatientBody = zod.object({
     .enum([
       "Em Triagem",
       "Aguardando Atendimento",
+      "Em Atendimento (Cons. 1)",
+      "Em Atendimento (Cons. 2)",
       "Em Observação",
       "Internado",
       "Em Transferência",
@@ -256,9 +268,13 @@ export const UpdatePatientResponse = zod.object({
     "observacao_pre_adulto",
   ]),
   internmentStatus: zod.enum(["observacao", "internado", "alta"]),
+  prontuarioNumber: zod.string().optional(),
+  atendimentoNumber: zod.string().optional(),
   careStatus: zod.enum([
     "Em Triagem",
     "Aguardando Atendimento",
+    "Em Atendimento (Cons. 1)",
+    "Em Atendimento (Cons. 2)",
     "Em Observação",
     "Internado",
     "Em Transferência",
@@ -304,6 +320,8 @@ export const UpdatePatientStatusBody = zod.object({
     .enum([
       "Em Triagem",
       "Aguardando Atendimento",
+      "Em Atendimento (Cons. 1)",
+      "Em Atendimento (Cons. 2)",
       "Em Observação",
       "Internado",
       "Em Transferência",
@@ -337,9 +355,13 @@ export const UpdatePatientStatusResponse = zod.object({
     "observacao_pre_adulto",
   ]),
   internmentStatus: zod.enum(["observacao", "internado", "alta"]),
+  prontuarioNumber: zod.string().optional(),
+  atendimentoNumber: zod.string().optional(),
   careStatus: zod.enum([
     "Em Triagem",
     "Aguardando Atendimento",
+    "Em Atendimento (Cons. 1)",
+    "Em Atendimento (Cons. 2)",
     "Em Observação",
     "Internado",
     "Em Transferência",
@@ -1082,4 +1104,109 @@ export const UpdateStaffResponse = zod.object({
  */
 export const DeleteStaffParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get patient exam results
+ */
+export const GetPatientExamResultsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientExamResultsResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  uploadedBy: zod.number().optional(),
+  examName: zod.string(),
+  examType: zod.enum(["laboratorial", "imagem"]),
+  prioridade: zod.enum(["urgente", "rotina", "eletivo"]).optional(),
+  resultText: zod.string().optional(),
+  fileData: zod.string().optional(),
+  fileName: zod.string().optional(),
+  fileMime: zod.string().optional(),
+  status: zod.enum(["pendente", "liberado"]),
+  liberadoAt: zod.coerce.date().optional(),
+  notified: zod.boolean().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const GetPatientExamResultsResponse = zod.array(
+  GetPatientExamResultsResponseItem,
+);
+
+/**
+ * @summary Create an exam result (pending)
+ */
+export const CreateExamResultParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateExamResultBody = zod.object({
+  uploadedBy: zod.number().optional(),
+  examName: zod.string(),
+  examType: zod.enum(["laboratorial", "imagem"]),
+  prioridade: zod.enum(["urgente", "rotina", "eletivo"]).optional(),
+  resultText: zod.string().optional(),
+  fileData: zod.string().optional(),
+  fileName: zod.string().optional(),
+  fileMime: zod.string().optional(),
+});
+
+/**
+ * @summary Release exam result with data
+ */
+export const LiberarExamResultParams = zod.object({
+  id: zod.coerce.number(),
+  examId: zod.coerce.number(),
+});
+
+export const LiberarExamResultBody = zod.object({
+  resultText: zod.string().optional(),
+  fileData: zod.string().optional(),
+  fileName: zod.string().optional(),
+  fileMime: zod.string().optional(),
+});
+
+export const LiberarExamResultResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  uploadedBy: zod.number().optional(),
+  examName: zod.string(),
+  examType: zod.enum(["laboratorial", "imagem"]),
+  prioridade: zod.enum(["urgente", "rotina", "eletivo"]).optional(),
+  resultText: zod.string().optional(),
+  fileData: zod.string().optional(),
+  fileName: zod.string().optional(),
+  fileMime: zod.string().optional(),
+  status: zod.enum(["pendente", "liberado"]),
+  liberadoAt: zod.coerce.date().optional(),
+  notified: zod.boolean().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Mark exam as notified (alert dismissed)
+ */
+export const MarkExamNotifiedParams = zod.object({
+  id: zod.coerce.number(),
+  examId: zod.coerce.number(),
+});
+
+export const MarkExamNotifiedResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  uploadedBy: zod.number().optional(),
+  examName: zod.string(),
+  examType: zod.enum(["laboratorial", "imagem"]),
+  prioridade: zod.enum(["urgente", "rotina", "eletivo"]).optional(),
+  resultText: zod.string().optional(),
+  fileData: zod.string().optional(),
+  fileName: zod.string().optional(),
+  fileMime: zod.string().optional(),
+  status: zod.enum(["pendente", "liberado"]),
+  liberadoAt: zod.coerce.date().optional(),
+  notified: zod.boolean().optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });

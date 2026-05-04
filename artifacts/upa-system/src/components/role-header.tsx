@@ -20,9 +20,10 @@ const ROLE_COLORS: Record<string, string> = {
 
 interface Props {
   title: string;
+  icon?: React.ReactNode;
 }
 
-export function RoleHeader({ title }: Props) {
+export function RoleHeader({ title, icon }: Props) {
   const { activeUser, logout } = useAuth();
   const [, setLocation] = useLocation();
   const role = activeUser?.role ?? "";

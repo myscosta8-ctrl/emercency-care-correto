@@ -28,11 +28,14 @@ import type {
   ChangePassword200,
   ChangePasswordBody,
   CreateAuditLogBody,
+  CreateExamResultBody,
   CreatePatientBody,
   CreateSinanNotificationBody,
   CreateStaffBody,
   CreateTransferBody,
+  ExamResult,
   HealthCheck200,
+  LiberarExamResultBody,
   ListAuditLogsParams,
   LoginBody,
   NutritionalAssessment,
@@ -3866,4 +3869,352 @@ export const useDeleteStaff = <
   TContext
 > => {
   return useMutation(getDeleteStaffMutationOptions(options));
+};
+
+/**
+ * @summary Get patient exam results
+ */
+export const getGetPatientExamResultsUrl = (id: number) => {
+  return `/api/patients/${id}/exam-results`;
+};
+
+export const getPatientExamResults = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ExamResult[]> => {
+  return customFetch<ExamResult[]>(getGetPatientExamResultsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatientExamResultsQueryKey = (id: number) => {
+  return [`/api/patients/${id}/exam-results`] as const;
+};
+
+export const getGetPatientExamResultsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientExamResults>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientExamResults>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPatientExamResultsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientExamResults>>
+  > = ({ signal }) => getPatientExamResults(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientExamResults>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientExamResultsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientExamResults>>
+>;
+export type GetPatientExamResultsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get patient exam results
+ */
+
+export function useGetPatientExamResults<
+  TData = Awaited<ReturnType<typeof getPatientExamResults>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientExamResults>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientExamResultsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create an exam result (pending)
+ */
+export const getCreateExamResultUrl = (id: number) => {
+  return `/api/patients/${id}/exam-results`;
+};
+
+export const createExamResult = async (
+  id: number,
+  createExamResultBody: CreateExamResultBody,
+  options?: RequestInit,
+): Promise<ExamResult> => {
+  return customFetch<ExamResult>(getCreateExamResultUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createExamResultBody),
+  });
+};
+
+export const getCreateExamResultMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExamResult>>,
+    TError,
+    { id: number; data: BodyType<CreateExamResultBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createExamResult>>,
+  TError,
+  { id: number; data: BodyType<CreateExamResultBody> },
+  TContext
+> => {
+  const mutationKey = ["createExamResult"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createExamResult>>,
+    { id: number; data: BodyType<CreateExamResultBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createExamResult(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateExamResultMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createExamResult>>
+>;
+export type CreateExamResultMutationBody = BodyType<CreateExamResultBody>;
+export type CreateExamResultMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create an exam result (pending)
+ */
+export const useCreateExamResult = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExamResult>>,
+    TError,
+    { id: number; data: BodyType<CreateExamResultBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createExamResult>>,
+  TError,
+  { id: number; data: BodyType<CreateExamResultBody> },
+  TContext
+> => {
+  return useMutation(getCreateExamResultMutationOptions(options));
+};
+
+/**
+ * @summary Release exam result with data
+ */
+export const getLiberarExamResultUrl = (id: number, examId: number) => {
+  return `/api/patients/${id}/exam-results/${examId}/liberar`;
+};
+
+export const liberarExamResult = async (
+  id: number,
+  examId: number,
+  liberarExamResultBody: LiberarExamResultBody,
+  options?: RequestInit,
+): Promise<ExamResult> => {
+  return customFetch<ExamResult>(getLiberarExamResultUrl(id, examId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(liberarExamResultBody),
+  });
+};
+
+export const getLiberarExamResultMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof liberarExamResult>>,
+    TError,
+    { id: number; examId: number; data: BodyType<LiberarExamResultBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof liberarExamResult>>,
+  TError,
+  { id: number; examId: number; data: BodyType<LiberarExamResultBody> },
+  TContext
+> => {
+  const mutationKey = ["liberarExamResult"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof liberarExamResult>>,
+    { id: number; examId: number; data: BodyType<LiberarExamResultBody> }
+  > = (props) => {
+    const { id, examId, data } = props ?? {};
+
+    return liberarExamResult(id, examId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LiberarExamResultMutationResult = NonNullable<
+  Awaited<ReturnType<typeof liberarExamResult>>
+>;
+export type LiberarExamResultMutationBody = BodyType<LiberarExamResultBody>;
+export type LiberarExamResultMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Release exam result with data
+ */
+export const useLiberarExamResult = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof liberarExamResult>>,
+    TError,
+    { id: number; examId: number; data: BodyType<LiberarExamResultBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof liberarExamResult>>,
+  TError,
+  { id: number; examId: number; data: BodyType<LiberarExamResultBody> },
+  TContext
+> => {
+  return useMutation(getLiberarExamResultMutationOptions(options));
+};
+
+/**
+ * @summary Mark exam as notified (alert dismissed)
+ */
+export const getMarkExamNotifiedUrl = (id: number, examId: number) => {
+  return `/api/patients/${id}/exam-results/${examId}/notified`;
+};
+
+export const markExamNotified = async (
+  id: number,
+  examId: number,
+  options?: RequestInit,
+): Promise<ExamResult> => {
+  return customFetch<ExamResult>(getMarkExamNotifiedUrl(id, examId), {
+    ...options,
+    method: "PUT",
+  });
+};
+
+export const getMarkExamNotifiedMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markExamNotified>>,
+    TError,
+    { id: number; examId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markExamNotified>>,
+  TError,
+  { id: number; examId: number },
+  TContext
+> => {
+  const mutationKey = ["markExamNotified"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markExamNotified>>,
+    { id: number; examId: number }
+  > = (props) => {
+    const { id, examId } = props ?? {};
+
+    return markExamNotified(id, examId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkExamNotifiedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markExamNotified>>
+>;
+
+export type MarkExamNotifiedMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark exam as notified (alert dismissed)
+ */
+export const useMarkExamNotified = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markExamNotified>>,
+    TError,
+    { id: number; examId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof markExamNotified>>,
+  TError,
+  { id: number; examId: number },
+  TContext
+> => {
+  return useMutation(getMarkExamNotifiedMutationOptions(options));
 };

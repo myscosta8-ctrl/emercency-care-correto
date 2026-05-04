@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requirePermissao } from "../middleware/require-auth";
-import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable } from "@workspace/db";
+import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable } from "@workspace/db";
 import { eq, sql, desc } from "drizzle-orm";
 import {
   CreatePatientBody,
@@ -80,11 +80,23 @@ function ageFromBirthDate(birthDate: string): number {
 type TriageLevel   = "red" | "orange" | "yellow" | "green" | "blue";
 type PatientSector = "sala_vermelha" | "observacao_adulto" | "observacao_pediatrica" | "observacao_pre_adulto";
 type InternStatus  = "internado" | "nao_internado";
-type CareStatus    = "Em Triagem" | "Aguardando Atendimento" | "Em Observação" | "Internado" | "Em Transferência" | "Alta";
+type CareStatus    = "Em Triagem" | "Aguardando Atendimento" | "Em Atendimento (Cons. 1)" | "Em Atendimento (Cons. 2)" | "Em Observação" | "Internado" | "Em Transferência" | "Alta";
 
 const CARE_STATUSES: CareStatus[] = [
-  "Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta",
+  "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Observação", "Internado", "Em Transferência", "Alta",
 ];
+
+function generateProntuarioNumber(id: number): string {
+  const year = new Date().getFullYear();
+  return `PRN-${year}-${String(id).padStart(5, "0")}`;
+}
+
+function generateAtendimentoNumber(id: number): string {
+  const year = new Date().getFullYear();
+  const seq = Date.now() % 100000;
+  const seqStr = String(seq).padStart(5, "0");
+  return `ATD-${year}-${String(id).padStart(4, "0")}${seqStr.slice(-1)}`;
+}
 
 /** Full insert payload for patient creation */
 function buildPatientInsert(body: typeof CreatePatientBody._type) {
@@ -216,17 +228,24 @@ router.post("/", requirePermissao("criar_paciente"), async (req, res) => {
   const data = buildPatientInsert(body);
   const responsible = data.responsibleProfessional;
 
-  const [patient] = await db.insert(patientsTable).values({
+  const [patientRaw] = await db.insert(patientsTable).values({
     ...data,
     createdBy: responsible,
     updatedBy: responsible,
     updatedAt: new Date(),
   }).returning();
 
+  const prontuarioNumber  = generateProntuarioNumber(patientRaw.id);
+  const atendimentoNumber = generateAtendimentoNumber(patientRaw.id);
+  const [patient] = await db.update(patientsTable)
+    .set({ prontuarioNumber, atendimentoNumber })
+    .where(eq(patientsTable.id, patientRaw.id))
+    .returning();
+
   await db.insert(patientEvolutionsTable).values({
     patientId: patient.id,
     userId:    0,
-    soapText:  "Admissão inicial",
+    soapText:  `Admissão inicial — Prontuário: ${prontuarioNumber} | Atendimento: ${atendimentoNumber}`,
   });
 
   res.status(201).json(serialize(patient));
@@ -452,6 +471,87 @@ router.put("/:id/tasks/:taskId/status", requirePermissao("editar_paciente"), asy
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
   });
+});
+
+// ── exam results ──────────────────────────────────────────────────────────────
+
+const serializeExam = (e: typeof examResultsTable.$inferSelect) => ({
+  ...e,
+  liberadoAt: e.liberadoAt ? e.liberadoAt.toISOString() : null,
+  createdAt:  e.createdAt.toISOString(),
+  updatedAt:  e.updatedAt.toISOString(),
+});
+
+router.get("/:id/exam-results", async (req, res) => {
+  const id = Number(req.params.id);
+  const results = await db.select().from(examResultsTable)
+    .where(eq(examResultsTable.patientId, id))
+    .orderBy(desc(examResultsTable.createdAt));
+  res.json(results.map(serializeExam));
+});
+
+router.post("/:id/exam-results", async (req, res) => {
+  const id   = Number(req.params.id);
+  const body = req.body as {
+    uploadedBy?: number; examName: string;
+    examType: "laboratorial" | "imagem"; prioridade?: "urgente" | "rotina" | "eletivo";
+    resultText?: string; fileData?: string; fileName?: string; fileMime?: string;
+  };
+  const [exam] = await db.insert(examResultsTable).values({
+    patientId:   id,
+    uploadedBy:  body.uploadedBy ?? 0,
+    examName:    body.examName,
+    examType:    body.examType,
+    prioridade:  body.prioridade ?? "rotina",
+    resultText:  body.resultText ?? "",
+    fileData:    body.fileData ?? "",
+    fileName:    body.fileName ?? "",
+    fileMime:    body.fileMime ?? "",
+    status:      "pendente",
+    notified:    false,
+    updatedAt:   new Date(),
+  }).returning();
+  res.status(201).json(serializeExam(exam));
+});
+
+router.put("/:id/exam-results/:examId/liberar", async (req, res) => {
+  const patientId = Number(req.params.id);
+  const examId    = Number(req.params.examId);
+  const body = req.body as {
+    resultText?: string; fileData?: string; fileName?: string; fileMime?: string;
+  };
+  const [exam] = await db.update(examResultsTable)
+    .set({
+      status:     "liberado",
+      liberadoAt: new Date(),
+      notified:   false,
+      resultText: body.resultText ?? "",
+      fileData:   body.fileData ?? "",
+      fileName:   body.fileName ?? "",
+      fileMime:   body.fileMime ?? "",
+      updatedAt:  new Date(),
+    })
+    .where(eq(examResultsTable.id, examId))
+    .returning();
+  if (!exam) { res.status(404).json({ error: "Exame não encontrado" }); return; }
+
+  await db.insert(patientEvolutionsTable).values({
+    patientId,
+    userId:   body.resultText ? 0 : 0,
+    soapText: `[Resultado de Exame] ${exam.examName} liberado pelo laboratório`,
+  });
+
+  res.json(serializeExam(exam));
+});
+
+router.put("/:id/exam-results/:examId/notified", async (req, res) => {
+  const examId = Number(req.params.examId);
+  const [exam] = await db.update(examResultsTable)
+    .set({ notified: true, updatedAt: new Date() })
+    .where(eq(examResultsTable.id, examId))
+    .returning();
+  if (!exam) { res.status(404).json({ error: "Exame não encontrado" }); return; }
+  res.json(serializeExam(exam));
 });
 
 // ── delete ────────────────────────────────────────────────────────────────────

@@ -39,6 +39,8 @@ export type PatientCareStatus =
 export const PatientCareStatus = {
   Em_Triagem: "Em Triagem",
   Aguardando_Atendimento: "Aguardando Atendimento",
+  "Em_Atendimento_(Cons_1)": "Em Atendimento (Cons. 1)",
+  "Em_Atendimento_(Cons_2)": "Em Atendimento (Cons. 2)",
   Em_Observação: "Em Observação",
   Internado: "Internado",
   Em_Transferência: "Em Transferência",
@@ -64,6 +66,8 @@ export interface Patient {
   bed: string;
   sector: PatientSector;
   internmentStatus: PatientInternmentStatus;
+  prontuarioNumber?: string;
+  atendimentoNumber?: string;
   careStatus: PatientCareStatus;
   careStatusChangedAt: string;
   nurse: string;
@@ -89,6 +93,8 @@ export type CreatePatientBodyCareStatus =
 export const CreatePatientBodyCareStatus = {
   Em_Triagem: "Em Triagem",
   Aguardando_Atendimento: "Aguardando Atendimento",
+  "Em_Atendimento_(Cons_1)": "Em Atendimento (Cons. 1)",
+  "Em_Atendimento_(Cons_2)": "Em Atendimento (Cons. 2)",
   Em_Observação: "Em Observação",
   Internado: "Internado",
   Em_Transferência: "Em Transferência",
@@ -135,6 +141,8 @@ export type UpdatePatientBodyCareStatus =
 export const UpdatePatientBodyCareStatus = {
   Em_Triagem: "Em Triagem",
   Aguardando_Atendimento: "Aguardando Atendimento",
+  "Em_Atendimento_(Cons_1)": "Em Atendimento (Cons. 1)",
+  "Em_Atendimento_(Cons_2)": "Em Atendimento (Cons. 2)",
   Em_Observação: "Em Observação",
   Internado: "Internado",
   Em_Transferência: "Em Transferência",
@@ -192,6 +200,8 @@ export type UpdatePatientStatusBodyCareStatus =
 export const UpdatePatientStatusBodyCareStatus = {
   Em_Triagem: "Em Triagem",
   Aguardando_Atendimento: "Aguardando Atendimento",
+  "Em_Atendimento_(Cons_1)": "Em Atendimento (Cons. 1)",
+  "Em_Atendimento_(Cons_2)": "Em Atendimento (Cons. 2)",
   Em_Observação: "Em Observação",
   Internado: "Internado",
   Em_Transferência: "Em Transferência",
@@ -202,6 +212,77 @@ export interface UpdatePatientStatusBody {
   triage_level?: UpdatePatientStatusBodyTriageLevel;
   care_status?: UpdatePatientStatusBodyCareStatus;
   user_id?: number;
+}
+
+export type ExamResultExamType =
+  (typeof ExamResultExamType)[keyof typeof ExamResultExamType];
+
+export const ExamResultExamType = {
+  laboratorial: "laboratorial",
+  imagem: "imagem",
+} as const;
+
+export type ExamResultPrioridade =
+  (typeof ExamResultPrioridade)[keyof typeof ExamResultPrioridade];
+
+export const ExamResultPrioridade = {
+  urgente: "urgente",
+  rotina: "rotina",
+  eletivo: "eletivo",
+} as const;
+
+export type ExamResultStatus =
+  (typeof ExamResultStatus)[keyof typeof ExamResultStatus];
+
+export const ExamResultStatus = {
+  pendente: "pendente",
+  liberado: "liberado",
+} as const;
+
+export interface ExamResult {
+  id: number;
+  patientId: number;
+  uploadedBy?: number;
+  examName: string;
+  examType: ExamResultExamType;
+  prioridade?: ExamResultPrioridade;
+  resultText?: string;
+  fileData?: string;
+  fileName?: string;
+  fileMime?: string;
+  status: ExamResultStatus;
+  liberadoAt?: string;
+  notified?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateExamResultBodyExamType =
+  (typeof CreateExamResultBodyExamType)[keyof typeof CreateExamResultBodyExamType];
+
+export const CreateExamResultBodyExamType = {
+  laboratorial: "laboratorial",
+  imagem: "imagem",
+} as const;
+
+export type CreateExamResultBodyPrioridade =
+  (typeof CreateExamResultBodyPrioridade)[keyof typeof CreateExamResultBodyPrioridade];
+
+export const CreateExamResultBodyPrioridade = {
+  urgente: "urgente",
+  rotina: "rotina",
+  eletivo: "eletivo",
+} as const;
+
+export interface CreateExamResultBody {
+  uploadedBy?: number;
+  examName: string;
+  examType: CreateExamResultBodyExamType;
+  prioridade?: CreateExamResultBodyPrioridade;
+  resultText?: string;
+  fileData?: string;
+  fileName?: string;
+  fileMime?: string;
 }
 
 export interface PatientSummary {
@@ -688,4 +769,11 @@ export type ChangePassword200 = {
 
 export type ListAuditLogsParams = {
   limit?: number;
+};
+
+export type LiberarExamResultBody = {
+  resultText?: string;
+  fileData?: string;
+  fileName?: string;
+  fileMime?: string;
 };

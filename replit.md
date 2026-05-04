@@ -88,23 +88,46 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - **"Nova Admissão"** button disabled unless `pode("criar_paciente")`
 - Logout button (Power icon, `aria-label="Sair"`) in dashboard header → clears session + navigates to `/login`
 
+### Prontuário e Atendimento
+- **`prontuario_number`**: `PRN-AAAA-NNNNN` — gerado automaticamente após INSERT com o `id` do paciente. Permanente.
+- **`atendimento_number`**: `ATD-AAAA-NNNNN` — gerado por visita/admissão, também automático.
+- Ambos gerados no `POST /api/patients` logo após o insert, com `UPDATE` subsequente. Exibidos na ficha do paciente e no setor de Laboratório.
+
 ### Workflow de Status de Cuidado (`careStatus`)
 - **Campo DB**: `care_status` (text, enum) + `care_status_changed_at` (timestamp) na tabela `patients`.
-- **Valores**: `"Em Triagem"` → `"Aguardando Atendimento"` → `"Em Observação"` → `"Internado"` → `"Em Transferência"` → `"Alta"`.
+- **Valores completos**: `"Em Triagem"` → `"Aguardando Atendimento"` → `"Em Atendimento (Cons. 1)"` | `"Em Atendimento (Cons. 2)"` → `"Em Observação"` | `"Internado"` | `"Em Transferência"` | `"Alta"`.
 - **Padrão**: todo paciente criado começa com `"Em Triagem"`.
 - **Endpoint**: `PUT /api/patients/:id/status` (requer `mudar_setor`) aceita `{ triage_level?, care_status?, user_id }`.
-  - Atualiza `careStatus` + `careStatusChangedAt` + `triageLevel` conforme enviado.
-  - Registra evolução automática: `[Reclassificação] Triagem: X → Y | Status: A → B`.
-  - Loga no servidor: `action=patient_reclassified` com `changes[]`.
 - **Regra de leito**: Pacientes em `"Em Triagem"` ou `"Aguardando Atendimento"` são bloqueados de ser alocados a leitos (422 backend).
-- **Frontend — badge**: Cada card de paciente exibe o status com cor:
-  - Azul = Em Triagem, Amarelo = Aguardando, Laranja = Em Observação, Vermelho = Internado, Roxo = Em Transferência, Verde = Alta.
-- **Frontend — alertas de tempo**:
-  - `"Em Triagem"` há >30min → badge laranja com `Clock` e tempo decorrido.
-  - `"Em Observação"` há >6h → badge roxo com `Clock` e tempo decorrido.
-- **Frontend — "Reclassificar"**: Botão `RefreshCw` em cada linha (visível para quem tem `mudar_setor`) abre modal com selects de triagem + status.
-- **Frontend — visualização "Por Status"**: Toggle "Por Setor" / "Por Status" no dashboard. "Por Status" agrupa em seções: Triagem, Aguardando, Observação, Internado, Transferência (alta excluída da lista ativa).
-  - Cabeçalho de cada seção exibe contagem de alertas de tempo (>30min triagem / >6h observação).
+- **Frontend — badge**: Cada card exibe o status com cor:
+  - Azul = Em Triagem, Amarelo = Aguardando, Céu/Violeta = Cons.1/Cons.2, Laranja = Em Observação, Vermelho = Internado, Roxo = Em Transferência, Verde = Alta.
+
+### Fila Médica (`/fila-medico`)
+- Página dedicada ao fluxo médico. Acessada via header do dashboard e como home do perfil `medico`.
+- **Consultório 1** (Adulto/Clínica Geral) e **Consultório 2** (Pediatria/Pré-Adulto) exibidos como cards.
+- Lista de pacientes `"Aguardando Atendimento"` ordenados por gravidade de triagem.
+- Botões "Cons. 1" / "Cons. 2" chamam o paciente → status muda para `"Em Atendimento (Cons. X)"`.
+- Botão "Desfecho" nos pacientes em atendimento → modal com opções: Alta, Em Observação, Internação, Transferência.
+- Rota protegida por `registrar_prescricao` (médico/enfermeiro têm acesso).
+
+### Laboratório (`/laboratorio`)
+- Página dedicada ao setor de laboratório. Home do perfil `farmaceutico` (laboratorista).
+- Lista todos os pacientes ativos (não em Alta) com accordion expansível por paciente.
+- Exibe PRN e ATD de cada paciente.
+- Por paciente: lista de exames com status pendente/liberado, prioridade, tipo (laboratorial/imagem).
+- Botão "+ Solicitar exame" → formulário inline para registrar nova solicitação.
+- Botão "Inserir resultado" → formulário com texto + upload de arquivo (PDF/imagem, Base64 em `file_data`).
+- Ao liberar resultado: status muda para `"liberado"`, `liberado_at` gravado, evolução automática registrada.
+- Notificações em tempo real (polling 30s): banner verde no topo lista novos resultados liberados.
+- Rota protegida por `registrar_exames`.
+
+### Tabela `exam_results`
+- Colunas: `id`, `patient_id`, `uploaded_by`, `exam_name`, `exam_type` (laboratorial/imagem), `prioridade` (urgente/rotina/eletivo), `result_text`, `file_data` (Base64), `file_name`, `file_mime`, `status` (pendente/liberado), `liberado_at`, `notified`, `created_at`, `updated_at`.
+- Rotas: `GET /api/patients/:id/exam-results`, `POST /api/patients/:id/exam-results`, `PUT /api/patients/:id/exam-results/:examId/liberar`, `PUT /api/patients/:id/exam-results/:examId/notified`.
+
+### Nova Ação de Permissão: `registrar_exames`
+- Atribuída a: `farmaceutico`, `medico` (`*`), `administrador` (`*`).
+- Controla acesso à página `/laboratorio`.
 
 ### Gestão de Leitos (`/leitos`)
 - **Tabela**: `beds` — `id`, `bed_id` (único), `sector`, `bed_number`, `is_isolation` (fixo), `is_extra` (boolean), `extra_reason`, `is_occupied`, `patient_id` (FK → patients), `admission_time` (timestamp), `isolation_active`, `isolation_type` (contact/droplet/airborne), `isolation_reason`, `created_at`, `updated_at`.

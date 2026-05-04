@@ -10,7 +10,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -35,22 +35,26 @@ const ALERT_ROLES = new Set(["enfermeiro", "tecnico_enfermagem"]);
 // ── care status config ─────────────────────────────────────────────────────────
 
 const CARE_STATUS_CONFIG = {
-  "Em Triagem":             { label: "Em Triagem",             color: "text-blue-400",   bg: "bg-blue-500/15",   border: "border-blue-500/30",   dot: "bg-blue-500"   },
-  "Aguardando Atendimento": { label: "Aguardando",             color: "text-yellow-400", bg: "bg-yellow-500/15", border: "border-yellow-500/30", dot: "bg-yellow-400" },
-  "Em Observação":          { label: "Em Observação",          color: "text-orange-400", bg: "bg-orange-500/15", border: "border-orange-500/30", dot: "bg-orange-500" },
-  "Internado":              { label: "Internado",              color: "text-red-400",    bg: "bg-red-500/15",    border: "border-red-500/30",    dot: "bg-red-500"    },
-  "Em Transferência":       { label: "Em Transferência",       color: "text-purple-400", bg: "bg-purple-500/15", border: "border-purple-500/30", dot: "bg-purple-500" },
-  "Alta":                   { label: "Alta",                   color: "text-green-400",  bg: "bg-green-500/15",  border: "border-green-500/30",  dot: "bg-green-500"  },
+  "Em Triagem":                { label: "Em Triagem",          color: "text-blue-400",   bg: "bg-blue-500/15",   border: "border-blue-500/30",   dot: "bg-blue-500"   },
+  "Aguardando Atendimento":    { label: "Aguardando",          color: "text-yellow-400", bg: "bg-yellow-500/15", border: "border-yellow-500/30", dot: "bg-yellow-400" },
+  "Em Atendimento (Cons. 1)":  { label: "Cons. 1",             color: "text-sky-400",    bg: "bg-sky-500/15",    border: "border-sky-500/30",    dot: "bg-sky-400"    },
+  "Em Atendimento (Cons. 2)":  { label: "Cons. 2",             color: "text-violet-400", bg: "bg-violet-500/15", border: "border-violet-500/30", dot: "bg-violet-400" },
+  "Em Observação":             { label: "Em Observação",       color: "text-orange-400", bg: "bg-orange-500/15", border: "border-orange-500/30", dot: "bg-orange-500" },
+  "Internado":                 { label: "Internado",           color: "text-red-400",    bg: "bg-red-500/15",    border: "border-red-500/30",    dot: "bg-red-500"    },
+  "Em Transferência":          { label: "Em Transferência",    color: "text-purple-400", bg: "bg-purple-500/15", border: "border-purple-500/30", dot: "bg-purple-500" },
+  "Alta":                      { label: "Alta",                color: "text-green-400",  bg: "bg-green-500/15",  border: "border-green-500/30",  dot: "bg-green-500"  },
 } as const;
 
 type CareStatusKey = keyof typeof CARE_STATUS_CONFIG;
 
 const CARE_STATUS_KEYS: CareStatusKey[] = [
-  "Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta",
+  "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)",
+  "Em Observação", "Internado", "Em Transferência", "Alta",
 ];
 
 const CARE_STATUS_SECTION_KEYS: CareStatusKey[] = [
-  "Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência",
+  "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)",
+  "Em Observação", "Internado", "Em Transferência",
 ];
 
 // ── time alert helpers ─────────────────────────────────────────────────────────
@@ -284,7 +288,7 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
     e.preventDefault();
     if (!patient) return;
     reclassify.mutate(
-      { id: patient.id, data: { triage_level: triageLevel as "red" | "orange" | "yellow" | "green" | "blue", care_status: careStatus as "Em Triagem" | "Aguardando Atendimento" | "Em Observação" | "Internado" | "Em Transferência" | "Alta", user_id: userId } },
+      { id: patient.id, data: { triage_level: triageLevel as "red" | "orange" | "yellow" | "green" | "blue", care_status: careStatus as "Em Triagem" | "Aguardando Atendimento" | "Em Atendimento (Cons. 1)" | "Em Atendimento (Cons. 2)" | "Em Observação" | "Internado" | "Em Transferência" | "Alta", user_id: userId } },
       {
         onSuccess: () => {
           toast({ title: "Paciente reclassificado com sucesso" });
@@ -490,6 +494,18 @@ export default function Dashboard() {
                 </Button>
               </Link>
             )}
+            <Link href="/fila-medico">
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
+                <Stethoscope className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Fila Médica</span>
+              </Button>
+            </Link>
+            <Link href="/laboratorio">
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
+                <FlaskConical className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Laboratório</span>
+              </Button>
+            </Link>
             <Link href="/leitos">
               <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
                 <BedDouble className="h-3.5 w-3.5" />

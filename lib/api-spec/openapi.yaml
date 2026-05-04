@@ -897,6 +897,109 @@ paths:
         "404":
           description: Not found
 
+  /api/patients/{id}/exam-results:
+    get:
+      operationId: getPatientExamResults
+      summary: Get patient exam results
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Exam results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExamResult"
+    post:
+      operationId: createExamResult
+      summary: Create an exam result (pending)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExamResultBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+
+  /api/patients/{id}/exam-results/{examId}/liberar:
+    put:
+      operationId: liberarExamResult
+      summary: Release exam result with data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: examId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resultText:
+                  type: string
+                fileData:
+                  type: string
+                fileName:
+                  type: string
+                fileMime:
+                  type: string
+      responses:
+        "200":
+          description: Released
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+
+  /api/patients/{id}/exam-results/{examId}/notified:
+    put:
+      operationId: markExamNotified
+      summary: Mark exam as notified (alert dismissed)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: examId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+
 components:
   schemas:
     Patient:
@@ -941,9 +1044,13 @@ components:
         internmentStatus:
           type: string
           enum: [observacao, internado, alta]
+        prontuarioNumber:
+          type: string
+        atendimentoNumber:
+          type: string
         careStatus:
           type: string
-          enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"]
+          enum: ["Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Observação", "Internado", "Em Transferência", "Alta"]
         careStatusChangedAt:
           type: string
           format: date-time
@@ -1056,7 +1163,7 @@ components:
           type: string
         care_status:
           type: string
-          enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"]
+          enum: ["Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Observação", "Internado", "Em Transferência", "Alta"]
         nurse:
           type: string
         responsibleProfessional:
@@ -1126,7 +1233,7 @@ components:
           type: string
         care_status:
           type: string
-          enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"]
+          enum: ["Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Observação", "Internado", "Em Transferência", "Alta"]
         nurse:
           type: string
         responsibleProfessional:
@@ -1160,9 +1267,82 @@ components:
           enum: [red, orange, yellow, green, blue]
         care_status:
           type: string
-          enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"]
+          enum: ["Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Observação", "Internado", "Em Transferência", "Alta"]
         user_id:
           type: integer
+
+    ExamResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        uploadedBy:
+          type: integer
+        examName:
+          type: string
+        examType:
+          type: string
+          enum: [laboratorial, imagem]
+        prioridade:
+          type: string
+          enum: [urgente, rotina, eletivo]
+        resultText:
+          type: string
+        fileData:
+          type: string
+        fileName:
+          type: string
+        fileMime:
+          type: string
+        status:
+          type: string
+          enum: [pendente, liberado]
+        liberadoAt:
+          type: string
+          format: date-time
+        notified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - examName
+        - examType
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateExamResultBody:
+      type: object
+      properties:
+        uploadedBy:
+          type: integer
+        examName:
+          type: string
+        examType:
+          type: string
+          enum: [laboratorial, imagem]
+        prioridade:
+          type: string
+          enum: [urgente, rotina, eletivo]
+        resultText:
+          type: string
+        fileData:
+          type: string
+        fileName:
+          type: string
+        fileMime:
+          type: string
+      required:
+        - examName
+        - examType
 
     PatientSummary:
       type: object

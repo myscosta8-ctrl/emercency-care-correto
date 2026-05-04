@@ -23,6 +23,7 @@ export type Acao =
   | "registrar_nota_social"
   | "registrar_avaliacao_nutricional"
   | "registrar_farmacia"
+  | "registrar_exames"
   | "gerenciar_usuarios";
 
 export interface Usuario {
@@ -55,6 +56,7 @@ export const ACAO_LABELS: Record<Acao, string> = {
   registrar_nota_social:         "Registrar Nota Social",
   registrar_avaliacao_nutricional: "Registrar Avaliação Nutricional",
   registrar_farmacia:            "Registrar Dispensação / Farmácia",
+  registrar_exames:              "Laboratório / Exames",
   gerenciar_usuarios:            "Gerenciar Usuários",
 };
 
@@ -64,7 +66,7 @@ export const ACOES: Acao[] = [
   "classificacao_risco", "visualizar_setores",
   "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao",
   "registrar_nota_social", "registrar_avaliacao_nutricional", "registrar_farmacia",
-  "gerenciar_usuarios",
+  "registrar_exames", "gerenciar_usuarios",
 ];
 
 export const PERFIS: Perfil[] = [
@@ -79,7 +81,7 @@ export const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
   medico:             ["*"],
   assistente_social:  ["visualizar_setores", "visualizar_relatorios", "editar_paciente", "registrar_nota_social"],
   nutricionista:      ["visualizar_setores", "visualizar_relatorios", "registrar_avaliacao_nutricional"],
-  farmaceutico:       ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao", "registrar_farmacia"],
+  farmaceutico:       ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao", "registrar_farmacia", "registrar_exames"],
   administrador:      ["*"],
 };
 

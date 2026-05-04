@@ -5,6 +5,10 @@ import { z } from "zod/v4";
 export const patientsTable = pgTable("patients", {
   id: serial("id").primaryKey(),
 
+  // ── identificadores únicos ──────────────────────────────────────────────────
+  prontuarioNumber:  text("prontuario_number").notNull().default(""),
+  atendimentoNumber: text("atendimento_number").notNull().default(""),
+
   // ── identificação ──────────────────────────────────────────────────────────
   fullName:     text("full_name").notNull(),
   birthDate:    text("birth_date").notNull().default(""),
@@ -26,11 +30,20 @@ export const patientsTable = pgTable("patients", {
   sector:       text("sector", { enum: ["sala_vermelha", "observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"] }).notNull(),
   bed:          text("bed").notNull().default(""),
 
-  // ── triagem ────────────────────────────────────────────────────────────────
+  // ── triagem / status de fluxo ──────────────────────────────────────────────
   triageLevel:      text("triage_level", { enum: ["red", "orange", "yellow", "green", "blue"] }).notNull(),
   internmentStatus: text("internment_status", { enum: ["internado", "nao_internado"] }).notNull().default("nao_internado"),
   careStatus:       text("care_status", {
-    enum: ["Em Triagem", "Aguardando Atendimento", "Em Observação", "Internado", "Em Transferência", "Alta"],
+    enum: [
+      "Em Triagem",
+      "Aguardando Atendimento",
+      "Em Atendimento (Cons. 1)",
+      "Em Atendimento (Cons. 2)",
+      "Em Observação",
+      "Internado",
+      "Em Transferência",
+      "Alta",
+    ],
   }).notNull().default("Em Triagem"),
   careStatusChangedAt: timestamp("care_status_changed_at").defaultNow().notNull(),
 

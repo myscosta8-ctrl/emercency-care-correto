@@ -12,3 +12,4 @@ export * from "./pharmacy-entries";
 export * from "./transfers";
 export * from "./password-resets";
 export * from "./beds";
+export * from "./exam-results";
