@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requirePermissao } from "../middleware/require-auth";
-import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable } from "@workspace/db";
-import { eq, sql, desc } from "drizzle-orm";
+import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable } from "@workspace/db";
+import { eq, sql, desc, and } from "drizzle-orm";
 import {
   CreatePatientBody,
   UpdatePatientBody,
@@ -21,6 +21,10 @@ import {
   AddPatientTaskBody,
   UpdateTaskStatusParams,
   UpdateTaskStatusBody,
+  AddPatientExamRequestParams,
+  AddPatientExamRequestBody,
+  UpdateExamRequestStatusParams,
+  UpdateExamRequestStatusBody,
 } from "@workspace/api-zod";
 
 const router = Router();
@@ -552,6 +556,79 @@ router.put("/:id/exam-results/:examId/notified", async (req, res) => {
     .returning();
   if (!exam) { res.status(404).json({ error: "Exame não encontrado" }); return; }
   res.json(serializeExam(exam));
+});
+
+// ── exam requests ──────────────────────────────────────────────────────────────
+
+router.get("/:id/exam-requests", async (req, res) => {
+  const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
+  const examRequests = await db.select()
+    .from(patientExamRequestsTable)
+    .where(eq(patientExamRequestsTable.patientId, id))
+    .orderBy(desc(patientExamRequestsTable.createdAt));
+  res.json(examRequests.map(e => ({
+    ...e,
+    laboratoriais: e.laboratoriais as string[],
+    imagem: e.imagem as string[],
+    createdAt: e.createdAt.toISOString(),
+  })));
+});
+
+router.post("/:id/exam-requests", requirePermissao("registrar_prescricao"), async (req, res) => {
+  const { id } = AddPatientExamRequestParams.parse({ id: Number(req.params.id) });
+  const body = AddPatientExamRequestBody.parse(req.body);
+
+  if (body.prescriptionId != null) {
+    const [prescription] = await db.select({ id: patientPrescriptionsTable.id })
+      .from(patientPrescriptionsTable)
+      .where(and(
+        eq(patientPrescriptionsTable.id, body.prescriptionId),
+        eq(patientPrescriptionsTable.patientId, id),
+      ))
+      .limit(1);
+    if (!prescription) {
+      res.status(422).json({ error: "Prescrição não pertence a este paciente" });
+      return;
+    }
+  }
+
+  const [examRequest] = await db.insert(patientExamRequestsTable).values({
+    patientId:     id,
+    prescriptionId: body.prescriptionId ?? null,
+    laboratoriais: body.laboratoriais,
+    imagem:        body.imagem,
+    prioridade:    body.prioridade as "urgente" | "rotina" | "eletivo",
+    justificativa: body.justificativa ?? "",
+    status:        "solicitado",
+  }).returning();
+  res.status(201).json({
+    ...examRequest,
+    laboratoriais: examRequest!.laboratoriais as string[],
+    imagem: examRequest!.imagem as string[],
+    createdAt: examRequest!.createdAt.toISOString(),
+  });
+});
+
+router.patch("/:id/exam-requests/:examRequestId/status", requirePermissao("registrar_prescricao"), async (req, res) => {
+  const { id, examRequestId } = UpdateExamRequestStatusParams.parse({
+    id: Number(req.params.id),
+    examRequestId: Number(req.params.examRequestId),
+  });
+  const body = UpdateExamRequestStatusBody.parse(req.body);
+  const [examRequest] = await db.update(patientExamRequestsTable)
+    .set({ status: body.status as "solicitado" | "coletado" | "laudado" })
+    .where(and(
+      eq(patientExamRequestsTable.id, examRequestId),
+      eq(patientExamRequestsTable.patientId, id),
+    ))
+    .returning();
+  if (!examRequest) { res.status(404).json({ error: "Solicitação de exame não encontrada" }); return; }
+  res.json({
+    ...examRequest,
+    laboratoriais: examRequest.laboratoriais as string[],
+    imagem: examRequest.imagem as string[],
+    createdAt: examRequest.createdAt.toISOString(),
+  });
 });
 
 // ── delete ────────────────────────────────────────────────────────────────────

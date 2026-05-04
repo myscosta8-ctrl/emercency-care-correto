@@ -13,3 +13,4 @@ export * from "./transfers";
 export * from "./password-resets";
 export * from "./beds";
 export * from "./exam-results";
+export * from "./exam-requests";

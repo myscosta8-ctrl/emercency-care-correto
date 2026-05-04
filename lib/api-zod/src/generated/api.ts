@@ -878,6 +878,67 @@ export const UpdatePatientTransferResponse = zod.object({
 });
 
 /**
+ * @summary Get exam requests for a patient
+ */
+export const GetPatientExamRequestsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientExamRequestsResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  prescriptionId: zod.number().nullish(),
+  laboratoriais: zod.array(zod.string()),
+  imagem: zod.array(zod.string()),
+  prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
+  justificativa: zod.string(),
+  status: zod.enum(["solicitado", "coletado", "laudado"]),
+  createdAt: zod.coerce.date(),
+});
+export const GetPatientExamRequestsResponse = zod.array(
+  GetPatientExamRequestsResponseItem,
+);
+
+/**
+ * @summary Add an exam request for a patient
+ */
+export const AddPatientExamRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddPatientExamRequestBody = zod.object({
+  prescriptionId: zod.number().optional(),
+  laboratoriais: zod.array(zod.string()),
+  imagem: zod.array(zod.string()),
+  prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
+  justificativa: zod.string().optional(),
+});
+
+/**
+ * @summary Update exam request status
+ */
+export const UpdateExamRequestStatusParams = zod.object({
+  id: zod.coerce.number(),
+  examRequestId: zod.coerce.number(),
+});
+
+export const UpdateExamRequestStatusBody = zod.object({
+  status: zod.enum(["solicitado", "coletado", "laudado"]),
+});
+
+export const UpdateExamRequestStatusResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  prescriptionId: zod.number().nullish(),
+  laboratoriais: zod.array(zod.string()),
+  imagem: zod.array(zod.string()),
+  prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
+  justificativa: zod.string(),
+  status: zod.enum(["solicitado", "coletado", "laudado"]),
+  createdAt: zod.coerce.date(),
+});
+
+/**
  * @summary Create a SINAN notification (auto-fills from patient)
  */
 export const CreateSinanNotificationBody = zod.object({

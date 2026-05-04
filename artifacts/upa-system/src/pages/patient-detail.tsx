@@ -37,6 +37,9 @@ import {
   getGetPatientPharmacyEntriesQueryKey,
   useGetPatientTransfers,
   getGetPatientTransfersQueryKey,
+  useGetPatientExamRequests,
+  useUpdateExamRequestStatus,
+  getGetPatientExamRequestsQueryKey,
 } from "@workspace/api-client-react";
 import type { PatientNotification } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -47,7 +50,7 @@ import {
   UserCheck, ClipboardList, Stethoscope, Thermometer,
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
   Bell, Trash, Download, FileDown, Calendar, Building2,
-  MessageSquare, UtensilsCrossed, Pill, Truck, Plus, Send,
+  MessageSquare, UtensilsCrossed, Pill, Truck, Plus, Send, FlaskConical,
 } from "lucide-react";
 import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 
@@ -183,6 +186,9 @@ export default function PatientDetail() {
   const { data: transfers, isLoading: isLoadingTransfers } = useGetPatientTransfers(id, {
     query: { enabled: !!id, queryKey: getGetPatientTransfersQueryKey(id) },
   });
+  const { data: examRequests, isLoading: isLoadingExamRequests } = useGetPatientExamRequests(id, {
+    query: { enabled: !!id, queryKey: getGetPatientExamRequestsQueryKey(id) },
+  });
 
   const latestVitals = vitals?.[0];
 
@@ -218,6 +224,7 @@ export default function PatientDetail() {
   const deleteNotification = useDeletePatientNotification();
   const updateNotification = useUpdatePatientNotification();
   const updateTaskStatus = useUpdateTaskStatus();
+  const updateExamStatus = useUpdateExamRequestStatus();
   const addSocialNote = useAddPatientSocialNote();
   const addNutritionalAssessment = useAddPatientNutritionalAssessment();
   const addPharmacyEntry = useAddPatientPharmacyEntry();
@@ -528,6 +535,16 @@ export default function PatientDetail() {
             {pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Social</TabsTrigger>}
             {pode("registrar_avaliacao_nutricional") && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
             {pode("registrar_farmacia") && <TabsTrigger value="farmacia" className="text-xs">Farmácia</TabsTrigger>}
+            {pode("registrar_prescricao") && (
+              <TabsTrigger value="exames" className="text-xs flex items-center gap-1">
+                Exames
+                {examRequests && examRequests.filter(e => e.status !== "laudado").length > 0 && (
+                  <span className="text-[10px] font-bold px-1 rounded-full bg-orange-500/20 text-orange-400 min-w-[16px] text-center">
+                    {examRequests.filter(e => e.status !== "laudado").length}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* ── TAB: IDENTIFICAÇÃO ─────────────────────────────────────── */}
@@ -1327,6 +1344,99 @@ export default function PatientDetail() {
                   })}
                 </div>
               )}
+            </TabsContent>
+          )}
+          {/* ── TAB: EXAMES ───────────────────────────────────────────── */}
+          {pode("registrar_prescricao") && (
+            <TabsContent value="exames">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4 text-orange-400" /> Pendências de Exame
+                    {examRequests && examRequests.filter(e => e.status !== "laudado").length > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                        {examRequests.filter(e => e.status !== "laudado").length}
+                      </span>
+                    )}
+                  </h3>
+                </div>
+                {isLoadingExamRequests ? (
+                  <Skeleton className="h-24 w-full" />
+                ) : !examRequests || examRequests.length === 0 ? (
+                  <div className="text-center py-8 bg-card rounded-lg border border-border/50">
+                    <FlaskConical className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Nenhuma solicitação de exame registrada.</p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">Os exames são criados ao salvar uma prescrição médica com exames selecionados.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {examRequests.map(exam => {
+                      const prioConfig = ({
+                        urgente: { label: "Urgente", color: "bg-red-500/20 text-red-400 border-red-500/30" },
+                        rotina:  { label: "Rotina",  color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+                        eletivo: { label: "Eletivo", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
+                      } as const)[exam.prioridade as "urgente" | "rotina" | "eletivo"] ?? { label: exam.prioridade, color: "bg-muted/20 text-muted-foreground border-border/30" };
+                      const statusConfig = ({
+                        solicitado: { label: "Solicitado", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                        coletado:   { label: "Coletado",   color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+                        laudado:    { label: "Laudado",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
+                      } as const)[exam.status as "solicitado" | "coletado" | "laudado"] ?? { label: exam.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
+                      const allExams = [
+                        ...(exam.laboratoriais as string[]).map(e => ({ nome: e, tipo: "Lab" })),
+                        ...(exam.imagem as string[]).map(e => ({ nome: e, tipo: "Img" })),
+                      ];
+                      return (
+                        <div key={exam.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", prioConfig.color)}>{prioConfig.label}</span>
+                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", statusConfig.color)}>{statusConfig.label}</span>
+                              <span className="text-[10px] text-muted-foreground">{allExams.length} exame{allExams.length !== 1 ? "s" : ""}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">{format(new Date(exam.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                          </div>
+                          <div className="px-4 py-3 space-y-3">
+                            <div className="flex flex-wrap gap-1.5">
+                              {allExams.map((e, idx) => (
+                                <span key={idx} className={cn(
+                                  "text-[10px] px-2 py-0.5 rounded border",
+                                  e.tipo === "Lab"
+                                    ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
+                                    : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300",
+                                  exam.status === "laudado" && "opacity-50 line-through"
+                                )}>
+                                  <span className="font-bold mr-1">[{e.tipo}]</span>{e.nome}
+                                </span>
+                              ))}
+                            </div>
+                            {exam.justificativa && (
+                              <p className="text-xs text-muted-foreground italic">Justificativa: {exam.justificativa}</p>
+                            )}
+                            {exam.status !== "laudado" && (
+                              <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/40">
+                                {exam.status === "solicitado" && (
+                                  <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                    onClick={() => updateExamStatus.mutate(
+                                      { id, examRequestId: exam.id, data: { status: "coletado" } },
+                                      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) }),
+                                        onError: () => toast({ title: "Erro ao atualizar exame", variant: "destructive" }) }
+                                    )}>Marcar Coletado</Button>
+                                )}
+                                <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                                  onClick={() => updateExamStatus.mutate(
+                                    { id, examRequestId: exam.id, data: { status: "laudado" } },
+                                    { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) }),
+                                      onError: () => toast({ title: "Erro ao atualizar exame", variant: "destructive" }) }
+                                  )}>Marcar Laudado</Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </TabsContent>
           )}
         </Tabs>

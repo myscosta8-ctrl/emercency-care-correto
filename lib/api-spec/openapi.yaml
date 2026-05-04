@@ -734,6 +734,79 @@ paths:
               schema:
                 $ref: "#/components/schemas/Transfer"
 
+  /api/patients/{id}/exam-requests:
+    get:
+      operationId: getPatientExamRequests
+      summary: Get exam requests for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Exam requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExamRequest"
+    post:
+      operationId: addPatientExamRequest
+      summary: Add an exam request for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddExamRequestBody"
+      responses:
+        "201":
+          description: Created exam request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamRequest"
+
+  /api/patients/{id}/exam-requests/{examRequestId}/status:
+    patch:
+      operationId: updateExamRequestStatus
+      summary: Update exam request status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: examRequestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExamRequestStatusBody"
+      responses:
+        "200":
+          description: Updated exam request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamRequest"
+        "404":
+          description: Not found
+
   /api/notifications:
     post:
       operationId: createSinanNotification
@@ -2181,3 +2254,74 @@ components:
       required:
         - usuario
         - acao
+
+    ExamRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        prescriptionId:
+          type: integer
+          nullable: true
+        laboratoriais:
+          type: array
+          items:
+            type: string
+        imagem:
+          type: array
+          items:
+            type: string
+        prioridade:
+          type: string
+          enum: [urgente, rotina, eletivo]
+        justificativa:
+          type: string
+        status:
+          type: string
+          enum: [solicitado, coletado, laudado]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - laboratoriais
+        - imagem
+        - prioridade
+        - justificativa
+        - status
+        - createdAt
+
+    AddExamRequestBody:
+      type: object
+      properties:
+        prescriptionId:
+          type: integer
+        laboratoriais:
+          type: array
+          items:
+            type: string
+        imagem:
+          type: array
+          items:
+            type: string
+        prioridade:
+          type: string
+          enum: [urgente, rotina, eletivo]
+        justificativa:
+          type: string
+      required:
+        - laboratoriais
+        - imagem
+        - prioridade
+
+    UpdateExamRequestStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [solicitado, coletado, laudado]
+      required:
+        - status

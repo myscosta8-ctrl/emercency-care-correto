@@ -5,8 +5,10 @@ import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useAddPatientPrescription,
+  useAddPatientExamRequest,
   useListStaff,
   getGetPatientPrescriptionsQueryKey,
+  getGetPatientExamRequestsQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
 import { format } from "date-fns";
@@ -57,6 +59,7 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createPrescription = useAddPatientPrescription();
+  const createExamRequest = useAddPatientExamRequest();
   const { data: staffList } = useListStaff();
   const activeStaff = (staffList ?? []).filter(s => s.active);
 
@@ -84,14 +87,35 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
     );
   }
 
-  function saveMedical(text: string, _data: PrescricaoMedicaData) {
+  function saveMedical(text: string, data: PrescricaoMedicaData) {
     const doctorUser = activeStaff.find(s => s.role === "medico") ?? activeStaff[0];
     const userId = doctorUser?.id ?? 0;
     createPrescription.mutate(
       { id: patient.id, data: { userId, type: "medical", content: text } },
       {
-        onSuccess: () => {
+        onSuccess: (prescription) => {
           queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(patient.id) });
+          const totalExames = data.exames.laboratoriais.length + data.exames.imagem.length;
+          if (totalExames > 0) {
+            createExamRequest.mutate(
+              {
+                id: patient.id,
+                data: {
+                  prescriptionId: prescription.id,
+                  laboratoriais: data.exames.laboratoriais,
+                  imagem: data.exames.imagem,
+                  prioridade: data.exames.prioridade,
+                  justificativa: data.exames.justificativa,
+                },
+              },
+              {
+                onSuccess: () => {
+                  queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(patient.id) });
+                },
+                onError: () => toast({ title: "Prescrição salva, mas falha ao registrar exames estruturados", variant: "destructive" }),
+              }
+            );
+          }
           toast({ title: "Prescrição médica registrada" });
           onSuccess();
         },

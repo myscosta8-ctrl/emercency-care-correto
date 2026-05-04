@@ -771,6 +771,67 @@ export interface CreateAuditLogBody {
   detalhes?: string;
 }
 
+export type ExamRequestPrioridade =
+  (typeof ExamRequestPrioridade)[keyof typeof ExamRequestPrioridade];
+
+export const ExamRequestPrioridade = {
+  urgente: "urgente",
+  rotina: "rotina",
+  eletivo: "eletivo",
+} as const;
+
+export type ExamRequestStatus =
+  (typeof ExamRequestStatus)[keyof typeof ExamRequestStatus];
+
+export const ExamRequestStatus = {
+  solicitado: "solicitado",
+  coletado: "coletado",
+  laudado: "laudado",
+} as const;
+
+export interface ExamRequest {
+  id: number;
+  patientId: number;
+  /** @nullable */
+  prescriptionId?: number | null;
+  laboratoriais: string[];
+  imagem: string[];
+  prioridade: ExamRequestPrioridade;
+  justificativa: string;
+  status: ExamRequestStatus;
+  createdAt: string;
+}
+
+export type AddExamRequestBodyPrioridade =
+  (typeof AddExamRequestBodyPrioridade)[keyof typeof AddExamRequestBodyPrioridade];
+
+export const AddExamRequestBodyPrioridade = {
+  urgente: "urgente",
+  rotina: "rotina",
+  eletivo: "eletivo",
+} as const;
+
+export interface AddExamRequestBody {
+  prescriptionId?: number;
+  laboratoriais: string[];
+  imagem: string[];
+  prioridade: AddExamRequestBodyPrioridade;
+  justificativa?: string;
+}
+
+export type UpdateExamRequestStatusBodyStatus =
+  (typeof UpdateExamRequestStatusBodyStatus)[keyof typeof UpdateExamRequestStatusBodyStatus];
+
+export const UpdateExamRequestStatusBodyStatus = {
+  solicitado: "solicitado",
+  coletado: "coletado",
+  laudado: "laudado",
+} as const;
+
+export interface UpdateExamRequestStatusBody {
+  status: UpdateExamRequestStatusBodyStatus;
+}
+
 export type HealthCheck200 = {
   status: string;
 };

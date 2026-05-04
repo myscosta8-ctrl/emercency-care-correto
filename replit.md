@@ -1,69 +1,81 @@
-# Workspace
+# Overview
 
-## Overview
+This project is an Emergency UPA (Unidade de Pronto Atendimento) patient management system. Its primary purpose is to streamline the administration and care processes within an emergency medical unit.
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+**Key Capabilities:**
 
-## Stack
+*   **Patient Management:** Comprehensive patient registration, tracking, and status management, including a detailed care status workflow and critical alert system.
+*   **Administrative Tools:** Features for managing staff, permissions, and feature flags, alongside an extensive audit logging system.
+*   **Bed Management:** System for allocating and monitoring beds, including isolation protocols.
+*   **Medical Documentation:** Tools for recording patient evolutions (SOAP notes), vital signs, prescriptions, and mandatory notifications (e.g., for infectious diseases).
+*   **Access Control:** Robust server-side authentication and role-based access control to ensure data security and appropriate user permissions.
+*   **User Experience:** A dark, modern UI with a focus on usability, incorporating Manchester triage colors and supporting Brazilian Portuguese (pt-BR).
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+The system aims to improve patient flow, enhance data accuracy, and provide critical information rapidly to medical staff, ultimately leading to better patient outcomes and more efficient emergency department operations.
 
-## Key Commands
+# User Preferences
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `cd lib/api-spec && npx orval --config ./orval.config.ts` — regenerate API hooks and Zod schemas
-- `pnpm --filter @workspace/db run push-force` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+*   After every `orval` codegen run, reset `lib/api-zod/src/index.ts` to only: `export * from "./generated/api";`
+*   After codegen, run `pnpm run typecheck:libs` to rebuild composite lib `.d.ts` files
+*   All deep imports from `@workspace/api-client-react/src/generated/api.schemas` must use `@workspace/api-client-react` (package root) for TypeScript to resolve correctly
 
-## Critical Notes
+# System Architecture
 
-- After every `orval` codegen run, reset `lib/api-zod/src/index.ts` to only: `export * from "./generated/api";`
-- After codegen, run `pnpm run typecheck:libs` to rebuild composite lib `.d.ts` files
-- All deep imports from `@workspace/api-client-react/src/generated/api.schemas` must use `@workspace/api-client-react` (package root) for TypeScript to resolve correctly
+The project is structured as a pnpm workspace monorepo using TypeScript, with each package managing its own dependencies.
 
-## Project: UPA Breves — Gestão de Pacientes
+**Core Technologies:**
 
-Emergency UPA patient management system. Dark modern UI with Manchester triage colors, pt-BR.
+*   **Node.js:** Version 24
+*   **Package Manager:** pnpm
+*   **TypeScript:** Version 5.9
+*   **API Framework:** Express 5
+*   **Database:** PostgreSQL with Drizzle ORM
+*   **Validation:** Zod (`zod/v4`) and `drizzle-zod`
+*   **API Codegen:** Orval (from OpenAPI spec)
+*   **Build Tool:** esbuild (CJS bundle)
+*   **Frontend:** React with Vite
 
-### Artifacts
-- `artifacts/upa-system` — React+Vite frontend, preview path `/`
-- `artifacts/api-server` — Express API server, paths `/api`
+**Architectural Decisions & Design Patterns:**
 
-### Admin Section (`/admin`) — Direção only
-- **Dashboard**: stats cards (pacientes, triagem por cor, funcionários por perfil, feature flags)
-- **Usuários**: CRUD completo de funcionários (criar/editar/excluir/ativar/desativar)
-- **Permissões**: matriz ações × perfis (somente leitura)
-- **Funcionalidades**: feature flags com Switch — cada toggle grava entrada no audit log
-- **Auditoria** (`/admin/auditoria`): log persistido em PostgreSQL, busca por usuário/ação/detalhes, badges coloridos por tipo de ação, botão atualizar
+*   **Monorepo Structure:** Facilitates code sharing and consistent development across frontend and backend applications.
+*   **Clean Architecture (implied):** Separation of concerns between API server, UI, and shared libraries.
+*   **API-First Approach:** OpenAPI specification drives API client generation for robust frontend-backend communication.
+*   **Server-Side Access Control:** Critical `requireAuth`, `requirePermissao`, and `auditWrite` middlewares enforce security, permissions, and logging at the API level.
+*   **Role-Based UI:** Frontend elements are dynamically rendered or disabled based on user roles and permissions, ensuring a tailored experience.
+*   **Feature Flag System:** Allows dynamic control over application features, integrated with user permissions.
+*   **Password Management:** Secure password handling with bcrypt hashing, first-access forced password change, and a robust password reset mechanism.
+*   **Critical Alert System:** Real-time patient critical status monitoring with visual and auditory alerts for relevant roles.
+*   **Data Model:** Comprehensive patient demographics, clinical data, and administrative metadata, designed for a UPA environment.
 
-### Backend DB Structure — novos campos e tabelas
+**UI/UX Decisions:**
 
-#### `patients` — campos adicionados
-- `address TEXT` — endereço consolidado em texto único (para compatibilidade com sistemas externos como SINAN)
+*   **Dark Modern UI:** Provides a sleek and professional aesthetic.
+*   **Manchester Triage Colors:** Integrated into the UI for intuitive visual identification of patient urgency.
+*   **Localization:** Full support for Brazilian Portuguese (pt-BR).
+*   **Responsive Design:** Implied by the use of React and modern frontend practices, ensuring usability across devices.
+*   **Print-Friendly Outputs:** Specific CSS for printing reports (e.g., evolution notes, shift handovers).
+*   **Intuitive Workflow:** Patient status workflow, bed management, and alert systems are designed to mirror real-world UPA operations.
 
-#### `patient_notifications` — campos adicionados
-- `disease TEXT` — doença notificada (ex: "Dengue Clássico")
-- `classification TEXT` — classificação do caso (ex: "Confirmado Laboratorial")
-- `health_unit TEXT DEFAULT 'UPA Breves'` — unidade de saúde notificadora
-- `pdf_url TEXT` — URL do PDF SINAN gerado
+**Key Features & Implementations:**
 
-#### Novas rotas standalone de notificação
-- `POST /api/notifications` — cria notificação; busca paciente por `patient_id` e auto-preenche `disease`, `classification`, `health_unit`, `professional` a partir dos dados do paciente
-- `GET /api/notifications/:id` — retorna notificação com dados do paciente mesclados (`patient.full_name`, `patient.cpf`, `patient.address`, etc.)
+*   **Admin Section:** Dashboard with stats, full CRUD for staff, permission matrix (read-only), feature flags with audit logging, and a dedicated audit log viewer.
+*   **Patient Data Enrichment:** Addition of `address` to `patients` for external system compatibility (e.g., SINAN).
+*   **Mandatory Notifications:** Dedicated `patient_notifications` table and API for managing notifications, including auto-population of patient data.
+*   **CPF Validation:** Server-side validation (Módulo 11) for Brazilian CPF numbers.
+*   **Care Status Workflow:** `care_status` and `care_status_changed_at` fields in `patients` table, with defined states and rules for transitions, including time-based alerts on the frontend.
+*   **Bed Management:** `beds` table with detailed attributes, automatic seeding of standard beds, and API endpoints for management. Frontend displays a grid view with color-coded status and isolation indicators.
+*   **Password Reset Flow:** Dedicated `password_resets` table, API endpoints for requesting and performing resets, and public-facing UI pages.
+*   **First-Access Password Change:** Ensures new users set a strong password immediately after their first login.
+*   **Critical Alert System:** Backend API (`/api/alerts/critical`) to identify critical patients based on triage level or vital signs. Frontend displays alerts, highlights patients, and provides an dismissible popup.
+*   **Role-based UI Elements:** Dynamic visibility of navigation links, buttons, and sections based on user permissions (e.g., "Funcionários" link, "Admin" link, "Nova Admissão" button).
+*   **Audit Fields:** `createdBy` and `updatedBy` fields for tracking changes on `patients` and `evolutions` tables.
+*   **Patient Detail Screen:** Comprehensive view with SOAP evolution history, vital signs, prescriptions, tasks, and compulsory notifications. Includes a print function for patient evolution.
+*   **Shift Handover:** Dedicated interface for managing and printing shift summaries.
+*   **Staff Management:** CRUD operations for staff, including login, password hash, digital signature, and stamp generation.
+*   **Patient Form Sections:** Standardized admission and edit forms structured into logical sections (Patient Data, Documents, Contact, Address, Clinical Data, Initial Vital Signs).
+*   **Sector Order:** Predefined order for displaying patient sectors.
 
-#### Validação de CPF
-- Algoritmo completo de validação (módulo 11) em `patients.ts` e `sinan-notifications.ts`
-- `POST /api/patients` e `PUT /api/patients/:id` retornam `422` com mensagem clara se o CPF for inválido
-- CPF em branco / não preenchido é aceito normalmente
+# External Dependencies
 
 ### Access Control (Server-side)
 
@@ -159,7 +171,7 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - `consultorio = "ambos"` ou `""` → ambos visíveis.
 
 #### Cadastro de funcionários (`/funcionarios`)
-- Formulário inclui: **Turno do plantão** (select), **Consultório** (select, só para médicos), **Setores de atuação** (checkboxes multi-select).
+- Formulário includes: **Turno do plantão** (select), **Consultório** (select, só para médicos), **Setores de atuação** (checkboxes multi-select).
 - Card de funcionário exibe turno, consultório e setores de atuação configurados.
 
 #### Feature flag `setor_pre_adulto`
@@ -169,6 +181,11 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
   - Removido dos setores disponíveis no desfecho da fila médica.
   - Removido dos checkboxes de setores de atuação no cadastro de funcionários.
 - Descrição no painel: "Desative para remover completamente este setor do sistema — dashboard, fila médica, formulários e cadastro de funcionários."
+
+### Tabela `patient_exam_requests`
+- Colunas: `id`, `patient_id` (FK patients), `prescription_id` (FK patient_prescriptions, nullable), `laboratoriais` (jsonb), `imagem` (jsonb), `prioridade` (urgente/rotina/eletivo), `justificativa`, `status` (solicitado/coletado/laudado), `created_at`.
+- Rotas: `GET /api/patients/:id/exam-requests`, `POST /api/patients/:id/exam-requests`, `PATCH /api/patients/:id/exam-requests/:examRequestId/status`.
+- Preenchida automaticamente ao salvar prescrição médica com exames (prescription-form.tsx).
 
 ### Gestão de Leitos (`/leitos`)
 - **Tabela**: `beds` — `id`, `bed_id` (único), `sector`, `bed_number`, `is_isolation` (fixo), `is_extra` (boolean), `extra_reason`, `is_occupied`, `patient_id` (FK → patients), `admission_time` (timestamp), `isolation_active`, `isolation_type` (contact/droplet/airborne), `isolation_reason`, `created_at`, `updated_at`.
