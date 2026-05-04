@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { requirePermissao } from "../middleware/require-auth";
-import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable } from "@workspace/db";
+import { db, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable } from "@workspace/db";
 import { eq, sql, desc, and } from "drizzle-orm";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   CreatePatientBody,
   UpdatePatientBody,
@@ -629,6 +630,243 @@ router.patch("/:id/exam-requests/:examRequestId/status", requirePermissao("regis
     imagem: examRequest.imagem as string[],
     createdAt: examRequest.createdAt.toISOString(),
   });
+});
+
+// ── prescription PDF ──────────────────────────────────────────────────────────
+
+function wrapTextPdf(
+  text: string,
+  font: { widthOfTextAtSize: (s: string, n: number) => number },
+  fontSize: number,
+  maxWidth: number,
+): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
+      current = candidate;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.length ? lines : [""];
+}
+
+async function buildPrescricaoPdf(
+  patientName: string,
+  birthDate: string | null,
+  age: number | null,
+  sex: string | null,
+  cpf: string | null,
+  content: string,
+  createdAt: Date,
+  authorName: string | null,
+): Promise<Uint8Array> {
+  const doc  = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  const PAGE_W = 595;
+  const PAGE_H = 842;
+  const ML     = 40;
+  const CW     = PAGE_W - ML - 40;
+
+  const NAVY   = rgb(0.06, 0.09, 0.18);
+  const ACCENT = rgb(0.15, 0.35, 0.78);
+  const WHITE  = rgb(1, 1, 1);
+  const LTBLUE = rgb(0.72, 0.78, 0.96);
+  const DARK   = rgb(0.06, 0.07, 0.12);
+  const MUTED  = rgb(0.42, 0.44, 0.54);
+  const BORDER = rgb(0.80, 0.82, 0.88);
+  const SECBG  = rgb(0.93, 0.95, 0.97);
+
+  let page = doc.addPage([PAGE_W, PAGE_H]);
+  let y    = PAGE_H - 40;
+
+  function drawContinuationHeader() {
+    page.drawRectangle({ x: ML, y: y - 24, width: CW, height: 24, color: NAVY });
+    page.drawText("UPA 24H — BREVES  |  PRESCRIÇÃO MÉDICA (continuação)", {
+      x: ML + 8, y: y - 16, font: bold, size: 8, color: WHITE,
+    });
+    y -= 32;
+  }
+
+  function ensureSpace(needed: number) {
+    if (y - needed < 60) {
+      page = doc.addPage([PAGE_W, PAGE_H]);
+      y = PAGE_H - 40;
+      drawContinuationHeader();
+    }
+  }
+
+  // ── header ──────────────────────────────────────────────────────────────────
+  const HDR_H = 54;
+  page.drawRectangle({ x: ML, y: y - HDR_H, width: CW, height: HDR_H, color: NAVY });
+  page.drawRectangle({ x: ML, y: y - HDR_H, width: 5, height: HDR_H, color: ACCENT });
+  page.drawText("UPA 24H — BREVES", { x: ML + 14, y: y - 20, font: bold, size: 14, color: WHITE });
+  page.drawText("PRESCRIÇÃO MÉDICA", { x: ML + 14, y: y - 36, font: bold, size: 9.5, color: LTBLUE });
+
+  const emitida = `Emitida em: ${createdAt.toLocaleDateString("pt-BR")} ${createdAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+  page.drawText(emitida, {
+    x: ML + CW - font.widthOfTextAtSize(emitida, 6.5) - 6, y: y - HDR_H + 6,
+    font, size: 6.5, color: LTBLUE,
+  });
+  y -= HDR_H + 10;
+
+  // ── patient info ────────────────────────────────────────────────────────────
+  const INFO_H = 36;
+  page.drawRectangle({ x: ML, y: y - INFO_H, width: CW, height: INFO_H, color: SECBG, borderColor: BORDER, borderWidth: 0.5 });
+
+  const fmtDate = (d: string | null) => {
+    if (!d) return "";
+    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
+  };
+  const ageStr = [fmtDate(birthDate), age ? `${age} anos` : ""].filter(Boolean).join(" — ");
+
+  page.drawText("PACIENTE", { x: ML + 8, y: y - 10, font: bold, size: 6.5, color: MUTED });
+  page.drawText(patientName, { x: ML + 8, y: y - 23, font: bold, size: 10.5, color: DARK });
+  if (ageStr) {
+    const colX = ML + CW / 2;
+    page.drawText("DATA NASC. / IDADE", { x: colX, y: y - 10, font: bold, size: 6.5, color: MUTED });
+    page.drawText(ageStr, { x: colX, y: y - 23, font, size: 9, color: DARK });
+  }
+  y -= INFO_H + 4;
+
+  if (cpf || sex) {
+    page.drawRectangle({ x: ML, y: y - 22, width: CW, height: 22, color: rgb(0.97, 0.97, 1), borderColor: BORDER, borderWidth: 0.5 });
+    let xc = ML + 8;
+    if (cpf) {
+      page.drawText("CPF:", { x: xc, y: y - 8, font: bold, size: 6.5, color: MUTED });
+      page.drawText(cpf, { x: xc, y: y - 18, font, size: 8.5, color: DARK });
+      xc += 120;
+    }
+    if (sex) {
+      const sexStr = sex === "M" ? "Masculino" : sex === "F" ? "Feminino" : "Não inf.";
+      page.drawText("SEXO:", { x: xc, y: y - 8, font: bold, size: 6.5, color: MUTED });
+      page.drawText(sexStr, { x: xc, y: y - 18, font, size: 8.5, color: DARK });
+    }
+    y -= 22 + 4;
+  }
+
+  // ── separator ───────────────────────────────────────────────────────────────
+  page.drawLine({ start: { x: ML, y: y - 2 }, end: { x: ML + CW, y: y - 2 }, thickness: 1, color: ACCENT });
+  y -= 14;
+
+  // ── content ─────────────────────────────────────────────────────────────────
+  const SECTION_KEYS = ["MEDICAMENTOS:", "CURATIVOS:", "MONITORIZAÇÃO:", "DIETA:", "EXAMES SOLICITADOS", "OUTROS:"];
+
+  for (const rawLine of content.split("\n")) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) { y -= 6; continue; }
+
+    const isSection = SECTION_KEYS.some(k => trimmed.toUpperCase().startsWith(k.toUpperCase()));
+    const isDocHeader = trimmed.startsWith("PRESCRIÇÃO MÉDICA —") || trimmed.startsWith("Paciente:");
+
+    if (isSection) {
+      ensureSpace(24);
+      page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: SECBG });
+      page.drawText(trimmed, { x: ML + 8, y: y - 13, font: bold, size: 9, color: ACCENT });
+      y -= 20;
+    } else if (isDocHeader) {
+      ensureSpace(14);
+      page.drawText(trimmed, { x: ML + 8, y: y - 2, font: bold, size: 7.5, color: MUTED });
+      y -= 13;
+    } else {
+      const wrapped = wrapTextPdf(trimmed, font, 9, CW - 16);
+      for (const wl of wrapped) {
+        ensureSpace(13);
+        page.drawText(wl, { x: ML + 8, y: y - 2, font, size: 9, color: DARK });
+        y -= 13;
+      }
+    }
+  }
+
+  // ── author + date ────────────────────────────────────────────────────────────
+  y -= 10;
+  ensureSpace(20);
+  const rxDateStr = `${createdAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })} às ${createdAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+  page.drawText(`Prescrição registrada em: ${rxDateStr}`, { x: ML + 8, y: y - 2, font, size: 8, color: MUTED });
+  if (authorName) {
+    y -= 13;
+    ensureSpace(14);
+    page.drawText(`Prescritor(a): ${authorName}`, { x: ML + 8, y: y - 2, font, size: 8, color: MUTED });
+  }
+
+  // ── signature ────────────────────────────────────────────────────────────────
+  ensureSpace(80);
+  y -= 40;
+  const SIG_W = 180;
+  const SIG_X = ML + (CW - SIG_W) / 2;
+  page.drawLine({ start: { x: SIG_X, y }, end: { x: SIG_X + SIG_W, y }, thickness: 1, color: DARK });
+  const sigLabel = authorName ?? "Assinatura / Carimbo do Médico";
+  const sigLabelW = font.widthOfTextAtSize(sigLabel, 7.5);
+  page.drawText(sigLabel, { x: SIG_X + (SIG_W - sigLabelW) / 2, y: y - 12, font, size: 7.5, color: MUTED });
+  if (authorName) {
+    const crmLabel = "CRM: ________________";
+    const crmW = font.widthOfTextAtSize(crmLabel, 7.5);
+    page.drawText(crmLabel, { x: SIG_X + (SIG_W - crmW) / 2, y: y - 24, font, size: 7.5, color: MUTED });
+  }
+
+  // ── footer ───────────────────────────────────────────────────────────────────
+  const lastPage = doc.getPage(doc.getPageCount() - 1);
+  lastPage.drawLine({ start: { x: ML, y: 38 }, end: { x: ML + CW, y: 38 }, thickness: 0.4, color: BORDER });
+  lastPage.drawText(
+    "UPA Breves — Gestão de Pacientes  |  Documento gerado automaticamente pelo sistema",
+    { x: ML, y: 26, font, size: 6.5, color: MUTED },
+  );
+
+  return doc.save();
+}
+
+router.get("/:id/prescriptions/:prescriptionId/pdf", requirePermissao("gerar_pdf"), async (req, res) => {
+  const patientId      = Number(req.params.id);
+  const prescriptionId = Number(req.params.prescriptionId);
+
+  const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId));
+  if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
+
+  const [prescription] = await db.select()
+    .from(patientPrescriptionsTable)
+    .where(and(
+      eq(patientPrescriptionsTable.id, prescriptionId),
+      eq(patientPrescriptionsTable.patientId, patientId),
+    ));
+  if (!prescription) { res.status(404).json({ error: "Prescrição não encontrada" }); return; }
+  if (prescription.type !== "medical") { res.status(400).json({ error: "Apenas prescrições médicas podem ser impressas" }); return; }
+
+  // look up the prescriber name if available
+  let authorName: string | null = null;
+  if (prescription.userId) {
+    const [staff] = await db.select({ name: staffTable.name })
+      .from(staffTable)
+      .where(eq(staffTable.id, prescription.userId))
+      .limit(1);
+    authorName = staff?.name ?? null;
+  }
+
+  const pdfBytes = await buildPrescricaoPdf(
+    patient.fullName,
+    patient.birthDate ?? null,
+    patient.age ?? null,
+    patient.sex ?? null,
+    patient.cpf ?? null,
+    prescription.content,
+    prescription.createdAt,
+    authorName,
+  );
+
+  const safeName = patient.fullName.replace(/\s+/g, "_");
+  const dateSlug = prescription.createdAt.toISOString().slice(0, 10);
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="Prescricao_Medica_${safeName}_${dateSlug}.pdf"`);
+  res.setHeader("Content-Length", pdfBytes.length);
+  res.send(Buffer.from(pdfBytes));
 });
 
 // ── delete ────────────────────────────────────────────────────────────────────

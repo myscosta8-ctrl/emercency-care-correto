@@ -279,6 +279,7 @@ export default function PatientDetail() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [generatingPdfId, setGeneratingPdfId] = useState<number | null>(null);
+  const [printingRxId, setPrintingRxId] = useState<number | null>(null);
 
   const handleDelete = () => {
     deletePatient.mutate({ id }, {
@@ -939,20 +940,60 @@ export default function PatientDetail() {
                             <pre className={cn("text-sm whitespace-pre-wrap font-sans mb-3", rx.status === "concluido" && "line-through text-muted-foreground")}>{rx.content}</pre>
                             <div className="flex items-center justify-between pt-2 border-t border-border/40">
                               <span className="text-xs text-muted-foreground">— {staffName}</span>
-                              {rx.status !== "concluido" && (
-                                <div className="flex gap-1.5">
-                                  {rx.status === "pendente" && (
-                                    <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                                      onClick={() => updatePrescriptionStatus.mutate({ id, prescriptionId: rx.id, data: { status: "em_andamento" } },
+                              <div className="flex gap-1.5">
+                                {rx.type === "medical" && (
+                                  <Button
+                                    size="sm" variant="outline"
+                                    className="h-6 text-[10px] px-2 gap-1 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                                    disabled={printingRxId === rx.id}
+                                    onClick={async () => {
+                                      setPrintingRxId(rx.id);
+                                      try {
+                                        const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                                        const staffId = activeUser?.id ?? 0;
+                                        const resp = await fetch(
+                                          `${base}/api/patients/${id}/prescriptions/${rx.id}/pdf`,
+                                          { headers: { "x-staff-id": String(staffId) } },
+                                        );
+                                        if (!resp.ok) throw new Error("Falha ao gerar PDF");
+                                        const blob = await resp.blob();
+                                        const href = URL.createObjectURL(blob);
+                                        const safeName = patient.full_name.replace(/\s+/g, "_");
+                                        const dateSlug = new Date(rx.createdAt).toISOString().slice(0, 10);
+                                        const a = Object.assign(document.createElement("a"), {
+                                          href,
+                                          download: `Prescricao_Medica_${safeName}_${dateSlug}.pdf`,
+                                        });
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(href);
+                                      } catch {
+                                        toast({ title: "Erro ao gerar PDF", variant: "destructive" });
+                                      } finally {
+                                        setPrintingRxId(null);
+                                      }
+                                    }}
+                                  >
+                                    <Printer className="h-3 w-3" />
+                                    {printingRxId === rx.id ? "Gerando…" : "Imprimir"}
+                                  </Button>
+                                )}
+                                {rx.status !== "concluido" && (
+                                  <>
+                                    {rx.status === "pendente" && (
+                                      <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                        onClick={() => updatePrescriptionStatus.mutate({ id, prescriptionId: rx.id, data: { status: "em_andamento" } },
+                                          { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(id) }),
+                                            onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Iniciar</Button>
+                                    )}
+                                    <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                                      onClick={() => updatePrescriptionStatus.mutate({ id, prescriptionId: rx.id, data: { status: "concluido" } },
                                         { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(id) }),
-                                          onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Iniciar</Button>
-                                  )}
-                                  <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
-                                    onClick={() => updatePrescriptionStatus.mutate({ id, prescriptionId: rx.id, data: { status: "concluido" } },
-                                      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(id) }),
-                                        onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Concluir</Button>
-                                </div>
-                              )}
+                                          onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Concluir</Button>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>

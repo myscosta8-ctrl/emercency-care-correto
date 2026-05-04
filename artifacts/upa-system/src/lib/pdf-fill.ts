@@ -1179,6 +1179,8 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
 }
 
 // ── preencherPDF — simplified Portuguese API ──────────────────────────────────
+// NOTE: Medical prescription PDFs are generated server-side via
+// GET /api/patients/:id/prescriptions/:prescriptionId/pdf (see artifacts/api-server)
 // Field names match the 14 standardized AcroForm field names exactly so the
 // caller can use the same object to fill any template:
 //
