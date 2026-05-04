@@ -651,6 +651,9 @@ export const AuthLoginResponse = zod.object({
   sector: zod.string(),
   corenCrm: zod.string(),
   mustChangePassword: zod.boolean(),
+  setoresAtuacao: zod.string(),
+  turno: zod.string(),
+  consultorio: zod.string(),
 });
 
 /**
@@ -979,6 +982,9 @@ export const ListStaffResponseItem = zod.object({
   accessLevels: zod.string(),
   signature: zod.string(),
   stamp: zod.string(),
+  setoresAtuacao: zod.string(),
+  turno: zod.string(),
+  consultorio: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -1008,6 +1014,9 @@ export const CreateStaffBody = zod.object({
   accessLevels: zod.string().optional(),
   signature: zod.string().optional(),
   stamp: zod.string().optional(),
+  setoresAtuacao: zod.string().optional(),
+  turno: zod.string().optional(),
+  consultorio: zod.string().optional(),
 });
 
 /**
@@ -1038,6 +1047,9 @@ export const GetStaffResponse = zod.object({
   accessLevels: zod.string(),
   signature: zod.string(),
   stamp: zod.string(),
+  setoresAtuacao: zod.string(),
+  turno: zod.string(),
+  consultorio: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -1072,6 +1084,9 @@ export const UpdateStaffBody = zod.object({
   accessLevels: zod.string().optional(),
   signature: zod.string().optional(),
   stamp: zod.string().optional(),
+  setoresAtuacao: zod.string().optional(),
+  turno: zod.string().optional(),
+  consultorio: zod.string().optional(),
 });
 
 export const UpdateStaffResponse = zod.object({
@@ -1095,6 +1110,9 @@ export const UpdateStaffResponse = zod.object({
   accessLevels: zod.string(),
   signature: zod.string(),
   stamp: zod.string(),
+  setoresAtuacao: zod.string(),
+  turno: zod.string(),
+  consultorio: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });

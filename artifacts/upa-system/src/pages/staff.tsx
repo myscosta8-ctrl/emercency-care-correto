@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/use-auth";
 import { usePode } from "@/hooks/use-pode";
+import { useFeatures } from "@/lib/features-context";
 import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle, Mail, ToggleLeft, ToggleRight } from "lucide-react";
 import { useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
@@ -47,6 +48,29 @@ const SECTORS = [
   { value: "observacao_pediatrica", label: "Observação Pediátrica" },
   { value: "observacao_pre_adulto", label: "Observação Pré-Adulto" },
   { value: "todos_os_setores",      label: "Todos os Setores"      },
+];
+
+const SETORES_PLANTAO = [
+  { value: "sala_vermelha",         label: "Sala Vermelha"         },
+  { value: "observacao_adulto",     label: "Observação Adulto"     },
+  { value: "observacao_pediatrica", label: "Observação Pediátrica" },
+  { value: "observacao_pre_adulto", label: "Observação Pré-Adulto" },
+];
+
+const TURNOS = [
+  { value: "",            label: "Não definido"               },
+  { value: "dia_07_19",   label: "Diurno 07h–19h"             },
+  { value: "tarde_19_23", label: "Tarde 19h–23h"              },
+  { value: "noite_23_07", label: "Noturno 23h–07h"            },
+  { value: "plantao_24h", label: "Plantão 07h–07h (24h)"      },
+  { value: "noite_19_07", label: "Noturno 19h–07h"            },
+];
+
+const CONSULTORIOS = [
+  { value: "",      label: "Não aplicável"       },
+  { value: "1",     label: "Consultório 1"        },
+  { value: "2",     label: "Consultório 2"        },
+  { value: "ambos", label: "Ambos os Consultórios" },
 ];
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -196,6 +220,9 @@ interface FormData {
   accessLevels: string[];
   signature: string;
   stamp: string;
+  setoresAtuacao: string[];
+  turno: string;
+  consultorio: string;
 }
 
 const defaultForm = (): FormData => ({
@@ -210,6 +237,9 @@ const defaultForm = (): FormData => ({
   accessLevels: [],
   signature: "",
   stamp: "",
+  setoresAtuacao: ["todos"],
+  turno: "",
+  consultorio: "",
 });
 
 function buildStamp(f: FormData): string {
@@ -233,6 +263,8 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
   const { toast } = useToast();
   const createMut = useCreateStaff();
   const updateMut = useUpdateStaff();
+  const { featureAtiva } = useFeatures();
+  const preAdultoAtivo = featureAtiva("setor_pre_adulto");
 
   const [form, setForm] = useState<FormData>(() => {
     if (!initial) return defaultForm();
@@ -248,6 +280,9 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
       accessLevels: initial.accessLevels ? initial.accessLevels.split(",").filter(Boolean) : [],
       signature: initial.signature,
       stamp: initial.stamp,
+      setoresAtuacao: initial.setoresAtuacao ? initial.setoresAtuacao.split(",").filter(Boolean) : ["todos"],
+      turno: initial.turno ?? "",
+      consultorio: initial.consultorio ?? "",
     };
   });
 
@@ -258,6 +293,24 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
       ? form.accessLevels.filter(x => x !== v)
       : [...form.accessLevels, v] });
   };
+
+  const toggleSetor = (v: string) => {
+    if (v === "todos") {
+      set({ setoresAtuacao: ["todos"] });
+      return;
+    }
+    const semTodos = form.setoresAtuacao.filter(x => x !== "todos");
+    set({
+      setoresAtuacao: semTodos.includes(v)
+        ? semTodos.filter(x => x !== v) || ["todos"]
+        : [...semTodos, v],
+    });
+  };
+
+  const setoresOptions = [
+    { value: "todos",                 label: "Sem restrição (todos os setores)" },
+    ...SETORES_PLANTAO.filter(s => s.value !== "observacao_pre_adulto" || preAdultoAtivo),
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,6 +331,9 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
       accessLevels: form.accessLevels.join(","),
       signature: form.signature,
       stamp: form.stamp || buildStamp(form),
+      setoresAtuacao: form.setoresAtuacao.join(",") || "todos",
+      turno: form.turno,
+      consultorio: form.consultorio,
     };
 
     try {
@@ -379,7 +435,7 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
 
           {/* setor */}
           <div className="space-y-1.5">
-            <Label>Setor</Label>
+            <Label>Setor (lotação)</Label>
             <div className="relative">
               <select
                 value={form.sector}
@@ -390,6 +446,74 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
                 {SECTORS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
               <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+
+          {/* turno + consultório */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Turno do plantão</Label>
+              <div className="relative">
+                <select
+                  value={form.turno}
+                  onChange={e => set({ turno: e.target.value })}
+                  className="w-full h-10 bg-background border border-input rounded-md px-3 pr-8 text-sm text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {TURNOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+                <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+            {(form.role === "medico") && (
+              <div className="space-y-1.5">
+                <Label>Consultório</Label>
+                <div className="relative">
+                  <select
+                    value={form.consultorio}
+                    onChange={e => set({ consultorio: e.target.value })}
+                    className="w-full h-10 bg-background border border-input rounded-md px-3 pr-8 text-sm text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    {CONSULTORIOS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* setores de atuação */}
+          <div className="space-y-2">
+            <div>
+              <Label>Setores de atuação no plantão</Label>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Limita quais setores este funcionário visualiza no dashboard.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {setoresOptions.map(s => {
+                const ativo = form.setoresAtuacao.includes(s.value);
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => toggleSetor(s.value)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors",
+                      ativo
+                        ? "bg-primary/20 border-primary/60 text-primary"
+                        : "border-border/50 text-muted-foreground hover:bg-muted/30"
+                    )}
+                  >
+                    <div className={cn(
+                      "h-4 w-4 rounded border flex items-center justify-center shrink-0",
+                      ativo ? "bg-primary border-primary" : "border-muted-foreground/40"
+                    )}>
+                      {ativo && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                    </div>
+                    {s.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -539,6 +663,11 @@ function StaffCard({ member, onEdit, onDelete, canEdit }: StaffCardProps) {
               <p>{COREN_LABEL[member.role]}: <span className="text-foreground font-mono">{member.corenCrm}</span></p>
             )}
             {member.sector && <p>Setor: <span className="text-foreground">{SECTOR_LABEL[member.sector] ?? member.sector}</span></p>}
+            {member.turno && <p>Turno: <span className="text-foreground">{TURNOS.find(t => t.value === member.turno)?.label ?? member.turno}</span></p>}
+            {member.consultorio && <p>Consultório: <span className="text-foreground">{CONSULTORIOS.find(c => c.value === member.consultorio)?.label ?? member.consultorio}</span></p>}
+            {member.setoresAtuacao && member.setoresAtuacao !== "todos" && (
+              <p>Atuação: <span className="text-foreground">{member.setoresAtuacao.split(",").map(s => SETORES_PLANTAO.find(x => x.value === s)?.label ?? s).join(", ")}</span></p>
+            )}
             {member.email && <p className="flex items-center gap-1"><Mail className="h-3 w-3 shrink-0" /><span className="text-foreground">{member.email}</span></p>}
             <p>Login: <span className="text-foreground font-mono">{member.login}</span></p>
           </div>

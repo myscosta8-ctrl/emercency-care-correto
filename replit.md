@@ -129,6 +129,47 @@ Emergency UPA patient management system. Dark modern UI with Manchester triage c
 - Atribuída a: `farmaceutico`, `medico` (`*`), `administrador` (`*`).
 - Controla acesso à página `/laboratorio`.
 
+### Controle de Acesso por Setor e Turno
+
+#### Novos campos na tabela `staff`
+- `setores_atuacao` (text) — setores que o funcionário visualiza no dashboard, separados por vírgula. Valor especial `"todos"` = sem restrição. Exemplos: `"sala_vermelha,observacao_adulto"`, `"observacao_pediatrica,observacao_pre_adulto"`.
+- `turno` (text) — turno do plantão. Valores: `dia_07_19`, `tarde_19_23`, `noite_23_07`, `plantao_24h`, `noite_19_07`.
+- `consultorio` (text) — apenas para médicos. Valores: `""`, `"1"`, `"2"`, `"ambos"`.
+
+#### Estrutura de plantões configurada pelo admin
+| Perfil | Turno | Setores de atuação | Consultório |
+|--------|-------|-------------------|-------------|
+| Médico Cons. 1 | dia_07_19 | `todos` | `1` |
+| Médico Cons. 2 | dia_07_19 | `observacao_pediatrica,observacao_pre_adulto` | `2` |
+| Médico Cons. 1 noturno | tarde_19_23 | `todos` | `1` |
+| Plantonista 24h | plantao_24h | `sala_vermelha,observacao_adulto` | `ambos` |
+| Enfermeiro triagem | dia_07_19 | `todos` | — |
+| Enfermeiro obs. pediátrica | dia_07_19 | `observacao_pediatrica,observacao_pre_adulto` | — |
+| Enfermeiro sala vermelha | dia_07_19 | `sala_vermelha,observacao_adulto` | — |
+| Enfermeiro noturno | noite_19_07 | `todos` | — |
+
+#### Efeito no Dashboard
+- `setoresAtuacao = "todos"` → todos os setores visíveis (sem restrição).
+- `setoresAtuacao = "sala_vermelha,observacao_adulto"` → apenas esses dois setores aparecem no dashboard (tanto "Por Setor" quanto "Por Status").
+- Filtro de setor manual também é restrito aos setores permitidos.
+
+#### Efeito na Fila Médica
+- `consultorio = "1"` → apenas card do Consultório 1; botão "Cons. 2" oculto na fila.
+- `consultorio = "2"` → apenas card do Consultório 2; botão "Cons. 1" oculto na fila.
+- `consultorio = "ambos"` ou `""` → ambos visíveis.
+
+#### Cadastro de funcionários (`/funcionarios`)
+- Formulário inclui: **Turno do plantão** (select), **Consultório** (select, só para médicos), **Setores de atuação** (checkboxes multi-select).
+- Card de funcionário exibe turno, consultório e setores de atuação configurados.
+
+#### Feature flag `setor_pre_adulto`
+- Padrão: **ativada** (`true`).
+- Quando desativada em Admin → Funcionalidades:
+  - Setor Observação Pré-Adulto é removido do dashboard (todos os usuários).
+  - Removido dos setores disponíveis no desfecho da fila médica.
+  - Removido dos checkboxes de setores de atuação no cadastro de funcionários.
+- Descrição no painel: "Desative para remover completamente este setor do sistema — dashboard, fila médica, formulários e cadastro de funcionários."
+
 ### Gestão de Leitos (`/leitos`)
 - **Tabela**: `beds` — `id`, `bed_id` (único), `sector`, `bed_number`, `is_isolation` (fixo), `is_extra` (boolean), `extra_reason`, `is_occupied`, `patient_id` (FK → patients), `admission_time` (timestamp), `isolation_active`, `isolation_type` (contact/droplet/airborne), `isolation_reason`, `created_at`, `updated_at`.
 - **Seed automático**: 35 leitos criados na primeira chamada GET se a tabela estiver vazia.

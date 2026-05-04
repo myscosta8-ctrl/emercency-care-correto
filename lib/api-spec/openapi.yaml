@@ -1654,6 +1654,12 @@ components:
           type: string
         stamp:
           type: string
+        setoresAtuacao:
+          type: string
+        turno:
+          type: string
+        consultorio:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -1672,6 +1678,9 @@ components:
         - accessLevels
         - signature
         - stamp
+        - setoresAtuacao
+        - turno
+        - consultorio
         - createdAt
         - updatedAt
 
@@ -1700,6 +1709,12 @@ components:
         signature:
           type: string
         stamp:
+          type: string
+        setoresAtuacao:
+          type: string
+        turno:
+          type: string
+        consultorio:
           type: string
       required:
         - name
@@ -1731,6 +1746,12 @@ components:
         signature:
           type: string
         stamp:
+          type: string
+        setoresAtuacao:
+          type: string
+        turno:
+          type: string
+        consultorio:
           type: string
 
     GetStaffParams:
@@ -1887,6 +1908,12 @@ components:
           type: string
         mustChangePassword:
           type: boolean
+        setoresAtuacao:
+          type: string
+        turno:
+          type: string
+        consultorio:
+          type: string
       required:
         - id
         - login
@@ -1895,6 +1922,9 @@ components:
         - sector
         - corenCrm
         - mustChangePassword
+        - setoresAtuacao
+        - turno
+        - consultorio
 
     ChangePasswordBody:
       type: object

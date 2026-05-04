@@ -16,6 +16,10 @@ export const staffTable = pgTable("staff", {
   accessLevels: text("access_levels").notNull().default(""),
   signature: text("signature").notNull().default(""),
   stamp: text("stamp").notNull().default(""),
+  // ── setor e turno ──────────────────────────────────────────────────────────
+  setoresAtuacao: text("setores_atuacao").notNull().default("todos"),
+  turno: text("turno").notNull().default(""),
+  consultorio: text("consultorio").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

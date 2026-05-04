@@ -479,6 +479,9 @@ export interface StaffMember {
   accessLevels: string;
   signature: string;
   stamp: string;
+  setoresAtuacao: string;
+  turno: string;
+  consultorio: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -509,6 +512,9 @@ export interface CreateStaffBody {
   accessLevels?: string;
   signature?: string;
   stamp?: string;
+  setoresAtuacao?: string;
+  turno?: string;
+  consultorio?: string;
 }
 
 export type UpdateStaffBodyRole =
@@ -537,6 +543,9 @@ export interface UpdateStaffBody {
   accessLevels?: string;
   signature?: string;
   stamp?: string;
+  setoresAtuacao?: string;
+  turno?: string;
+  consultorio?: string;
 }
 
 export interface GetStaffParams {
@@ -601,6 +610,9 @@ export interface AuthUser {
   sector: string;
   corenCrm: string;
   mustChangePassword: boolean;
+  setoresAtuacao: string;
+  turno: string;
+  consultorio: string;
 }
 
 export interface ChangePasswordBody {

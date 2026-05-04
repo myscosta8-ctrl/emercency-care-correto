@@ -50,6 +50,9 @@ router.post("/login", async (req, res) => {
     sector:             user.sector,
     corenCrm:           user.corenCrm,
     mustChangePassword: user.mustChangePassword,
+    setoresAtuacao:     user.setoresAtuacao,
+    turno:              user.turno,
+    consultorio:        user.consultorio,
   });
 });
 

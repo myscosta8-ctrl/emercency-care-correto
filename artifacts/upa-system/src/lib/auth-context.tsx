@@ -100,6 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           sector:             s.sector,
           corenCrm:           s.corenCrm ?? "",
           mustChangePassword: s.mustChangePassword ?? false,
+          setoresAtuacao:     s.setoresAtuacao ?? "todos",
+          turno:              s.turno ?? "",
+          consultorio:        s.consultorio ?? "",
         };
         localStorage.setItem(AUTH_KEY, JSON.stringify(updated));
         setActiveUser(updated);

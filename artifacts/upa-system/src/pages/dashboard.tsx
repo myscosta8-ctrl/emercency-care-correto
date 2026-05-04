@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef, memo } from "react";
 import { useAuth } from "@/lib/use-auth";
+import { useFeatures } from "@/lib/features-context";
 import { Link, useLocation } from "wouter";
 import {
   useListPatients,
@@ -89,15 +90,12 @@ type TriageKey = keyof typeof TRIAGE_CONFIG;
 
 const TRIAGE_SEVERITY: Record<string, number> = { red: 1, orange: 2, yellow: 3, green: 4, blue: 5 };
 
-const SECTOR_CONFIG = [
+const ALL_SECTOR_CONFIG = [
   { key: "sala_vermelha",         name: "Sala Vermelha",         emoji: "🔴", headerCls: "bg-red-950/60 border-red-700/50 text-red-300",        emptyBorder: "border-red-900/30"    },
   { key: "observacao_adulto",     name: "Observação Adulto",     emoji: "🟡", headerCls: "bg-yellow-950/40 border-yellow-700/40 text-yellow-300", emptyBorder: "border-yellow-900/30" },
   { key: "observacao_pediatrica", name: "Observação Pediátrica", emoji: "🟢", headerCls: "bg-green-950/40 border-green-700/40 text-green-300",   emptyBorder: "border-green-900/30"  },
   { key: "observacao_pre_adulto", name: "Observação Pré-Adulto", emoji: "🔵", headerCls: "bg-blue-950/40 border-blue-700/40 text-blue-300",      emptyBorder: "border-blue-900/30"   },
 ];
-
-const SECTOR_NAMES = SECTOR_CONFIG.map(s => s.key);
-const SECTOR_LABEL = Object.fromEntries(SECTOR_CONFIG.map(s => [s.key, s.name]));
 
 // ── debounce ──────────────────────────────────────────────────────────────────
 
@@ -364,6 +362,7 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
 
 export default function Dashboard() {
   const { pode, activeUser, logout } = useAuth();
+  const { featureAtiva } = useFeatures();
   const [, setLocation] = useLocation();
   const [isNewPatientOpen, setIsNewPatientOpen]     = useState(false);
   const [editingPatient, setEditingPatient]         = useState<Patient | null>(null);
@@ -373,6 +372,30 @@ export default function Dashboard() {
   const [filtro, setFiltro]                         = useState("Todos");
   const [triageFilter, setTriageFilter]             = useState("all");
   const [viewMode, setViewMode]                     = useState<"setor" | "status">("setor");
+
+  // ── setor e feature flag ───────────────────────────────────────────────────
+  const preAdultoAtivo = featureAtiva("setor_pre_adulto");
+
+  // Setores permitidos para este funcionário (baseado em setoresAtuacao)
+  const setoresPermitidos = useMemo(() => {
+    const raw = activeUser?.setoresAtuacao ?? "todos";
+    const lista = raw.split(",").map(s => s.trim()).filter(Boolean);
+    // "todos" ou vazio = sem restrição
+    if (!lista.length || lista.includes("todos")) return null;
+    return new Set(lista);
+  }, [activeUser?.setoresAtuacao]);
+
+  // Config de setores visíveis: filtra pré-adulto (feature flag) e setores do funcionário
+  const SECTOR_CONFIG = useMemo(() => {
+    return ALL_SECTOR_CONFIG.filter(s => {
+      if (s.key === "observacao_pre_adulto" && !preAdultoAtivo) return false;
+      if (setoresPermitidos && !setoresPermitidos.has(s.key)) return false;
+      return true;
+    });
+  }, [preAdultoAtivo, setoresPermitidos]);
+
+  const SECTOR_NAMES = SECTOR_CONFIG.map(s => s.key);
+  const SECTOR_LABEL = Object.fromEntries(SECTOR_CONFIG.map(s => [s.key, s.name]));
 
   const debouncedSearch = useDebounce(search, 200);
 
@@ -430,10 +453,15 @@ export default function Dashboard() {
       patients: base.filter(p => p.sector === cfg.key).sort(sortFn),
     }));
 
+    // "Por Status": respect sector restriction too
+    const statusBase = setoresPermitidos
+      ? base.filter(p => !p.sector || setoresPermitidos.has(p.sector))
+      : base;
+
     const groupedByStatus = CARE_STATUS_SECTION_KEYS.map(status => ({
       key: status,
       ...CARE_STATUS_CONFIG[status],
-      patients: base.filter(p => p.careStatus === status).sort(sortFn),
+      patients: statusBase.filter(p => p.careStatus === status).sort(sortFn),
     }));
 
     return { grouped, groupedByStatus };

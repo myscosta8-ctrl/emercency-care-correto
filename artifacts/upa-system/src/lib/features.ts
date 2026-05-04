@@ -4,7 +4,8 @@ export type FeatureKey =
   | "triagem_avancada"
   | "dashboard"
   | "relatorios"
-  | "controle_estoque";
+  | "controle_estoque"
+  | "setor_pre_adulto";
 
 export const FEATURES_DEFAULTS: Record<FeatureKey, boolean> = {
   sinan_pdf:           true,
@@ -13,6 +14,7 @@ export const FEATURES_DEFAULTS: Record<FeatureKey, boolean> = {
   dashboard:           true,
   relatorios:          true,
   controle_estoque:    false,
+  setor_pre_adulto:    true,
 };
 
 export const FEATURE_LABELS: Record<FeatureKey, string> = {
@@ -22,4 +24,5 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   dashboard:           "Dashboard",
   relatorios:          "Relatórios",
   controle_estoque:    "Controle de Estoque",
+  setor_pre_adulto:    "Setor Observação Pré-Adulto",
 };

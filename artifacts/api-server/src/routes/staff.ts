@@ -29,6 +29,9 @@ const serialize = (s: typeof staffTable.$inferSelect) => ({
   accessLevels: s.accessLevels,
   signature: s.signature,
   stamp: s.stamp,
+  setoresAtuacao: s.setoresAtuacao,
+  turno: s.turno,
+  consultorio: s.consultorio,
   createdAt: s.createdAt.toISOString(),
   updatedAt: s.updatedAt.toISOString(),
 });
@@ -50,6 +53,9 @@ router.post("/", requirePermissao("gerenciar_usuarios"), async (req, res) => {
     accessLevels?: string;
     signature?: string;
     stamp?: string;
+    setoresAtuacao?: string;
+    turno?: string;
+    consultorio?: string;
   };
 
   if (!rest.name || !rest.role || !rest.login) {
@@ -74,6 +80,9 @@ router.post("/", requirePermissao("gerenciar_usuarios"), async (req, res) => {
       accessLevels: rest.accessLevels ?? "",
       signature: rest.signature ?? "",
       stamp: rest.stamp ?? "",
+      setoresAtuacao: rest.setoresAtuacao ?? "todos",
+      turno: rest.turno ?? "",
+      consultorio: rest.consultorio ?? "",
     })
     .returning();
 
@@ -100,6 +109,9 @@ router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
     accessLevels?: string;
     signature?: string;
     stamp?: string;
+    setoresAtuacao?: string;
+    turno?: string;
+    consultorio?: string;
   };
 
   const patch: Partial<typeof staffTable.$inferInsert> = {

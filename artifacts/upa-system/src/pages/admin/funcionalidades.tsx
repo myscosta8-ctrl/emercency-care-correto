@@ -15,6 +15,7 @@ const FEATURE_DESCRIPTIONS: Record<FeatureKey, string> = {
   dashboard:           "Dashboard principal com lista de pacientes por setor.",
   relatorios:          "Módulo de relatórios gerenciais e estatísticas da UPA.",
   controle_estoque:    "Controle de estoque de medicamentos e insumos (módulo futuro).",
+  setor_pre_adulto:    "Setor de Observação Pré-Adulto. Desative para remover completamente este setor do sistema — dashboard, fila médica, formulários e cadastro de funcionários.",
 };
 
 export default function AdminFuncionalidadesPage() {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListPatients,
@@ -11,6 +11,7 @@ import { RoleHeader } from "@/components/role-header";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/use-auth";
+import { useFeatures } from "@/lib/features-context";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -69,11 +70,13 @@ function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalPro
     { value: "Em Transferência",  label: "Transferência",        desc: "Transferir para outro serviço/hospital",        color: "text-purple-400" },
   ];
 
+  const { featureAtiva } = useFeatures();
+  const preAdultoAtivo = featureAtiva("setor_pre_adulto");
   const SETORES = [
     { value: "sala_vermelha",         label: "Sala Vermelha" },
     { value: "observacao_adulto",     label: "Observação Adulto" },
     { value: "observacao_pediatrica", label: "Observação Pediátrica" },
-    { value: "observacao_pre_adulto", label: "Observação Pré-Adulto" },
+    ...(preAdultoAtivo ? [{ value: "observacao_pre_adulto", label: "Observação Pré-Adulto" }] : []),
   ];
 
   const handleConfirm = () => {
@@ -275,16 +278,20 @@ export default function FilaMedicoPage() {
   const { data: patients, isLoading } = useListPatients();
   const userId = activeUser?.id ?? 0;
 
+  // Consultório do médico logado: "1", "2", "ambos" ou "" (sem restrição)
+  const consultorioDoMedico = activeUser?.consultorio ?? "";
+  const soCons1 = consultorioDoMedico === "1";
+  const soCons2 = consultorioDoMedico === "2";
+  const mostrarCons1 = !soCons2;
+  const mostrarCons2 = !soCons1;
+
   const [chamarPatient, setChamarPatient] = useState<Patient | null>(null);
-  const [chamarConsultorio, setChamarConsultorio] = useState<1 | 2>(1);
+  const [chamarConsultorio, setChamarConsultorio] = useState<1 | 2>(soCons2 ? 2 : 1);
   const [desfechoPatient, setDesfechoPatient] = useState<Patient | null>(null);
 
   const aguardando = (patients ?? [])
     .filter(p => p.careStatus === "Aguardando Atendimento")
     .sort((a, b) => (TRIAGE_ORDER[a.triage_level] ?? 9) - (TRIAGE_ORDER[b.triage_level] ?? 9));
-
-  const cons1 = (patients ?? []).filter(p => p.careStatus === "Em Atendimento (Cons. 1)");
-  const cons2 = (patients ?? []).filter(p => p.careStatus === "Em Atendimento (Cons. 2)");
 
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
@@ -299,23 +306,27 @@ export default function FilaMedicoPage() {
       <main className="flex-1 container mx-auto px-4 py-4 max-w-5xl space-y-6">
 
         {/* ── Consultórios ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ConsultorioCard
-            numero={1}
-            label="Consultório 1"
-            sub="Adulto / Clínica Geral"
-            patients={patients ?? []}
-            onChamar={(p, c) => { setChamarPatient(p); setChamarConsultorio(c); }}
-            onDesfecho={setDesfechoPatient}
-          />
-          <ConsultorioCard
-            numero={2}
-            label="Consultório 2"
-            sub="Pediatria / Pré-Adulto"
-            patients={patients ?? []}
-            onChamar={(p, c) => { setChamarPatient(p); setChamarConsultorio(c); }}
-            onDesfecho={setDesfechoPatient}
-          />
+        <div className={cn("grid gap-4", mostrarCons1 && mostrarCons2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 max-w-lg")}>
+          {mostrarCons1 && (
+            <ConsultorioCard
+              numero={1}
+              label="Consultório 1"
+              sub="Adulto / Clínica Geral"
+              patients={patients ?? []}
+              onChamar={(p, c) => { setChamarPatient(p); setChamarConsultorio(c); }}
+              onDesfecho={setDesfechoPatient}
+            />
+          )}
+          {mostrarCons2 && (
+            <ConsultorioCard
+              numero={2}
+              label="Consultório 2"
+              sub="Pediatria / Pré-Adulto"
+              patients={patients ?? []}
+              onChamar={(p, c) => { setChamarPatient(p); setChamarConsultorio(c); }}
+              onDesfecho={setDesfechoPatient}
+            />
+          )}
         </div>
 
         {/* ── Fila de aguardando atendimento ── */}
@@ -352,24 +363,28 @@ export default function FilaMedicoPage() {
                       <span className="text-[10px] font-mono text-muted-foreground/60 hidden md:block shrink-0">{p.prontuarioNumber}</span>
                     )}
                     <div className="flex gap-1 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1 border-blue-500/40 text-blue-400 hover:bg-blue-500/10"
-                        onClick={() => { setChamarPatient(p); setChamarConsultorio(1); }}
-                      >
-                        <Stethoscope className="h-3 w-3" />
-                        Cons. 1
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1 border-purple-500/40 text-purple-400 hover:bg-purple-500/10"
-                        onClick={() => { setChamarPatient(p); setChamarConsultorio(2); }}
-                      >
-                        <Stethoscope className="h-3 w-3" />
-                        Cons. 2
-                      </Button>
+                      {mostrarCons1 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-blue-500/40 text-blue-400 hover:bg-blue-500/10"
+                          onClick={() => { setChamarPatient(p); setChamarConsultorio(1); }}
+                        >
+                          <Stethoscope className="h-3 w-3" />
+                          Cons. 1
+                        </Button>
+                      )}
+                      {mostrarCons2 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-purple-500/40 text-purple-400 hover:bg-purple-500/10"
+                          onClick={() => { setChamarPatient(p); setChamarConsultorio(2); }}
+                        >
+                          <Stethoscope className="h-3 w-3" />
+                          Cons. 2
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );
