@@ -12,6 +12,7 @@ import pharmacyEntriesRouter from "./pharmacy-entries";
 import transfersRouter from "./transfers";
 import alertsRouter from "./alerts";
 import bedsRouter from "./beds";
+import devicesRouter from "./devices";
 import { requireAuth } from "../middleware/require-auth";
 import { auditWrite } from "../middleware/audit-write";
 
@@ -29,6 +30,7 @@ router.use("/patients/:id/social-notes", socialNotesRouter);
 router.use("/patients/:id/nutritional-assessments", nutritionalAssessmentsRouter);
 router.use("/patients/:id/pharmacy-entries", pharmacyEntriesRouter);
 router.use("/patients/:id/transfers", transfersRouter);
+router.use("/patients/:id/devices", devicesRouter);
 router.use("/staff", staffRouter);
 router.use("/audit", auditRouter);
 router.use("/alerts", alertsRouter);

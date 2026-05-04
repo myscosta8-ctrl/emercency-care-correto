@@ -71,14 +71,19 @@ function detectTurno(): (typeof TURNOS)[number] {
 // ── pendências estruturadas ────────────────────────────────────────────────────
 
 const PEND_ITEMS = [
-  { key: "acesso_venoso",    label: "Acesso venoso" },
-  { key: "sonda_uretral",    label: "Sonda uretral" },
-  { key: "sonda_nasogastrica", label: "Sonda nasogástrica" },
-  { key: "sonda_vesical",    label: "Sonda vesical" },
-  { key: "exames_laboratorio", label: "Exames laboratoriais" },
-  { key: "exames_imagem",    label: "Exames de imagem" },
-  { key: "procedimento",     label: "Procedimento pendente" },
-  { key: "medicacao",        label: "Medicação" },
+  { key: "acesso_venoso_periferico", label: "Acesso Venoso Periférico (AVP)" },
+  { key: "acesso_venoso_central",    label: "Acesso Venoso Central (AVC)" },
+  { key: "sonda_nasoenteral",        label: "Sonda Nasoenteral (SNE)" },
+  { key: "sonda_nasogastrica",       label: "Sonda Nasogástrica (SNG)" },
+  { key: "sonda_vesical_demora",     label: "Sonda Vesical de Demora (SVD)" },
+  { key: "cateter_arterial",         label: "Cateter Arterial" },
+  { key: "dreno_torax",              label: "Dreno de Tórax" },
+  { key: "traqueostomia",            label: "Traqueostomia" },
+  { key: "gastrostomia",             label: "Gastrostomia" },
+  { key: "exames_laboratorio",       label: "Exames laboratoriais" },
+  { key: "exames_imagem",            label: "Exames de imagem" },
+  { key: "procedimento",             label: "Procedimento pendente" },
+  { key: "medicacao",                label: "Medicação" },
 ] as const;
 
 type PendKey = (typeof PEND_ITEMS)[number]["key"];

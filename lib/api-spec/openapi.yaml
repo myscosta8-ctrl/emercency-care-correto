@@ -461,6 +461,99 @@ paths:
         "204":
           description: Deleted
 
+  /api/patients/{id}/devices:
+    get:
+      operationId: getPatientDevices
+      summary: List patient devices
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientDevice"
+    post:
+      operationId: addPatientDevice
+      summary: Add a device to patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPatientDeviceBody"
+      responses:
+        "201":
+          description: Created device
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientDevice"
+
+  /api/patients/{id}/devices/{deviceId}:
+    put:
+      operationId: updatePatientDevice
+      summary: Update a patient device (e.g. mark as removed)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePatientDeviceBody"
+      responses:
+        "200":
+          description: Updated device
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientDevice"
+    delete:
+      operationId: deletePatientDevice
+      summary: Delete a patient device record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   /api/auth/login:
     post:
       operationId: authLogin
@@ -2377,6 +2470,98 @@ components:
         - justificativa
         - status
         - createdAt
+
+    PatientDevice:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        deviceType:
+          type: string
+          enum:
+            - acesso_venoso_periferico
+            - acesso_venoso_central
+            - sonda_nasoenteral
+            - sonda_nasogastrica
+            - sonda_vesical_demora
+            - cateter_arterial
+            - dreno_torax
+            - traqueostomia
+            - gastrostomia
+            - cateter_duplo_lumen
+            - dissecao_vascular
+            - outro
+        insertionDate:
+          type: string
+        insertionSite:
+          type: string
+        notes:
+          type: string
+        removedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdBy:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - patientId
+        - deviceType
+        - insertionDate
+        - insertionSite
+        - notes
+        - createdBy
+        - createdAt
+        - updatedAt
+
+    AddPatientDeviceBody:
+      type: object
+      properties:
+        deviceType:
+          type: string
+          enum:
+            - acesso_venoso_periferico
+            - acesso_venoso_central
+            - sonda_nasoenteral
+            - sonda_nasogastrica
+            - sonda_vesical_demora
+            - cateter_arterial
+            - dreno_torax
+            - traqueostomia
+            - gastrostomia
+            - cateter_duplo_lumen
+            - dissecao_vascular
+            - outro
+        insertionDate:
+          type: string
+        insertionSite:
+          type: string
+        notes:
+          type: string
+        createdBy:
+          type: integer
+      required:
+        - deviceType
+        - insertionDate
+
+    UpdatePatientDeviceBody:
+      type: object
+      properties:
+        insertionSite:
+          type: string
+        notes:
+          type: string
+        removedAt:
+          type: string
+          nullable: true
 
     AddExamRequestBody:
       type: object

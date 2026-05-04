@@ -838,6 +838,71 @@ export interface ExamRequest {
   createdAt: string;
 }
 
+export type PatientDeviceDeviceType =
+  (typeof PatientDeviceDeviceType)[keyof typeof PatientDeviceDeviceType];
+
+export const PatientDeviceDeviceType = {
+  acesso_venoso_periferico: "acesso_venoso_periferico",
+  acesso_venoso_central: "acesso_venoso_central",
+  sonda_nasoenteral: "sonda_nasoenteral",
+  sonda_nasogastrica: "sonda_nasogastrica",
+  sonda_vesical_demora: "sonda_vesical_demora",
+  cateter_arterial: "cateter_arterial",
+  dreno_torax: "dreno_torax",
+  traqueostomia: "traqueostomia",
+  gastrostomia: "gastrostomia",
+  cateter_duplo_lumen: "cateter_duplo_lumen",
+  dissecao_vascular: "dissecao_vascular",
+  outro: "outro",
+} as const;
+
+export interface PatientDevice {
+  id: number;
+  patientId: number;
+  deviceType: PatientDeviceDeviceType;
+  insertionDate: string;
+  insertionSite: string;
+  notes: string;
+  /** @nullable */
+  removedAt?: string | null;
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AddPatientDeviceBodyDeviceType =
+  (typeof AddPatientDeviceBodyDeviceType)[keyof typeof AddPatientDeviceBodyDeviceType];
+
+export const AddPatientDeviceBodyDeviceType = {
+  acesso_venoso_periferico: "acesso_venoso_periferico",
+  acesso_venoso_central: "acesso_venoso_central",
+  sonda_nasoenteral: "sonda_nasoenteral",
+  sonda_nasogastrica: "sonda_nasogastrica",
+  sonda_vesical_demora: "sonda_vesical_demora",
+  cateter_arterial: "cateter_arterial",
+  dreno_torax: "dreno_torax",
+  traqueostomia: "traqueostomia",
+  gastrostomia: "gastrostomia",
+  cateter_duplo_lumen: "cateter_duplo_lumen",
+  dissecao_vascular: "dissecao_vascular",
+  outro: "outro",
+} as const;
+
+export interface AddPatientDeviceBody {
+  deviceType: AddPatientDeviceBodyDeviceType;
+  insertionDate: string;
+  insertionSite?: string;
+  notes?: string;
+  createdBy?: number;
+}
+
+export interface UpdatePatientDeviceBody {
+  insertionSite?: string;
+  notes?: string;
+  /** @nullable */
+  removedAt?: string | null;
+}
+
 export type AddExamRequestBodyPrioridade =
   (typeof AddExamRequestBodyPrioridade)[keyof typeof AddExamRequestBodyPrioridade];
 
@@ -870,6 +935,10 @@ export interface UpdateExamRequestStatusBody {
 
 export type HealthCheck200 = {
   status: string;
+};
+
+export type GetPatientDevicesParams = {
+  active?: boolean;
 };
 
 export type ChangePassword200 = {

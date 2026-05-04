@@ -684,6 +684,122 @@ export const DeletePatientNotificationParams = zod.object({
 });
 
 /**
+ * @summary List patient devices
+ */
+export const GetPatientDevicesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientDevicesQueryParams = zod.object({
+  active: zod.coerce.boolean().optional(),
+});
+
+export const GetPatientDevicesResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  deviceType: zod.enum([
+    "acesso_venoso_periferico",
+    "acesso_venoso_central",
+    "sonda_nasoenteral",
+    "sonda_nasogastrica",
+    "sonda_vesical_demora",
+    "cateter_arterial",
+    "dreno_torax",
+    "traqueostomia",
+    "gastrostomia",
+    "cateter_duplo_lumen",
+    "dissecao_vascular",
+    "outro",
+  ]),
+  insertionDate: zod.string(),
+  insertionSite: zod.string(),
+  notes: zod.string(),
+  removedAt: zod.coerce.date().nullish(),
+  createdBy: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const GetPatientDevicesResponse = zod.array(
+  GetPatientDevicesResponseItem,
+);
+
+/**
+ * @summary Add a device to patient
+ */
+export const AddPatientDeviceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddPatientDeviceBody = zod.object({
+  deviceType: zod.enum([
+    "acesso_venoso_periferico",
+    "acesso_venoso_central",
+    "sonda_nasoenteral",
+    "sonda_nasogastrica",
+    "sonda_vesical_demora",
+    "cateter_arterial",
+    "dreno_torax",
+    "traqueostomia",
+    "gastrostomia",
+    "cateter_duplo_lumen",
+    "dissecao_vascular",
+    "outro",
+  ]),
+  insertionDate: zod.string(),
+  insertionSite: zod.string().optional(),
+  notes: zod.string().optional(),
+  createdBy: zod.number().optional(),
+});
+
+/**
+ * @summary Update a patient device (e.g. mark as removed)
+ */
+export const UpdatePatientDeviceParams = zod.object({
+  id: zod.coerce.number(),
+  deviceId: zod.coerce.number(),
+});
+
+export const UpdatePatientDeviceBody = zod.object({
+  insertionSite: zod.string().optional(),
+  notes: zod.string().optional(),
+  removedAt: zod.string().nullish(),
+});
+
+export const UpdatePatientDeviceResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  deviceType: zod.enum([
+    "acesso_venoso_periferico",
+    "acesso_venoso_central",
+    "sonda_nasoenteral",
+    "sonda_nasogastrica",
+    "sonda_vesical_demora",
+    "cateter_arterial",
+    "dreno_torax",
+    "traqueostomia",
+    "gastrostomia",
+    "cateter_duplo_lumen",
+    "dissecao_vascular",
+    "outro",
+  ]),
+  insertionDate: zod.string(),
+  insertionSite: zod.string(),
+  notes: zod.string(),
+  removedAt: zod.coerce.date().nullish(),
+  createdBy: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a patient device record
+ */
+export const DeletePatientDeviceParams = zod.object({
+  id: zod.coerce.number(),
+  deviceId: zod.coerce.number(),
+});
+
+/**
  * @summary Authenticate a staff member
  */
 export const AuthLoginBody = zod.object({

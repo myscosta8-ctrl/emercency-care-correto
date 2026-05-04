@@ -40,6 +40,11 @@ import {
   useGetPatientExamRequests,
   useUpdateExamRequestStatus,
   getGetPatientExamRequestsQueryKey,
+  useGetPatientDevices,
+  useAddPatientDevice,
+  useUpdatePatientDevice,
+  getGetPatientDevicesQueryKey,
+  AddPatientDeviceBodyDeviceType,
 } from "@workspace/api-client-react";
 import type { PatientNotification } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -51,6 +56,7 @@ import {
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
   Bell, Trash, Download, FileDown, Calendar, Building2,
   MessageSquare, UtensilsCrossed, Pill, Truck, Plus, Send, FlaskConical,
+  Plug, Unplug, AlertCircle,
 } from "lucide-react";
 import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 
@@ -142,6 +148,36 @@ function VitalCard({ label, value, unit, icon, showZero = false, alertClass = ""
   );
 }
 
+const DEVICE_LABELS: Record<string, string> = {
+  acesso_venoso_periferico: "Acesso Venoso Periférico (AVP)",
+  acesso_venoso_central:    "Acesso Venoso Central (AVC)",
+  sonda_nasoenteral:        "Sonda Nasoenteral (SNE)",
+  sonda_nasogastrica:       "Sonda Nasogástrica (SNG)",
+  sonda_vesical_demora:     "Sonda Vesical de Demora (SVD)",
+  cateter_arterial:         "Cateter Arterial",
+  dreno_torax:              "Dreno de Tórax",
+  traqueostomia:            "Traqueostomia",
+  gastrostomia:             "Gastrostomia",
+  cateter_duplo_lumen:      "Cateter de Duplo Lúmen",
+  dissecao_vascular:        "Dissecção Vascular",
+  outro:                    "Outro Dispositivo",
+};
+
+const DEVICE_TYPES = Object.entries(DEVICE_LABELS);
+
+function fmtDeviceDate(iso: string): string {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  if (y && m && d) return `${d}/${m}/${y}`;
+  return iso;
+}
+
+function daysSince(iso: string): number {
+  const start = new Date(iso + "T00:00:00");
+  const now   = new Date();
+  return Math.floor((now.getTime() - start.getTime()) / 86_400_000);
+}
+
 function SoapBadge({ letter, colorClass }: { letter: string; colorClass: string }) {
   return (
     <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-[11px] font-bold shrink-0 mt-0.5 ${colorClass}`}>
@@ -189,6 +225,9 @@ export default function PatientDetail() {
   const { data: examRequests, isLoading: isLoadingExamRequests } = useGetPatientExamRequests(id, {
     query: { enabled: !!id, queryKey: getGetPatientExamRequestsQueryKey(id) },
   });
+  const { data: devices, isLoading: isLoadingDevices } = useGetPatientDevices(id, undefined, {
+    query: { enabled: !!id, queryKey: getGetPatientDevicesQueryKey(id) },
+  });
 
   const latestVitals = vitals?.[0];
 
@@ -202,6 +241,12 @@ export default function PatientDetail() {
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [editingNotification, setEditingNotification] = useState<PatientNotification | null>(null);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false);
+  const [deviceType, setDeviceType]           = useState("");
+  const [deviceDate, setDeviceDate]           = useState(() => new Date().toISOString().split("T")[0]);
+  const [deviceSite, setDeviceSite]           = useState("");
+  const [deviceNotes, setDeviceNotes]         = useState("");
+  const [removingDeviceId, setRemovingDeviceId] = useState<number | null>(null);
 
   const [socialText, setSocialText]           = useState("");
   const [nutritionText, setNutritionText]     = useState("");
@@ -229,6 +274,8 @@ export default function PatientDetail() {
   const addNutritionalAssessment = useAddPatientNutritionalAssessment();
   const addPharmacyEntry = useAddPatientPharmacyEntry();
   const updatePharmacyStatus = useUpdatePharmacyEntryStatus();
+  const addDevice = useAddPatientDevice();
+  const updateDevice = useUpdatePatientDevice();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [generatingPdfId, setGeneratingPdfId] = useState<number | null>(null);
@@ -545,6 +592,14 @@ export default function PatientDetail() {
                 )}
               </TabsTrigger>
             )}
+            <TabsTrigger value="dispositivos" className="text-xs flex items-center gap-1">
+              <Plug className="h-3 w-3" /> Dispositivos
+              {devices && devices.filter(d => !d.removedAt).length > 0 && (
+                <span className="text-[10px] font-bold px-1 rounded-full bg-cyan-500/20 text-cyan-400 min-w-[16px] text-center">
+                  {devices.filter(d => !d.removedAt).length}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* ── TAB: IDENTIFICAÇÃO ─────────────────────────────────────── */}
@@ -1439,10 +1494,194 @@ export default function PatientDetail() {
               </div>
             </TabsContent>
           )}
+
+          {/* ── TAB: DISPOSITIVOS ─────────────────────────────────────── */}
+          <TabsContent value="dispositivos">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Plug className="h-4 w-4 text-cyan-400" /> Dispositivos Invasivos
+                {devices && devices.filter(d => !d.removedAt).length > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                    {devices.filter(d => !d.removedAt).length} ativo(s)
+                  </span>
+                )}
+              </h3>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"
+                onClick={() => { setDeviceType(""); setDeviceDate(new Date().toISOString().split("T")[0]); setDeviceSite(""); setDeviceNotes(""); setIsAddDeviceOpen(true); }}>
+                <Plus className="h-3.5 w-3.5" /> Adicionar Dispositivo
+              </Button>
+            </div>
+
+            {isLoadingDevices ? (
+              <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
+            ) : !devices || devices.length === 0 ? (
+              <div className="text-center py-10 bg-card rounded-lg border border-border/50">
+                <Plug className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">Nenhum dispositivo registrado.</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Clique em "Adicionar Dispositivo" para registrar.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Active devices */}
+                {devices.filter(d => !d.removedAt).length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80 mb-2">Ativos</p>
+                    <div className="space-y-2">
+                      {devices.filter(d => !d.removedAt).map(dev => {
+                        const days = daysSince(dev.insertionDate);
+                        return (
+                          <div key={dev.id} className="bg-card rounded-lg border border-cyan-500/20 overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-2 bg-cyan-500/5 border-b border-cyan-500/10">
+                              <span className="text-sm font-semibold text-cyan-300 flex items-center gap-1.5">
+                                <Plug className="h-3.5 w-3.5" />
+                                {DEVICE_LABELS[dev.deviceType] ?? dev.deviceType}
+                              </span>
+                              <Button
+                                size="sm" variant="ghost"
+                                className="h-7 text-[10px] gap-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2"
+                                disabled={removingDeviceId === dev.id}
+                                onClick={() => {
+                                  setRemovingDeviceId(dev.id);
+                                  updateDevice.mutate(
+                                    { id, deviceId: dev.id, data: { removedAt: new Date().toISOString() } },
+                                    {
+                                      onSuccess: () => {
+                                        queryClient.invalidateQueries({ queryKey: getGetPatientDevicesQueryKey(id) });
+                                        toast({ title: "Dispositivo retirado com sucesso" });
+                                      },
+                                      onError: () => toast({ title: "Erro ao retirar dispositivo", variant: "destructive" }),
+                                      onSettled: () => setRemovingDeviceId(null),
+                                    }
+                                  );
+                                }}
+                              >
+                                <Unplug className="h-3 w-3" />
+                                {removingDeviceId === dev.id ? "Retirando…" : "Retirar"}
+                              </Button>
+                            </div>
+                            <div className="px-4 py-2.5 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+                              <span><strong className="text-foreground/70">Inserido em:</strong> {fmtDeviceDate(dev.insertionDate)}</span>
+                              <span className={days > 7 ? "text-amber-400 font-semibold" : ""}>
+                                <strong className="text-foreground/70">Dias:</strong> {days} {days > 7 && <AlertCircle className="h-3 w-3 inline ml-0.5" />}
+                              </span>
+                              {dev.insertionSite && <span><strong className="text-foreground/70">Local:</strong> {dev.insertionSite}</span>}
+                              {dev.notes && <span className="w-full"><strong className="text-foreground/70">Obs:</strong> {dev.notes}</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Removed devices */}
+                {devices.filter(d => !!d.removedAt).length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 mb-2">Histórico — Retirados</p>
+                    <div className="space-y-1.5">
+                      {devices.filter(d => !!d.removedAt).map(dev => (
+                        <div key={dev.id} className="bg-card/50 rounded-lg border border-border/30 px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-0.5 opacity-60">
+                          <span className="text-xs font-medium line-through">{DEVICE_LABELS[dev.deviceType] ?? dev.deviceType}</span>
+                          <span className="text-[10px] text-muted-foreground">Inserido: {fmtDeviceDate(dev.insertionDate)}</span>
+                          {dev.insertionSite && <span className="text-[10px] text-muted-foreground">Local: {dev.insertionSite}</span>}
+                          {dev.removedAt && (
+                            <span className="text-[10px] text-muted-foreground">
+                              Retirado: {format(new Date(dev.removedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
 
       {/* ── DIALOGS ──────────────────────────────────────────────────── */}
+      {/* ── ADD DEVICE DIALOG ─────────────────────────────────────── */}
+      <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plug className="h-4 w-4 text-cyan-400" /> Adicionar Dispositivo
+            </DialogTitle>
+            <DialogDescription>Registre o dispositivo invasivo com data obrigatória de inserção.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Tipo de Dispositivo <span className="text-destructive text-xs">*</span></label>
+              <select
+                value={deviceType}
+                onChange={e => setDeviceType(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">Selecione o dispositivo...</option>
+                {DEVICE_TYPES.map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Data de Inserção <span className="text-destructive text-xs">*</span></label>
+              <Input
+                type="date"
+                value={deviceDate}
+                max={new Date().toISOString().split("T")[0]}
+                onChange={e => setDeviceDate(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Local de Inserção <span className="text-muted-foreground text-xs">(opcional)</span></label>
+              <Input
+                placeholder="Ex: MSD, MID, subclávia D, inguinal E…"
+                value={deviceSite}
+                onChange={e => setDeviceSite(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Observações <span className="text-muted-foreground text-xs">(opcional)</span></label>
+              <Textarea
+                placeholder="Calibre, curativo, intercorrências…"
+                rows={2}
+                value={deviceNotes}
+                onChange={e => setDeviceNotes(e.target.value)}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
+              <Button variant="outline" onClick={() => setIsAddDeviceOpen(false)} disabled={addDevice.isPending}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={!deviceType || !deviceDate || addDevice.isPending}
+                className="bg-cyan-600 hover:bg-cyan-500 text-white"
+                onClick={() => {
+                  addDevice.mutate(
+                    { id, data: { deviceType: deviceType as AddPatientDeviceBodyDeviceType, insertionDate: deviceDate, insertionSite: deviceSite, notes: deviceNotes } },
+                    {
+                      onSuccess: () => {
+                        queryClient.invalidateQueries({ queryKey: getGetPatientDevicesQueryKey(id) });
+                        toast({ title: "Dispositivo registrado com sucesso" });
+                        setIsAddDeviceOpen(false);
+                      },
+                      onError: () => toast({ title: "Erro ao registrar dispositivo", variant: "destructive" }),
+                    }
+                  );
+                }}
+              >
+                {addDevice.isPending ? "Salvando…" : "Registrar Dispositivo"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
