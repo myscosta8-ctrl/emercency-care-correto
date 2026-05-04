@@ -1364,10 +1364,10 @@ export default function PatientDetail() {
       </Dialog>
 
       <Dialog open={isPrescriptionOpen} onOpenChange={setIsPrescriptionOpen}>
-        <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[680px] max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nova Prescrição</DialogTitle>
-            <DialogDescription>Registre uma prescrição de enfermagem ou médica para este paciente.</DialogDescription>
+            <DialogDescription>Prescrição de enfermagem ou médica estruturada para este paciente.</DialogDescription>
           </DialogHeader>
           <PrescriptionForm patient={patient} onSuccess={() => setIsPrescriptionOpen(false)} onCancel={() => setIsPrescriptionOpen(false)} />
         </DialogContent>
