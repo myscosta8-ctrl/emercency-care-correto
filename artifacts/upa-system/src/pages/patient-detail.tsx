@@ -332,19 +332,19 @@ export default function PatientDetail() {
           .print-hide { display: none !important; }
           .print-only { display: block !important; }
           .no-print { display: none !important; }
-          .print-section { margin-bottom: 8pt; padding-bottom: 6pt; border-bottom: 1px solid #d1d5db; }
+          .print-section { margin-bottom: 14pt; padding-bottom: 8pt; border-bottom: 1px solid #d1d5db; }
           .print-table { width: 100%; border-collapse: collapse; margin-bottom: 6pt; }
-          .print-table th, .print-table td { border: 1px solid #9ca3af; padding: 3px 6px; font-size: 9pt; }
+          .print-table th, .print-table td { border: 1px solid #9ca3af; padding: 5px 8px; font-size: 9pt; }
           .print-table th { background: #e5e7eb; font-weight: 700; }
-          .soap-entry { margin-bottom: 8pt; padding: 6pt; border: 1px solid #d1d5db; page-break-inside: avoid; }
-          .soap-entry-header { background: #f3f4f6; padding: 3px 6px; margin-bottom: 4pt; border-bottom: 1px solid #d1d5db; }
+          .soap-entry { margin-bottom: 10pt; padding: 8pt; border: 1px solid #d1d5db; page-break-inside: avoid; }
+          .soap-entry-header { background: #f3f4f6; padding: 4px 8px; margin-bottom: 5pt; border-bottom: 1px solid #d1d5db; }
           .soap-badge { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 3px; font-size: 9pt; font-weight: 700; margin-right: 4px; }
           .badge-s { background: #dbeafe; color: #1e40af; }
           .badge-o { background: #dcfce7; color: #166534; }
           .badge-a { background: #ffedd5; color: #9a3412; }
           .badge-p { background: #f3e8ff; color: #6b21a8; }
-          .print-sig-area { margin-top: 20pt; border-top: 1px solid #9ca3af; padding-top: 8pt; display: flex; justify-content: flex-end; }
-          .print-sig-box { text-align: center; border-top: 1px solid black; min-width: 200px; padding-top: 4pt; font-size: 9pt; }
+          .print-sig-area { margin-top: 40pt; display: flex; justify-content: center; }
+          .print-sig-box { text-align: center; width: 75%; padding-top: 6pt; font-size: 9pt; border-top: 1.5px solid #111; }
         }
         .print-only { display: none; }
       `}</style>
@@ -1452,15 +1452,15 @@ export default function PatientDetail() {
 
       {/* ── PRINT-ONLY EVOLUTION REPORT ──────────────────────────────── */}
       <div className="print-only" style={{ fontFamily: "Arial, sans-serif", color: "#000", background: "#fff" }}>
-        <div className="print-section" style={{ textAlign: "center", borderBottom: "2px solid #374151", paddingBottom: "8pt" }}>
-          <div style={{ fontSize: "14pt", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>UPA Breves — Gestão de Pacientes</div>
-          <div style={{ fontSize: "12pt", fontWeight: 600, marginTop: "2pt" }}>Relatório de Evolução de Enfermagem</div>
-          <div style={{ fontSize: "9pt", color: "#6b7280", marginTop: "3pt" }}>
+        <div className="print-section" style={{ textAlign: "center", borderBottom: "2px solid #374151", paddingBottom: "10pt", marginBottom: "12pt" }}>
+          <div style={{ fontSize: "15pt", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>UPA 24H - Breves</div>
+          <div style={{ fontSize: "11pt", fontWeight: 600, marginTop: "3pt", letterSpacing: "0.04em", textTransform: "uppercase" }}>Evolução de Enfermagem</div>
+          <div style={{ fontSize: "9pt", color: "#6b7280", marginTop: "4pt" }}>
             Emitido em: {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-            {nurseName ? ` | Profissional: ${nurseName}` : ""}
           </div>
         </div>
         <div className="print-section">
+          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "5pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>Dados do Paciente</div>
           <table className="print-table">
             <tbody>
               <tr>
@@ -1490,7 +1490,7 @@ export default function PatientDetail() {
           </table>
         </div>
         <div className="print-section">
-          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "4pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>Sinais Vitais Atuais</div>
+          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "5pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>Sinais Vitais</div>
           <table className="print-table">
             <thead>
               <tr><th>PA (mmHg)</th><th>FC (bpm)</th><th>FR (irpm)</th><th>SpO₂ (%)</th><th>Temp. (°C)</th><th>HGT (mg/dL)</th></tr>
@@ -1508,9 +1508,7 @@ export default function PatientDetail() {
           </table>
         </div>
         <div className="print-section">
-          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "6pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            Histórico de Evoluções ({history ? history.filter(e => e.soapText !== "Admissão inicial").length : 0} registros)
-          </div>
+          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "6pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>Evoluções</div>
           {history && history.map(entry => {
             const isInitial = entry.soapText === "Admissão inicial";
             return (
@@ -1533,9 +1531,7 @@ export default function PatientDetail() {
         </div>
         <div className="print-sig-area">
           <div className="print-sig-box">
-            <div>{nurseName || "___________________________________"}</div>
-            <div style={{ marginTop: "2pt" }}>Profissional Responsável</div>
-            {patient.responsibleProfessional && <div style={{ color: "#6b7280" }}>{patient.responsibleProfessional}</div>}
+            <div style={{ marginTop: "4pt", fontSize: "9pt", color: "#374151" }}>Profissional responsável</div>
           </div>
         </div>
       </div>
