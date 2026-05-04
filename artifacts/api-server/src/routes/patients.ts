@@ -481,11 +481,18 @@ router.get("/:id/history", async (req, res) => {
 
 router.post("/:id/history", requirePermissao("registrar_evolucao"), async (req, res) => {
   const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
-  const body   = req.body as { userId: number; soapText: string };
+  const body = req.body as {
+    userId: number;
+    soapText: string;
+    professionalCategory?: string;
+    structuredData?: Record<string, unknown> | null;
+  };
   const [entry] = await db.insert(patientEvolutionsTable).values({
-    patientId: id,
-    userId:    body.userId   ?? 0,
-    soapText:  body.soapText ?? "",
+    patientId:            id,
+    userId:               body.userId   ?? 0,
+    soapText:             body.soapText ?? "",
+    professionalCategory: body.professionalCategory ?? "geral",
+    structuredData:       body.structuredData ?? null,
   }).returning();
   res.status(201).json(serializeEvolution(entry));
 });

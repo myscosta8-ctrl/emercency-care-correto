@@ -323,17 +323,37 @@ export interface PatientSummary {
   blue: number;
 }
 
+/**
+ * @nullable
+ */
+export type PatientHistoryEntryStructuredData = {
+  [key: string]: unknown;
+} | null;
+
 export interface PatientHistoryEntry {
   id: number;
   patientId: number;
   userId: number;
   soapText: string;
+  professionalCategory: string;
+  /** @nullable */
+  structuredData?: PatientHistoryEntryStructuredData;
   createdAt: string;
 }
+
+/**
+ * @nullable
+ */
+export type AddPatientHistoryBodyStructuredData = {
+  [key: string]: unknown;
+} | null;
 
 export interface AddPatientHistoryBody {
   userId: number;
   soapText: string;
+  professionalCategory?: string;
+  /** @nullable */
+  structuredData?: AddPatientHistoryBodyStructuredData;
 }
 
 export interface RecordPatientVitalsBody {
@@ -684,30 +704,62 @@ export interface ChangePasswordBody {
   password: string;
 }
 
+/**
+ * @nullable
+ */
+export type SocialNoteStructuredData = { [key: string]: unknown } | null;
+
 export interface SocialNote {
   id: number;
   patientId: number;
   userId: number;
   content: string;
+  /** @nullable */
+  structuredData?: SocialNoteStructuredData;
   createdAt: string;
 }
+
+/**
+ * @nullable
+ */
+export type AddSocialNoteBodyStructuredData = { [key: string]: unknown } | null;
 
 export interface AddSocialNoteBody {
   userId?: number;
   content: string;
+  /** @nullable */
+  structuredData?: AddSocialNoteBodyStructuredData;
 }
+
+/**
+ * @nullable
+ */
+export type NutritionalAssessmentStructuredData = {
+  [key: string]: unknown;
+} | null;
 
 export interface NutritionalAssessment {
   id: number;
   patientId: number;
   userId: number;
   content: string;
+  /** @nullable */
+  structuredData?: NutritionalAssessmentStructuredData;
   createdAt: string;
 }
+
+/**
+ * @nullable
+ */
+export type AddNutritionalAssessmentBodyStructuredData = {
+  [key: string]: unknown;
+} | null;
 
 export interface AddNutritionalAssessmentBody {
   userId?: number;
   content: string;
+  /** @nullable */
+  structuredData?: AddNutritionalAssessmentBodyStructuredData;
 }
 
 export type PharmacyEntryStatus =

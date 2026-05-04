@@ -476,6 +476,8 @@ export const GetPatientHistoryResponseItem = zod.object({
   patientId: zod.number(),
   userId: zod.number(),
   soapText: zod.string(),
+  professionalCategory: zod.string(),
+  structuredData: zod.record(zod.string(), zod.unknown()).nullish(),
   createdAt: zod.coerce.date(),
 });
 export const GetPatientHistoryResponse = zod.array(
@@ -492,6 +494,8 @@ export const AddPatientHistoryParams = zod.object({
 export const AddPatientHistoryBody = zod.object({
   userId: zod.number(),
   soapText: zod.string(),
+  professionalCategory: zod.string().optional(),
+  structuredData: zod.record(zod.string(), zod.unknown()).nullish(),
 });
 
 /**
@@ -922,6 +926,7 @@ export const GetPatientSocialNotesResponseItem = zod.object({
   patientId: zod.number(),
   userId: zod.number(),
   content: zod.string(),
+  structuredData: zod.record(zod.string(), zod.unknown()).nullish(),
   createdAt: zod.coerce.date(),
 });
 export const GetPatientSocialNotesResponse = zod.array(
@@ -938,6 +943,7 @@ export const AddPatientSocialNoteParams = zod.object({
 export const AddPatientSocialNoteBody = zod.object({
   userId: zod.number().optional(),
   content: zod.string(),
+  structuredData: zod.record(zod.string(), zod.unknown()).nullish(),
 });
 
 /**
@@ -952,6 +958,7 @@ export const GetPatientNutritionalAssessmentsResponseItem = zod.object({
   patientId: zod.number(),
   userId: zod.number(),
   content: zod.string(),
+  structuredData: zod.record(zod.string(), zod.unknown()).nullish(),
   createdAt: zod.coerce.date(),
 });
 export const GetPatientNutritionalAssessmentsResponse = zod.array(
@@ -968,6 +975,7 @@ export const AddPatientNutritionalAssessmentParams = zod.object({
 export const AddPatientNutritionalAssessmentBody = zod.object({
   userId: zod.number().optional(),
   content: zod.string(),
+  structuredData: zod.record(zod.string(), zod.unknown()).nullish(),
 });
 
 /**

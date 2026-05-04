@@ -4,7 +4,10 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-const connectionString = process.env.SUPABASE_DATABASE_URL ?? process.env.DATABASE_URL;
+const isProduction = process.env.NODE_ENV === "production";
+
+const connectionString = (isProduction ? process.env.SUPABASE_DATABASE_URL : undefined)
+  ?? process.env.DATABASE_URL;
 
 if (!connectionString) {
   throw new Error(
@@ -12,11 +15,11 @@ if (!connectionString) {
   );
 }
 
+const useSupabase = isProduction && !!process.env.SUPABASE_DATABASE_URL;
+
 export const pool = new Pool({
   connectionString,
-  ssl: process.env.SUPABASE_DATABASE_URL
-    ? { rejectUnauthorized: false }
-    : undefined,
+  ssl: useSupabase ? { rejectUnauthorized: false } : undefined,
 });
 export const db = drizzle(pool, { schema });
 

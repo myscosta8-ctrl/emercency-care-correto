@@ -52,7 +52,14 @@ The project is built as a pnpm workspace monorepo using TypeScript, facilitating
 *   **Mandatory Notifications:** Dedicated system for managing and tracking compulsory notifications (e.g., infectious diseases).
 *   **Laboratório Module:** Management of exam requests and results, including file uploads and real-time notifications.
 *   **Access Control by Sector and Shift:** Staff profiles define `setores_atuacao`, `turno`, and `consultorio` to dynamically filter dashboard views and access in the medical queue.
-*   **Patient Detail Screen:** Comprehensive view with SOAP evolution history, vital signs, prescriptions, tasks, and mandatory notifications.
+*   **Patient Detail Screen:** Comprehensive view with profession-specific evolution tabs, vital signs, prescriptions, tasks, and mandatory notifications.
+*   **Profession-Specific Evolution Tabs:** Each clinical category has a dedicated structured form in the patient detail screen:
+    *   **Médico** (`evolution-medico.tsx`): HDA, exame físico, hipótese diagnóstica, CID-10, conduta, CRM — stores `professional_category="medico"` + `structured_data` JSONB in `patient_evolutions`.
+    *   **Enfermeiro** (`evolution-enfermeiro.tsx`): SAE fields (avaliação por sistemas, NANDA, prescrição de enfermagem, resultado, COREN).
+    *   **Técnico de Enfermagem** (`evolution-tecnico.tsx`): Turno selector, procedure checkboxes, intercorrências, observações gerais.
+    *   **Assistente Social** (`evolution-social.tsx`): Moradia, renda familiar, composição familiar, demandas, intervenções, encaminhamentos, CRESS — stored in `social_notes.structured_data`.
+    *   **Nutricionista** (`evolution-nutricionista.tsx`): Peso, altura, IMC (auto-calculated), via de alimentação, diagnóstico nutricional, plano alimentar, CRN — stored in `nutritional_assessments.structured_data`.
+    *   All tabs include expandable history cards and print-to-new-window capability (A4 formatted HTML).
 *   **Shift Handover:** Dedicated interface for managing and printing shift summaries.
 *   **Staff Management:** CRUD operations for staff, including login, password hash, digital signature, and stamp generation.
 *   **Patient Form Sections:** Standardized admission and edit forms structured into logical sections.

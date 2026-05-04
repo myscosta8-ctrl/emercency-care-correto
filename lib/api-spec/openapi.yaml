@@ -1604,6 +1604,12 @@ components:
           type: integer
         soapText:
           type: string
+        professionalCategory:
+          type: string
+        structuredData:
+          type: object
+          additionalProperties: true
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -1612,6 +1618,7 @@ components:
         - patientId
         - userId
         - soapText
+        - professionalCategory
         - createdAt
 
     AddPatientHistoryBody:
@@ -1621,6 +1628,12 @@ components:
           type: integer
         soapText:
           type: string
+        professionalCategory:
+          type: string
+        structuredData:
+          type: object
+          additionalProperties: true
+          nullable: true
       required:
         - userId
         - soapText
@@ -2255,6 +2268,10 @@ components:
           type: integer
         content:
           type: string
+        structuredData:
+          type: object
+          additionalProperties: true
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -2272,6 +2289,10 @@ components:
           type: integer
         content:
           type: string
+        structuredData:
+          type: object
+          additionalProperties: true
+          nullable: true
       required:
         - content
 
@@ -2286,6 +2307,10 @@ components:
           type: integer
         content:
           type: string
+        structuredData:
+          type: object
+          additionalProperties: true
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -2303,6 +2328,10 @@ components:
           type: integer
         content:
           type: string
+        structuredData:
+          type: object
+          additionalProperties: true
+          nullable: true
       required:
         - content
 

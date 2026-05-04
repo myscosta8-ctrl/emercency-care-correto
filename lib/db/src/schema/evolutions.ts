@@ -1,12 +1,14 @@
-import { pgTable, serial, integer, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { patientsTable } from "./patients";
 
 export const patientEvolutionsTable = pgTable("patient_evolutions", {
-  id:        serial("id").primaryKey(),
-  patientId: integer("patient_id").notNull().references(() => patientsTable.id, { onDelete: "cascade" }),
-  userId:    integer("user_id").notNull().default(0),
-  soapText:  text("soap_text").notNull().default(""),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  id:                   serial("id").primaryKey(),
+  patientId:            integer("patient_id").notNull().references(() => patientsTable.id, { onDelete: "cascade" }),
+  userId:               integer("user_id").notNull().default(0),
+  soapText:             text("soap_text").notNull().default(""),
+  professionalCategory: text("professional_category").notNull().default("geral"),
+  structuredData:       jsonb("structured_data"),
+  createdAt:            timestamp("created_at").defaultNow().notNull(),
 });
 
 export type PatientEvolution = typeof patientEvolutionsTable.$inferSelect;

@@ -26,12 +26,6 @@ import {
   getGetPatientTasksQueryKey,
   getGetPatientNotificationsQueryKey,
   getGetPatientVitalsQueryKey,
-  useGetPatientSocialNotes,
-  useAddPatientSocialNote,
-  getGetPatientSocialNotesQueryKey,
-  useGetPatientNutritionalAssessments,
-  useAddPatientNutritionalAssessment,
-  getGetPatientNutritionalAssessmentsQueryKey,
   useGetPatientPharmacyEntries,
   useAddPatientPharmacyEntry,
   useUpdatePharmacyEntryStatus,
@@ -85,6 +79,11 @@ import { PrescriptionForm } from "@/components/prescription-form";
 import { TasksForm } from "@/components/tasks-form";
 import { NotificationForm } from "@/components/notification-form";
 import { TransferForm } from "@/components/transfer-form";
+import { EvolutionMedico } from "@/components/evolution-medico";
+import { EvolutionEnfermeiro } from "@/components/evolution-enfermeiro";
+import { EvolutionTecnico } from "@/components/evolution-tecnico";
+import { EvolutionSocial } from "@/components/evolution-social";
+import { EvolutionNutricionista } from "@/components/evolution-nutricionista";
 import { cn } from "@/lib/utils";
 
 const TRIAGE_CONFIG = {
@@ -211,12 +210,6 @@ export default function PatientDetail() {
   const { data: vitals } = useGetPatientVitals(id, {
     query: { enabled: !!id, queryKey: getGetPatientVitalsQueryKey(id) },
   });
-  const { data: socialNotes, isLoading: isLoadingSocial } = useGetPatientSocialNotes(id, {
-    query: { enabled: !!id, queryKey: getGetPatientSocialNotesQueryKey(id) },
-  });
-  const { data: nutritionalAssessments, isLoading: isLoadingNutritional } = useGetPatientNutritionalAssessments(id, {
-    query: { enabled: !!id, queryKey: getGetPatientNutritionalAssessmentsQueryKey(id) },
-  });
   const { data: pharmacyEntries, isLoading: isLoadingPharmacy } = useGetPatientPharmacyEntries(id, {
     query: { enabled: !!id, queryKey: getGetPatientPharmacyEntriesQueryKey(id) },
   });
@@ -258,8 +251,6 @@ export default function PatientDetail() {
   const [laudarSubmitting, setLaudarSubmitting] = useState(false);
   const [laudarFileReading, setLaudarFileReading] = useState(false);
 
-  const [socialText, setSocialText]           = useState("");
-  const [nutritionText, setNutritionText]     = useState("");
   const [pharmacyMed, setPharmacyMed]         = useState("");
   const [pharmacyNotes, setPharmacyNotes]     = useState("");
   const [pharmacyStatus, setPharmacyStatus]   = useState<"pendente" | "dispensado" | "devolvido">("pendente");
@@ -280,8 +271,6 @@ export default function PatientDetail() {
   const updateNotification = useUpdatePatientNotification();
   const updateTaskStatus = useUpdateTaskStatus();
   const updateExamStatus = useUpdateExamRequestStatus();
-  const addSocialNote = useAddPatientSocialNote();
-  const addNutritionalAssessment = useAddPatientNutritionalAssessment();
   const addPharmacyEntry = useAddPatientPharmacyEntry();
   const updatePharmacyStatus = useUpdatePharmacyEntryStatus();
   const addDevice = useAddPatientDevice();
@@ -317,36 +306,6 @@ export default function PatientDetail() {
       },
       onError: () => toast({ title: "Não foi possível reclassificar a triagem", variant: "destructive" }),
     });
-  };
-
-  const handleAddSocialNote = () => {
-    if (!socialText.trim()) return;
-    addSocialNote.mutate(
-      { id, data: { userId: activeUser?.id ?? 0, content: socialText.trim() } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetPatientSocialNotesQueryKey(id) });
-          setSocialText("");
-          toast({ title: "Nota social registrada" });
-        },
-        onError: () => toast({ title: "Erro ao salvar nota", variant: "destructive" }),
-      },
-    );
-  };
-
-  const handleAddNutrition = () => {
-    if (!nutritionText.trim()) return;
-    addNutritionalAssessment.mutate(
-      { id, data: { userId: activeUser?.id ?? 0, content: nutritionText.trim() } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetPatientNutritionalAssessmentsQueryKey(id) });
-          setNutritionText("");
-          toast({ title: "Avaliação nutricional registrada" });
-        },
-        onError: () => toast({ title: "Erro ao salvar avaliação", variant: "destructive" }),
-      },
-    );
   };
 
   const handleAddPharmacy = () => {
@@ -848,51 +807,65 @@ export default function PatientDetail() {
 
           {/* ── TAB: EVOLUÇÃO ─────────────────────────────────────────── */}
           <TabsContent value="evolucao">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-primary" /> Histórico de Evolução
+                <ClipboardList className="h-4 w-4 text-primary" /> Evolução Clínica
                 {history && history.filter(e => e.soapText !== "Admissão inicial").length > 0 && (
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
                     {history.filter(e => e.soapText !== "Admissão inicial").length}
                   </span>
                 )}
               </h3>
-              {pode("registrar_evolucao") && (
-                <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setIsVitalsOpen(true)}>
-                  <Stethoscope className="h-3.5 w-3.5" /> Registrar Evolução
-                </Button>
-              )}
             </div>
-            {isLoadingHistory ? (
-              <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
-            ) : !history || history.length === 0 ? (
-              <div className="text-center py-8 bg-card rounded-lg border border-border/50">
-                <p className="text-sm text-muted-foreground">Nenhuma evolução registrada ainda.</p>
-              </div>
-            ) : (
+            {activeUser?.role === "medico" && (
+              <EvolutionMedico
+                patientId={id}
+                userId={activeUser.id}
+                patientName={patient.full_name}
+                staffMap={staffMap}
+              />
+            )}
+            {activeUser?.role === "enfermeiro" && (
+              <EvolutionEnfermeiro
+                patientId={id}
+                userId={activeUser.id}
+                patientName={patient.full_name}
+                staffMap={staffMap}
+              />
+            )}
+            {activeUser?.role === "tecnico_enfermagem" && (
+              <EvolutionTecnico
+                patientId={id}
+                userId={activeUser.id}
+                patientName={patient.full_name}
+                staffMap={staffMap}
+              />
+            )}
+            {activeUser?.role !== "medico" && activeUser?.role !== "enfermeiro" && activeUser?.role !== "tecnico_enfermagem" && (
               <div className="space-y-3">
-                {history.map(entry => {
-                  const isInitial = entry.soapText === "Admissão inicial";
-                  return (
+                {isLoadingHistory ? (
+                  <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
+                ) : !history || history.filter(e => e.soapText !== "Admissão inicial").length === 0 ? (
+                  <div className="text-center py-8 bg-card rounded-lg border border-border/50">
+                    <p className="text-sm text-muted-foreground">Nenhuma evolução registrada ainda.</p>
+                  </div>
+                ) : (
+                  history.filter(e => e.soapText !== "Admissão inicial").map(entry => (
                     <div key={entry.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
                       <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
                         <span className="text-xs font-semibold">
-                          {isInitial ? "📋 Admissão Inicial" : (staffMap[entry.userId]?.name ?? `Profissional ID ${entry.userId}`)}
+                          {staffMap[entry.userId]?.name ?? `Profissional ID ${entry.userId}`}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         </span>
                       </div>
                       <div className="px-4 py-3">
-                        {isInitial ? (
-                          <p className="text-sm text-muted-foreground italic">Paciente admitido na unidade.</p>
-                        ) : (
-                          <p className="text-sm font-mono whitespace-pre-wrap text-foreground/90">{entry.soapText}</p>
-                        )}
+                        <p className="text-sm font-mono whitespace-pre-wrap text-foreground/90">{entry.soapText}</p>
                       </div>
                     </div>
-                  );
-                })}
+                  ))
+                )}
               </div>
             )}
           </TabsContent>
@@ -1276,94 +1249,24 @@ export default function PatientDetail() {
           {/* ── TAB: SOCIAL ───────────────────────────────────────────── */}
           {pode("registrar_nota_social") && (
             <TabsContent value="social">
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
-                  <MessageSquare className="h-4 w-4 text-purple-400" /> Notas de Serviço Social
-                  {socialNotes && socialNotes.length > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">{socialNotes.length}</span>
-                  )}
-                </h3>
-                <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3 mb-4">
-                  <Textarea
-                    placeholder="Registre a nota de serviço social aqui…"
-                    value={socialText}
-                    onChange={e => setSocialText(e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                  <div className="flex justify-end">
-                    <Button size="sm" disabled={!socialText.trim() || addSocialNote.isPending} onClick={handleAddSocialNote} className="gap-1.5">
-                      <Send className="h-3.5 w-3.5" /> {addSocialNote.isPending ? "Salvando…" : "Registrar Nota"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              {isLoadingSocial ? (
-                <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
-              ) : !socialNotes || socialNotes.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">Nenhuma nota social registrada ainda.</div>
-              ) : (
-                <div className="space-y-3">
-                  {socialNotes.map(note => (
-                    <div key={note.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
-                        <span className="text-xs font-semibold">{staffMap[note.userId]?.name ?? `Assistente Social ID ${note.userId}`}</span>
-                        <span className="text-xs text-muted-foreground">{format(new Date(note.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
-                      </div>
-                      <div className="px-4 py-3">
-                        <p className="text-sm whitespace-pre-wrap text-foreground/90">{note.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <EvolutionSocial
+                patientId={id}
+                userId={activeUser?.id ?? 0}
+                patientName={patient.full_name}
+                staffMap={staffMap}
+              />
             </TabsContent>
           )}
 
           {/* ── TAB: NUTRIÇÃO ─────────────────────────────────────────── */}
           {pode("registrar_avaliacao_nutricional") && (
             <TabsContent value="nutricao">
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
-                  <UtensilsCrossed className="h-4 w-4 text-emerald-400" /> Avaliação Nutricional
-                  {nutritionalAssessments && nutritionalAssessments.length > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{nutritionalAssessments.length}</span>
-                  )}
-                </h3>
-                <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3 mb-4">
-                  <Textarea
-                    placeholder="Registre a avaliação nutricional aqui…"
-                    value={nutritionText}
-                    onChange={e => setNutritionText(e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                  <div className="flex justify-end">
-                    <Button size="sm" disabled={!nutritionText.trim() || addNutritionalAssessment.isPending} onClick={handleAddNutrition} className="gap-1.5">
-                      <Send className="h-3.5 w-3.5" /> {addNutritionalAssessment.isPending ? "Salvando…" : "Registrar Avaliação"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              {isLoadingNutritional ? (
-                <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
-              ) : !nutritionalAssessments || nutritionalAssessments.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">Nenhuma avaliação nutricional registrada ainda.</div>
-              ) : (
-                <div className="space-y-3">
-                  {nutritionalAssessments.map(item => (
-                    <div key={item.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
-                        <span className="text-xs font-semibold">{staffMap[item.userId]?.name ?? `Nutricionista ID ${item.userId}`}</span>
-                        <span className="text-xs text-muted-foreground">{format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
-                      </div>
-                      <div className="px-4 py-3">
-                        <p className="text-sm whitespace-pre-wrap text-foreground/90">{item.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <EvolutionNutricionista
+                patientId={id}
+                userId={activeUser?.id ?? 0}
+                patientName={patient.full_name}
+                staffMap={staffMap}
+              />
             </TabsContent>
           )}
 
