@@ -518,22 +518,26 @@ function buildFieldValues(patient: PdfPatient, notif?: PdfNotification): Record<
     data_inicio_sintomas: fmtDate(notif?.dataInicioSintomas ?? patient.symptomOnsetDate),
     sintomas:             patient.symptoms       ?? "",
     classificacao_risco:  riskLabel(patient.triageStatus),
-    // ── atendimento fields
-    unidade_saude:            patient.healthUnit              ?? "",
+    // ── atendimento fields — formData overrides patient defaults
+    unidade_saude:            formExtra.unidade_saude            || patient.healthUnit              || "",
     data_atendimento:         fmtDate(patient.attendanceDate),
     hora_atendimento:         patient.attendanceTime           ?? "",
-    profissional_responsavel: patient.responsibleProfessional ?? "",
-    // ── SINAN notification header
+    profissional_responsavel: formExtra.profissional_responsavel || patient.responsibleProfessional || "",
+    // ── SINAN notification header — formData overrides patient defaults
     agravo_notificacao:    agravoLabel,
     data_notificacao:      fmtDate(notif?.dataNotificacao ?? patient.dataNotificacao),
-    municipio_notificacao: patient.municipioNotificacao ?? "",
-    codigo_ibge:           patient.codigoIbge            ?? "",
-    // ── SINAN investigation/conclusion
-    evolucao_caso:        patient.evolucaoCaso                     ?? "",
+    municipio_notificacao: formExtra.municipio_notificacao || patient.municipioNotificacao || "",
+    codigo_ibge:           formExtra.codigo_ibge           || patient.codigoIbge            || "",
+    // ── SINAN investigation/conclusion — formData overrides patient defaults
+    evolucao_caso:        formExtra.evolucao || patient.evolucaoCaso || "",
     classificacao_final:  notif?.classification ?? patient.classificacaoFinal ?? "",
-    criterio_confirmacao: patient.criterioConfirmacao              ?? "",
-    // ── extra disease-specific fields from formData
-    ...Object.fromEntries(Object.entries(formExtra).map(([k, v]) => [k, String(v ?? "")])),
+    criterio_confirmacao: formExtra.criterio_confirmacao || patient.criterioConfirmacao || "",
+    // ── extra disease-specific fields from formData (non-overriding keys)
+    ...Object.fromEntries(
+      Object.entries(formExtra)
+        .filter(([k]) => !["unidade_saude","profissional_responsavel","municipio_notificacao","codigo_ibge","evolucao","criterio_confirmacao"].includes(k))
+        .map(([k, v]) => [k, String(v ?? "")])
+    ),
   };
 }
 

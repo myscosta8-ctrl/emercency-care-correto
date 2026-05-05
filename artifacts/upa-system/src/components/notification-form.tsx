@@ -242,7 +242,6 @@ function CovidFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd: Re
         <SelectField label="Hospitalização" name="hospitalizacao" options={SIM_NAO_IGN} value={fd["hospitalizacao"] ?? ""} onChange={v => setFd({ ...fd, hospitalizacao: v })} />
         <SelectField label="UTI" name="uti" options={SIM_NAO_IGN} value={fd["uti"] ?? ""} onChange={v => setFd({ ...fd, uti: v })} />
       </div>
-      <SelectField label="Evolução do Caso" name="evolucao" options={EVOLUCAO_OPTS} value={fd["evolucao"] ?? ""} onChange={v => setFd({ ...fd, evolucao: v })} />
     </div>
   );
 }
@@ -267,7 +266,6 @@ function SragFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd: Rec
         { value: "nao",          label: "Não" },
         { value: "ignorado",     label: "Ignorado" },
       ]} value={fd["ventilacao"] ?? ""} onChange={v => setFd({ ...fd, ventilacao: v })} />
-      <SelectField label="Evolução do Caso" name="evolucao" options={EVOLUCAO_OPTS} value={fd["evolucao"] ?? ""} onChange={v => setFd({ ...fd, evolucao: v })} />
     </div>
   );
 }
@@ -337,7 +335,48 @@ function MeningiteFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd
         { value: "outros",       label: "Outros" },
         { value: "ignorado",     label: "Ignorado" },
       ]} value={fd["agente"] ?? ""} onChange={v => setFd({ ...fd, agente: v })} />
+      <SelectField label="Critério de Confirmação" name="criterio_mening" options={[
+        { value: "cultura",          label: "Cultura" },
+        { value: "cie",              label: "CIE" },
+        { value: "ag_latex",         label: "Ag Látex" },
+        { value: "bacterioscopia",   label: "Bacterioscopia" },
+        { value: "clinico",          label: "Clínico" },
+        { value: "quimiocitologico", label: "Quimiocitológico" },
+        { value: "clinico_epid",     label: "Clínico-Epidemiológico" },
+        { value: "pcr",              label: "PCR" },
+        { value: "outros",           label: "Outros" },
+      ]} value={fd["criterio_mening"] ?? ""} onChange={v => setFd({ ...fd, criterio_mening: v })} />
       <SelectField label="Hospitalização" name="hospitalizacao" options={SIM_NAO_IGN} value={fd["hospitalizacao"] ?? ""} onChange={v => setFd({ ...fd, hospitalizacao: v })} />
+    </div>
+  );
+}
+
+function ExantematicaFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd: Record<string, string>) => void }) {
+  return (
+    <div className="space-y-3">
+      <SelectField label="Classificação Final" name="classificacao_exant" options={[
+        { value: "sarampo",    label: "Sarampo" },
+        { value: "rubeola",    label: "Rubéola" },
+        { value: "descartado", label: "Descartado" },
+      ]} value={fd["classificacao_exant"] ?? ""} onChange={v => setFd({ ...fd, classificacao_exant: v })} />
+      <SelectField label="Critério de Confirmação" name="criterio_exant" options={[
+        { value: "laboratorial",  label: "Laboratorial" },
+        { value: "clinico_epid",  label: "Clínico-Epidemiológico" },
+        { value: "clinico",       label: "Clínico" },
+      ]} value={fd["criterio_exant"] ?? ""} onChange={v => setFd({ ...fd, criterio_exant: v })} />
+      <SelectField label="Hospitalização" name="hospitalizacao" options={SIM_NAO_IGN} value={fd["hospitalizacao"] ?? ""} onChange={v => setFd({ ...fd, hospitalizacao: v })} />
+    </div>
+  );
+}
+
+function AidsAdultoFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd: Record<string, string>) => void }) {
+  return (
+    <div className="space-y-3">
+      <SelectField label="Evolução" name="evolucao" options={[
+        { value: "vivo",         label: "Vivo" },
+        { value: "obito_aids",   label: "Óbito por AIDS" },
+        { value: "obito_outras", label: "Óbito por outras causas" },
+      ]} value={fd["evolucao"] ?? ""} onChange={v => setFd({ ...fd, evolucao: v })} />
     </div>
   );
 }
@@ -377,6 +416,8 @@ function DiseaseSpecificFields({ agravoCode, fd, setFd }: {
   if (agravoCode === "febre_amarela") return <FebreAmarelaFields fd={fd} setFd={setFd} />;
   if (agravoCode === "febre_tifoide") return <FebreTifoideFields fd={fd} setFd={setFd} />;
   if (agravoCode === "meningite") return <MeningiteFields fd={fd} setFd={setFd} />;
+  if (["sarampo", "rubeola"].includes(agravoCode)) return <ExantematicaFields fd={fd} setFd={setFd} />;
+  if (agravoCode === "aids_adulto") return <AidsAdultoFields fd={fd} setFd={setFd} />;
   return <GenericFields fd={fd} setFd={setFd} />;
 }
 
@@ -393,8 +434,16 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
   const { toast }   = useToast();
   const queryClient = useQueryClient();
   const [fd, setFd] = useState<Record<string, string>>(() => {
-    try { return notification?.formData ? JSON.parse(notification.formData) : {}; }
-    catch { return {}; }
+    const base: Record<string, string> = {
+      unidade_saude:            patient.healthUnit              ?? "",
+      municipio_notificacao:    patient.municipioNotificacao    ?? "",
+      profissional_responsavel: patient.responsibleProfessional ?? "",
+      codigo_ibge:              patient.codigoIbge              ?? "",
+    };
+    try {
+      const saved = notification?.formData ? JSON.parse(notification.formData) : {};
+      return { ...base, ...saved };
+    } catch { return base; }
   });
   const [generating, setGenerating] = useState(false);
 
@@ -594,7 +643,56 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
           )}
         </div>
 
-        {/* ── 3. Endereço de residência (editável para SINAN) ────────────── */}
+        {/* ── 3. Dados da Unidade Notificante ────────────────────────────── */}
+        <div className="space-y-3">
+          <SectionTitle>Dados da Unidade Notificante</SectionTitle>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="text-xs font-medium text-foreground block mb-1">Unidade de Saúde</label>
+              <input
+                type="text"
+                value={fd["unidade_saude"] ?? ""}
+                onChange={e => setFd({ ...fd, unidade_saude: e.target.value })}
+                placeholder="Nome da unidade"
+                className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground block mb-1">Código IBGE</label>
+              <input
+                type="text"
+                value={fd["codigo_ibge"] ?? ""}
+                onChange={e => setFd({ ...fd, codigo_ibge: e.target.value })}
+                placeholder="Ex: 1501501"
+                className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-foreground block mb-1">Município de Notificação</label>
+              <input
+                type="text"
+                value={fd["municipio_notificacao"] ?? ""}
+                onChange={e => setFd({ ...fd, municipio_notificacao: e.target.value })}
+                placeholder="Ex: Breves"
+                className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground block mb-1">Profissional Responsável</label>
+              <input
+                type="text"
+                value={fd["profissional_responsavel"] ?? ""}
+                onChange={e => setFd({ ...fd, profissional_responsavel: e.target.value })}
+                placeholder="Nome do profissional"
+                className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── 4. Endereço de residência (editável para SINAN) ────────────── */}
         <div className="space-y-3">
           <SectionTitle>Endereço de Residência (para a ficha SINAN)</SectionTitle>
           <div className="grid grid-cols-3 gap-3">
@@ -660,7 +758,7 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
           )} />
         </div>
 
-        {/* ── 4. Dados específicos do agravo ─────────────────────────────── */}
+        {/* ── 5. Dados específicos do agravo ─────────────────────────────── */}
         {selectedCode && (
           <div className="space-y-3">
             <SectionTitle>Dados Clínicos / Epidemiológicos</SectionTitle>
@@ -668,7 +766,54 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
           </div>
         )}
 
-        {/* ── 5. Classificação final ─────────────────────────────────────── */}
+        {/* ── 6. Encerramento do Caso ─────────────────────────────────────── */}
+        <div className="space-y-3">
+          <SectionTitle>Encerramento do Caso</SectionTitle>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-foreground block mb-1">Evolução do Caso</label>
+              <select
+                value={fd["evolucao"] ?? ""}
+                onChange={e => setFd({ ...fd, evolucao: e.target.value })}
+                className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">— Selecione —</option>
+                <option value="cura">Cura</option>
+                <option value="obito">Óbito pela doença</option>
+                <option value="obito_outras">Óbito por outras causas</option>
+                <option value="transferencia">Transferência</option>
+                <option value="alta">Alta / Em acompanhamento</option>
+                <option value="ignorado">Ignorado</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground block mb-1">Critério de Confirmação</label>
+              <select
+                value={fd["criterio_confirmacao"] ?? ""}
+                onChange={e => setFd({ ...fd, criterio_confirmacao: e.target.value })}
+                className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">— Selecione —</option>
+                <option value="laboratorial">Laboratorial</option>
+                <option value="clinico_epidemiologico">Clínico-Epidemiológico</option>
+                <option value="clinico">Clínico</option>
+                <option value="em_investigacao">Em Investigação</option>
+                <option value="descartado">Descartado</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-foreground block mb-1">Data de Encerramento</label>
+            <input
+              type="date"
+              value={fd["data_encerramento"] ?? ""}
+              onChange={e => setFd({ ...fd, data_encerramento: e.target.value })}
+              className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+        </div>
+
+        {/* ── 7. Classificação final ─────────────────────────────────────── */}
         <div className="space-y-3">
           <SectionTitle>Classificação Final</SectionTitle>
           <FormField control={form.control} name="classification" render={({ field }) => (
@@ -688,6 +833,14 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
               <FormMessage />
             </FormItem>
           )} />
+        </div>
+
+        {/* ── 8. Nota sobre assinaturas ──────────────────────────────────── */}
+        <div className="flex items-start gap-2 p-3 rounded-md bg-muted/30 border border-border/50 text-xs text-muted-foreground">
+          <span className="shrink-0 mt-0.5">✍️</span>
+          <span>
+            <strong className="text-foreground">Campo de assinatura:</strong> O espaço para assinatura do profissional notificador e do responsável pela unidade deve ser preenchido e assinado manualmente após a impressão do PDF.
+          </span>
         </div>
 
         {/* ── Actions ────────────────────────────────────────────────────── */}
