@@ -14,10 +14,18 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  const [user] = await db
-    .select()
-    .from(staffTable)
-    .where(eq(staffTable.login, login));
+  let user: typeof staffTable.$inferSelect | undefined;
+  try {
+    const rows = await db
+      .select()
+      .from(staffTable)
+      .where(eq(staffTable.login, login));
+    user = rows[0];
+  } catch (err) {
+    req.log.error({ err }, "Database error during login query");
+    res.status(503).json({ error: "Serviço temporariamente indisponível. Tente novamente." });
+    return;
+  }
 
   if (!user) {
     res.status(401).json({ error: "Credenciais inválidas" });
@@ -34,7 +42,9 @@ router.post("/login", async (req, res) => {
   if (isBcrypt) {
     valid = await bcrypt.compare(password, user.passwordHash);
   } else {
-    valid = user.passwordHash === password;
+    const { createHash } = await import("crypto");
+    const sha256 = createHash("sha256").update(password).digest("hex");
+    valid = sha256 === user.passwordHash || user.passwordHash === password;
   }
 
   if (!valid) {

@@ -270,18 +270,26 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Garantir constraints UNIQUE necessárias para ON CONFLICT
+DO $$ BEGIN
+  BEGIN ALTER TABLE public.staff ADD UNIQUE (login); EXCEPTION WHEN duplicate_object THEN NULL; END;
+END $$;
+DO $$ BEGIN
+  BEGIN ALTER TABLE public.beds ADD UNIQUE (bed_id); EXCEPTION WHEN duplicate_object THEN NULL; END;
+END $$;
+
 -- Usuários padrão do sistema
--- admin / admin123  e  myscosta8@gmail.com (hash existente)
+-- admin / admin123  e  myscosta8@gmail.com / Enfermagem@2025 (bcrypt)
 INSERT INTO public.staff (id, name, role, coren_crm, sector, login, password_hash, access_levels, signature, stamp, email, active, must_change_password, setores_atuacao)
 VALUES
   (1, 'Marcus Yan dos Santos Costa', 'enfermeiro', '577662', 'todos_os_setores',
    'myscosta8@gmail.com',
-   '662dbf0dcb47fe63d56fb415beebbfb7ea8fab0ba129f4581b98e1412c1b62e8',
+   '$2b$12$qbInr5XhJqetV.WpivyAxuROpjleauQmH51bX1s6c8BLyigaOPqCi',
    'assistencial,admin,coordenacao_enfermagem', '', '',
    'myscosta8@gmail.com', true, false, 'todos'),
   (2, 'Administrador', 'administrador', 'ADM-001', 'Administração',
    'admin',
-   '86a51ca7f81768d3e5c429fa9963fb2e8fd5db934688018af3dcf6997a6c13dc',
+   '$2b$12$bf0Rq6eq4kup9tX4sBI2S.0ml/325WD1rO7.a73V66W9APMcXXkkq',
    '', '', '', '', true, false, 'todos')
 ON CONFLICT (login) DO NOTHING;
 
