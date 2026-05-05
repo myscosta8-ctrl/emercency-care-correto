@@ -21,12 +21,14 @@ import type { IsolationType as IsoType } from "@/lib/isolation-protocols";
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
 export type Sector =
+  | "triagem"
   | "sala_vermelha"
   | "observacao_adulto"
   | "observacao_pediatrica"
   | "observacao_pre_adulto";
 
 const SECTOR_LABELS: Record<Sector, string> = {
+  triagem:                "Triagem",
   sala_vermelha:          "Sala Vermelha",
   observacao_adulto:      "Observação Adulto",
   observacao_pediatrica:  "Observação Pediátrica",
@@ -34,6 +36,7 @@ const SECTOR_LABELS: Record<Sector, string> = {
 };
 
 const SECTOR_ORDER: Sector[] = [
+  "triagem",
   "sala_vermelha",
   "observacao_adulto",
   "observacao_pediatrica",
@@ -41,6 +44,7 @@ const SECTOR_ORDER: Sector[] = [
 ];
 
 const SECTOR_DOT: Record<Sector, string> = {
+  triagem:                "bg-teal-500",
   sala_vermelha:          "bg-red-500",
   observacao_adulto:      "bg-blue-500",
   observacao_pediatrica:  "bg-emerald-500",

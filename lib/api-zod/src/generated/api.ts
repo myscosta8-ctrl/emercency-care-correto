@@ -53,6 +53,7 @@ export const ListPatientsResponseItem = zod.object({
   triage_level: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   bed: zod.string(),
   sector: zod.enum([
+    "triagem",
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -190,6 +191,7 @@ export const GetPatientResponse = zod.object({
   triage_level: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   bed: zod.string(),
   sector: zod.enum([
+    "triagem",
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -311,6 +313,7 @@ export const UpdatePatientResponse = zod.object({
   triage_level: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   bed: zod.string(),
   sector: zod.enum([
+    "triagem",
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",
@@ -413,6 +416,7 @@ export const UpdatePatientStatusResponse = zod.object({
   triage_level: zod.enum(["red", "orange", "yellow", "green", "blue"]),
   bed: zod.string(),
   sector: zod.enum([
+    "triagem",
     "sala_vermelha",
     "observacao_adulto",
     "observacao_pediatrica",

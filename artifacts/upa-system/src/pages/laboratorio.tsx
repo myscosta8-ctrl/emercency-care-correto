@@ -50,7 +50,7 @@ const TRIAGE_CFG = {
 // ── api helpers ───────────────────────────────────────────────────────────────
 
 async function fetchExamResults(patientId: number): Promise<ExamResult[]> {
-  const r = await fetch(`/api/patients/${patientId}/exam-results`);
+  const r = await fetch(`/api/patients/${patientId}/exam-results`, { credentials: "include" });
   if (!r.ok) throw new Error("Erro ao buscar exames");
   return r.json();
 }
@@ -58,6 +58,7 @@ async function fetchExamResults(patientId: number): Promise<ExamResult[]> {
 async function postExamResult(patientId: number, data: Partial<ExamResult>): Promise<ExamResult> {
   const r = await fetch(`/api/patients/${patientId}/exam-results`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
@@ -68,6 +69,7 @@ async function postExamResult(patientId: number, data: Partial<ExamResult>): Pro
 async function liberarExam(patientId: number, examId: number, data: Partial<ExamResult>): Promise<ExamResult> {
   const r = await fetch(`/api/patients/${patientId}/exam-results/${examId}/liberar`, {
     method: "PUT",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });

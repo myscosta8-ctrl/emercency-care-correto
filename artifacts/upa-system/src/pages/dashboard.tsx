@@ -92,6 +92,7 @@ type TriageKey = keyof typeof TRIAGE_CONFIG;
 const TRIAGE_SEVERITY: Record<string, number> = { red: 1, orange: 2, yellow: 3, green: 4, blue: 5 };
 
 const ALL_SECTOR_CONFIG = [
+  { key: "triagem",               name: "Triagem",               emoji: "🩺", headerCls: "bg-teal-950/60 border-teal-700/50 text-teal-300",       emptyBorder: "border-teal-900/30"   },
   { key: "sala_vermelha",         name: "Sala Vermelha",         emoji: "🔴", headerCls: "bg-red-950/60 border-red-700/50 text-red-300",        emptyBorder: "border-red-900/30"    },
   { key: "observacao_adulto",     name: "Observação Adulto",     emoji: "🟡", headerCls: "bg-yellow-950/40 border-yellow-700/40 text-yellow-300", emptyBorder: "border-yellow-900/30" },
   { key: "observacao_pediatrica", name: "Observação Pediátrica", emoji: "🟢", headerCls: "bg-green-950/40 border-green-700/40 text-green-300",   emptyBorder: "border-green-900/30"  },
@@ -506,7 +507,8 @@ export default function Dashboard() {
 
   const { data: patients, isLoading: isLoadingPatients } = useListPatients(examParams);
   const { data: summary, isLoading: isLoadingSummary }   = useGetPatientsSummary();
-  const deletePatient = useDeletePatient();
+  const deletePatient         = useDeletePatient();
+  const updatePatientStatus   = useUpdatePatientStatus();
   const queryClient   = useQueryClient();
   const { toast }     = useToast();
 
@@ -540,6 +542,7 @@ export default function Dashboard() {
     if (!patients) return { grouped: null, groupedByStatus: null };
     const q = debouncedSearch.toLowerCase();
     const base = patients.filter(p => {
+      if (p.careStatus === "Alta") return false;
       const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
       const matchesSector = filtro === "Todos" || p.sector === filtro;
       const matchesTriage = triageFilter === "all" || p.triage_level === triageFilter;
@@ -623,15 +626,18 @@ export default function Dashboard() {
 
   const confirmAlta = () => {
     if (!altaPatient) return;
-    deletePatient.mutate({ id: altaPatient.id }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
-        toast({ title: "Alta registrada com sucesso" });
-        setAltaPatient(null);
-      },
-      onError: () => toast({ title: "Não foi possível registrar a alta", variant: "destructive" }),
-    });
+    updatePatientStatus.mutate(
+      { id: altaPatient.id, data: { care_status: "Alta", triage_level: altaPatient.triage_level as "red" | "orange" | "yellow" | "green" | "blue", user_id: activeUser?.id ?? 0 } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
+          toast({ title: "Alta registrada com sucesso", description: "Dados preservados no histórico." });
+          setAltaPatient(null);
+        },
+        onError: () => toast({ title: "Não foi possível registrar a alta", variant: "destructive" }),
+      }
+    );
   };
 
   return (

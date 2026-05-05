@@ -29,6 +29,7 @@ interface PrintHeaderProps {
 }
 
 const SECTOR_LABEL: Record<string, string> = {
+  triagem:                "Triagem",
   sala_vermelha:          "Sala Vermelha",
   observacao_adulto:      "Obs. Adulto",
   observacao_pediatrica:  "Obs. Pediátrica",

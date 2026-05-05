@@ -33,6 +33,7 @@ const TRIAGE = {
 type TriageKey = keyof typeof TRIAGE;
 
 const SECTORS = [
+  { value: "triagem",               label: "Triagem" },
   { value: "sala_vermelha",         label: "Sala Vermelha" },
   { value: "observacao_adulto",     label: "Obs. Adulto" },
   { value: "observacao_pediatrica", label: "Obs. Pediátrica" },
@@ -53,7 +54,7 @@ export default function RecepcaoPage() {
   const [phone, setPhone]         = useState("");
   const [complaint, setComplaint] = useState("");
   const [triage, setTriage]       = useState<TriageKey>("green");
-  const [sector, setSector]       = useState("sala_vermelha");
+  const [sector, setSector]       = useState("triagem");
   const [saving, setSaving]       = useState(false);
 
   const { data: patients } = useListPatients();

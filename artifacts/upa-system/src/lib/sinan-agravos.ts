@@ -59,6 +59,7 @@ export const SINAN_AGRAVOS: SinanAgravo[] = [
   { code: "varicela_grave",      label: "Varicela Grave / Óbito por Varicela",        cid10: "B01",   template: "outros" },
   { code: "violencia",           label: "Violência Doméstica, Sexual e/ou Autoprovocada", cid10: "Y09", template: "violencia" },
   { code: "zika",                label: "Zika Vírus",                                 cid10: "A92.8", template: "outros" },
+  { code: "acidente_pecanhento", label: "Acidente por Animais Peçonhentos",            cid10: "X20",   template: "outros" },
 ];
 
 export function findAgravo(code: string): SinanAgravo | undefined {

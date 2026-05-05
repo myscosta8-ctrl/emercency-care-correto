@@ -281,18 +281,21 @@ export default function PatientDetail() {
   const [printingRxId, setPrintingRxId] = useState<number | null>(null);
 
   const handleDelete = () => {
-    deletePatient.mutate({ id }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
-        toast({ title: "Alta registrada com sucesso" });
-        setLocation("/");
-      },
-      onError: () => {
-        toast({ title: "Não foi possível registrar a alta", variant: "destructive" });
-        setIsDeleteOpen(false);
-      },
-    });
+    updateStatus.mutate(
+      { id, data: { care_status: "Alta", triage_level: (patient?.triage_level ?? "green") as "red" | "orange" | "yellow" | "green" | "blue", user_id: activeUser?.id ?? 0 } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
+          toast({ title: "Alta registrada com sucesso", description: "Dados preservados no histórico." });
+          setLocation("/");
+        },
+        onError: () => {
+          toast({ title: "Não foi possível registrar a alta", variant: "destructive" });
+          setIsDeleteOpen(false);
+        },
+      }
+    );
   };
 
   const handleStatusChange = (newStatus: string) => {
@@ -1852,17 +1855,17 @@ export default function PatientDetail() {
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent className="no-print">
           <AlertDialogHeader>
-            <AlertDialogTitle>Alta / Remoção do Paciente</AlertDialogTitle>
+            <AlertDialogTitle>Registrar Alta do Paciente</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirma a alta ou remoção de <strong>{patient.full_name}</strong> do sistema? O registro será excluído permanentemente.
+              Confirma a alta de <strong>{patient.full_name}</strong>? O paciente será removido da lista ativa e seus dados preservados no histórico.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletePatient.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={updateStatus.isPending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={e => { e.preventDefault(); handleDelete(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deletePatient.isPending}>
-              {deletePatient.isPending ? "Processando..." : "Confirmar Alta"}
+              disabled={updateStatus.isPending}>
+              {updateStatus.isPending ? "Processando..." : "Confirmar Alta"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

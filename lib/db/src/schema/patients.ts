@@ -27,7 +27,7 @@ export const patientsTable = pgTable("patients", {
   email:        text("email").notNull().default(""),
 
   // ── localização na UPA ─────────────────────────────────────────────────────
-  sector:       text("sector", { enum: ["sala_vermelha", "observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"] }).notNull(),
+  sector:       text("sector", { enum: ["triagem", "sala_vermelha", "observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"] }).notNull(),
   bed:          text("bed").notNull().default(""),
 
   // ── triagem / status de fluxo ──────────────────────────────────────────────

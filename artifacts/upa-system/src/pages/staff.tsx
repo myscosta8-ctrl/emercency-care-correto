@@ -35,6 +35,7 @@ const ACCESS_LEVELS = [
 const EDITOR_ROLES = new Set(["admin", "coordenacao_enfermagem"]);
 
 const SECTOR_LABEL: Record<string, string> = {
+  triagem:               "Triagem",
   sala_vermelha:         "Sala Vermelha",
   observacao_adulto:     "Observação Adulto",
   observacao_pediatrica: "Observação Pediátrica",
@@ -43,6 +44,7 @@ const SECTOR_LABEL: Record<string, string> = {
 };
 
 const SECTORS = [
+  { value: "triagem",               label: "Triagem"               },
   { value: "sala_vermelha",         label: "Sala Vermelha"         },
   { value: "observacao_adulto",     label: "Observação Adulto"     },
   { value: "observacao_pediatrica", label: "Observação Pediátrica" },

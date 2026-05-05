@@ -1263,7 +1263,7 @@ components:
           type: string
         sector:
           type: string
-          enum: [sala_vermelha, observacao_adulto, observacao_pediatrica, observacao_pre_adulto]
+          enum: [triagem, sala_vermelha, observacao_adulto, observacao_pediatrica, observacao_pre_adulto]
         internmentStatus:
           type: string
           enum: [observacao, internado, alta]

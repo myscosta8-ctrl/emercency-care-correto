@@ -84,7 +84,7 @@ function ageFromBirthDate(birthDate: string): number {
 }
 
 type TriageLevel   = "red" | "orange" | "yellow" | "green" | "blue";
-type PatientSector = "sala_vermelha" | "observacao_adulto" | "observacao_pediatrica" | "observacao_pre_adulto";
+type PatientSector = "triagem" | "sala_vermelha" | "observacao_adulto" | "observacao_pediatrica" | "observacao_pre_adulto";
 type InternStatus  = "internado" | "nao_internado";
 type CareStatus    = "Em Triagem" | "Aguardando Atendimento" | "Em Atendimento (Cons. 1)" | "Em Atendimento (Cons. 2)" | "Em Observação" | "Internado" | "Em Transferência" | "Alta";
 

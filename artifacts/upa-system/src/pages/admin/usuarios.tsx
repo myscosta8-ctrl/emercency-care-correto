@@ -35,6 +35,7 @@ const PERFIL_COLOR: Record<Perfil, string> = {
 
 const SECTOR_OPTIONS = [
   { value: "todos_os_setores",      label: "Todos os Setores"      },
+  { value: "triagem",               label: "Triagem"               },
   { value: "sala_vermelha",         label: "Sala Vermelha"         },
   { value: "observacao_adulto",     label: "Observação Adulto"     },
   { value: "observacao_pediatrica", label: "Observação Pediátrica" },

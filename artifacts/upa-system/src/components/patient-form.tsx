@@ -34,6 +34,7 @@ const TRIAGE_OPTIONS = [
 ] as const;
 
 const SECTOR_OPTIONS = [
+  { value: "triagem",               label: "Triagem"               },
   { value: "sala_vermelha",         label: "Sala Vermelha"         },
   { value: "observacao_adulto",     label: "Observação Adulto"     },
   { value: "observacao_pediatrica", label: "Observação Pediátrica" },

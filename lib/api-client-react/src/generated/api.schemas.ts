@@ -18,6 +18,7 @@ export const PatientTriageLevel = {
 export type PatientSector = (typeof PatientSector)[keyof typeof PatientSector];
 
 export const PatientSector = {
+  triagem: "triagem",
   sala_vermelha: "sala_vermelha",
   observacao_adulto: "observacao_adulto",
   observacao_pediatrica: "observacao_pediatrica",
