@@ -22,6 +22,7 @@ const serialize = (s: typeof staffTable.$inferSelect) => ({
   setoresAtuacao: s.setoresAtuacao,
   turno: s.turno,
   consultorio: s.consultorio,
+  customPermissions: s.customPermissions,
   createdAt: s.createdAt.toISOString(),
   updatedAt: s.updatedAt.toISOString(),
 });
@@ -46,6 +47,7 @@ router.post("/", requirePermissao("gerenciar_usuarios"), async (req, res) => {
     setoresAtuacao?: string;
     turno?: string;
     consultorio?: string;
+    customPermissions?: string;
   };
 
   if (!rest.name || !rest.role || !rest.login) {
@@ -73,6 +75,7 @@ router.post("/", requirePermissao("gerenciar_usuarios"), async (req, res) => {
       setoresAtuacao: rest.setoresAtuacao ?? "todos",
       turno: rest.turno ?? "",
       consultorio: rest.consultorio ?? "",
+      customPermissions: rest.customPermissions ?? "",
     })
     .returning();
 
@@ -102,6 +105,7 @@ router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
     setoresAtuacao?: string;
     turno?: string;
     consultorio?: string;
+    customPermissions?: string;
   };
 
   const patch: Partial<typeof staffTable.$inferInsert> = {
@@ -122,9 +126,8 @@ router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
 
 router.delete("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   const id = Number(req.params["id"]);
-  const [deleted] = await db.delete(staffTable).where(eq(staffTable.id, id)).returning();
-  if (!deleted) { res.status(404).json({ error: "Not found" }); return; }
-  res.status(204).end();
+  await db.delete(staffTable).where(eq(staffTable.id, id));
+  res.json({ ok: true });
 });
 
 export default router;

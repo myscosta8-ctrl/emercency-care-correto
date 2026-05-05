@@ -5,7 +5,13 @@ import { z } from "zod/v4";
 export const staffTable = pgTable("staff", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  role: text("role", { enum: ["recepcionista", "enfermeiro", "tecnico_enfermagem", "medico", "assistente_social", "nutricionista", "farmaceutico", "administrador"] }).notNull(),
+  role: text("role", {
+    enum: [
+      "recepcionista", "enfermeiro", "tecnico_enfermagem", "medico",
+      "assistente_social", "nutricionista", "farmaceutico", "administrador",
+      "auxiliar_administrativo", "diretoria_geral",
+    ],
+  }).notNull(),
   email: text("email").notNull().default(""),
   active: boolean("active").notNull().default(true),
   corenCrm: text("coren_crm").notNull().default(""),
@@ -20,6 +26,10 @@ export const staffTable = pgTable("staff", {
   setoresAtuacao: text("setores_atuacao").notNull().default("todos"),
   turno: text("turno").notNull().default(""),
   consultorio: text("consultorio").notNull().default(""),
+  // ── permissões individuais ─────────────────────────────────────────────────
+  // JSON string: lista de ações permitidas ex: ["criar_paciente","*"]
+  // null/vazio = usa padrão do cargo
+  customPermissions: text("custom_permissions").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

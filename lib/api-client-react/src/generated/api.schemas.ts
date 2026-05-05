@@ -551,6 +551,8 @@ export const StaffMemberRole = {
   nutricionista: "nutricionista",
   farmaceutico: "farmaceutico",
   administrador: "administrador",
+  auxiliar_administrativo: "auxiliar_administrativo",
+  diretoria_geral: "diretoria_geral",
 } as const;
 
 export interface StaffMember {
@@ -568,6 +570,7 @@ export interface StaffMember {
   setoresAtuacao: string;
   turno: string;
   consultorio: string;
+  customPermissions?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -584,6 +587,8 @@ export const CreateStaffBodyRole = {
   nutricionista: "nutricionista",
   farmaceutico: "farmaceutico",
   administrador: "administrador",
+  auxiliar_administrativo: "auxiliar_administrativo",
+  diretoria_geral: "diretoria_geral",
 } as const;
 
 export interface CreateStaffBody {
@@ -601,6 +606,7 @@ export interface CreateStaffBody {
   setoresAtuacao?: string;
   turno?: string;
   consultorio?: string;
+  customPermissions?: string;
 }
 
 export type UpdateStaffBodyRole =
@@ -615,6 +621,8 @@ export const UpdateStaffBodyRole = {
   nutricionista: "nutricionista",
   farmaceutico: "farmaceutico",
   administrador: "administrador",
+  auxiliar_administrativo: "auxiliar_administrativo",
+  diretoria_geral: "diretoria_geral",
 } as const;
 
 export interface UpdateStaffBody {
@@ -632,6 +640,7 @@ export interface UpdateStaffBody {
   setoresAtuacao?: string;
   turno?: string;
   consultorio?: string;
+  customPermissions?: string;
 }
 
 export interface GetStaffParams {
@@ -699,6 +708,7 @@ export interface AuthUser {
   setoresAtuacao: string;
   turno: string;
   consultorio: string;
+  customPermissions?: string;
 }
 
 export interface ChangePasswordBody {

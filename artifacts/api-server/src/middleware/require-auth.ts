@@ -52,6 +52,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 
 /**
  * Checks that the authenticated staff member has the given permission.
+ * Respects per-user customPermissions if defined, otherwise uses role defaults.
  * Must be used after requireAuth in the middleware chain.
  */
 export function requirePermissao(acao: string) {
@@ -60,7 +61,7 @@ export function requirePermissao(acao: string) {
       res.status(401).json({ error: "Autenticação necessária" });
       return;
     }
-    if (!temPermissaoServer(req.staff.role, acao)) {
+    if (!temPermissaoServer(req.staff.role, acao, req.staff.customPermissions)) {
       res.status(403).json({ error: `Permissão insuficiente para: ${acao}` });
       return;
     }

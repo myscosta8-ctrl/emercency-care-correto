@@ -1989,7 +1989,7 @@ components:
           type: string
         role:
           type: string
-          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador]
+          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador, auxiliar_administrativo, diretoria_geral]
         email:
           type: string
         active:
@@ -2011,6 +2011,8 @@ components:
         turno:
           type: string
         consultorio:
+          type: string
+        customPermissions:
           type: string
         createdAt:
           type: string
@@ -2043,7 +2045,7 @@ components:
           type: string
         role:
           type: string
-          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador]
+          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador, auxiliar_administrativo, diretoria_geral]
         email:
           type: string
         active:
@@ -2067,6 +2069,8 @@ components:
         turno:
           type: string
         consultorio:
+          type: string
+        customPermissions:
           type: string
       required:
         - name
@@ -2080,7 +2084,7 @@ components:
           type: string
         role:
           type: string
-          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador]
+          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador, auxiliar_administrativo, diretoria_geral]
         email:
           type: string
         active:
@@ -2104,6 +2108,8 @@ components:
         turno:
           type: string
         consultorio:
+          type: string
+        customPermissions:
           type: string
 
     GetStaffParams:
@@ -2265,6 +2271,8 @@ components:
         turno:
           type: string
         consultorio:
+          type: string
+        customPermissions:
           type: string
       required:
         - id

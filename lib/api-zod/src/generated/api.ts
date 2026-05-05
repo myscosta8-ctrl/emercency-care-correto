@@ -905,6 +905,7 @@ export const AuthLoginResponse = zod.object({
   setoresAtuacao: zod.string(),
   turno: zod.string(),
   consultorio: zod.string(),
+  customPermissions: zod.string().optional(),
 });
 
 /**
@@ -1337,6 +1338,8 @@ export const ListStaffResponseItem = zod.object({
     "nutricionista",
     "farmaceutico",
     "administrador",
+    "auxiliar_administrativo",
+    "diretoria_geral",
   ]),
   email: zod.string(),
   active: zod.boolean(),
@@ -1349,6 +1352,7 @@ export const ListStaffResponseItem = zod.object({
   setoresAtuacao: zod.string(),
   turno: zod.string(),
   consultorio: zod.string(),
+  customPermissions: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -1368,6 +1372,8 @@ export const CreateStaffBody = zod.object({
     "nutricionista",
     "farmaceutico",
     "administrador",
+    "auxiliar_administrativo",
+    "diretoria_geral",
   ]),
   email: zod.string().optional(),
   active: zod.boolean().optional(),
@@ -1381,6 +1387,7 @@ export const CreateStaffBody = zod.object({
   setoresAtuacao: zod.string().optional(),
   turno: zod.string().optional(),
   consultorio: zod.string().optional(),
+  customPermissions: zod.string().optional(),
 });
 
 /**
@@ -1402,6 +1409,8 @@ export const GetStaffResponse = zod.object({
     "nutricionista",
     "farmaceutico",
     "administrador",
+    "auxiliar_administrativo",
+    "diretoria_geral",
   ]),
   email: zod.string(),
   active: zod.boolean(),
@@ -1414,6 +1423,7 @@ export const GetStaffResponse = zod.object({
   setoresAtuacao: zod.string(),
   turno: zod.string(),
   consultorio: zod.string(),
+  customPermissions: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -1437,6 +1447,8 @@ export const UpdateStaffBody = zod.object({
       "nutricionista",
       "farmaceutico",
       "administrador",
+      "auxiliar_administrativo",
+      "diretoria_geral",
     ])
     .optional(),
   email: zod.string().optional(),
@@ -1451,6 +1463,7 @@ export const UpdateStaffBody = zod.object({
   setoresAtuacao: zod.string().optional(),
   turno: zod.string().optional(),
   consultorio: zod.string().optional(),
+  customPermissions: zod.string().optional(),
 });
 
 export const UpdateStaffResponse = zod.object({
@@ -1465,6 +1478,8 @@ export const UpdateStaffResponse = zod.object({
     "nutricionista",
     "farmaceutico",
     "administrador",
+    "auxiliar_administrativo",
+    "diretoria_geral",
   ]),
   email: zod.string(),
   active: zod.boolean(),
@@ -1477,6 +1492,7 @@ export const UpdateStaffResponse = zod.object({
   setoresAtuacao: zod.string(),
   turno: zod.string(),
   consultorio: zod.string(),
+  customPermissions: zod.string().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });

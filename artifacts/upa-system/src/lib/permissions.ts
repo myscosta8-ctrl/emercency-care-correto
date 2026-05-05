@@ -30,6 +30,7 @@ export type Acao =
 
 export interface Usuario {
   role: string;
+  customPermissions?: string;
 }
 
 export const PERFIL_LABELS: Record<Perfil, string> = {
@@ -94,6 +95,20 @@ export const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
 
 export function temPermissao(usuario: Usuario | null | undefined, acao: Acao): boolean {
   if (!usuario) return false;
+
+  // Se o colaborador tem permissões individuais configuradas, usa elas
+  if (usuario.customPermissions && usuario.customPermissions.trim()) {
+    try {
+      const perms: string[] = JSON.parse(usuario.customPermissions);
+      if (Array.isArray(perms) && perms.length > 0) {
+        return perms.includes("*") || perms.includes(acao);
+      }
+    } catch {
+      // fall through to role-based check
+    }
+  }
+
+  // Fallback: usa padrão do cargo
   const permissoes = PERMISSOES[usuario.role as Perfil];
   if (!permissoes) return false;
   return permissoes.includes("*") || (permissoes as Acao[]).includes(acao);

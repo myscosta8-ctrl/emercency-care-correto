@@ -1,4 +1,4 @@
-const PERMISSOES: Record<string, (string)[]> = {
+const PERMISSOES: Record<string, string[]> = {
   recepcionista:           ["criar_paciente", "editar_paciente", "visualizar_setores"],
   enfermeiro:              ["criar_paciente", "editar_paciente", "excluir_paciente", "classificacao_risco", "gerar_pdf", "mudar_setor", "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao"],
   tecnico_enfermagem:      ["criar_paciente", "registrar_sinais_vitais", "registrar_evolucao"],
@@ -11,7 +11,22 @@ const PERMISSOES: Record<string, (string)[]> = {
   diretoria_geral:         ["*"],
 };
 
-export function temPermissaoServer(role: string, acao: string): boolean {
+/**
+ * Verifica se um colaborador tem uma permissão.
+ * Se o colaborador tiver customPermissions definidas (JSON com lista de ações),
+ * usa apenas elas. Caso contrário, usa o padrão do cargo.
+ */
+export function temPermissaoServer(role: string, acao: string, customPermissions?: string | null): boolean {
+  if (customPermissions && customPermissions.trim()) {
+    try {
+      const perms: string[] = JSON.parse(customPermissions);
+      if (Array.isArray(perms) && perms.length > 0) {
+        return perms.includes("*") || perms.includes(acao);
+      }
+    } catch {
+      // fall through to role-based check
+    }
+  }
   const perms = PERMISSOES[role];
   if (!perms) return false;
   return perms.includes("*") || perms.includes(acao);

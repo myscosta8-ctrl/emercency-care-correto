@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { useAuth } from "@/lib/use-auth";
 import { usePode } from "@/hooks/use-pode";
 import { useFeatures } from "@/lib/features-context";
-import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle, Mail, ToggleLeft, ToggleRight } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle, Mail, ToggleLeft, ToggleRight, ShieldCheck } from "lucide-react";
 import { useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ACOES, ACAO_LABELS, PERMISSOES, type Perfil, type Acao } from "@/lib/permissions";
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -218,7 +219,7 @@ function SignaturePad({ value, onChange }: SignaturePadProps) {
 
 interface FormData {
   name: string;
-  role: "recepcionista" | "enfermeiro" | "tecnico_enfermagem" | "medico" | "assistente_social" | "nutricionista" | "farmaceutico" | "administrador";
+  role: Perfil;
   email: string;
   active: boolean;
   corenCrm: string;
@@ -231,6 +232,9 @@ interface FormData {
   setoresAtuacao: string[];
   turno: string;
   consultorio: string;
+  // null = usa padrão do cargo; string[] = permissões individuais
+  useCustomPerms: boolean;
+  customPermissions: Acao[];
 }
 
 const defaultForm = (): FormData => ({
@@ -248,7 +252,28 @@ const defaultForm = (): FormData => ({
   setoresAtuacao: ["todos"],
   turno: "",
   consultorio: "",
+  useCustomPerms: false,
+  customPermissions: [],
 });
+
+function parseCustomPerms(raw: string | undefined | null): { useCustomPerms: boolean; customPermissions: Acao[] } {
+  if (!raw || !raw.trim()) return { useCustomPerms: false, customPermissions: [] };
+  try {
+    const arr: string[] = JSON.parse(raw);
+    if (Array.isArray(arr) && arr.length > 0) {
+      // "*" means all-permissions but stored as individual actions
+      if (arr.includes("*")) return { useCustomPerms: true, customPermissions: [...ACOES] };
+      return { useCustomPerms: true, customPermissions: arr.filter((a): a is Acao => ACOES.includes(a as Acao)) };
+    }
+  } catch { /* ignore */ }
+  return { useCustomPerms: false, customPermissions: [] };
+}
+
+function roleDefaultPerms(role: Perfil): Acao[] {
+  const perms = PERMISSOES[role] ?? [];
+  if (perms.includes("*")) return [...ACOES];
+  return perms.filter((a): a is Acao => a !== "*");
+}
 
 function buildStamp(f: FormData): string {
   const catLabel = CATEGORIES.find(c => c.value === f.role)?.label ?? "";
@@ -276,9 +301,10 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
 
   const [form, setForm] = useState<FormData>(() => {
     if (!initial) return defaultForm();
+    const { useCustomPerms, customPermissions } = parseCustomPerms(initial.customPermissions);
     return {
       name: initial.name,
-      role: initial.role as FormData["role"],
+      role: initial.role as Perfil,
       email: initial.email,
       active: initial.active,
       corenCrm: initial.corenCrm,
@@ -291,6 +317,8 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
       setoresAtuacao: initial.setoresAtuacao ? initial.setoresAtuacao.split(",").filter(Boolean) : ["todos"],
       turno: initial.turno ?? "",
       consultorio: initial.consultorio ?? "",
+      useCustomPerms,
+      customPermissions,
     };
   });
 
@@ -300,6 +328,30 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
     set({ accessLevels: form.accessLevels.includes(v)
       ? form.accessLevels.filter(x => x !== v)
       : [...form.accessLevels, v] });
+  };
+
+  const togglePerm = (a: Acao) => {
+    set({
+      customPermissions: form.customPermissions.includes(a)
+        ? form.customPermissions.filter(x => x !== a)
+        : [...form.customPermissions, a],
+    });
+  };
+
+  const toggleAllPerms = () => {
+    if (form.customPermissions.length === ACOES.length) {
+      set({ customPermissions: [] });
+    } else {
+      set({ customPermissions: [...ACOES] });
+    }
+  };
+
+  const toggleUseCustom = () => {
+    if (form.useCustomPerms) {
+      set({ useCustomPerms: false, customPermissions: [] });
+    } else {
+      set({ useCustomPerms: true, customPermissions: roleDefaultPerms(form.role) });
+    }
   };
 
   const toggleSetor = (v: string) => {
@@ -327,6 +379,10 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
       return;
     }
 
+    const customPermissionsJson = form.useCustomPerms && form.customPermissions.length > 0
+      ? JSON.stringify(form.customPermissions)
+      : "";
+
     const payload = {
       name: form.name,
       role: form.role,
@@ -342,6 +398,7 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
       setoresAtuacao: form.setoresAtuacao.join(",") || "todos",
       turno: form.turno,
       consultorio: form.consultorio,
+      customPermissions: customPermissionsJson,
     };
 
     try {
@@ -582,6 +639,97 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
             </div>
           </div>
 
+          {/* permissões individuais */}
+          <div className="space-y-3 border border-border/40 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-amber-400" />
+                <Label className="mb-0">Permissões individuais</Label>
+              </div>
+              <button
+                type="button"
+                onClick={toggleUseCustom}
+                className={cn(
+                  "flex items-center gap-1.5 h-8 px-3 rounded-md border text-xs font-medium transition-colors",
+                  form.useCustomPerms
+                    ? "border-amber-500/50 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20"
+                    : "border-border/50 text-muted-foreground bg-muted/20 hover:bg-muted/40"
+                )}
+              >
+                {form.useCustomPerms ? (
+                  <><ToggleRight className="h-3.5 w-3.5" /> Personalizado</>
+                ) : (
+                  <><ToggleLeft className="h-3.5 w-3.5" /> Padrão do cargo</>
+                )}
+              </button>
+            </div>
+
+            {!form.useCustomPerms ? (
+              <div>
+                <p className="text-[11px] text-muted-foreground">
+                  Usando permissões padrão do cargo <strong className="text-foreground">{CATEGORIES.find(c => c.value === form.role)?.label}</strong>.
+                  Ative "Personalizado" para sobrescrever individualmente.
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {roleDefaultPerms(form.role).map(a => (
+                    <span key={a} className="px-2 py-0.5 rounded text-[10px] font-medium bg-muted/40 border border-border/30 text-muted-foreground">
+                      {ACAO_LABELS[a]}
+                    </span>
+                  ))}
+                  {roleDefaultPerms(form.role).length === ACOES.length && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                      Acesso total
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] text-muted-foreground">
+                    Selecione exatamente quais ações este colaborador pode executar, independente do cargo.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={toggleAllPerms}
+                    className="text-[11px] text-primary hover:underline shrink-0 ml-2"
+                  >
+                    {form.customPermissions.length === ACOES.length ? "Desmarcar todos" : "Selecionar todos"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {ACOES.map(a => {
+                    const checked = form.customPermissions.includes(a);
+                    return (
+                      <button
+                        key={a}
+                        type="button"
+                        onClick={() => togglePerm(a)}
+                        className={cn(
+                          "flex items-center gap-2.5 px-3 py-2 rounded-lg border text-sm text-left transition-colors",
+                          checked
+                            ? "bg-amber-500/10 border-amber-500/40 text-amber-300"
+                            : "border-border/30 text-muted-foreground hover:bg-muted/20"
+                        )}
+                      >
+                        <div className={cn(
+                          "h-4 w-4 rounded border flex items-center justify-center shrink-0",
+                          checked ? "bg-amber-500 border-amber-500" : "border-muted-foreground/40"
+                        )}>
+                          {checked && <Check className="h-2.5 w-2.5 text-white" />}
+                        </div>
+                        <span className="flex-1">{ACAO_LABELS[a]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-amber-400/70 mt-1">
+                  {form.customPermissions.length} de {ACOES.length} permissões selecionadas
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* assinatura digital */}
           <div className="space-y-1.5">
             <Label>Assinatura digital</Label>
@@ -688,6 +836,24 @@ function StaffCard({ member, onEdit, onDelete, canEdit }: StaffCardProps) {
               ))}
             </div>
           )}
+          {(() => {
+            const cp = member.customPermissions;
+            if (!cp || !cp.trim()) return null;
+            try {
+              const arr: string[] = JSON.parse(cp);
+              if (Array.isArray(arr) && arr.length > 0) {
+                return (
+                  <div className="flex items-center gap-1 mt-2">
+                    <ShieldCheck className="h-3 w-3 text-amber-400 shrink-0" />
+                    <span className="text-[10px] text-amber-400 font-medium">
+                      Permissões individuais ({arr.length} ações)
+                    </span>
+                  </div>
+                );
+              }
+            } catch { /* ignore */ }
+            return null;
+          })()}
         </div>
 
         {/* actions */}

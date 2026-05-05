@@ -8,7 +8,7 @@ This project is an Emergency UPA (Unidade de Pronto Atendimento) patient managem
 *   **Administrative Tools:** Staff, permissions, feature flags, and audit logging.
 *   **Bed Management:** Allocation, monitoring, and isolation protocols.
 *   **Medical Documentation:** SOAP notes, vital signs, prescriptions, and mandatory notifications.
-*   **Access Control:** Server-side authentication and role-based permissions.
+*   **Access Control:** Server-side authentication, role-based permissions, and per-collaborator custom permission overrides.
 *   **User Experience:** Dark, modern UI with Manchester triage colors and Brazilian Portuguese (pt-BR) localization.
 
 # User Preferences
@@ -31,11 +31,13 @@ The project is built as a pnpm workspace monorepo using TypeScript, facilitating
 *   **Monorepo:** Centralized codebase for consistent development.
 *   **API-First:** OpenAPI specification drives client generation.
 *   **Server-Side Security:** `requireAuth`, `requirePermissao`, and `auditWrite` middlewares enforce authentication, role-based access control, and comprehensive audit logging at the API level.
+*   **Per-Collaborator Permissions:** `custom_permissions` column on `staff` table stores a JSON array of allowed actions. When set, it overrides the role default in both `temPermissaoServer` (backend) and `temPermissao` (frontend). Admin UI in `staff.tsx` exposes a full permission matrix with toggle per action.
 *   **Role-Based UI:** Dynamically renders or disables UI elements based on user roles and permissions.
 *   **Feature Flag System:** Allows dynamic control over application features.
 *   **Secure Authentication:** bcrypt hashing for passwords, forced first-access password changes, and a robust password reset flow.
 *   **Critical Alert System:** Real-time monitoring of patient critical statuses with visual and auditory alerts for relevant roles.
 *   **Comprehensive Data Model:** Designed specifically for UPA environments, including patient demographics, clinical data, and administrative metadata.
+*   **Auto-Migration on Startup:** `db-init.ts` runs idempotent `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` statements on every start, so new columns added in development are automatically applied to Supabase production without a manual migration step.
 
 **UI/UX Decisions:**
 *   **Dark Modern UI:** Professional and sleek aesthetic.

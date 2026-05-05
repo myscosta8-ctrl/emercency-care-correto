@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS public.staff (
   must_change_password boolean NOT NULL DEFAULT false,
   setores_atuacao text NOT NULL DEFAULT 'todos',
   turno text NOT NULL DEFAULT '',
-  consultorio text NOT NULL DEFAULT ''
+  consultorio text NOT NULL DEFAULT '',
+  custom_permissions text NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS public.patients (
@@ -372,8 +373,66 @@ export async function initializeDatabase(): Promise<void> {
     const alreadyInitialized = result.rows[0]?.exists === true;
 
     if (alreadyInitialized) {
-      logger.info("Database already initialized — skipping full setup");
+      logger.info("Database already initialized — running incremental migrations");
       await migratePasswords();
+      // ── incremental migrations (all idempotent) ────────────────────────────
+      await client.query(`
+        -- staff: permission system
+        ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS custom_permissions text NOT NULL DEFAULT '';
+
+        -- patients: columns added after initial schema (fixes Supabase 500 errors)
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS birth_date text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS sex text NOT NULL DEFAULT 'O';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS mother_name text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS cns text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS cpf text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS rg text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS phone text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS email text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS symptoms text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS symptom_onset_date text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS attendance_date text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS attendance_time text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS health_unit text NOT NULL DEFAULT 'UPA Breves - Breves/PA';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS responsible_professional text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS agravo text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS data_notificacao text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS municipio_notificacao text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS codigo_ibge text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS evolucao_caso text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS classificacao_final text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS criterio_confirmacao text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS address text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS care_status text NOT NULL DEFAULT 'Em Triagem';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS care_status_changed_at timestamp without time zone NOT NULL DEFAULT now();
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS prontuario_number text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS atendimento_number text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS created_by text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS updated_by text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS internment_status text NOT NULL DEFAULT 'nao_internado';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS nurse text NOT NULL DEFAULT '';
+
+        -- staff: extra columns
+        ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS setores_atuacao text NOT NULL DEFAULT 'todos';
+        ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS turno text NOT NULL DEFAULT '';
+        ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS consultorio text NOT NULL DEFAULT '';
+        ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS must_change_password boolean NOT NULL DEFAULT false;
+        ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS active boolean NOT NULL DEFAULT true;
+        ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS email text NOT NULL DEFAULT '';
+
+        -- exam_results: extra columns
+        ALTER TABLE public.exam_results ADD COLUMN IF NOT EXISTS notified boolean NOT NULL DEFAULT false;
+        ALTER TABLE public.exam_results ADD COLUMN IF NOT EXISTS liberado_at timestamp without time zone;
+
+        -- patient_exam_requests: extra columns
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_text text NOT NULL DEFAULT '';
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_name text NOT NULL DEFAULT '';
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_data text NOT NULL DEFAULT '';
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_mime text NOT NULL DEFAULT '';
+
+        -- audit_log: extra column
+        ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS staff_id integer;
+      `);
       logger.info("Database initialization complete");
       return;
     }

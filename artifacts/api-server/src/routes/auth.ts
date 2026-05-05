@@ -66,6 +66,7 @@ router.post("/login", async (req, res) => {
     setoresAtuacao:     user.setoresAtuacao,
     turno:              user.turno,
     consultorio:        user.consultorio,
+    customPermissions:  user.customPermissions ?? "",
   });
 });
 
