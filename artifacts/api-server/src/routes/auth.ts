@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, staffTable, passwordResetsTable } from "@workspace/db";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, isNull, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomBytes, randomUUID } from "crypto";
 
@@ -104,29 +104,59 @@ router.post("/forgot-password", async (req, res) => {
     return;
   }
 
-  const [user] = await db
-    .select()
-    .from(staffTable)
-    .where(eq(staffTable.login, login));
+  try {
+    const [user] = await db
+      .select()
+      .from(staffTable)
+      .where(eq(staffTable.login, login));
 
-  if (user && user.active) {
-    const token     = randomBytes(32).toString("hex");
-    const id        = randomUUID();
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    if (user && user.active) {
+      const token     = randomBytes(32).toString("hex");
+      const id        = randomUUID();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    await db.insert(passwordResetsTable).values({
-      id,
-      userId: user.id,
-      token,
-      expiresAt,
-    });
-
-    const resetLink = `/reset-password?token=${token}`;
-    req.log.info({ msg: "Password reset requested", user: user.login, resetLink });
-    console.log(`[RESET] ${user.name} (${user.login}) → ${resetLink}`);
+      await db.insert(passwordResetsTable).values({ id, userId: user.id, token, expiresAt });
+      req.log.info({ msg: "Password reset requested", user: user.login, token });
+    }
+  } catch (err) {
+    req.log.error({ err }, "Error processing password reset request");
   }
 
   res.json({ ok: true });
+});
+
+router.get("/password-resets", async (req, res) => {
+  const staffId = req.headers["x-staff-id"];
+  if (!staffId) { res.status(401).json({ error: "Não autenticado" }); return; }
+
+  try {
+    const [requester] = await db.select({ role: staffTable.role })
+      .from(staffTable).where(eq(staffTable.id, Number(staffId)));
+    if (!requester || requester.role !== "administrador") {
+      res.status(403).json({ error: "Acesso negado" }); return;
+    }
+
+    const now = new Date();
+    const resets = await db
+      .select({
+        id:        passwordResetsTable.id,
+        token:     passwordResetsTable.token,
+        userId:    passwordResetsTable.userId,
+        expiresAt: passwordResetsTable.expiresAt,
+        createdAt: passwordResetsTable.createdAt,
+        userName:  staffTable.name,
+        userLogin: staffTable.login,
+      })
+      .from(passwordResetsTable)
+      .innerJoin(staffTable, eq(passwordResetsTable.userId, staffTable.id))
+      .where(and(gt(passwordResetsTable.expiresAt, now), isNull(passwordResetsTable.usedAt)))
+      .orderBy(desc(passwordResetsTable.createdAt));
+
+    res.json(resets);
+  } catch (err) {
+    req.log.error({ err }, "Error fetching password resets");
+    res.status(503).json({ error: "Erro ao buscar solicitações" });
+  }
 });
 
 router.post("/reset-password", async (req, res) => {

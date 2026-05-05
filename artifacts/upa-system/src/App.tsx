@@ -20,11 +20,12 @@ const LoginPage          = lazy(() => import("@/pages/login"));
 const ChangePasswordPage  = lazy(() => import("@/pages/change-password"));
 const ForgotPasswordPage  = lazy(() => import("@/pages/forgot-password"));
 const ResetPasswordPage   = lazy(() => import("@/pages/reset-password"));
-const AdminDashboard      = lazy(() => import("@/pages/admin/admin-dashboard"));
-const AdminUsuarios       = lazy(() => import("@/pages/admin/usuarios"));
-const AdminPermissoes     = lazy(() => import("@/pages/admin/permissoes"));
-const AdminFuncionalidades = lazy(() => import("@/pages/admin/funcionalidades"));
-const AdminAuditoria       = lazy(() => import("@/pages/admin/auditoria"));
+const AdminDashboard        = lazy(() => import("@/pages/admin/admin-dashboard"));
+const AdminUsuarios         = lazy(() => import("@/pages/admin/usuarios"));
+const AdminPermissoes       = lazy(() => import("@/pages/admin/permissoes"));
+const AdminFuncionalidades  = lazy(() => import("@/pages/admin/funcionalidades"));
+const AdminAuditoria        = lazy(() => import("@/pages/admin/auditoria"));
+const AdminRedefinicaoSenha = lazy(() => import("@/pages/admin/redefinicao-senha"));
 
 const LeitosPage      = lazy(() => import("@/pages/leitos"));
 const RecepcaoPage    = lazy(() => import("@/pages/recepcao"));
@@ -187,6 +188,9 @@ function Router() {
               </Route>
               <Route path="/admin/auditoria">
                 <AdminGuard><AdminAuditoria /></AdminGuard>
+              </Route>
+              <Route path="/admin/redefinicao-senha">
+                <AdminGuard><AdminRedefinicaoSenha /></AdminGuard>
               </Route>
 
               <Route component={NotFound} />

@@ -1,16 +1,17 @@
 import { Link, useLocation } from "wouter";
-import { Activity, LayoutDashboard, Users, ShieldCheck, SlidersHorizontal, ClipboardList, ArrowLeft, Lock } from "lucide-react";
+import { Activity, LayoutDashboard, Users, ShieldCheck, SlidersHorizontal, ClipboardList, ArrowLeft, Lock, KeyRound } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/admin/dashboard",       label: "Dashboard",       icon: LayoutDashboard },
-  { href: "/admin/usuarios",        label: "Usuários",        icon: Users           },
-  { href: "/admin/permissoes",      label: "Permissões",      icon: ShieldCheck     },
-  { href: "/admin/funcionalidades", label: "Funcionalidades", icon: SlidersHorizontal },
-  { href: "/admin/auditoria",       label: "Auditoria",       icon: ClipboardList    },
+  { href: "/admin/dashboard",          label: "Dashboard",       icon: LayoutDashboard   },
+  { href: "/admin/usuarios",           label: "Usuários",        icon: Users             },
+  { href: "/admin/permissoes",         label: "Permissões",      icon: ShieldCheck       },
+  { href: "/admin/funcionalidades",    label: "Funcionalidades", icon: SlidersHorizontal },
+  { href: "/admin/auditoria",          label: "Auditoria",       icon: ClipboardList     },
+  { href: "/admin/redefinicao-senha",  label: "Redefinir Senha", icon: KeyRound          },
 ];
 
 function AccessDenied() {

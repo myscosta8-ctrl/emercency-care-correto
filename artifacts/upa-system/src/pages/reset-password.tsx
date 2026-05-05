@@ -5,14 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-async function sha256hex(input: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data    = encoder.encode(input);
-  const hash    = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-}
 
 export default function ResetPasswordPage() {
   const [, setLocation] = useLocation();
@@ -44,12 +36,11 @@ export default function ResetPasswordPage() {
     setApiError("");
     setIsPending(true);
     try {
-      const hashed = await sha256hex(newPassword + "upa_salt_2026");
-      const base   = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-      const res    = await fetch(`${base}/api/auth/reset-password`, {
+      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+      const res  = await fetch(`${base}/api/auth/reset-password`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ token, password: hashed }),
+        body:    JSON.stringify({ token, password: newPassword }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

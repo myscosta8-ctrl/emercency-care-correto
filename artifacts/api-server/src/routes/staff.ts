@@ -1,20 +1,10 @@
 import { Router } from "express";
 import { db, staffTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router();
-
-function sha256Hash(plain: string): string {
-  return createHash("sha256").update(plain + "upa_salt_2026").digest("hex");
-}
-
-async function hashDefaultPassword(plain: string): Promise<string> {
-  const sha = sha256Hash(plain);
-  return bcrypt.hash(sha, 12);
-}
 
 const serialize = (s: typeof staffTable.$inferSelect) => ({
   id: s.id,
@@ -63,7 +53,7 @@ router.post("/", requirePermissao("gerenciar_usuarios"), async (req, res) => {
     return;
   }
 
-  const passwordHash = await hashDefaultPassword("1234");
+  const passwordHash = await bcrypt.hash("1234", 12);
 
   const [created] = await db
     .insert(staffTable)

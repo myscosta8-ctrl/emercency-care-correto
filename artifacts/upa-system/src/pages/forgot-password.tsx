@@ -51,10 +51,9 @@ export default function ForgotPasswordPage() {
               <CheckCircle className="h-12 w-12 text-green-400" />
             </div>
             <div className="space-y-1">
-              <p className="font-semibold text-foreground">Solicitação enviada!</p>
+              <p className="font-semibold text-foreground">Solicitação registrada!</p>
               <p className="text-sm text-muted-foreground">
-                Um link de redefinição de senha foi enviado.<br />
-                Verifique com o administrador do sistema.
+                Seu pedido foi registrado. <strong>Contate o administrador do sistema</strong> — ele verá o link de redefinição no painel e poderá enviá-lo a você.
               </p>
             </div>
             <Button variant="outline" className="w-full" onClick={() => setLocation("/login")}>
