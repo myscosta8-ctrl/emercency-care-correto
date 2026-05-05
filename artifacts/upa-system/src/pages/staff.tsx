@@ -16,14 +16,16 @@ import { cn } from "@/lib/utils";
 // ── constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { value: "recepcionista",    label: "Recepcionista" },
-  { value: "enfermeiro",       label: "Enfermeiro" },
-  { value: "tecnico_enfermagem", label: "Técnico de Enfermagem" },
-  { value: "medico",           label: "Médico" },
-  { value: "assistente_social", label: "Assistente Social" },
-  { value: "nutricionista",    label: "Nutricionista" },
-  { value: "farmaceutico",     label: "Farmacêutico" },
-  { value: "administrador",    label: "Administrador" },
+  { value: "recepcionista",         label: "Recepcionista" },
+  { value: "enfermeiro",            label: "Enfermeiro" },
+  { value: "tecnico_enfermagem",    label: "Técnico de Enfermagem" },
+  { value: "medico",                label: "Médico" },
+  { value: "assistente_social",     label: "Assistente Social" },
+  { value: "nutricionista",         label: "Nutricionista" },
+  { value: "farmaceutico",          label: "Farmacêutico" },
+  { value: "administrador",         label: "Administrador" },
+  { value: "auxiliar_administrativo", label: "Auxiliar Administrativo" },
+  { value: "diretoria_geral",       label: "Diretoria Geral" },
 ] as const;
 
 const ACCESS_LEVELS = [
@@ -76,24 +78,28 @@ const CONSULTORIOS = [
 ];
 
 const CATEGORY_LABEL: Record<string, string> = {
-  recepcionista:     "Recepcionista",
-  enfermeiro:        "Enfermeiro",
-  tecnico_enfermagem: "Técnico de Enfermagem",
-  medico:            "Médico",
-  assistente_social: "Assistente Social",
-  nutricionista:     "Nutricionista",
-  farmaceutico:      "Farmacêutico",
-  administrador:     "Administrador",
+  recepcionista:          "Recepcionista",
+  enfermeiro:             "Enfermeiro",
+  tecnico_enfermagem:     "Técnico de Enfermagem",
+  medico:                 "Médico",
+  assistente_social:      "Assistente Social",
+  nutricionista:          "Nutricionista",
+  farmaceutico:           "Farmacêutico",
+  administrador:          "Administrador",
+  auxiliar_administrativo: "Auxiliar Administrativo",
+  diretoria_geral:        "Diretoria Geral",
 };
 const CATEGORY_COLOR: Record<string, string> = {
-  recepcionista:     "text-pink-400   bg-pink-500/10   border-pink-500/30",
-  enfermeiro:        "text-cyan-400   bg-cyan-500/10   border-cyan-500/30",
-  tecnico_enfermagem:"text-blue-400   bg-blue-500/10   border-blue-500/30",
-  medico:            "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
-  assistente_social: "text-purple-400 bg-purple-500/10 border-purple-500/30",
-  nutricionista:     "text-lime-400   bg-lime-500/10   border-lime-500/30",
-  farmaceutico:      "text-amber-400  bg-amber-500/10  border-amber-500/30",
-  administrador:     "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+  recepcionista:          "text-pink-400   bg-pink-500/10   border-pink-500/30",
+  enfermeiro:             "text-cyan-400   bg-cyan-500/10   border-cyan-500/30",
+  tecnico_enfermagem:     "text-blue-400   bg-blue-500/10   border-blue-500/30",
+  medico:                 "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+  assistente_social:      "text-purple-400 bg-purple-500/10 border-purple-500/30",
+  nutricionista:          "text-lime-400   bg-lime-500/10   border-lime-500/30",
+  farmaceutico:           "text-amber-400  bg-amber-500/10  border-amber-500/30",
+  administrador:          "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+  auxiliar_administrativo: "text-slate-400  bg-slate-500/10  border-slate-500/30",
+  diretoria_geral:        "text-rose-400   bg-rose-500/10   border-rose-500/30",
 };
 const COREN_LABEL: Record<string, string> = {
   enfermeiro:        "COREN",
@@ -759,7 +765,7 @@ export default function StaffPage() {
   const handleDelete = async (m: StaffMember) => {
     if (!confirm(`Remover ${m.name}?`)) return;
     await deleteMut.mutateAsync({ id: m.id });
-    toast({ title: "Funcionário removido" });
+    toast({ title: "Colaborador removido" });
     invalidate();
   };
 
@@ -783,7 +789,7 @@ export default function StaffPage() {
               </Button>
             </Link>
             <Users className="h-4 w-4 text-primary" />
-            <h1 className="text-base font-bold tracking-tight">Funcionários</h1>
+            <h1 className="text-base font-bold tracking-tight">Colaboradores</h1>
           </div>
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-2">
@@ -798,7 +804,7 @@ export default function StaffPage() {
             {(canEdit || !staff?.length) && (
               <Button size="sm" className="gap-2" onClick={() => { setEditing(null); setShowForm(true); }}>
                 <Plus className="h-3.5 w-3.5" />
-                Novo Funcionário
+                Novo Colaborador
               </Button>
             )}
           </div>
@@ -847,6 +853,8 @@ export default function StaffPage() {
             { label: "Nutri.", count: staff?.filter(m => m.role === "nutricionista").length ?? 0, cls: "text-lime-400" },
             { label: "Farmac.", count: staff?.filter(m => m.role === "farmaceutico").length ?? 0, cls: "text-amber-400" },
             { label: "Admin.", count: staff?.filter(m => m.role === "administrador").length ?? 0, cls: "text-yellow-400" },
+            { label: "Aux. Adm.", count: staff?.filter(m => (m.role as string) === "auxiliar_administrativo").length ?? 0, cls: "text-slate-400" },
+            { label: "Diretoria", count: staff?.filter(m => (m.role as string) === "diretoria_geral").length ?? 0, cls: "text-rose-400" },
           ].map(s => (
             <div key={s.label} className="bg-card border border-border/30 rounded-xl px-4 py-2.5 min-w-[80px]">
               <p className="text-xs text-muted-foreground">{s.label}</p>
@@ -862,11 +870,11 @@ export default function StaffPage() {
           <div className="text-center py-20 space-y-3">
             <Users className="h-10 w-10 text-muted-foreground/30 mx-auto" />
             <p className="text-muted-foreground text-sm">
-              {staff?.length === 0 ? "Nenhum funcionário cadastrado." : "Nenhum resultado para a busca."}
+              {staff?.length === 0 ? "Nenhum colaborador cadastrado." : "Nenhum resultado para a busca."}
             </p>
             {staff?.length === 0 && (
               <Button size="sm" onClick={() => { setEditing(null); setShowForm(true); }}>
-                <Plus className="h-3.5 w-3.5 mr-2" /> Cadastrar primeiro funcionário
+                <Plus className="h-3.5 w-3.5 mr-2" /> Cadastrar primeiro colaborador
               </Button>
             )}
           </div>

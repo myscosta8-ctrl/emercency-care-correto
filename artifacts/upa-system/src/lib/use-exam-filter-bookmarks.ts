@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 
 const STORAGE_KEY = "upa-exam-filter-bookmarks";
 
-const VALID_EXAM_TYPES   = ["", "laboratorial", "imagem"] as const;
-const VALID_EXAM_STATUSES = ["", "solicitado", "coletado", "laudado"] as const;
+const VALID_EXAM_TYPES     = ["", "laboratorial", "imagem"] as const;
+const VALID_EXAM_STATUSES  = ["", "solicitado", "coletado", "laudado"] as const;
 const VALID_EXAM_PRIORITIES = ["", "urgente", "rotina", "eletivo"] as const;
 
 export interface ExamFilterBookmark {
@@ -71,5 +71,23 @@ export function useExamFilterBookmarks() {
     setBookmarks(prev => prev.filter(b => b.id !== id));
   }, []);
 
-  return { bookmarks, saveBookmark, deleteBookmark };
+  const renameBookmark = useCallback((id: string, newLabel: string): void => {
+    const trimmed = newLabel.trim();
+    if (!trimmed) return;
+    setBookmarks(prev => prev.map(b => b.id === id ? { ...b, label: trimmed } : b));
+  }, []);
+
+  const reorderBookmarks = useCallback((id: string, direction: "up" | "down"): void => {
+    setBookmarks(prev => {
+      const idx = prev.findIndex(b => b.id === id);
+      if (idx === -1) return prev;
+      const next = direction === "up" ? idx - 1 : idx + 1;
+      if (next < 0 || next >= prev.length) return prev;
+      const result = [...prev];
+      [result[idx], result[next]] = [result[next]!, result[idx]!];
+      return result;
+    });
+  }, []);
+
+  return { bookmarks, saveBookmark, deleteBookmark, renameBookmark, reorderBookmarks };
 }

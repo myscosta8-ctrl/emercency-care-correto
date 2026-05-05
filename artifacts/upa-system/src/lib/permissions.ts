@@ -6,7 +6,9 @@ export type Perfil =
   | "assistente_social"
   | "nutricionista"
   | "farmaceutico"
-  | "administrador";
+  | "administrador"
+  | "auxiliar_administrativo"
+  | "diretoria_geral";
 
 export type Acao =
   | "criar_paciente"
@@ -31,14 +33,16 @@ export interface Usuario {
 }
 
 export const PERFIL_LABELS: Record<Perfil, string> = {
-  recepcionista:      "Recepcionista",
-  enfermeiro:         "Enfermeiro",
-  tecnico_enfermagem: "Técnico de Enfermagem",
-  medico:             "Médico",
-  assistente_social:  "Assistente Social",
-  nutricionista:      "Nutricionista",
-  farmaceutico:       "Farmacêutico",
-  administrador:      "Administrador",
+  recepcionista:          "Recepcionista",
+  enfermeiro:             "Enfermeiro",
+  tecnico_enfermagem:     "Técnico de Enfermagem",
+  medico:                 "Médico",
+  assistente_social:      "Assistente Social",
+  nutricionista:          "Nutricionista",
+  farmaceutico:           "Farmacêutico",
+  administrador:          "Administrador",
+  auxiliar_administrativo: "Auxiliar Administrativo",
+  diretoria_geral:        "Diretoria Geral",
 };
 
 export const ACAO_LABELS: Record<Acao, string> = {
@@ -72,17 +76,20 @@ export const ACOES: Acao[] = [
 export const PERFIS: Perfil[] = [
   "recepcionista", "enfermeiro", "tecnico_enfermagem", "medico",
   "assistente_social", "nutricionista", "farmaceutico", "administrador",
+  "auxiliar_administrativo", "diretoria_geral",
 ];
 
 export const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
-  recepcionista:      ["criar_paciente", "editar_paciente", "visualizar_setores"],
-  enfermeiro:         ["criar_paciente", "editar_paciente", "excluir_paciente", "classificacao_risco", "gerar_pdf", "mudar_setor", "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao"],
-  tecnico_enfermagem: ["criar_paciente", "registrar_sinais_vitais", "registrar_evolucao"],
-  medico:             ["*"],
-  assistente_social:  ["visualizar_setores", "visualizar_relatorios", "editar_paciente", "registrar_nota_social"],
-  nutricionista:      ["visualizar_setores", "visualizar_relatorios", "registrar_avaliacao_nutricional"],
-  farmaceutico:       ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao", "registrar_farmacia", "registrar_exames"],
-  administrador:      ["*"],
+  recepcionista:          ["criar_paciente", "editar_paciente", "visualizar_setores"],
+  enfermeiro:             ["criar_paciente", "editar_paciente", "excluir_paciente", "classificacao_risco", "gerar_pdf", "mudar_setor", "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao"],
+  tecnico_enfermagem:     ["criar_paciente", "registrar_sinais_vitais", "registrar_evolucao"],
+  medico:                 ["*"],
+  assistente_social:      ["visualizar_setores", "visualizar_relatorios", "editar_paciente", "registrar_nota_social"],
+  nutricionista:          ["visualizar_setores", "visualizar_relatorios", "registrar_avaliacao_nutricional"],
+  farmaceutico:           ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao", "registrar_farmacia", "registrar_exames"],
+  administrador:          ["*"],
+  auxiliar_administrativo: ["criar_paciente", "editar_paciente", "visualizar_setores", "visualizar_relatorios"],
+  diretoria_geral:        ["*"],
 };
 
 export function temPermissao(usuario: Usuario | null | undefined, acao: Acao): boolean {

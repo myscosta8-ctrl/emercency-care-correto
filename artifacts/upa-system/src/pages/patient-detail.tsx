@@ -41,7 +41,7 @@ import {
   getGetPatientDevicesQueryKey,
   AddPatientDeviceBodyDeviceType,
 } from "@workspace/api-client-react";
-import type { PatientNotification } from "@workspace/api-client-react";
+import type { Patient, PatientNotification } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/use-auth";
 import {
@@ -51,7 +51,7 @@ import {
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
   Bell, Trash, Download, FileDown, Calendar, Building2,
   MessageSquare, UtensilsCrossed, Pill, Truck, Plus, Send, FlaskConical,
-  Plug, Unplug, AlertCircle,
+  Plug, Unplug, AlertCircle, ChevronDown,
 } from "lucide-react";
 import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 import { PatientLabTab } from "@/components/patient-lab-tab";
@@ -280,6 +280,28 @@ export default function PatientDetail() {
   const { toast } = useToast();
   const [generatingPdfId, setGeneratingPdfId] = useState<number | null>(null);
   const [printingRxId, setPrintingRxId] = useState<number | null>(null);
+
+  const [prevVisits, setPrevVisits]               = useState<Patient[] | null>(null);
+  const [prevVisitsLoading, setPrevVisitsLoading] = useState(false);
+  const [showPrevVisits, setShowPrevVisits]       = useState(false);
+
+  async function loadPrevVisits() {
+    if (!patient?.cpf) return;
+    setPrevVisitsLoading(true);
+    try {
+      const resp = await fetch(
+        `/api/patients/previous-visits?cpf=${encodeURIComponent(patient.cpf)}&excludeId=${id}`,
+        { headers: { "x-staff-id": String(activeUser?.id ?? 0) } }
+      );
+      const data = await resp.json();
+      setPrevVisits(Array.isArray(data) ? data : []);
+      setShowPrevVisits(true);
+    } catch {
+      // ignore
+    } finally {
+      setPrevVisitsLoading(false);
+    }
+  }
 
   const handleDelete = () => {
     updateStatus.mutate(
@@ -543,6 +565,58 @@ export default function PatientDetail() {
             </CardContent>
           )}
         </Card>
+
+        {/* ── Visitas Anteriores (mesmo CPF) ───────────────────────── */}
+        {patient.cpf && (
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={() => {
+                if (!showPrevVisits && prevVisits === null) {
+                  loadPrevVisits();
+                } else {
+                  setShowPrevVisits(v => !v);
+                }
+              }}
+              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg border border-border/30 bg-card hover:bg-muted/20 w-full"
+            >
+              <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+              <span className="flex-1 text-left font-medium">Visitas Anteriores — mesmo CPF</span>
+              {prevVisitsLoading
+                ? <RefreshCw className="h-3 w-3 animate-spin shrink-0" />
+                : <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", showPrevVisits ? "rotate-180" : "")} />
+              }
+            </button>
+            {showPrevVisits && prevVisits && (
+              <div className="mt-1.5 border border-border/30 rounded-lg bg-card/50 divide-y divide-border/20 overflow-hidden">
+                {prevVisits.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    Nenhuma visita anterior registrada para este CPF.
+                  </p>
+                ) : (
+                  prevVisits.map(v => (
+                    <a
+                      key={v.id}
+                      href={`/patients/${v.id}`}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-muted/20 transition-colors group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">{v.full_name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {format(new Date(v.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          {v.diagnosis && <> &bull; <span className="italic">{v.diagnosis}</span></>}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/25 shrink-0">
+                        Alta
+                      </span>
+                    </a>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
         <Tabs defaultValue="identificacao">

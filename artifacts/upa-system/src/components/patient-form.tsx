@@ -78,7 +78,11 @@ const formSchema = z.object({
   cpf:    z.string().default(""),
   rg:     z.string().default(""),
 
-  address: z.string().default(""),
+  addressStreet:       z.string().default(""),
+  addressNumber:       z.string().default(""),
+  addressNeighborhood: z.string().default(""),
+  addressCity:         z.string().default(""),
+  addressCep:          z.string().default(""),
   phone:   z.string().default(""),
   email:   z.string().default(""),
 
@@ -136,7 +140,11 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       cpf: patient?.cpf ?? "",
       rg:  patient?.rg  ?? "",
 
-      address: patient?.address ?? "",
+      addressStreet:       patient?.address ?? "",
+      addressNumber:       "",
+      addressNeighborhood: "",
+      addressCity:         "",
+      addressCep:          "",
       phone:   patient?.phone   ?? "",
       email:   patient?.email   ?? "",
 
@@ -176,8 +184,13 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
   const isPending = createPatient.isPending || updatePatient.isPending;
 
   function onSubmit(data: FormValues) {
+    const { addressStreet, addressNumber, addressNeighborhood, addressCity, addressCep, ...rest } = data;
+    const address = [addressStreet, addressNumber, addressNeighborhood, addressCity, addressCep]
+      .filter(Boolean).join(", ");
+    const payload = { ...rest, address } as unknown as CreatePatientBody;
+
     if (patient) {
-      updatePatient.mutate({ id: patient.id, data: data as unknown as CreatePatientBody }, {
+      updatePatient.mutate({ id: patient.id, data: payload }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
@@ -188,7 +201,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
         onError: () => toast({ title: "Não foi possível atualizar o prontuário", variant: "destructive" }),
       });
     } else {
-      createPatient.mutate({ data: data as unknown as CreatePatientBody }, {
+      createPatient.mutate({ data: payload }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
@@ -308,7 +321,7 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
           )} />
 
           {/* ── CONTATO / ENDEREÇO ────────────────────────────────────── */}
-          <SectionTitle>Contato</SectionTitle>
+          <SectionTitle>Contato e Endereço</SectionTitle>
 
           <FormField control={form.control} name="phone" render={({ field }) => (
             <FormItem>
@@ -326,10 +339,52 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
 
-          <FormField control={form.control} name="address" render={({ field }) => (
+          <FormField control={form.control} name="addressStreet" render={({ field }) => (
             <FormItem className="col-span-2">
-              <FormLabel>Endereço <Opt /></FormLabel>
-              <FormControl><Input placeholder="Rua, número, bairro, cidade" {...field} /></FormControl>
+              <FormLabel>Logradouro <Opt /></FormLabel>
+              <FormControl><Input placeholder="Rua, Av., Travessa, Passagem..." {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="addressNumber" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Número <Opt /></FormLabel>
+              <FormControl><Input placeholder="123 / S/N" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="addressNeighborhood" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bairro <Opt /></FormLabel>
+              <FormControl><Input placeholder="Bairro" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="addressCity" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cidade <Opt /></FormLabel>
+              <FormControl><Input placeholder="Breves" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="addressCep" render={({ field }) => (
+            <FormItem>
+              <FormLabel>CEP <Opt /></FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="68800-000"
+                  maxLength={9}
+                  {...field}
+                  onChange={e => {
+                    const v = e.target.value.replace(/\D/g, "");
+                    field.onChange(v.length > 5 ? `${v.slice(0, 5)}-${v.slice(5, 8)}` : v);
+                  }}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />

@@ -11,7 +11,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient, ListPatientsParams, PatientPendingExamsItem } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List } from "lucide-react";
+import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List, ChevronUp, ChevronDown, Check } from "lucide-react";
 import { useExamFilterBookmarks } from "@/lib/use-exam-filter-bookmarks";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -423,7 +423,9 @@ export default function Dashboard() {
   const [showSaveBookmark, setShowSaveBookmark]     = useState(false);
   const [bookmarkLabel, setBookmarkLabel]           = useState("");
 
-  const { bookmarks, saveBookmark, deleteBookmark } = useExamFilterBookmarks();
+  const { bookmarks, saveBookmark, deleteBookmark, renameBookmark, reorderBookmarks } = useExamFilterBookmarks();
+  const [renamingId, setRenamingId]   = useState<string | null>(null);
+  const [renameInput, setRenameInput] = useState("");
 
   // ── setor e feature flag ───────────────────────────────────────────────────
   const preAdultoAtivo = featureAtiva("setor_pre_adulto");
@@ -842,34 +844,92 @@ export default function Dashboard() {
               <Bookmark className="h-3 w-3" />
               Favoritos:
             </span>
-            {bookmarks.map(bk => (
+            {bookmarks.map((bk, idx) => (
               <span
                 key={bk.id}
-                className="group inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 rounded-full border border-cyan-500/35 bg-cyan-500/8 text-cyan-400 text-[11px] font-medium"
+                className="group inline-flex items-center gap-0.5 pl-2.5 pr-1 py-0.5 rounded-full border border-cyan-500/35 bg-cyan-500/8 text-cyan-400 text-[11px] font-medium"
               >
-                <button
-                  type="button"
-                  title={`Aplicar filtro: ${bk.label}`}
-                  onClick={() => {
-                    setExamSearch(bk.examSearch);
-                    setExamType(bk.examType);
-                    setExamStatus(bk.examStatus);
-                    setExamPriority(bk.examPriority);
-                    setShowExamFilters(true);
-                    setShowSaveBookmark(false);
-                  }}
-                  className="hover:text-cyan-300 transition-colors"
-                >
-                  {bk.label}
-                </button>
-                <button
-                  type="button"
-                  title="Remover favorito"
-                  onClick={() => deleteBookmark(bk.id)}
-                  className="ml-0.5 h-4 w-4 flex items-center justify-center rounded-full opacity-40 group-hover:opacity-100 focus:opacity-100 hover:bg-cyan-500/20 focus:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 focus:text-cyan-300 transition-all focus:outline-none"
-                >
-                  <X className="h-2.5 w-2.5" />
-                </button>
+                {renamingId === bk.id ? (
+                  <form
+                    className="flex items-center gap-1"
+                    onSubmit={e => {
+                      e.preventDefault();
+                      if (renameInput.trim()) renameBookmark(bk.id, renameInput);
+                      setRenamingId(null);
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      type="text"
+                      value={renameInput}
+                      onChange={e => setRenameInput(e.target.value)}
+                      maxLength={40}
+                      className="bg-transparent text-[11px] text-foreground focus:outline-none w-28 border-b border-cyan-500/50"
+                      onBlur={() => {
+                        if (renameInput.trim()) renameBookmark(bk.id, renameInput);
+                        setRenamingId(null);
+                      }}
+                      onKeyDown={e => e.key === "Escape" && setRenamingId(null)}
+                    />
+                    <button type="submit" className="text-cyan-400 hover:text-cyan-300 flex items-center">
+                      <Check className="h-3 w-3" />
+                    </button>
+                  </form>
+                ) : (
+                  <button
+                    type="button"
+                    title={`Aplicar filtro: ${bk.label}`}
+                    onClick={() => {
+                      setExamSearch(bk.examSearch);
+                      setExamType(bk.examType);
+                      setExamStatus(bk.examStatus);
+                      setExamPriority(bk.examPriority);
+                      setShowExamFilters(true);
+                      setShowSaveBookmark(false);
+                    }}
+                    className="hover:text-cyan-300 transition-colors"
+                  >
+                    {bk.label}
+                  </button>
+                )}
+                {renamingId !== bk.id && (
+                  <>
+                    <button
+                      type="button"
+                      title="Mover para cima"
+                      onClick={() => reorderBookmarks(bk.id, "up")}
+                      disabled={idx === 0}
+                      className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-50 hover:!opacity-100 disabled:!opacity-0 hover:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 transition-all focus:outline-none"
+                    >
+                      <ChevronUp className="h-2.5 w-2.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Mover para baixo"
+                      onClick={() => reorderBookmarks(bk.id, "down")}
+                      disabled={idx === bookmarks.length - 1}
+                      className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-50 hover:!opacity-100 disabled:!opacity-0 hover:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 transition-all focus:outline-none"
+                    >
+                      <ChevronDown className="h-2.5 w-2.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Renomear favorito"
+                      onClick={() => { setRenamingId(bk.id); setRenameInput(bk.label); }}
+                      className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-50 hover:!opacity-100 hover:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 transition-all focus:outline-none"
+                    >
+                      <Pencil className="h-2.5 w-2.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Remover favorito"
+                      onClick={() => deleteBookmark(bk.id)}
+                      className="ml-0.5 h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-70 hover:!opacity-100 focus:opacity-100 hover:bg-cyan-500/20 focus:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 focus:text-cyan-300 transition-all focus:outline-none"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </>
+                )}
               </span>
             ))}
           </div>

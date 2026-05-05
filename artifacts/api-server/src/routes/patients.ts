@@ -323,6 +323,29 @@ router.get("/summary", async (req, res) => {
   res.json(summary);
 });
 
+// GET /patients/previous-visits?cpf=xxx&excludeId=yyy
+// Returns Alta'd patients with that CPF (previous visits of the same person)
+router.get("/previous-visits", async (req, res) => {
+  const { cpf, excludeId } = req.query;
+  if (!cpf || typeof cpf !== "string" || !cpf.trim()) {
+    res.json([]);
+    return;
+  }
+  const excluded = excludeId ? parseInt(excludeId as string, 10) : 0;
+  const results = await db.select()
+    .from(patientsTable)
+    .where(
+      and(
+        eq(patientsTable.cpf, cpf.trim()),
+        eq(patientsTable.careStatus, "Alta"),
+        excluded > 0 ? sql`${patientsTable.id} != ${excluded}` : sql`true`,
+      )
+    )
+    .orderBy(desc(patientsTable.createdAt))
+    .limit(20);
+  res.json(results.map(serialize));
+});
+
 router.get("/:id", async (req, res) => {
   const { id } = GetPatientParams.parse({ id: Number(req.params.id) });
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, id));
