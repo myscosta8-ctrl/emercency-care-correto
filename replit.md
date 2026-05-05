@@ -48,6 +48,12 @@ The project is built as a pnpm workspace monorepo using TypeScript, facilitating
 *   **Admin Section:** Full CRUD for staff, permission matrix, feature flags, and audit log viewer.
 *   **Patient Management:** Unique `prontuario_number` and `atendimento_number` for each patient and visit; includes `address` for external system compatibility.
 *   **Care Status Workflow:** Defined states for patient care progression (`Em Triagem` to `Alta`) with rules for transitions and time-based alerts.
+*   **Patient History Archive (`/historico`):** Dedicated page listing all discharged patients (careStatus="Alta") with search by name/CPF/diagnosis, date filters, CSV export, and link to full prontuário.
+*   **Exam Results (Lab) Tab in Prontuário:** `patient-lab-tab.tsx` component embedded in patient-detail.tsx as a "Laboratório" tab. Supports soliciting new exams, inserting text results + file uploads, and auto-refreshes every 30s for real-time visibility.
+*   **Consultório Availability Indicator:** In the medical queue (fila-medico.tsx), Cons.1 and Cons.2 buttons show green + "livre" when the room has no active patients, making triage routing immediately visible.
+*   **Triage Sector:** Full "Triagem" sector support across all menus, forms, and filters.
+*   **SINAN Notification Form:** Fully fillable digital form (all fields editable, PDF generated with filled data, only signatures blank).
+*   **Alta = Archive:** Giving a patient "Alta" archives them (sets careStatus="Alta") instead of deleting — full history preserved.
 *   **Bed Management:** Detailed `beds` table with automatic seeding, isolation protocols, and a visual grid interface.
 *   **Mandatory Notifications:** Dedicated system for managing and tracking compulsory notifications (e.g., infectious diseases).
 *   **Laboratório Module:** Management of exam requests and results, including file uploads and real-time notifications.

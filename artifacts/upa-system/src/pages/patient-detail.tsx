@@ -54,6 +54,7 @@ import {
   Plug, Unplug, AlertCircle,
 } from "lucide-react";
 import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
+import { PatientLabTab } from "@/components/patient-lab-tab";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -565,6 +566,9 @@ export default function PatientDetail() {
                 )}
               </TabsTrigger>
             )}
+            <TabsTrigger value="laboratorio" className="text-xs flex items-center gap-1">
+              <FlaskConical className="h-3 w-3" /> Laboratório
+            </TabsTrigger>
             <TabsTrigger value="dispositivos" className="text-xs flex items-center gap-1">
               <Plug className="h-3 w-3" /> Dispositivos
               {devices && devices.filter(d => !d.removedAt).length > 0 && (
@@ -1472,6 +1476,11 @@ export default function PatientDetail() {
               </div>
             </TabsContent>
           )}
+
+          {/* ── TAB: LABORATÓRIO ──────────────────────────────────────── */}
+          <TabsContent value="laboratorio">
+            <PatientLabTab patientId={id} active={true} />
+          </TabsContent>
 
           {/* ── TAB: DISPOSITIVOS ─────────────────────────────────────── */}
           <TabsContent value="dispositivos">

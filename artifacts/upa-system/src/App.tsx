@@ -36,6 +36,7 @@ const FarmaciaPage    = lazy(() => import("@/pages/farmacia"));
 const FilaMedicoPage  = lazy(() => import("@/pages/fila-medico"));
 const LaboratorioPage = lazy(() => import("@/pages/laboratorio"));
 const ExamesPage      = lazy(() => import("@/pages/exames"));
+const HistoricoPage   = lazy(() => import("@/pages/historico"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -166,6 +167,8 @@ function Router() {
               <Route path="/exames">
                 <RoleGuard acao="registrar_exames"><ExamesPage /></RoleGuard>
               </Route>
+
+              <Route path="/historico" component={HistoricoPage} />
 
               <Route path="/passagem-plantao">
                 <RoleGuard acao="registrar_evolucao"><ShiftHandover /></RoleGuard>

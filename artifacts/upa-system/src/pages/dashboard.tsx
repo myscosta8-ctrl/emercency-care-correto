@@ -686,6 +686,12 @@ export default function Dashboard() {
                 <span className="hidden md:inline">Laboratório</span>
               </Button>
             </Link>
+            <Link href="/historico">
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
+                <Bookmark className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Histórico</span>
+              </Button>
+            </Link>
             {pode("registrar_exames") && (
               <Link href="/exames">
                 <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">

@@ -293,6 +293,9 @@ export default function FilaMedicoPage() {
     .filter(p => p.careStatus === "Aguardando Atendimento")
     .sort((a, b) => (TRIAGE_ORDER[a.triage_level] ?? 9) - (TRIAGE_ORDER[b.triage_level] ?? 9));
 
+  const cons1Livre = !(patients ?? []).some(p => p.careStatus === "Em Atendimento (Cons. 1)");
+  const cons2Livre = !(patients ?? []).some(p => p.careStatus === "Em Atendimento (Cons. 2)");
+
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
     setChamarPatient(null);
@@ -367,22 +370,34 @@ export default function FilaMedicoPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs gap-1 border-blue-500/40 text-blue-400 hover:bg-blue-500/10"
+                          className={cn(
+                            "h-7 text-xs gap-1",
+                            cons1Livre
+                              ? "border-green-500/50 text-green-400 hover:bg-green-500/10"
+                              : "border-blue-500/40 text-blue-400 hover:bg-blue-500/10",
+                          )}
                           onClick={() => { setChamarPatient(p); setChamarConsultorio(1); }}
                         >
                           <Stethoscope className="h-3 w-3" />
                           Cons. 1
+                          {cons1Livre && <span className="text-[9px] opacity-80">livre</span>}
                         </Button>
                       )}
                       {mostrarCons2 && (
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs gap-1 border-purple-500/40 text-purple-400 hover:bg-purple-500/10"
+                          className={cn(
+                            "h-7 text-xs gap-1",
+                            cons2Livre
+                              ? "border-green-500/50 text-green-400 hover:bg-green-500/10"
+                              : "border-purple-500/40 text-purple-400 hover:bg-purple-500/10",
+                          )}
                           onClick={() => { setChamarPatient(p); setChamarConsultorio(2); }}
                         >
                           <Stethoscope className="h-3 w-3" />
                           Cons. 2
+                          {cons2Livre && <span className="text-[9px] opacity-80">livre</span>}
                         </Button>
                       )}
                     </div>
