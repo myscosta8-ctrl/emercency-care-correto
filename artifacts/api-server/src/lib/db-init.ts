@@ -1,5 +1,6 @@
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
+import bcrypt from "bcryptjs";
 
 const INIT_SQL = `
 -- Tabelas
@@ -318,6 +319,40 @@ INSERT INTO public.beds (bed_id, sector, bed_number, is_isolation) VALUES
 ON CONFLICT (bed_id) DO NOTHING;
 `;
 
+async function migratePasswords(client: Awaited<ReturnType<typeof pool.connect>>): Promise<void> {
+  try {
+    const { rows } = await client.query<{ login: string; password_hash: string }>(
+      `SELECT login, password_hash FROM public.staff
+       WHERE login IN ('admin', 'myscosta8@gmail.com')`
+    );
+
+    const defaultPasswords: Record<string, string> = {
+      admin: "admin123",
+      "myscosta8@gmail.com": "Enfermagem@2025",
+    };
+
+    for (const row of rows) {
+      const isBcrypt =
+        row.password_hash.startsWith("$2b$") ||
+        row.password_hash.startsWith("$2a$");
+
+      if (!isBcrypt) {
+        const plain = defaultPasswords[row.login];
+        if (plain) {
+          const hash = await bcrypt.hash(plain, 12);
+          await client.query(
+            `UPDATE public.staff SET password_hash = $1 WHERE login = $2`,
+            [hash, row.login]
+          );
+          logger.info({ login: row.login }, "Migrated legacy hash to bcrypt");
+        }
+      }
+    }
+  } catch {
+    // Table may not exist yet — will be created in INIT_SQL below
+  }
+}
+
 export async function initializeDatabase(): Promise<void> {
   const client = await pool.connect();
   try {
@@ -332,6 +367,8 @@ export async function initializeDatabase(): Promise<void> {
 
     if (alreadyInitialized) {
       logger.info("Database already initialized, skipping setup");
+      await migratePasswords(client);
+      logger.info("Database initialization complete");
       return;
     }
 
