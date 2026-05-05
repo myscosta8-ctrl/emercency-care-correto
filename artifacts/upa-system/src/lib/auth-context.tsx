@@ -6,15 +6,6 @@ import type { Acao } from "@/lib/permissions";
 
 const AUTH_KEY = "upa_auth_user";
 
-async function sha256hex(input: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data    = encoder.encode(input);
-  const hash    = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 function loadUser(): AuthUser | null {
   try {
     const raw = localStorage.getItem(AUTH_KEY);
@@ -55,12 +46,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (loginVal: string, password: string) => {
-    const hashed = await sha256hex(password + "upa_salt_2026");
     const base   = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
     const res    = await fetch(`${base}/api/auth/login`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ login: loginVal, password: hashed }),
+      body:    JSON.stringify({ login: loginVal, password }),
     });
     if (!res.ok) throw new Error("Credenciais inválidas");
     const user: AuthUser = await res.json();

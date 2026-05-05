@@ -43,8 +43,11 @@ router.post("/login", async (req, res) => {
     valid = await bcrypt.compare(password, user.passwordHash);
   } else {
     const { createHash } = await import("crypto");
-    const sha256 = createHash("sha256").update(password).digest("hex");
-    valid = sha256 === user.passwordHash || user.passwordHash === password;
+    const sha256plain  = createHash("sha256").update(password).digest("hex");
+    const sha256salted = createHash("sha256").update(password + "upa_salt_2026").digest("hex");
+    valid = sha256plain  === user.passwordHash
+         || sha256salted === user.passwordHash
+         || user.passwordHash === password;
   }
 
   if (!valid) {
