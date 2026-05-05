@@ -43,6 +43,8 @@ const TYPE_OPTIONS = [
   },
 ] as const;
 
+const NURSING_ROLES = ["enfermeiro", "tecnico_enfermagem"];
+
 const nursingSchema = z.object({
   userId:  z.coerce.number().min(1, "Selecione o profissional responsável"),
   content: z.string().min(1, "Preencha o conteúdo da prescrição"),
@@ -51,11 +53,18 @@ type NursingValues = z.infer<typeof nursingSchema>;
 
 interface PrescriptionFormProps {
   patient: Patient;
+  /** ID do usuário logado — pré-preenche o seletor de profissional */
+  userId?: number;
+  /**
+   * Quando definido, fixa o tipo e oculta o seletor.
+   * "medical" → prescrição médica; "nursing" → prescrição de cuidados de enfermagem.
+   */
+  forceType?: "nursing" | "medical";
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionFormProps) {
+export function PrescriptionForm({ patient, userId = 0, forceType, onSuccess, onCancel }: PrescriptionFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createPrescription = useAddPatientPrescription();
@@ -63,14 +72,18 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
   const { data: staffList } = useListStaff();
   const activeStaff = (staffList ?? []).filter(s => s.active);
 
-  const [type, setType] = useState<"nursing" | "medical">("nursing");
+  const [type, setType] = useState<"nursing" | "medical">(forceType ?? "nursing");
 
   const now = new Date();
   const dateLabel = format(now, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
 
+  // Staff filtrado conforme o tipo de prescrição
+  const nursingStaff = activeStaff.filter(s => NURSING_ROLES.includes(s.role));
+  const medStaff     = activeStaff.filter(s => s.role === "medico");
+
   const form = useForm<NursingValues>({
     resolver: zodResolver(nursingSchema),
-    defaultValues: { userId: 0, content: "" },
+    defaultValues: { userId: userId > 0 ? userId : 0, content: "" },
   });
 
   function saveNursing(data: NursingValues) {
@@ -88,10 +101,13 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
   }
 
   function saveMedical(text: string, data: PrescricaoMedicaData) {
-    const doctorUser = activeStaff.find(s => s.role === "medico") ?? activeStaff[0];
-    const userId = doctorUser?.id ?? 0;
+    // Usa o ID do usuário logado; fallback para o primeiro médico da lista
+    const resolvedUserId = userId > 0
+      ? userId
+      : (medStaff[0]?.id ?? activeStaff[0]?.id ?? 0);
+
     createPrescription.mutate(
-      { id: patient.id, data: { userId, type: "medical", content: text } },
+      { id: patient.id, data: { userId: resolvedUserId, type: "medical", content: text } },
       {
         onSuccess: (prescription) => {
           queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(patient.id) });
@@ -126,31 +142,33 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
 
   return (
     <div className="space-y-4">
-      {/* Type selector */}
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Tipo de Prescrição</p>
-        <div className="flex gap-2">
-          {TYPE_OPTIONS.map(opt => {
-            const Icon = opt.icon;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setType(opt.value)}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-2 rounded-md border text-sm font-medium transition-all",
-                  type === opt.value
-                    ? opt.color
-                    : "border-border/50 text-muted-foreground hover:border-border"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {opt.label}
-              </button>
-            );
-          })}
+      {/* Type selector — só aparece quando o tipo não está fixado */}
+      {!forceType && (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Tipo de Prescrição</p>
+          <div className="flex gap-2">
+            {TYPE_OPTIONS.map(opt => {
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setType(opt.value)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2 rounded-md border text-sm font-medium transition-all",
+                    type === opt.value
+                      ? opt.color
+                      : "border-border/50 text-muted-foreground hover:border-border"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Medical form */}
       {type === "medical" && (
@@ -166,10 +184,10 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
       {type === "nursing" && (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(saveNursing)} className="space-y-4">
-            <div className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50">
+            <div className="bg-blue-500/5 rounded-lg px-4 py-3 border border-blue-500/20">
               <div className="flex items-center gap-2 mb-0.5">
-                <ClipboardCheck className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold uppercase tracking-wider text-primary">Prescrição de Enfermagem</span>
+                <ClipboardCheck className="h-4 w-4 text-blue-400" />
+                <span className="text-sm font-semibold uppercase tracking-wider text-blue-400">Prescrição de Cuidados de Enfermagem</span>
               </div>
               <p className="text-xs text-muted-foreground">{patient.full_name} · {dateLabel}</p>
             </div>
@@ -180,7 +198,7 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Profissional <span className="text-destructive">*</span>
+                    Profissional responsável <span className="text-destructive">*</span>
                   </FormLabel>
                   <Select onValueChange={field.onChange} value={field.value ? String(field.value) : ""}>
                     <FormControl>
@@ -189,9 +207,10 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {activeStaff.map(s => (
+                      {/* Prioriza enfermeiros/técnicos; fallback para todos */}
+                      {(nursingStaff.length > 0 ? nursingStaff : activeStaff).map(s => (
                         <SelectItem key={s.id} value={String(s.id)}>
-                          {s.name} — {s.role}
+                          {s.name} — {s.role === "enfermeiro" ? "Enfermeiro(a)" : s.role === "tecnico_enfermagem" ? "Técnico de Enfermagem" : s.role}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -207,12 +226,14 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Conteúdo <span className="text-destructive">*</span>
+                    Cuidados prescritos <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Descreva as prescrições de enfermagem..."
-                      className="min-h-[140px] font-mono text-sm resize-y"
+                      placeholder={
+                        "Ex:\n1. Curativo simples em região sacra 1x/dia\n2. Mudança de decúbito 2/2h\n3. Controle de diurese\n4. Verificar acesso venoso 4/4h\n5. Glicemia capilar em jejum e pós-prandial"
+                      }
+                      className="min-h-[160px] font-mono text-sm resize-y"
                       {...field}
                     />
                   </FormControl>
@@ -223,7 +244,7 @@ export function PrescriptionForm({ patient, onSuccess, onCancel }: PrescriptionF
 
             <div className="flex gap-3 pt-1">
               <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancelar</Button>
-              <Button type="submit" className="flex-1" disabled={createPrescription.isPending}>
+              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" disabled={createPrescription.isPending}>
                 {createPrescription.isPending ? "Registrando..." : "Registrar Prescrição"}
               </Button>
             </div>

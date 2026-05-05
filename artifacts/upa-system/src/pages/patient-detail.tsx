@@ -230,7 +230,8 @@ export default function PatientDetail() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isVitalsOpen, setIsVitalsOpen] = useState(false);
   const [isVitalsRecordOpen, setIsVitalsRecordOpen] = useState(false);
-  const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
+  const [isPrescricaoMedicaOpen, setIsPrescricaoMedicaOpen] = useState(false);
+  const [isPrescricaoEnfermagemOpen, setIsPrescricaoEnfermagemOpen] = useState(false);
   const [isTasksOpen, setIsTasksOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -263,6 +264,10 @@ export default function PatientDetail() {
 
   const pode = usePode();
   const podeGerarPDF = pode("gerar_pdf", "sinan_pdf");
+
+  // Helpers de cargo para separar prescrições
+  const isMedico      = ["medico", "administrador", "diretoria_geral"].includes(activeUser?.role ?? "");
+  const isEnfermeiro  = ["enfermeiro", "tecnico_enfermagem", "administrador", "diretoria_geral"].includes(activeUser?.role ?? "");
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
@@ -954,48 +959,46 @@ export default function PatientDetail() {
           {/* ── TAB: PRESCRIÇÃO ───────────────────────────────────────── */}
           <TabsContent value="prescricao">
             <div className="space-y-6">
-              {/* Prescriptions */}
+
+              {/* ── Prescrição Médica ─────────────────────────────────── */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <ClipboardCheck className="h-4 w-4 text-primary" /> Prescrição de Enfermagem
+                      <Stethoscope className="h-4 w-4 text-purple-400" /> Prescrição Médica
                     </h3>
-                    {prescriptions && prescriptions.filter(p => p.status !== "concluido").length > 0 && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                        {prescriptions.filter(p => p.status !== "concluido").length}
+                    {prescriptions && prescriptions.filter(p => p.type === "medical" && p.status !== "concluido").length > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                        {prescriptions.filter(p => p.type === "medical" && p.status !== "concluido").length}
                       </span>
                     )}
                   </div>
-                  {pode("registrar_prescricao") && (
-                    <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setIsPrescriptionOpen(true)}>
-                      <ClipboardCheck className="h-3.5 w-3.5" /> Nova Prescrição
+                  {isMedico && pode("registrar_prescricao") && (
+                    <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-purple-500/30 text-purple-400 hover:bg-purple-500/10" onClick={() => setIsPrescricaoMedicaOpen(true)}>
+                      <Stethoscope className="h-3.5 w-3.5" /> Nova Prescrição Médica
                     </Button>
                   )}
                 </div>
                 {isLoadingPrescriptions ? (
                   <Skeleton className="h-24 w-full" />
-                ) : !prescriptions || prescriptions.length === 0 ? (
-                  <div className="text-center py-6 bg-card rounded-lg border border-border/50">
-                    <p className="text-sm text-muted-foreground">Nenhuma prescrição registrada ainda.</p>
+                ) : !prescriptions || prescriptions.filter(p => p.type === "medical").length === 0 ? (
+                  <div className="text-center py-4 bg-card rounded-lg border border-border/50">
+                    <p className="text-sm text-muted-foreground">Nenhuma prescrição médica registrada.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {prescriptions.map(rx => {
+                    {prescriptions.filter(p => p.type === "medical").map(rx => {
                       const statusCfg = ({
                         pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
                         em_andamento: { label: "Em andamento", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
                         concluido:    { label: "Concluído",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
                       } as const)[rx.status as "pendente" | "em_andamento" | "concluido"] ?? { label: rx.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
-                      const typeCfg = rx.type === "medical"
-                        ? { label: "Médica",     color: "bg-purple-500/10 text-purple-400 border-purple-500/30" }
-                        : { label: "Enfermagem", color: "bg-blue-500/10 text-blue-400 border-blue-500/30" };
                       const staffName = staffMap[rx.userId]?.name ?? (rx.userId > 0 ? `#${rx.userId}` : "—");
                       return (
-                        <div key={rx.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
-                          <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
+                        <div key={rx.id} className="bg-card rounded-lg border border-purple-500/20 overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-2 bg-purple-500/5 border-b border-purple-500/15">
                             <div className="flex items-center gap-2">
-                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", typeCfg.color)}>{typeCfg.label}</span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider bg-purple-500/10 text-purple-400 border-purple-500/30">Médica</span>
                               <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", statusCfg.color)}>{statusCfg.label}</span>
                             </div>
                             <span className="text-xs text-muted-foreground">{format(new Date(rx.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
@@ -1005,44 +1008,114 @@ export default function PatientDetail() {
                             <div className="flex items-center justify-between pt-2 border-t border-border/40">
                               <span className="text-xs text-muted-foreground">— {staffName}</span>
                               <div className="flex gap-1.5">
-                                {rx.type === "medical" && (
-                                  <Button
-                                    size="sm" variant="outline"
-                                    className="h-6 text-[10px] px-2 gap-1 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
-                                    disabled={printingRxId === rx.id}
-                                    onClick={async () => {
-                                      setPrintingRxId(rx.id);
-                                      try {
-                                        const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-                                        const staffId = activeUser?.id ?? 0;
-                                        const resp = await fetch(
-                                          `${base}/api/patients/${id}/prescriptions/${rx.id}/pdf`,
-                                          { headers: { "x-staff-id": String(staffId) } },
-                                        );
-                                        if (!resp.ok) throw new Error("Falha ao gerar PDF");
-                                        const blob = await resp.blob();
-                                        const href = URL.createObjectURL(blob);
-                                        const safeName = patient.full_name.replace(/\s+/g, "_");
-                                        const dateSlug = new Date(rx.createdAt).toISOString().slice(0, 10);
-                                        const a = Object.assign(document.createElement("a"), {
-                                          href,
-                                          download: `Prescricao_Medica_${safeName}_${dateSlug}.pdf`,
-                                        });
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                        URL.revokeObjectURL(href);
-                                      } catch {
-                                        toast({ title: "Erro ao gerar PDF", variant: "destructive" });
-                                      } finally {
-                                        setPrintingRxId(null);
-                                      }
-                                    }}
-                                  >
-                                    <Printer className="h-3 w-3" />
-                                    {printingRxId === rx.id ? "Gerando…" : "Imprimir"}
-                                  </Button>
+                                <Button
+                                  size="sm" variant="outline"
+                                  className="h-6 text-[10px] px-2 gap-1 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                                  disabled={printingRxId === rx.id}
+                                  onClick={async () => {
+                                    setPrintingRxId(rx.id);
+                                    try {
+                                      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                                      const staffId = activeUser?.id ?? 0;
+                                      const resp = await fetch(
+                                        `${base}/api/patients/${id}/prescriptions/${rx.id}/pdf`,
+                                        { headers: { "x-staff-id": String(staffId) } },
+                                      );
+                                      if (!resp.ok) throw new Error("Falha ao gerar PDF");
+                                      const blob = await resp.blob();
+                                      const href = URL.createObjectURL(blob);
+                                      const safeName = patient.full_name.replace(/\s+/g, "_");
+                                      const dateSlug = new Date(rx.createdAt).toISOString().slice(0, 10);
+                                      const a = Object.assign(document.createElement("a"), {
+                                        href,
+                                        download: `Prescricao_Medica_${safeName}_${dateSlug}.pdf`,
+                                      });
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                      URL.revokeObjectURL(href);
+                                    } catch {
+                                      toast({ title: "Erro ao gerar PDF", variant: "destructive" });
+                                    } finally {
+                                      setPrintingRxId(null);
+                                    }
+                                  }}
+                                >
+                                  <Printer className="h-3 w-3" />
+                                  {printingRxId === rx.id ? "Gerando…" : "Imprimir"}
+                                </Button>
+                                {rx.status !== "concluido" && (
+                                  <>
+                                    {rx.status === "pendente" && (
+                                      <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                        onClick={() => updatePrescriptionStatus.mutate({ id, prescriptionId: rx.id, data: { status: "em_andamento" } },
+                                          { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(id) }),
+                                            onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Iniciar</Button>
+                                    )}
+                                    <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                                      onClick={() => updatePrescriptionStatus.mutate({ id, prescriptionId: rx.id, data: { status: "concluido" } },
+                                        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(id) }),
+                                          onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Concluir</Button>
+                                  </>
                                 )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Prescrição de Cuidados de Enfermagem ──────────────── */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <ClipboardCheck className="h-4 w-4 text-blue-400" /> Prescrição de Enfermagem
+                    </h3>
+                    {prescriptions && prescriptions.filter(p => p.type === "nursing" && p.status !== "concluido").length > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        {prescriptions.filter(p => p.type === "nursing" && p.status !== "concluido").length}
+                      </span>
+                    )}
+                  </div>
+                  {isEnfermeiro && pode("registrar_prescricao") && (
+                    <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-blue-500/30 text-blue-400 hover:bg-blue-500/10" onClick={() => setIsPrescricaoEnfermagemOpen(true)}>
+                      <ClipboardCheck className="h-3.5 w-3.5" /> Nova Prescrição de Enfermagem
+                    </Button>
+                  )}
+                </div>
+                {isLoadingPrescriptions ? (
+                  <Skeleton className="h-24 w-full" />
+                ) : !prescriptions || prescriptions.filter(p => p.type === "nursing").length === 0 ? (
+                  <div className="text-center py-4 bg-card rounded-lg border border-border/50">
+                    <p className="text-sm text-muted-foreground">Nenhuma prescrição de enfermagem registrada.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {prescriptions.filter(p => p.type === "nursing").map(rx => {
+                      const statusCfg = ({
+                        pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                        em_andamento: { label: "Em andamento", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+                        concluido:    { label: "Concluído",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
+                      } as const)[rx.status as "pendente" | "em_andamento" | "concluido"] ?? { label: rx.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
+                      const staffName = staffMap[rx.userId]?.name ?? (rx.userId > 0 ? `#${rx.userId}` : "—");
+                      return (
+                        <div key={rx.id} className="bg-card rounded-lg border border-blue-500/20 overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-2 bg-blue-500/5 border-b border-blue-500/15">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider bg-blue-500/10 text-blue-400 border-blue-500/30">Enfermagem</span>
+                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", statusCfg.color)}>{statusCfg.label}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">{format(new Date(rx.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                          </div>
+                          <div className="px-4 py-3">
+                            <pre className={cn("text-sm whitespace-pre-wrap font-sans mb-3", rx.status === "concluido" && "line-through text-muted-foreground")}>{rx.content}</pre>
+                            <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                              <span className="text-xs text-muted-foreground">— {staffName}</span>
+                              <div className="flex gap-1.5">
                                 {rx.status !== "concluido" && (
                                   <>
                                     {rx.status === "pendente" && (
@@ -1867,13 +1940,39 @@ export default function PatientDetail() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPrescriptionOpen} onOpenChange={setIsPrescriptionOpen}>
-        <DialogContent className="sm:max-w-[680px] max-h-[92vh] overflow-y-auto">
+      <Dialog open={isPrescricaoMedicaOpen} onOpenChange={setIsPrescricaoMedicaOpen}>
+        <DialogContent className="sm:max-w-[720px] max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nova Prescrição</DialogTitle>
-            <DialogDescription>Prescrição de enfermagem ou médica estruturada para este paciente.</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <Stethoscope className="h-4 w-4 text-purple-400" /> Nova Prescrição Médica
+            </DialogTitle>
+            <DialogDescription>Prescrição médica estruturada — medicamentos, exames, dieta e condutas.</DialogDescription>
           </DialogHeader>
-          <PrescriptionForm patient={patient} onSuccess={() => setIsPrescriptionOpen(false)} onCancel={() => setIsPrescriptionOpen(false)} />
+          <PrescriptionForm
+            patient={patient}
+            userId={activeUser?.id ?? 0}
+            forceType="medical"
+            onSuccess={() => setIsPrescricaoMedicaOpen(false)}
+            onCancel={() => setIsPrescricaoMedicaOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPrescricaoEnfermagemOpen} onOpenChange={setIsPrescricaoEnfermagemOpen}>
+        <DialogContent className="sm:max-w-[560px] max-h-[92vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4 text-blue-400" /> Nova Prescrição de Enfermagem
+            </DialogTitle>
+            <DialogDescription>Prescrição de cuidados de enfermagem para este paciente.</DialogDescription>
+          </DialogHeader>
+          <PrescriptionForm
+            patient={patient}
+            userId={activeUser?.id ?? 0}
+            forceType="nursing"
+            onSuccess={() => setIsPrescricaoEnfermagemOpen(false)}
+            onCancel={() => setIsPrescricaoEnfermagemOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
@@ -1922,7 +2021,8 @@ export default function PatientDetail() {
           {([
             pode("registrar_sinais_vitais") && { icon: <Activity className="h-5 w-5" />, label: "SVs",        action: () => setIsVitalsRecordOpen(true) },
             pode("registrar_evolucao")      && { icon: <ClipboardList className="h-5 w-5" />, label: "SOAP",  action: () => setIsVitalsOpen(true) },
-            pode("registrar_prescricao")    && { icon: <ClipboardCheck className="h-5 w-5" />, label: "Prescrição", action: () => setIsPrescriptionOpen(true) },
+            pode("registrar_prescricao") && isMedico     && { icon: <Stethoscope className="h-5 w-5" />, label: "Rx Médica", action: () => setIsPrescricaoMedicaOpen(true) },
+            pode("registrar_prescricao") && isEnfermeiro && { icon: <ClipboardCheck className="h-5 w-5" />, label: "Rx Enf.", action: () => setIsPrescricaoEnfermagemOpen(true) },
             { icon: <ListTodo className="h-5 w-5" />, label: "Pendência",  action: () => setIsTasksOpen(true) },
             { icon: <Truck className="h-5 w-5" />, label: "Transfer.",  action: () => setIsTransferOpen(true) },
           ].filter(Boolean) as { icon: React.ReactNode; label: string; action: () => void }[]).map((item, i) => (
