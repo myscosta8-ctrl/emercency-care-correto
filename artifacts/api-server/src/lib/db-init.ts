@@ -260,6 +260,12 @@ CREATE TABLE IF NOT EXISTS public.vitals (
 -- FK pendente de patient_exam_requests → patient_prescriptions
 ALTER TABLE public.patient_exam_requests
   ADD COLUMN IF NOT EXISTS prescription_id integer;
+
+-- Colunas de resultado adicionadas depois da criação inicial
+ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_text text NOT NULL DEFAULT '';
+ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_name text NOT NULL DEFAULT '';
+ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_data text NOT NULL DEFAULT '';
+ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_mime text NOT NULL DEFAULT '';
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.table_constraints
@@ -366,7 +372,15 @@ export async function initializeDatabase(): Promise<void> {
     const alreadyInitialized = result.rows[0]?.exists === true;
 
     if (alreadyInitialized) {
-      logger.info("Database already initialized, skipping setup");
+      logger.info("Database already initialized — running incremental migrations...");
+      await client.query(`
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_text text NOT NULL DEFAULT '';
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_name text NOT NULL DEFAULT '';
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_data text NOT NULL DEFAULT '';
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_mime text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS archived_at timestamp without time zone;
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS archive_reason text NOT NULL DEFAULT '';
+      `);
       await migratePasswords();
       logger.info("Database initialization complete");
       return;
