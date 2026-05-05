@@ -53,15 +53,23 @@ function toPdfPatient(p: Patient): PdfPatient {
     motherName:              p.motherName,
     cns:                     p.cns,
     cpf:                     p.cpf,
+    rg:                      p.rg,
     phone:                   p.phone,
+    email:                   p.email,
+    symptoms:                p.symptoms,
+    symptomOnsetDate:        p.symptomOnsetDate,
+    address:                 p.address,
     healthUnit:              p.healthUnit,
     responsibleProfessional: p.responsibleProfessional,
-    symptomOnsetDate:        p.symptomOnsetDate,
     attendanceDate:          p.attendanceDate,
     attendanceTime:          p.attendanceTime,
     agravo:                  p.agravo,
     dataNotificacao:         p.dataNotificacao,
     municipioNotificacao:    p.municipioNotificacao,
+    codigoIbge:              p.codigoIbge,
+    evolucaoCaso:            p.evolucaoCaso,
+    classificacaoFinal:      p.classificacaoFinal,
+    criterioConfirmacao:     p.criterioConfirmacao,
   };
 }
 
@@ -468,9 +476,17 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
   const selectedCode = form.watch("agravoCode");
   const agravo       = findAgravo(selectedCode);
 
-  // reset disease-specific fields when agravo changes
+  // reset disease-specific fields when agravo changes, preserving base fields
   useEffect(() => {
-    if (!notification) setFd({});
+    if (!notification) {
+      setFd({
+        unidade_saude:            patient.healthUnit              ?? "",
+        municipio_notificacao:    patient.municipioNotificacao    ?? "",
+        profissional_responsavel: patient.responsibleProfessional ?? "",
+        codigo_ibge:              patient.codigoIbge              ?? "",
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCode, notification]);
 
   const createNotif = useAddPatientNotification();
@@ -742,6 +758,7 @@ export function NotificationForm({ patient, notification, onSuccess, onCancel }:
                     {...field}
                     className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
+                    <option value="">— UF —</option>
                     {["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"].map(uf => (
                       <option key={uf} value={uf}>{uf}</option>
                     ))}

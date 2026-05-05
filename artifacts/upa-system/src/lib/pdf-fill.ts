@@ -14,6 +14,8 @@ export interface PdfPatient {
   rg?: string | null;
   phone?: string | null;
   email?: string | null;
+  /** Single-string address (legacy / API model). Used as fallback when split fields are absent. */
+  address?: string | null;
   street?: string | null;
   addressNumber?: string | null;
   addressComplement?: string | null;
@@ -498,8 +500,9 @@ function buildFieldValues(patient: PdfPatient, notif?: PdfNotification): Record<
     cpf:                  patient.cpf            ?? "",
     rg:                   patient.rg             ?? "",
     cns:                  patient.cns            ?? "",
-    // address: use notification overrides if provided, fallback to patient fields
-    endereco_rua:         addr(notif?.logradouro,          patient.street),
+    // address: use notification overrides if provided, fallback to split patient fields,
+    // then to the single patient.address string (legacy/API model)
+    endereco_rua:         addr(notif?.logradouro,          patient.street)          || patient.address || "",
     endereco_numero:      addr(notif?.numeroEndereco,      patient.addressNumber),
     endereco_complemento: addr(notif?.complemento,         patient.addressComplement),
     bairro:               addr(notif?.bairro,              patient.neighborhood),
