@@ -1,0 +1,339 @@
+import { pool } from "@workspace/db";
+import { logger } from "./logger";
+
+const INIT_SQL = `
+-- Tabelas
+CREATE TABLE IF NOT EXISTS public.staff (
+  id serial PRIMARY KEY,
+  name text NOT NULL,
+  role text NOT NULL,
+  coren_crm text NOT NULL DEFAULT '',
+  sector text NOT NULL DEFAULT '',
+  login text NOT NULL UNIQUE,
+  password_hash text NOT NULL DEFAULT '',
+  access_levels text NOT NULL DEFAULT '',
+  signature text NOT NULL DEFAULT '',
+  stamp text NOT NULL DEFAULT '',
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  updated_at timestamp without time zone NOT NULL DEFAULT now(),
+  email text NOT NULL DEFAULT '',
+  active boolean NOT NULL DEFAULT true,
+  must_change_password boolean NOT NULL DEFAULT false,
+  setores_atuacao text NOT NULL DEFAULT 'todos',
+  turno text NOT NULL DEFAULT '',
+  consultorio text NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS public.patients (
+  id serial PRIMARY KEY,
+  full_name text NOT NULL,
+  age integer NOT NULL DEFAULT 0,
+  bed text NOT NULL DEFAULT '',
+  diagnosis text NOT NULL DEFAULT '',
+  triage_level text NOT NULL,
+  sector text NOT NULL,
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  updated_at timestamp without time zone NOT NULL DEFAULT now(),
+  nurse text NOT NULL DEFAULT '',
+  internment_status text NOT NULL DEFAULT 'nao_internado',
+  created_by text NOT NULL DEFAULT '',
+  updated_by text NOT NULL DEFAULT '',
+  birth_date text NOT NULL DEFAULT '',
+  sex text NOT NULL DEFAULT 'O',
+  mother_name text NOT NULL DEFAULT '',
+  cns text NOT NULL DEFAULT '',
+  cpf text NOT NULL DEFAULT '',
+  rg text NOT NULL DEFAULT '',
+  phone text NOT NULL DEFAULT '',
+  email text NOT NULL DEFAULT '',
+  symptoms text NOT NULL DEFAULT '',
+  symptom_onset_date text NOT NULL DEFAULT '',
+  attendance_date text NOT NULL DEFAULT '',
+  attendance_time text NOT NULL DEFAULT '',
+  health_unit text NOT NULL DEFAULT 'UPA Breves - Breves/PA',
+  responsible_professional text NOT NULL DEFAULT '',
+  agravo text NOT NULL DEFAULT '',
+  data_notificacao text NOT NULL DEFAULT '',
+  municipio_notificacao text NOT NULL DEFAULT '',
+  codigo_ibge text NOT NULL DEFAULT '',
+  evolucao_caso text NOT NULL DEFAULT '',
+  classificacao_final text NOT NULL DEFAULT '',
+  criterio_confirmacao text NOT NULL DEFAULT '',
+  address text NOT NULL DEFAULT '',
+  care_status text NOT NULL DEFAULT 'Em Triagem',
+  care_status_changed_at timestamp without time zone NOT NULL DEFAULT now(),
+  prontuario_number text NOT NULL DEFAULT '',
+  atendimento_number text NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS public.audit_log (
+  id serial PRIMARY KEY,
+  usuario text NOT NULL,
+  acao text NOT NULL,
+  detalhes text,
+  ip text,
+  criado_em timestamp without time zone NOT NULL DEFAULT now(),
+  staff_id integer
+);
+
+CREATE TABLE IF NOT EXISTS public.beds (
+  id serial PRIMARY KEY,
+  bed_id text NOT NULL UNIQUE,
+  sector text NOT NULL,
+  bed_number integer NOT NULL,
+  is_isolation boolean NOT NULL DEFAULT false,
+  is_occupied boolean NOT NULL DEFAULT false,
+  patient_id integer REFERENCES public.patients(id) ON DELETE SET NULL,
+  isolation_active boolean NOT NULL DEFAULT false,
+  isolation_type text,
+  isolation_reason text,
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  updated_at timestamp without time zone NOT NULL DEFAULT now(),
+  is_extra boolean NOT NULL DEFAULT false,
+  extra_reason text,
+  admission_time timestamp without time zone
+);
+
+CREATE TABLE IF NOT EXISTS public.password_resets (
+  id text PRIMARY KEY,
+  user_id integer NOT NULL REFERENCES public.staff(id) ON DELETE CASCADE,
+  token text NOT NULL UNIQUE,
+  expires_at timestamp without time zone NOT NULL,
+  used_at timestamp without time zone,
+  created_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.patient_evolutions (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  user_id integer NOT NULL DEFAULT 0,
+  soap_text text NOT NULL DEFAULT '',
+  professional_category text NOT NULL DEFAULT 'geral',
+  structured_data jsonb
+);
+
+CREATE TABLE IF NOT EXISTS public.patient_exam_requests (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  prescription_id integer,
+  laboratoriais jsonb NOT NULL DEFAULT '[]',
+  imagem jsonb NOT NULL DEFAULT '[]',
+  prioridade text NOT NULL DEFAULT 'rotina',
+  justificativa text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'solicitado',
+  created_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.exam_results (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  uploaded_by integer NOT NULL DEFAULT 0,
+  exam_name text NOT NULL,
+  exam_type text NOT NULL DEFAULT 'laboratorial',
+  prioridade text NOT NULL DEFAULT 'rotina',
+  result_text text NOT NULL DEFAULT '',
+  file_data text NOT NULL DEFAULT '',
+  file_name text NOT NULL DEFAULT '',
+  file_mime text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'pendente',
+  liberado_at timestamp without time zone,
+  notified boolean NOT NULL DEFAULT false,
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  updated_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.nutritional_assessments (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  user_id integer NOT NULL DEFAULT 0,
+  content text NOT NULL DEFAULT '',
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  structured_data jsonb
+);
+
+CREATE TABLE IF NOT EXISTS public.patient_notifications (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  disease text NOT NULL DEFAULT '',
+  classification text NOT NULL DEFAULT '',
+  pdf_url text NOT NULL DEFAULT '',
+  agravo_code text NOT NULL DEFAULT '',
+  cid10 text NOT NULL DEFAULT '',
+  data_notificacao text NOT NULL DEFAULT '',
+  data_inicio_sintomas text NOT NULL DEFAULT '',
+  logradouro text NOT NULL DEFAULT '',
+  numero_endereco text NOT NULL DEFAULT '',
+  complemento text NOT NULL DEFAULT '',
+  bairro text NOT NULL DEFAULT '',
+  municipio_residencia text NOT NULL DEFAULT '',
+  uf_residencia text NOT NULL DEFAULT '',
+  cep text NOT NULL DEFAULT '',
+  form_data text NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS public.patient_prescriptions (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  status text NOT NULL DEFAULT 'pendente',
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  user_id integer NOT NULL DEFAULT 0,
+  type text NOT NULL DEFAULT 'nursing',
+  content text NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS public.patient_tasks (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  items text NOT NULL DEFAULT '[]',
+  status text NOT NULL DEFAULT 'pendente',
+  responsible text NOT NULL DEFAULT '',
+  notes text NOT NULL DEFAULT '',
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  updated_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.patient_devices (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  device_type text NOT NULL,
+  insertion_date text NOT NULL,
+  insertion_site text NOT NULL DEFAULT '',
+  notes text NOT NULL DEFAULT '',
+  removed_at timestamp without time zone,
+  created_by integer NOT NULL DEFAULT 0,
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  updated_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.pharmacy_entries (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  user_id integer NOT NULL DEFAULT 0,
+  medication text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'pendente',
+  notes text NOT NULL DEFAULT '',
+  created_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.social_notes (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  user_id integer NOT NULL DEFAULT 0,
+  content text NOT NULL DEFAULT '',
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  structured_data jsonb
+);
+
+CREATE TABLE IF NOT EXISTS public.transfers (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  user_id integer NOT NULL DEFAULT 0,
+  destination_hospital text NOT NULL,
+  specialty text NOT NULL DEFAULT '',
+  reason_for_transfer text NOT NULL DEFAULT '',
+  transfer_status text NOT NULL DEFAULT 'Solicitado',
+  transport_type text NOT NULL DEFAULT '',
+  regulation_contact text NOT NULL DEFAULT '',
+  departure_datetime timestamp without time zone,
+  arrival_confirmation boolean NOT NULL DEFAULT false,
+  arrival_datetime timestamp without time zone,
+  created_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.vitals (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  user_id integer NOT NULL DEFAULT 0,
+  bp text NOT NULL DEFAULT '',
+  hr integer NOT NULL DEFAULT 0,
+  rr integer NOT NULL DEFAULT 0,
+  spo2 integer NOT NULL DEFAULT 0,
+  temp real NOT NULL DEFAULT 0,
+  glucose real NOT NULL DEFAULT 0,
+  note text NOT NULL DEFAULT '',
+  created_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
+-- FK pendente de patient_exam_requests → patient_prescriptions
+ALTER TABLE public.patient_exam_requests
+  ADD COLUMN IF NOT EXISTS prescription_id integer;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'patient_exam_requests_prescription_id_fk'
+  ) THEN
+    ALTER TABLE public.patient_exam_requests
+      ADD CONSTRAINT patient_exam_requests_prescription_id_fk
+      FOREIGN KEY (prescription_id) REFERENCES public.patient_prescriptions(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+-- Usuários padrão do sistema
+-- admin / admin123  e  myscosta8@gmail.com (hash existente)
+INSERT INTO public.staff (id, name, role, coren_crm, sector, login, password_hash, access_levels, signature, stamp, email, active, must_change_password, setores_atuacao)
+VALUES
+  (1, 'Marcus Yan dos Santos Costa', 'enfermeiro', '577662', 'todos_os_setores',
+   'myscosta8@gmail.com',
+   '662dbf0dcb47fe63d56fb415beebbfb7ea8fab0ba129f4581b98e1412c1b62e8',
+   'assistencial,admin,coordenacao_enfermagem', '', '',
+   'myscosta8@gmail.com', true, false, 'todos'),
+  (2, 'Administrador', 'administrador', 'ADM-001', 'Administração',
+   'admin',
+   '86a51ca7f81768d3e5c429fa9963fb2e8fd5db934688018af3dcf6997a6c13dc',
+   '', '', '', '', true, false, 'todos')
+ON CONFLICT (login) DO NOTHING;
+
+SELECT setval('public.staff_id_seq', GREATEST((SELECT MAX(id) FROM public.staff), 1));
+
+-- Leitos padrão
+INSERT INTO public.beds (bed_id, sector, bed_number, is_isolation) VALUES
+  ('VS-01','sala_vermelha',1,false), ('VS-02','sala_vermelha',2,false),
+  ('VS-03','sala_vermelha',3,false), ('VS-04','sala_vermelha',4,false),
+  ('OA-01','observacao_adulto',1,false), ('OA-02','observacao_adulto',2,false),
+  ('OA-03','observacao_adulto',3,false), ('OA-04','observacao_adulto',4,false),
+  ('OA-05','observacao_adulto',5,false), ('OA-06','observacao_adulto',6,false),
+  ('OA-07','observacao_adulto',7,false), ('OA-08','observacao_adulto',8,false),
+  ('OA-09','observacao_adulto',9,false), ('OA-10','observacao_adulto',10,false),
+  ('OA-11','observacao_adulto',11,false), ('OA-12','observacao_adulto',12,false),
+  ('OA-13','observacao_adulto',13,false), ('OA-14','observacao_adulto',14,false),
+  ('OA-15','observacao_adulto',15,false), ('OA-16','observacao_adulto',16,false),
+  ('OA-ISO','observacao_adulto',17,true),
+  ('OP-01','observacao_pediatrica',1,false), ('OP-02','observacao_pediatrica',2,false),
+  ('OP-03','observacao_pediatrica',3,false), ('OP-04','observacao_pediatrica',4,false),
+  ('OP-05','observacao_pediatrica',5,false), ('OP-ISO','observacao_pediatrica',6,true),
+  ('PA-01','observacao_pre_adulto',1,false), ('PA-02','observacao_pre_adulto',2,false),
+  ('PA-03','observacao_pre_adulto',3,false), ('PA-04','observacao_pre_adulto',4,false),
+  ('PA-05','observacao_pre_adulto',5,false), ('PA-06','observacao_pre_adulto',6,false),
+  ('PA-07','observacao_pre_adulto',7,false), ('PA-ISO','observacao_pre_adulto',8,true)
+ON CONFLICT (bed_id) DO NOTHING;
+`;
+
+export async function initializeDatabase(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query<{ exists: boolean }>(
+      `SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'staff'
+      ) AS exists`
+    );
+
+    const alreadyInitialized = result.rows[0]?.exists === true;
+
+    if (alreadyInitialized) {
+      logger.info("Database already initialized, skipping setup");
+      return;
+    }
+
+    logger.info("Database not initialized — running setup...");
+    await client.query(INIT_SQL);
+    logger.info("Database initialized successfully");
+  } catch (err) {
+    logger.error({ err }, "Failed to initialize database");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
