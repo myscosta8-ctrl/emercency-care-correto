@@ -319,9 +319,9 @@ INSERT INTO public.beds (bed_id, sector, bed_number, is_isolation) VALUES
 ON CONFLICT (bed_id) DO NOTHING;
 `;
 
-async function migratePasswords(client: Awaited<ReturnType<typeof pool.connect>>): Promise<void> {
+async function migratePasswords(): Promise<void> {
   try {
-    const { rows } = await client.query<{ login: string; password_hash: string }>(
+    const { rows } = await pool.query<{ login: string; password_hash: string }>(
       `SELECT login, password_hash FROM public.staff
        WHERE login IN ('admin', 'myscosta8@gmail.com')`
     );
@@ -340,7 +340,7 @@ async function migratePasswords(client: Awaited<ReturnType<typeof pool.connect>>
         const plain = defaultPasswords[row.login];
         if (plain) {
           const hash = await bcrypt.hash(plain, 12);
-          await client.query(
+          await pool.query(
             `UPDATE public.staff SET password_hash = $1 WHERE login = $2`,
             [hash, row.login]
           );
@@ -367,7 +367,7 @@ export async function initializeDatabase(): Promise<void> {
 
     if (alreadyInitialized) {
       logger.info("Database already initialized, skipping setup");
-      await migratePasswords(client);
+      await migratePasswords();
       logger.info("Database initialization complete");
       return;
     }
