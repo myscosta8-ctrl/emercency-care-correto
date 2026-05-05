@@ -68,6 +68,10 @@ export const patientsTable = pgTable("patients", {
   classificacaoFinal:   text("classificacao_final").notNull().default(""),
   criterioConfirmacao:  text("criterio_confirmacao").notNull().default(""),
 
+  // ── arquivo (alta / transferência) ────────────────────────────────────────
+  archivedAt:     timestamp("archived_at"),
+  archiveReason:  text("archive_reason").notNull().default(""),
+
   // ── auditoria ──────────────────────────────────────────────────────────────
   createdBy: text("created_by").notNull().default(""),
   updatedBy: text("updated_by").notNull().default(""),

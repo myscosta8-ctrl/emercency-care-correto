@@ -372,15 +372,7 @@ export async function initializeDatabase(): Promise<void> {
     const alreadyInitialized = result.rows[0]?.exists === true;
 
     if (alreadyInitialized) {
-      logger.info("Database already initialized — running incremental migrations...");
-      await client.query(`
-        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_text text NOT NULL DEFAULT '';
-        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_name text NOT NULL DEFAULT '';
-        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_data text NOT NULL DEFAULT '';
-        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_mime text NOT NULL DEFAULT '';
-        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS archived_at timestamp without time zone;
-        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS archive_reason text NOT NULL DEFAULT '';
-      `);
+      logger.info("Database already initialized — skipping full setup");
       await migratePasswords();
       logger.info("Database initialization complete");
       return;
