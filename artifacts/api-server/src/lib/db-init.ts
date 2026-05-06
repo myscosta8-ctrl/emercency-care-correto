@@ -441,6 +441,16 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS type text NOT NULL DEFAULT 'nursing';
         ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS user_id integer NOT NULL DEFAULT 0;
         ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS content text NOT NULL DEFAULT '';
+        ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS invalidado boolean NOT NULL DEFAULT false;
+        ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS motivo_invalidacao text NOT NULL DEFAULT '';
+
+        -- patient_evolutions: invalidação
+        ALTER TABLE public.patient_evolutions ADD COLUMN IF NOT EXISTS invalidado boolean NOT NULL DEFAULT false;
+        ALTER TABLE public.patient_evolutions ADD COLUMN IF NOT EXISTS motivo_invalidacao text NOT NULL DEFAULT '';
+
+        -- patient_exam_requests: invalidação
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS invalidado boolean NOT NULL DEFAULT false;
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS motivo_invalidacao text NOT NULL DEFAULT '';
       `);
 
       // ── restore admin account (idempotent) ──────────────────────────────────

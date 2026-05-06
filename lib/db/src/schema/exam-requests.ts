@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, jsonb, timestamp, boolean } from "drizzle-orm/pg-core";
 import { patientsTable } from "./patients";
 import { patientPrescriptionsTable } from "./prescriptions";
 
@@ -22,5 +22,7 @@ export const patientExamRequestsTable = pgTable("patient_exam_requests", {
   resultFileName: text("result_file_name").notNull().default(""),
   resultFileData: text("result_file_data").notNull().default(""),
   resultFileMime: text("result_file_mime").notNull().default(""),
+  invalidado: boolean("invalidado").notNull().default(false),
+  motivoInvalidacao: text("motivo_invalidacao").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

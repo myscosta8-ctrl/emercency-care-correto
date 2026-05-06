@@ -51,7 +51,7 @@ import {
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
   Bell, Trash, Download, FileDown, Calendar, Building2,
   MessageSquare, UtensilsCrossed, Pill, Truck, Plus, Send, FlaskConical,
-  Plug, Unplug, AlertCircle, ChevronDown,
+  Plug, Unplug, AlertCircle, ChevronDown, Ban, X as XIcon,
 } from "lucide-react";
 import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 import { PatientLabTab } from "@/components/patient-lab-tab";
@@ -286,6 +286,21 @@ export default function PatientDetail() {
   const [generatingPdfId, setGeneratingPdfId] = useState<number | null>(null);
   const [printingRxId, setPrintingRxId] = useState<number | null>(null);
 
+  const [isInvalidarOpen, setIsInvalidarOpen]   = useState(false);
+  const [invalidarTarget, setInvalidarTarget]   = useState<{ type: "prescricao" | "evolucao" | "exame"; id: number } | null>(null);
+  const [invalidarMotivo, setInvalidarMotivo]   = useState("");
+  const [invalidarLoading, setInvalidarLoading] = useState(false);
+
+  const [solExameLabs, setSolExameLabs]             = useState<string[]>([]);
+  const [solExameImagem, setSolExameImagem]         = useState<string[]>([]);
+  const [solExamePrioridade, setSolExamePrioridade] = useState<"urgente" | "rotina" | "eletivo">("rotina");
+  const [solExameJustificativa, setSolExameJustificativa] = useState("");
+  const [solExameLabInput, setSolExameLabInput]     = useState("");
+  const [solExameImgInput, setSolExameImgInput]     = useState("");
+  const [solExameLoading, setSolExameLoading]       = useState(false);
+  const [downloadingApac, setDownloadingApac]       = useState(false);
+  const [downloadingFichaRef, setDownloadingFichaRef] = useState(false);
+
   const [prevVisits, setPrevVisits]               = useState<Patient[] | null>(null);
   const [prevVisitsLoading, setPrevVisitsLoading] = useState(false);
   const [showPrevVisits, setShowPrevVisits]       = useState(false);
@@ -307,6 +322,61 @@ export default function PatientDetail() {
       setPrevVisitsLoading(false);
     }
   }
+
+  const handleInvalidar = async () => {
+    if (!invalidarTarget) return;
+    setInvalidarLoading(true);
+    try {
+      const { type, id: targetId } = invalidarTarget;
+      const path =
+        type === "prescricao"
+          ? `/api/patients/${id}/prescriptions/${targetId}/invalidar`
+          : type === "evolucao"
+          ? `/api/patients/${id}/evolutions/${targetId}/invalidar`
+          : `/api/patients/${id}/exam-requests/${targetId}/invalidar`;
+      const resp = await fetch(path, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-staff-id": String(activeUser?.id ?? 0) },
+        body: JSON.stringify({ motivo: invalidarMotivo }),
+      });
+      if (!resp.ok) throw new Error("Erro ao invalidar");
+      if (type === "prescricao") queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(id) });
+      else if (type === "evolucao") queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(id) });
+      else queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) });
+      toast({ title: "Registro invalidado com sucesso" });
+      setIsInvalidarOpen(false);
+    } catch {
+      toast({ title: "Erro ao invalidar registro", variant: "destructive" });
+    } finally {
+      setInvalidarLoading(false);
+    }
+  };
+
+  const handleSolicitarExame = async () => {
+    if (solExameLabs.length === 0 && solExameImagem.length === 0) return;
+    setSolExameLoading(true);
+    try {
+      const resp = await fetch(`/api/patients/${id}/exam-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-staff-id": String(activeUser?.id ?? 0) },
+        body: JSON.stringify({
+          laboratoriais: solExameLabs,
+          imagem: solExameImagem,
+          prioridade: solExamePrioridade,
+          justificativa: solExameJustificativa,
+        }),
+      });
+      if (!resp.ok) throw new Error("Erro");
+      queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) });
+      setSolExameLabs([]); setSolExameImagem([]); setSolExameJustificativa("");
+      setSolExameLabInput(""); setSolExameImgInput("");
+      toast({ title: "Solicitação de exame registrada" });
+    } catch {
+      toast({ title: "Erro ao solicitar exame", variant: "destructive" });
+    } finally {
+      setSolExameLoading(false);
+    }
+  };
 
   const handleDelete = () => {
     updateStatus.mutate(
@@ -500,6 +570,46 @@ export default function PatientDetail() {
               <FileDown className="h-4 w-4 mr-1.5" />
               {downloadingFicha ? "Gerando…" : "Ficha ID"}
             </Button>
+            <Button
+              variant="outline" size="sm"
+              className="print-hide hidden sm:flex"
+              disabled={downloadingApac || !pode("gerar_pdf")}
+              onClick={async () => {
+                setDownloadingApac(true);
+                try {
+                  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                  const resp = await fetch(`${base}/api/patients/${id}/pdf/apac`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                  if (!resp.ok) throw new Error();
+                  const blob = await resp.blob();
+                  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `APAC_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                } catch { toast({ title: "Erro ao gerar APAC", variant: "destructive" }); }
+                finally { setDownloadingApac(false); }
+              }}
+            >
+              <FileDown className="h-4 w-4 mr-1.5" />
+              {downloadingApac ? "Gerando…" : "APAC"}
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="print-hide hidden sm:flex"
+              disabled={downloadingFichaRef || !pode("gerar_pdf")}
+              onClick={async () => {
+                setDownloadingFichaRef(true);
+                try {
+                  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                  const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-referencia`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                  if (!resp.ok) throw new Error();
+                  const blob = await resp.blob();
+                  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaReferencia_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                } catch { toast({ title: "Erro ao gerar Ficha", variant: "destructive" }); }
+                finally { setDownloadingFichaRef(false); }
+              }}
+            >
+              <FileDown className="h-4 w-4 mr-1.5" />
+              {downloadingFichaRef ? "Gerando…" : "Ficha Ref."}
+            </Button>
             {pode("editar_paciente") && (
               <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
                 <Edit className="h-4 w-4 mr-1.5" /> Editar
@@ -643,6 +753,11 @@ export default function PatientDetail() {
                     {examRequests.filter(e => e.status !== "laudado").length}
                   </span>
                 )}
+              </TabsTrigger>
+            )}
+            {pode("registrar_prescricao") && (
+              <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
+                <FlaskConical className="h-3 w-3" /> Sol. Exames
               </TabsTrigger>
             )}
             <TabsTrigger value="laboratorio" className="text-xs flex items-center gap-1">
@@ -936,21 +1051,46 @@ export default function PatientDetail() {
                     <p className="text-sm text-muted-foreground">Nenhuma evolução registrada ainda.</p>
                   </div>
                 ) : (
-                  history.filter(e => e.soapText !== "Admissão inicial").map(entry => (
-                    <div key={entry.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
-                        <span className="text-xs font-semibold">
-                          {staffMap[entry.userId]?.name ?? `Profissional ID ${entry.userId}`}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </span>
+                  history.filter(e => e.soapText !== "Admissão inicial").map(entry => {
+                    const isInvalid = (entry as unknown as { invalidado: boolean }).invalidado;
+                    return (
+                      <div key={entry.id} className={cn("bg-card rounded-lg border border-border/50 overflow-hidden", isInvalid && "opacity-60")}>
+                        <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold">
+                              {staffMap[entry.userId]?.name ?? `Profissional ID ${entry.userId}`}
+                            </span>
+                            {isInvalid && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-500/20 text-red-400 border-red-500/30">
+                                <Ban className="h-2.5 w-2.5" /> Invalidado
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </span>
+                            {!isInvalid && pode("registrar_evolucao") && (
+                              <button
+                                type="button"
+                                title="Invalidar evolução"
+                                className="text-muted-foreground/50 hover:text-red-400 transition-colors"
+                                onClick={() => { setInvalidarTarget({ type: "evolucao", id: entry.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}
+                              >
+                                <Ban className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="px-4 py-3">
+                          <p className={cn("text-sm font-mono whitespace-pre-wrap text-foreground/90", isInvalid && "line-through text-muted-foreground")}>{entry.soapText}</p>
+                          {isInvalid && (entry as unknown as { motivoInvalidacao: string }).motivoInvalidacao && (
+                            <p className="text-xs text-red-400/70 mt-1">Motivo: {(entry as unknown as { motivoInvalidacao: string }).motivoInvalidacao}</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="px-4 py-3">
-                        <p className="text-sm font-mono whitespace-pre-wrap text-foreground/90">{entry.soapText}</p>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
@@ -1058,9 +1198,24 @@ export default function PatientDetail() {
                                           onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Concluir</Button>
                                   </>
                                 )}
+                                {!(rx as unknown as { invalidado: boolean }).invalidado && pode("registrar_prescricao") && (
+                                  <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                    onClick={() => { setInvalidarTarget({ type: "prescricao", id: rx.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}>
+                                    <Ban className="h-3 w-3 mr-0.5" /> Invalidar
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </div>
+                          {(rx as unknown as { invalidado: boolean; motivoInvalidacao: string }).invalidado && (
+                            <div className="px-4 py-2 bg-red-500/5 border-t border-red-500/20 flex items-center gap-2">
+                              <Ban className="h-3 w-3 text-red-400 shrink-0" />
+                              <span className="text-xs text-red-400 font-semibold">Invalidado</span>
+                              {(rx as unknown as { motivoInvalidacao: string }).motivoInvalidacao && (
+                                <span className="text-xs text-muted-foreground">— {(rx as unknown as { motivoInvalidacao: string }).motivoInvalidacao}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1130,9 +1285,24 @@ export default function PatientDetail() {
                                           onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Concluir</Button>
                                   </>
                                 )}
+                                {!(rx as unknown as { invalidado: boolean }).invalidado && pode("registrar_prescricao") && (
+                                  <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                    onClick={() => { setInvalidarTarget({ type: "prescricao", id: rx.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}>
+                                    <Ban className="h-3 w-3 mr-0.5" /> Invalidar
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </div>
+                          {(rx as unknown as { invalidado: boolean; motivoInvalidacao: string }).invalidado && (
+                            <div className="px-4 py-2 bg-red-500/5 border-t border-red-500/20 flex items-center gap-2">
+                              <Ban className="h-3 w-3 text-red-400 shrink-0" />
+                              <span className="text-xs text-red-400 font-semibold">Invalidado</span>
+                              {(rx as unknown as { motivoInvalidacao: string }).motivoInvalidacao && (
+                                <span className="text-xs text-muted-foreground">— {(rx as unknown as { motivoInvalidacao: string }).motivoInvalidacao}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1593,31 +1763,196 @@ export default function PatientDetail() {
                                 )}
                               </div>
                             )}
-                            {exam.status !== "laudado" && (
-                              <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/40">
-                                {exam.status === "solicitado" && (
-                                  <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                                    onClick={() => updateExamStatus.mutate(
-                                      { id, examRequestId: exam.id, data: { status: "coletado" } },
-                                      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) }),
-                                        onError: () => toast({ title: "Erro ao atualizar exame", variant: "destructive" }) }
-                                    )}>Marcar Coletado</Button>
-                                )}
-                                <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
-                                  onClick={() => {
-                                    setLaudarExamId(exam.id);
-                                    setLaudarResultText("");
-                                    setLaudarFileName("");
-                                    setLaudarFileData("");
-                                    setLaudarFileMime("");
-                                    setIsLaudarOpen(true);
-                                  }}>Marcar Laudado</Button>
-                              </div>
-                            )}
+                            <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/40 flex-wrap">
+                              {exam.status !== "laudado" && !(exam as unknown as { invalidado: boolean }).invalidado && (
+                                <>
+                                  {exam.status === "solicitado" && (
+                                    <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                      onClick={() => updateExamStatus.mutate(
+                                        { id, examRequestId: exam.id, data: { status: "coletado" } },
+                                        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) }),
+                                          onError: () => toast({ title: "Erro ao atualizar exame", variant: "destructive" }) }
+                                      )}>Marcar Coletado</Button>
+                                  )}
+                                  <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                                    onClick={() => {
+                                      setLaudarExamId(exam.id);
+                                      setLaudarResultText("");
+                                      setLaudarFileName("");
+                                      setLaudarFileData("");
+                                      setLaudarFileMime("");
+                                      setIsLaudarOpen(true);
+                                    }}>Marcar Laudado</Button>
+                                </>
+                              )}
+                              {!(exam as unknown as { invalidado: boolean }).invalidado && pode("registrar_prescricao") && (
+                                <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                  onClick={() => { setInvalidarTarget({ type: "exame", id: exam.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}>
+                                  <Ban className="h-3 w-3 mr-0.5" /> Invalidar
+                                </Button>
+                              )}
+                              {(exam as unknown as { invalidado: boolean }).invalidado && (
+                                <span className="text-xs text-red-400 font-semibold flex items-center gap-1">
+                                  <Ban className="h-3 w-3" /> Invalidado
+                                  {(exam as unknown as { motivoInvalidacao: string }).motivoInvalidacao && (
+                                    <span className="text-muted-foreground font-normal">— {(exam as unknown as { motivoInvalidacao: string }).motivoInvalidacao}</span>
+                                  )}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ── TAB: SOL. EXAMES ──────────────────────────────────────── */}
+          {pode("registrar_prescricao") && (
+            <TabsContent value="sol-exames">
+              <div className="space-y-5">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4 text-teal-400" /> Solicitação de Exames
+                </h3>
+
+                <div className="bg-card border border-border/50 rounded-lg p-4 space-y-4">
+                  {/* Lab exams */}
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Exames Laboratoriais</label>
+                    <div className="flex gap-2 mb-2">
+                      <Input
+                        placeholder="Ex: Hemograma completo, PCR, Glicemia..."
+                        value={solExameLabInput}
+                        onChange={e => setSolExameLabInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && solExameLabInput.trim()) {
+                            e.preventDefault();
+                            setSolExameLabs(prev => [...prev, solExameLabInput.trim()]);
+                            setSolExameLabInput("");
+                          }
+                        }}
+                        className="text-sm"
+                      />
+                      <Button type="button" size="sm" variant="outline" onClick={() => {
+                        if (solExameLabInput.trim()) { setSolExameLabs(prev => [...prev, solExameLabInput.trim()]); setSolExameLabInput(""); }
+                      }}>
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    {solExameLabs.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {solExameLabs.map((lab, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border border-purple-500/30 bg-purple-500/10 text-purple-300">
+                            {lab}
+                            <button type="button" onClick={() => setSolExameLabs(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-400 transition-colors">
+                              <XIcon className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Imaging exams */}
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Exames de Imagem</label>
+                    <div className="flex gap-2 mb-2">
+                      <Input
+                        placeholder="Ex: RX Tórax, TC Crânio, ECG..."
+                        value={solExameImgInput}
+                        onChange={e => setSolExameImgInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && solExameImgInput.trim()) {
+                            e.preventDefault();
+                            setSolExameImagem(prev => [...prev, solExameImgInput.trim()]);
+                            setSolExameImgInput("");
+                          }
+                        }}
+                        className="text-sm"
+                      />
+                      <Button type="button" size="sm" variant="outline" onClick={() => {
+                        if (solExameImgInput.trim()) { setSolExameImagem(prev => [...prev, solExameImgInput.trim()]); setSolExameImgInput(""); }
+                      }}>
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    {solExameImagem.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {solExameImagem.map((img, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
+                            {img}
+                            <button type="button" onClick={() => setSolExameImagem(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-400 transition-colors">
+                              <XIcon className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Priority + justification */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Prioridade</label>
+                      <select
+                        value={solExamePrioridade}
+                        onChange={e => setSolExamePrioridade(e.target.value as "urgente" | "rotina" | "eletivo")}
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      >
+                        <option value="urgente">Urgente</option>
+                        <option value="rotina">Rotina</option>
+                        <option value="eletivo">Eletivo</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Justificativa (opcional)</label>
+                      <Input
+                        placeholder="Indicação clínica..."
+                        value={solExameJustificativa}
+                        onChange={e => setSolExameJustificativa(e.target.value)}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      disabled={solExameLoading || (solExameLabs.length === 0 && solExameImagem.length === 0)}
+                      onClick={handleSolicitarExame}
+                      className="gap-1.5"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      {solExameLoading ? "Solicitando…" : `Solicitar ${solExameLabs.length + solExameImagem.length} exame(s)`}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Recent exam requests */}
+                {examRequests && examRequests.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Solicitações Recentes</h4>
+                    <div className="space-y-2">
+                      {examRequests.slice(0, 5).map(er => {
+                        const allNames = [...(er.laboratoriais as string[]), ...(er.imagem as string[])];
+                        const isInvalid = (er as unknown as { invalidado: boolean }).invalidado;
+                        return (
+                          <div key={er.id} className={cn("bg-card rounded border border-border/40 px-3 py-2 flex items-center justify-between gap-2", isInvalid && "opacity-50")}>
+                            <span className="text-xs truncate text-muted-foreground">{allNames.join(", ") || "—"}</span>
+                            <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0", {
+                              "solicitado": "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+                              "coletado":   "bg-blue-500/20 text-blue-400 border-blue-500/30",
+                              "laudado":    "bg-green-500/20 text-green-400 border-green-500/30",
+                            }[er.status as string] ?? "bg-muted/20 text-muted-foreground border-border/30")}>
+                              {isInvalid ? "Invalidado" : er.status}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1824,6 +2159,46 @@ export default function PatientDetail() {
               }}
             >
               {laudarSubmitting ? "Salvando..." : "Confirmar Laudo"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── INVALIDAR DIALOG ─────────────────────────────────────── */}
+      <Dialog open={isInvalidarOpen} onOpenChange={open => { if (!invalidarLoading) setIsInvalidarOpen(open); }}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <Ban className="h-4 w-4" /> Invalidar Registro
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação marca o registro como inválido e não pode ser desfeita. Informe o motivo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
+            <div>
+              <label className="text-sm font-medium block mb-1.5">Motivo da Invalidação <span className="text-muted-foreground text-xs">(opcional)</span></label>
+              <Textarea
+                placeholder="Ex: Prescrição duplicada, erro de preenchimento, dado incorreto..."
+                value={invalidarMotivo}
+                onChange={e => setInvalidarMotivo(e.target.value)}
+                rows={3}
+                className="text-sm resize-none"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setIsInvalidarOpen(false)} disabled={invalidarLoading}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={invalidarLoading}
+              onClick={handleInvalidar}
+            >
+              <Ban className="h-3.5 w-3.5 mr-1.5" />
+              {invalidarLoading ? "Invalidando…" : "Confirmar Invalidação"}
             </Button>
           </div>
         </DialogContent>

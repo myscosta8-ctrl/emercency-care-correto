@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 import { patientsTable } from "./patients";
 
 export const patientEvolutionsTable = pgTable("patient_evolutions", {
@@ -8,6 +8,8 @@ export const patientEvolutionsTable = pgTable("patient_evolutions", {
   soapText:             text("soap_text").notNull().default(""),
   professionalCategory: text("professional_category").notNull().default("geral"),
   structuredData:       jsonb("structured_data"),
+  invalidado:           boolean("invalidado").notNull().default(false),
+  motivoInvalidacao:    text("motivo_invalidacao").notNull().default(""),
   createdAt:            timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -411,6 +411,7 @@ export default function Dashboard() {
   const [filtro, setFiltro]                         = useState("Todos");
   const [triageFilter, setTriageFilter]             = useState("all");
   const [viewMode, setViewMode]                     = useState<"setor" | "status" | "exames">("setor");
+  const [sectorGroup, setSectorGroup]               = useState<"all" | "triagem" | "leitos">("all");
 
   const initialFilters = useMemo(() => parseExamFiltersFromSearch(currentSearch), []);
   const [examSearch, setExamSearch]     = useState(initialFilters.examSearch);
@@ -1140,8 +1141,36 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Sector filters — only in "setor" mode */}
+        {/* Triagem vs Leitos group selector — only in setor mode */}
         {viewMode === "setor" && !hasExamFilter && (
+          <div className="flex gap-1.5 mb-3">
+            {(
+              [
+                { key: "all",     label: "🏥 Todos",   title: "Exibir todos os setores" },
+                { key: "triagem", label: "📋 Triagem",  title: "Apenas área de triagem" },
+                { key: "leitos",  label: "🛏 Leitos",   title: "Observação e Internação" },
+              ] as const
+            ).map(({ key, label, title }) => (
+              <button
+                key={key}
+                type="button"
+                title={title}
+                onClick={() => setSectorGroup(key)}
+                className={cn(
+                  "px-3 py-1 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap",
+                  sectorGroup === key
+                    ? "bg-primary/20 border-primary/50 text-primary"
+                    : "border-border/40 text-muted-foreground hover:bg-muted/30",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Sector filters — only in "setor" mode */}
+        {viewMode === "setor" && !hasExamFilter && sectorGroup === "all" && (
           <div className="flex gap-1 mb-4 flex-wrap">
             {["Todos", ...SECTOR_NAMES].map(s => (
               <button
@@ -1188,7 +1217,11 @@ export default function Dashboard() {
           </div>
         ) : viewMode === "setor" ? (
           <div className="space-y-4">
-            {(grouped ?? []).map(sector => (
+            {((grouped ?? []).filter(g => {
+              if (sectorGroup === "triagem") return g.key === "triagem";
+              if (sectorGroup === "leitos")  return g.key !== "triagem";
+              return true;
+            })).map(sector => (
               <div key={sector.name}>
                 <div className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-t-md border mb-0",

@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { patientsTable } from "./patients";
 
 export const patientPrescriptionsTable = pgTable("patient_prescriptions", {
@@ -12,5 +12,7 @@ export const patientPrescriptionsTable = pgTable("patient_prescriptions", {
   status: text("status", { enum: ["pendente", "em_andamento", "concluido"] })
     .notNull()
     .default("pendente"),
+  invalidado: boolean("invalidado").notNull().default(false),
+  motivoInvalidacao: text("motivo_invalidacao").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
