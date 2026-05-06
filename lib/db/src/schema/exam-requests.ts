@@ -9,6 +9,7 @@ export const patientExamRequestsTable = pgTable("patient_exam_requests", {
     .references(() => patientsTable.id, { onDelete: "cascade" }),
   prescriptionId: integer("prescription_id")
     .references(() => patientPrescriptionsTable.id, { onDelete: "set null" }),
+  userId: integer("user_id").notNull().default(0),
   laboratoriais: jsonb("laboratoriais").notNull().default([]),
   imagem: jsonb("imagem").notNull().default([]),
   prioridade: text("prioridade", { enum: ["urgente", "rotina", "eletivo"] })

@@ -82,14 +82,14 @@ export const PERFIS: Perfil[] = [
 
 export const PERMISSOES: Record<Perfil, (Acao | "*")[]> = {
   recepcionista:          ["criar_paciente", "editar_paciente", "visualizar_setores"],
-  enfermeiro:             ["criar_paciente", "editar_paciente", "excluir_paciente", "classificacao_risco", "gerar_pdf", "mudar_setor", "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao"],
-  tecnico_enfermagem:     ["criar_paciente", "registrar_sinais_vitais", "registrar_evolucao"],
+  enfermeiro:             ["editar_paciente", "excluir_paciente", "classificacao_risco", "gerar_pdf", "mudar_setor", "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao"],
+  tecnico_enfermagem:     ["registrar_sinais_vitais", "registrar_evolucao"],
   medico:                 ["*"],
   assistente_social:      ["visualizar_setores", "visualizar_relatorios", "editar_paciente", "registrar_nota_social"],
   nutricionista:          ["visualizar_setores", "visualizar_relatorios", "registrar_avaliacao_nutricional"],
   farmaceutico:           ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao", "registrar_farmacia", "registrar_exames"],
   administrador:          ["*"],
-  auxiliar_administrativo: ["criar_paciente", "editar_paciente", "visualizar_setores", "visualizar_relatorios"],
+  auxiliar_administrativo: ["editar_paciente", "visualizar_setores", "visualizar_relatorios"],
   diretoria_geral:        ["*"],
 };
 

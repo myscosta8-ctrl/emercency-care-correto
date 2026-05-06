@@ -32,6 +32,8 @@ The project is built as a pnpm workspace monorepo using TypeScript, facilitating
 *   **API-First:** OpenAPI specification drives client generation.
 *   **Server-Side Security:** `requireAuth`, `requirePermissao`, and `auditWrite` middlewares enforce authentication, role-based access control, and comprehensive audit logging at the API level.
 *   **Per-Collaborator Permissions:** `custom_permissions` column on `staff` table stores a JSON array of allowed actions. When set, it overrides the role default in both `temPermissaoServer` (backend) and `temPermissao` (frontend). Admin UI in `staff.tsx` exposes a full permission matrix with toggle per action.
+*   **Admission Restriction:** Only `recepcionista`, `administrador`, and `diretoria_geral` (via `*`) can create new admissions (`criar_paciente`). Enfermeiro, técnico de enfermagem, and auxiliar administrativo no longer have this permission.
+*   **Invalidation Ownership:** Prescriptions, evolutions, and exam-requests can only be invalidated by the record's author (`userId`) or an admin (`administrador`/`diretoria_geral`). Backend returns HTTP 403 otherwise.
 *   **Role-Based UI:** Dynamically renders or disables UI elements based on user roles and permissions.
 *   **Feature Flag System:** Allows dynamic control over application features.
 *   **Secure Authentication:** bcrypt hashing for passwords, forced first-access password changes, and a robust password reset flow.

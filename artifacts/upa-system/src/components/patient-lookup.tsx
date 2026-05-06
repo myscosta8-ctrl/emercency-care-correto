@@ -22,11 +22,22 @@ const TRIAGE_LABEL: Record<string, string> = {
   red: "Vermelho", orange: "Laranja", yellow: "Amarelo", green: "Verde", blue: "Azul",
 };
 
+function getStaffId(): string {
+  try {
+    const raw = localStorage.getItem("upa_auth_user");
+    if (!raw) return "0";
+    const user = JSON.parse(raw) as { id?: number };
+    return String(user.id ?? 0);
+  } catch {
+    return "0";
+  }
+}
+
 async function fetchLookup(q: string): Promise<Patient[]> {
   if (!q.trim()) return [];
-  const staffId = localStorage.getItem("upa_staff_id") ?? "0";
-  const resp = await fetch(`/api/patients/lookup?q=${encodeURIComponent(q)}`, {
-    headers: { "x-staff-id": staffId },
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+  const resp = await fetch(`${base}/api/patients/lookup?q=${encodeURIComponent(q)}`, {
+    headers: { "x-staff-id": getStaffId() },
   });
   if (!resp.ok) return [];
   return resp.json() as Promise<Patient[]>;

@@ -877,6 +877,7 @@ router.post("/:id/exam-requests", requirePermissao("registrar_prescricao"), asyn
     prioridade:    body.prioridade as "urgente" | "rotina" | "eletivo",
     justificativa: body.justificativa ?? "",
     status:        "solicitado",
+    userId:        req.staff?.id ?? 0,
   }).returning();
   res.status(201).json({
     ...examRequest,
@@ -949,15 +950,31 @@ router.patch("/:id/exam-requests/:examRequestId/status", requirePermissao("regis
 
 // ── invalidação ───────────────────────────────────────────────────────────────
 
+const ADMIN_ROLES = new Set(["administrador", "diretoria_geral"]);
+
+function podeInvalidar(staffId: number, role: string, recordUserId: number): boolean {
+  return staffId === recordUserId || ADMIN_ROLES.has(role);
+}
+
 router.patch("/:id/prescriptions/:rxId/invalidar", requirePermissao("registrar_prescricao"), async (req, res) => {
   const patientId = Number(req.params.id);
   const rxId      = Number(req.params.rxId);
   const { motivo } = req.body as { motivo?: string };
-  const [rx] = await db.update(patientPrescriptionsTable)
-    .set({ invalidado: true, motivoInvalidacao: motivo ?? "" })
+
+  const [existing] = await db.select({ userId: patientPrescriptionsTable.userId })
+    .from(patientPrescriptionsTable)
     .where(and(eq(patientPrescriptionsTable.id, rxId), eq(patientPrescriptionsTable.patientId, patientId)))
-    .returning();
-  if (!rx) { res.status(404).json({ error: "Prescrição não encontrada" }); return; }
+    .limit(1);
+  if (!existing) { res.status(404).json({ error: "Prescrição não encontrada" }); return; }
+
+  if (!podeInvalidar(req.staff!.id, req.staff!.role, existing.userId)) {
+    res.status(403).json({ error: "Somente o autor ou um administrador pode invalidar este registro" });
+    return;
+  }
+
+  await db.update(patientPrescriptionsTable)
+    .set({ invalidado: true, motivoInvalidacao: motivo ?? "" })
+    .where(eq(patientPrescriptionsTable.id, rxId));
   res.json({ ok: true });
 });
 
@@ -965,11 +982,21 @@ router.patch("/:id/evolutions/:evolId/invalidar", requirePermissao("registrar_ev
   const patientId = Number(req.params.id);
   const evolId    = Number(req.params.evolId);
   const { motivo } = req.body as { motivo?: string };
-  const [evol] = await db.update(patientEvolutionsTable)
-    .set({ invalidado: true, motivoInvalidacao: motivo ?? "" })
+
+  const [existing] = await db.select({ userId: patientEvolutionsTable.userId })
+    .from(patientEvolutionsTable)
     .where(and(eq(patientEvolutionsTable.id, evolId), eq(patientEvolutionsTable.patientId, patientId)))
-    .returning();
-  if (!evol) { res.status(404).json({ error: "Evolução não encontrada" }); return; }
+    .limit(1);
+  if (!existing) { res.status(404).json({ error: "Evolução não encontrada" }); return; }
+
+  if (!podeInvalidar(req.staff!.id, req.staff!.role, existing.userId)) {
+    res.status(403).json({ error: "Somente o autor ou um administrador pode invalidar este registro" });
+    return;
+  }
+
+  await db.update(patientEvolutionsTable)
+    .set({ invalidado: true, motivoInvalidacao: motivo ?? "" })
+    .where(eq(patientEvolutionsTable.id, evolId));
   res.json({ ok: true });
 });
 
@@ -977,11 +1004,21 @@ router.patch("/:id/exam-requests/:examId/invalidar", requirePermissao("registrar
   const patientId = Number(req.params.id);
   const examId    = Number(req.params.examId);
   const { motivo } = req.body as { motivo?: string };
-  const [exam] = await db.update(patientExamRequestsTable)
-    .set({ invalidado: true, motivoInvalidacao: motivo ?? "" })
+
+  const [existing] = await db.select({ userId: patientExamRequestsTable.userId })
+    .from(patientExamRequestsTable)
     .where(and(eq(patientExamRequestsTable.id, examId), eq(patientExamRequestsTable.patientId, patientId)))
-    .returning();
-  if (!exam) { res.status(404).json({ error: "Solicitação de exame não encontrada" }); return; }
+    .limit(1);
+  if (!existing) { res.status(404).json({ error: "Solicitação de exame não encontrada" }); return; }
+
+  if (!podeInvalidar(req.staff!.id, req.staff!.role, existing.userId)) {
+    res.status(403).json({ error: "Somente o autor ou um administrador pode invalidar este registro" });
+    return;
+  }
+
+  await db.update(patientExamRequestsTable)
+    .set({ invalidado: true, motivoInvalidacao: motivo ?? "" })
+    .where(eq(patientExamRequestsTable.id, examId));
   res.json({ ok: true });
 });
 

@@ -44,7 +44,14 @@ const ALERT_TYPE_OPTIONS: PatientAlert["type"][] = [
 // ── API helpers ─────────────────────────────────────────────────────────────
 
 function getStaffId(): string {
-  return localStorage.getItem("upa_staff_id") ?? "0";
+  try {
+    const raw = localStorage.getItem("upa_auth_user");
+    if (!raw) return "0";
+    const user = JSON.parse(raw) as { id?: number };
+    return String(user.id ?? 0);
+  } catch {
+    return "0";
+  }
 }
 
 async function fetchAlerts(patientId: number): Promise<PatientAlert[]> {
