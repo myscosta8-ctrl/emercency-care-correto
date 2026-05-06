@@ -89,6 +89,18 @@ export const ListPatientsResponseItem = zod.object({
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
   address: zod.string().optional(),
+  addressStreet: zod.string().optional(),
+  addressNumber: zod.string().optional(),
+  addressNeighborhood: zod.string().optional(),
+  addressCity: zod.string().optional(),
+  addressCep: zod.string().optional(),
+  horaRecepcao: zod.coerce.date().nullish(),
+  horaTriagem: zod.coerce.date().nullish(),
+  horaAtendimentoMedico: zod.coerce.date().nullish(),
+  horaMedicacao: zod.coerce.date().nullish(),
+  horaAlta: zod.coerce.date().nullish(),
+  horaInternacao: zod.coerce.date().nullish(),
+  horaTransferencia: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
   pendingExams: zod
@@ -122,6 +134,11 @@ export const CreatePatientBody = zod.object({
   cpf: zod.string().optional(),
   rg: zod.string().optional(),
   address: zod.string().optional(),
+  addressStreet: zod.string().optional(),
+  addressNumber: zod.string().optional(),
+  addressNeighborhood: zod.string().optional(),
+  addressCity: zod.string().optional(),
+  addressCep: zod.string().optional(),
   phone: zod.string().optional(),
   email: zod.string().optional(),
   symptoms: zod.string().optional(),
@@ -159,6 +176,102 @@ export const CreatePatientBody = zod.object({
   classificacaoFinal: zod.string().optional(),
   criterioConfirmacao: zod.string().optional(),
 });
+
+/**
+ * @summary Search patients by name, CPF or CNS (all records including archived)
+ */
+export const LookupPatientsQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .optional()
+    .describe("Search term (name, CPF digits, CNS, or birth date)"),
+});
+
+export const LookupPatientsResponseItem = zod.object({
+  id: zod.number(),
+  full_name: zod.string(),
+  birthDate: zod.string(),
+  age: zod.number(),
+  sex: zod.string(),
+  motherName: zod.string(),
+  cns: zod.string(),
+  cpf: zod.string(),
+  rg: zod.string(),
+  phone: zod.string(),
+  email: zod.string(),
+  symptoms: zod.string(),
+  symptomOnsetDate: zod.string(),
+  diagnosis: zod.string(),
+  triage_level: zod.enum(["red", "orange", "yellow", "green", "blue"]),
+  bed: zod.string(),
+  sector: zod.enum([
+    "triagem",
+    "sala_vermelha",
+    "observacao_adulto",
+    "observacao_pediatrica",
+    "observacao_pre_adulto",
+  ]),
+  internmentStatus: zod.enum(["observacao", "internado", "alta"]),
+  prontuarioNumber: zod.string().optional(),
+  atendimentoNumber: zod.string().optional(),
+  careStatus: zod.enum([
+    "Em Triagem",
+    "Aguardando Atendimento",
+    "Em Atendimento (Cons. 1)",
+    "Em Atendimento (Cons. 2)",
+    "Em Medicação",
+    "Aguardando Exames",
+    "Aguardando Reavaliação",
+    "Em Observação",
+    "Internado",
+    "Em Transferência",
+    "Alta",
+  ]),
+  careStatusChangedAt: zod.coerce.date(),
+  nurse: zod.string(),
+  responsibleProfessional: zod.string(),
+  attendanceDate: zod.string(),
+  attendanceTime: zod.string(),
+  healthUnit: zod.string(),
+  agravo: zod.string(),
+  dataNotificacao: zod.string(),
+  municipioNotificacao: zod.string(),
+  codigoIbge: zod.string(),
+  evolucaoCaso: zod.string(),
+  classificacaoFinal: zod.string(),
+  criterioConfirmacao: zod.string(),
+  address: zod.string().optional(),
+  addressStreet: zod.string().optional(),
+  addressNumber: zod.string().optional(),
+  addressNeighborhood: zod.string().optional(),
+  addressCity: zod.string().optional(),
+  addressCep: zod.string().optional(),
+  horaRecepcao: zod.coerce.date().nullish(),
+  horaTriagem: zod.coerce.date().nullish(),
+  horaAtendimentoMedico: zod.coerce.date().nullish(),
+  horaMedicacao: zod.coerce.date().nullish(),
+  horaAlta: zod.coerce.date().nullish(),
+  horaInternacao: zod.coerce.date().nullish(),
+  horaTransferencia: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  pendingExams: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        laboratoriais: zod.array(zod.string()),
+        imagem: zod.array(zod.string()),
+        prioridade: zod.enum(["urgente", "rotina", "eletivo"]),
+        status: zod.enum(["solicitado", "coletado", "laudado"]),
+        createdAt: zod.coerce.date(),
+      }),
+    )
+    .optional()
+    .describe(
+      "Matching pending exam requests (only present when exam filter params are used)",
+    ),
+});
+export const LookupPatientsResponse = zod.array(LookupPatientsResponseItem);
 
 /**
  * @summary Get patient summary stats
@@ -233,6 +346,18 @@ export const GetPatientResponse = zod.object({
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
   address: zod.string().optional(),
+  addressStreet: zod.string().optional(),
+  addressNumber: zod.string().optional(),
+  addressNeighborhood: zod.string().optional(),
+  addressCity: zod.string().optional(),
+  addressCep: zod.string().optional(),
+  horaRecepcao: zod.coerce.date().nullish(),
+  horaTriagem: zod.coerce.date().nullish(),
+  horaAtendimentoMedico: zod.coerce.date().nullish(),
+  horaMedicacao: zod.coerce.date().nullish(),
+  horaAlta: zod.coerce.date().nullish(),
+  horaInternacao: zod.coerce.date().nullish(),
+  horaTransferencia: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
   pendingExams: zod
@@ -269,6 +394,11 @@ export const UpdatePatientBody = zod.object({
   cpf: zod.string().optional(),
   rg: zod.string().optional(),
   address: zod.string().optional(),
+  addressStreet: zod.string().optional(),
+  addressNumber: zod.string().optional(),
+  addressNeighborhood: zod.string().optional(),
+  addressCity: zod.string().optional(),
+  addressCep: zod.string().optional(),
   phone: zod.string().optional(),
   email: zod.string().optional(),
   symptoms: zod.string().optional(),
@@ -361,6 +491,18 @@ export const UpdatePatientResponse = zod.object({
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
   address: zod.string().optional(),
+  addressStreet: zod.string().optional(),
+  addressNumber: zod.string().optional(),
+  addressNeighborhood: zod.string().optional(),
+  addressCity: zod.string().optional(),
+  addressCep: zod.string().optional(),
+  horaRecepcao: zod.coerce.date().nullish(),
+  horaTriagem: zod.coerce.date().nullish(),
+  horaAtendimentoMedico: zod.coerce.date().nullish(),
+  horaMedicacao: zod.coerce.date().nullish(),
+  horaAlta: zod.coerce.date().nullish(),
+  horaInternacao: zod.coerce.date().nullish(),
+  horaTransferencia: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
   pendingExams: zod
@@ -470,6 +612,18 @@ export const UpdatePatientStatusResponse = zod.object({
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
   address: zod.string().optional(),
+  addressStreet: zod.string().optional(),
+  addressNumber: zod.string().optional(),
+  addressNeighborhood: zod.string().optional(),
+  addressCity: zod.string().optional(),
+  addressCep: zod.string().optional(),
+  horaRecepcao: zod.coerce.date().nullish(),
+  horaTriagem: zod.coerce.date().nullish(),
+  horaAtendimentoMedico: zod.coerce.date().nullish(),
+  horaMedicacao: zod.coerce.date().nullish(),
+  horaAlta: zod.coerce.date().nullish(),
+  horaInternacao: zod.coerce.date().nullish(),
+  horaTransferencia: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
   pendingExams: zod
@@ -1602,6 +1756,87 @@ export const LiberarExamResultResponse = zod.object({
   notified: zod.boolean().optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List clinical alerts for a patient
+ */
+export const GetPatientAlertsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPatientAlertsResponseItem = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  type: zod.enum([
+    "alergia",
+    "risco_queda",
+    "isolamento",
+    "critico",
+    "retorno_72h",
+    "outro",
+  ]),
+  descricao: zod.string(),
+  ativo: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  createdByName: zod.string(),
+  deactivatedAt: zod.coerce.date().nullish(),
+  deactivatedByName: zod.string(),
+  motivoDesativacao: zod.string(),
+});
+export const GetPatientAlertsResponse = zod.array(GetPatientAlertsResponseItem);
+
+/**
+ * @summary Create a clinical alert for a patient
+ */
+export const CreatePatientAlertParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreatePatientAlertBody = zod.object({
+  type: zod.enum([
+    "alergia",
+    "risco_queda",
+    "isolamento",
+    "critico",
+    "retorno_72h",
+    "outro",
+  ]),
+  descricao: zod.string().optional(),
+  createdByName: zod.string().optional(),
+});
+
+/**
+ * @summary Deactivate a clinical alert
+ */
+export const DeactivatePatientAlertParams = zod.object({
+  id: zod.coerce.number(),
+  alertId: zod.coerce.number(),
+});
+
+export const DeactivatePatientAlertBody = zod.object({
+  deactivatedByName: zod.string().optional(),
+  motivoDesativacao: zod.string().optional(),
+});
+
+export const DeactivatePatientAlertResponse = zod.object({
+  id: zod.number(),
+  patientId: zod.number(),
+  type: zod.enum([
+    "alergia",
+    "risco_queda",
+    "isolamento",
+    "critico",
+    "retorno_72h",
+    "outro",
+  ]),
+  descricao: zod.string(),
+  ativo: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  createdByName: zod.string(),
+  deactivatedAt: zod.coerce.date().nullish(),
+  deactivatedByName: zod.string(),
+  motivoDesativacao: zod.string(),
 });
 
 /**

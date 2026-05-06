@@ -15,3 +15,4 @@ export * from "./beds";
 export * from "./exam-results";
 export * from "./exam-requests";
 export * from "./devices";
+export * from "./patient-alerts";

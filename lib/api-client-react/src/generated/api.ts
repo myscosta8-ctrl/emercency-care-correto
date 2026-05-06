@@ -31,10 +31,12 @@ import type {
   ChangePasswordBody,
   CreateAuditLogBody,
   CreateExamResultBody,
+  CreatePatientAlertBody,
   CreatePatientBody,
   CreateSinanNotificationBody,
   CreateStaffBody,
   CreateTransferBody,
+  DeactivatePatientAlertBody,
   ExamRequest,
   ExamResult,
   GetPatientDevicesParams,
@@ -45,8 +47,10 @@ import type {
   ListExamRequestsParams,
   ListPatientsParams,
   LoginBody,
+  LookupPatientsParams,
   NutritionalAssessment,
   Patient,
+  PatientAlert,
   PatientDevice,
   PatientHistoryEntry,
   PatientNotification,
@@ -335,6 +339,100 @@ export const useCreatePatient = <
 > => {
   return useMutation(getCreatePatientMutationOptions(options));
 };
+
+/**
+ * @summary Search patients by name, CPF or CNS (all records including archived)
+ */
+export const getLookupPatientsUrl = (params?: LookupPatientsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/patients/lookup?${stringifiedParams}`
+    : `/api/patients/lookup`;
+};
+
+export const lookupPatients = async (
+  params?: LookupPatientsParams,
+  options?: RequestInit,
+): Promise<Patient[]> => {
+  return customFetch<Patient[]>(getLookupPatientsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLookupPatientsQueryKey = (params?: LookupPatientsParams) => {
+  return [`/api/patients/lookup`, ...(params ? [params] : [])] as const;
+};
+
+export const getLookupPatientsQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupPatients>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: LookupPatientsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupPatients>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getLookupPatientsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof lookupPatients>>> = ({
+    signal,
+  }) => lookupPatients(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupPatients>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupPatientsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupPatients>>
+>;
+export type LookupPatientsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Search patients by name, CPF or CNS (all records including archived)
+ */
+
+export function useLookupPatients<
+  TData = Awaited<ReturnType<typeof lookupPatients>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: LookupPatientsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupPatients>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupPatientsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get patient summary stats
@@ -4918,6 +5016,269 @@ export const useLiberarExamResult = <
   TContext
 > => {
   return useMutation(getLiberarExamResultMutationOptions(options));
+};
+
+/**
+ * @summary List clinical alerts for a patient
+ */
+export const getGetPatientAlertsUrl = (id: number) => {
+  return `/api/patients/${id}/alerts`;
+};
+
+export const getPatientAlerts = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PatientAlert[]> => {
+  return customFetch<PatientAlert[]>(getGetPatientAlertsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatientAlertsQueryKey = (id: number) => {
+  return [`/api/patients/${id}/alerts`] as const;
+};
+
+export const getGetPatientAlertsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPatientAlertsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientAlerts>>
+  > = ({ signal }) => getPatientAlerts(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientAlerts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientAlertsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientAlerts>>
+>;
+export type GetPatientAlertsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List clinical alerts for a patient
+ */
+
+export function useGetPatientAlerts<
+  TData = Awaited<ReturnType<typeof getPatientAlerts>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientAlerts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientAlertsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a clinical alert for a patient
+ */
+export const getCreatePatientAlertUrl = (id: number) => {
+  return `/api/patients/${id}/alerts`;
+};
+
+export const createPatientAlert = async (
+  id: number,
+  createPatientAlertBody: CreatePatientAlertBody,
+  options?: RequestInit,
+): Promise<PatientAlert> => {
+  return customFetch<PatientAlert>(getCreatePatientAlertUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPatientAlertBody),
+  });
+};
+
+export const getCreatePatientAlertMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPatientAlert>>,
+    TError,
+    { id: number; data: BodyType<CreatePatientAlertBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPatientAlert>>,
+  TError,
+  { id: number; data: BodyType<CreatePatientAlertBody> },
+  TContext
+> => {
+  const mutationKey = ["createPatientAlert"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPatientAlert>>,
+    { id: number; data: BodyType<CreatePatientAlertBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createPatientAlert(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePatientAlertMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPatientAlert>>
+>;
+export type CreatePatientAlertMutationBody = BodyType<CreatePatientAlertBody>;
+export type CreatePatientAlertMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a clinical alert for a patient
+ */
+export const useCreatePatientAlert = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPatientAlert>>,
+    TError,
+    { id: number; data: BodyType<CreatePatientAlertBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPatientAlert>>,
+  TError,
+  { id: number; data: BodyType<CreatePatientAlertBody> },
+  TContext
+> => {
+  return useMutation(getCreatePatientAlertMutationOptions(options));
+};
+
+/**
+ * @summary Deactivate a clinical alert
+ */
+export const getDeactivatePatientAlertUrl = (id: number, alertId: number) => {
+  return `/api/patients/${id}/alerts/${alertId}/deactivate`;
+};
+
+export const deactivatePatientAlert = async (
+  id: number,
+  alertId: number,
+  deactivatePatientAlertBody: DeactivatePatientAlertBody,
+  options?: RequestInit,
+): Promise<PatientAlert> => {
+  return customFetch<PatientAlert>(getDeactivatePatientAlertUrl(id, alertId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(deactivatePatientAlertBody),
+  });
+};
+
+export const getDeactivatePatientAlertMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivatePatientAlert>>,
+    TError,
+    { id: number; alertId: number; data: BodyType<DeactivatePatientAlertBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deactivatePatientAlert>>,
+  TError,
+  { id: number; alertId: number; data: BodyType<DeactivatePatientAlertBody> },
+  TContext
+> => {
+  const mutationKey = ["deactivatePatientAlert"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deactivatePatientAlert>>,
+    { id: number; alertId: number; data: BodyType<DeactivatePatientAlertBody> }
+  > = (props) => {
+    const { id, alertId, data } = props ?? {};
+
+    return deactivatePatientAlert(id, alertId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeactivatePatientAlertMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deactivatePatientAlert>>
+>;
+export type DeactivatePatientAlertMutationBody =
+  BodyType<DeactivatePatientAlertBody>;
+export type DeactivatePatientAlertMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Deactivate a clinical alert
+ */
+export const useDeactivatePatientAlert = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivatePatientAlert>>,
+    TError,
+    { id: number; alertId: number; data: BodyType<DeactivatePatientAlertBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deactivatePatientAlert>>,
+  TError,
+  { id: number; alertId: number; data: BodyType<DeactivatePatientAlertBody> },
+  TContext
+> => {
+  return useMutation(getDeactivatePatientAlertMutationOptions(options));
 };
 
 /**

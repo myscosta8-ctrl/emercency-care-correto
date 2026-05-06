@@ -15,6 +15,7 @@ import bedsRouter from "./beds";
 import devicesRouter from "./devices";
 import backupRouter from "./backup";
 import examRequestsRouter from "./exam-requests";
+import patientAlertsRouter from "./patient-alerts";
 import { requireAuth } from "../middleware/require-auth";
 import { auditWrite } from "../middleware/audit-write";
 
@@ -34,6 +35,7 @@ router.use("/patients/:id/nutritional-assessments", nutritionalAssessmentsRouter
 router.use("/patients/:id/pharmacy-entries", pharmacyEntriesRouter);
 router.use("/patients/:id/transfers", transfersRouter);
 router.use("/patients/:id/devices", devicesRouter);
+router.use("/patients/:id/alerts", patientAlertsRouter);
 router.use("/backup", backupRouter);
 router.use("/staff", staffRouter);
 router.use("/audit", auditRouter);

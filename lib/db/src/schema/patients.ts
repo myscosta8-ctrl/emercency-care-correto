@@ -21,8 +21,16 @@ export const patientsTable = pgTable("patients", {
   cpf:          text("cpf").notNull().default(""),
   rg:           text("rg").notNull().default(""),
 
-  // ── endereço / contato ─────────────────────────────────────────────────────
+  // ── endereço (campos separados) ────────────────────────────────────────────
+  addressStreet:       text("address_street").notNull().default(""),
+  addressNumber:       text("address_number").notNull().default(""),
+  addressNeighborhood: text("address_neighborhood").notNull().default(""),
+  addressCity:         text("address_city").notNull().default(""),
+  addressCep:          text("address_cep").notNull().default(""),
+  // campo legado (concatenado) — mantido por compatibilidade
   address:      text("address").notNull().default(""),
+
+  // ── contato ────────────────────────────────────────────────────────────────
   phone:        text("phone").notNull().default(""),
   email:        text("email").notNull().default(""),
 
@@ -49,6 +57,15 @@ export const patientsTable = pgTable("patients", {
     ],
   }).notNull().default("Em Triagem"),
   careStatusChangedAt: timestamp("care_status_changed_at").defaultNow().notNull(),
+
+  // ── rastreamento de tempo por etapa ────────────────────────────────────────
+  horaRecepcao:           timestamp("hora_recepcao"),
+  horaTriagem:            timestamp("hora_triagem"),
+  horaAtendimentoMedico:  timestamp("hora_atendimento_medico"),
+  horaMedicacao:          timestamp("hora_medicacao"),
+  horaAlta:               timestamp("hora_alta"),
+  horaInternacao:         timestamp("hora_internacao"),
+  horaTransferencia:      timestamp("hora_transferencia"),
 
   // ── clínico ────────────────────────────────────────────────────────────────
   diagnosis:        text("diagnosis").notNull().default(""),

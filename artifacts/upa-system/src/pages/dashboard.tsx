@@ -30,6 +30,9 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useCriticalAlerts } from "@/hooks/use-critical-alerts";
 import type { CriticalAlert } from "@/hooks/use-critical-alerts";
+import { useOffline } from "@/hooks/use-offline";
+import { PatientLookupDialog } from "@/components/patient-lookup";
+import { Wifi, WifiOff } from "lucide-react";
 
 // Roles that receive active alert notifications (sound + popup + panel)
 const ALERT_ROLES = new Set(["enfermeiro", "tecnico_enfermagem"]);
@@ -421,7 +424,10 @@ export default function Dashboard() {
   const [filtro, setFiltro]                         = useState("Todos");
   const [triageFilter, setTriageFilter]             = useState("all");
   const [viewMode, setViewMode]                     = useState<"setor" | "status" | "exames">("setor");
-  const [sectorGroup, setSectorGroup]               = useState<"all" | "triagem" | "leitos">("all");
+  const [flowTab, setFlowTab]                       = useState<"todos" | "recepcao" | "consultorios" | "medicacao" | "observacao">("todos");
+  const [lookupOpen, setLookupOpen]                 = useState(false);
+  const [prefillPatient, setPrefillPatient]         = useState<Partial<Patient> | undefined>(undefined);
+  const { isOffline }                               = useOffline();
 
   const initialFilters = useMemo(() => parseExamFiltersFromSearch(currentSearch), []);
   const [examSearch, setExamSearch]     = useState(initialFilters.examSearch);
@@ -554,12 +560,27 @@ export default function Dashboard() {
   const { grouped, groupedByStatus } = useMemo(() => {
     if (!patients) return { grouped: null, groupedByStatus: null };
     const q = debouncedSearch.toLowerCase();
+    const RECEPCAO_STATUS    = new Set(["Em Triagem", "Aguardando Atendimento"]);
+    const CONSULTORIOS_STATUS = new Set(["Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)"]);
+    const MEDICACAO_STATUS   = new Set(["Em Medicação", "Aguardando Exames", "Aguardando Reavaliação"]);
+    const OBS_STATUS         = new Set(["Em Observação", "Internado", "Em Transferência"]);
+    const OBS_SECTORS        = new Set(["sala_vermelha", "observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"]);
+
     const base = patients.filter(p => {
       if (p.careStatus === "Alta") return false;
       const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
       const matchesSector = filtro === "Todos" || p.sector === filtro;
       const matchesTriage = triageFilter === "all" || p.triage_level === triageFilter;
-      return matchesSearch && matchesSector && matchesTriage;
+      const matchesFlow = (() => {
+        switch (flowTab) {
+          case "recepcao":     return RECEPCAO_STATUS.has(p.careStatus as string);
+          case "consultorios": return CONSULTORIOS_STATUS.has(p.careStatus as string);
+          case "medicacao":    return MEDICACAO_STATUS.has(p.careStatus as string);
+          case "observacao":   return OBS_STATUS.has(p.careStatus as string) || OBS_SECTORS.has(p.sector);
+          default:             return true;
+        }
+      })();
+      return matchesSearch && matchesSector && matchesTriage && matchesFlow;
     });
 
     const sortFn = (a: Patient, b: Patient) => {
@@ -728,7 +749,7 @@ export default function Dashboard() {
               </Link>
             )}
             <Button
-              onClick={() => setIsNewPatientOpen(true)}
+              onClick={() => pode("criar_paciente") && setLookupOpen(true)}
               data-testid="button-new-patient"
               size="sm"
               className="h-8 gap-1.5 px-3 text-xs font-semibold"
@@ -751,6 +772,14 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      {/* ── offline banner ───────────────────────────────────────────── */}
+      {isOffline && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 border-b border-amber-500/40 text-amber-300 text-xs font-semibold">
+          <WifiOff className="h-4 w-4 shrink-0" />
+          <span>Sem conexão com a internet — dados podem estar desatualizados. Reconectará automaticamente.</span>
+        </div>
+      )}
 
       <main className="flex-1 container mx-auto px-4 py-4 max-w-5xl">
 
@@ -1151,36 +1180,48 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Triagem vs Leitos group selector — only in setor mode */}
-        {viewMode === "setor" && !hasExamFilter && (
-          <div className="flex gap-1.5 mb-3">
+        {/* ── fluxo 4 abas — Recepção / Consultórios / Medicação / Obs ── */}
+        {!hasExamFilter && (
+          <div className="flex gap-1 mb-3 flex-wrap">
             {(
               [
-                { key: "all",     label: "🏥 Todos",    title: "Exibir todos os setores" },
-                { key: "triagem", label: "📋 Recepção",  title: "Triagem e consultórios" },
-                { key: "leitos",  label: "🛏 Leitos",    title: "Sala Vermelha e Observação" },
+                { key: "todos",       label: "🏥 Todos",        title: "Todos os pacientes ativos",                          count: grouped?.reduce((n, g) => n + g.patients.length, 0) ?? 0 },
+                { key: "recepcao",    label: "📋 Recepção",     title: "Em Triagem e Aguardando Atendimento",                count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Triagem","Aguardando Atendimento"].includes(p.careStatus as string)).length, 0) ?? 0 },
+                { key: "consultorios",label: "🩺 Consultórios", title: "Em Atendimento (Cons. 1 e 2)",                       count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Atendimento (Cons. 1)","Em Atendimento (Cons. 2)"].includes(p.careStatus as string)).length, 0) ?? 0 },
+                { key: "medicacao",   label: "💊 Medicação",    title: "Em Medicação, Aguardando Exames ou Reavaliação",     count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Medicação","Aguardando Exames","Aguardando Reavaliação"].includes(p.careStatus as string)).length, 0) ?? 0 },
+                { key: "observacao",  label: "🛏 Obs./Leitos",  title: "Em Observação, Internados, Transferência e Sala Vermelha", count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Observação","Internado","Em Transferência"].includes(p.careStatus as string) || ["sala_vermelha","observacao_adulto","observacao_pediatrica","observacao_pre_adulto"].includes(p.sector as string)).length, 0) ?? 0 },
               ] as const
-            ).map(({ key, label, title }) => (
+            ).map(({ key, label, title, count }) => (
               <button
                 key={key}
                 type="button"
                 title={title}
-                onClick={() => setSectorGroup(key)}
+                onClick={() => setFlowTab(key)}
                 className={cn(
-                  "px-3 py-1 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap",
-                  sectorGroup === key
+                  "flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap",
+                  flowTab === key
                     ? "bg-primary/20 border-primary/50 text-primary"
                     : "border-border/40 text-muted-foreground hover:bg-muted/30",
                 )}
               >
                 {label}
+                {count > 0 && (
+                  <span className={cn(
+                    "text-[10px] font-bold px-1.5 py-0 rounded-full border",
+                    flowTab === key
+                      ? "bg-primary/20 border-primary/30 text-primary"
+                      : "bg-muted/30 border-border/30 text-muted-foreground",
+                  )}>
+                    {count}
+                  </span>
+                )}
               </button>
             ))}
           </div>
         )}
 
-        {/* Sector filters — only in "setor" mode */}
-        {viewMode === "setor" && !hasExamFilter && sectorGroup === "all" && (
+        {/* Sector filters — only in "setor" mode, todos flowTab */}
+        {viewMode === "setor" && !hasExamFilter && flowTab === "todos" && (
           <div className="flex gap-1 mb-4 flex-wrap">
             {["Todos", ...SECTOR_NAMES].map(s => (
               <button
@@ -1227,11 +1268,7 @@ export default function Dashboard() {
           </div>
         ) : viewMode === "setor" ? (
           <div className="space-y-4">
-            {((grouped ?? []).filter(g => {
-              if (sectorGroup === "triagem") return g.group === "recepcao";
-              if (sectorGroup === "leitos")  return g.group === "leitos";
-              return true;
-            })).map(sector => (
+            {((grouped ?? []).filter(g => g.patients.length > 0 || flowTab === "todos")).map(sector => (
               <div key={sector.name}>
                 <div className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-t-md border mb-0",
@@ -1439,16 +1476,31 @@ export default function Dashboard() {
         )}
       </main>
 
+      {/* ── lookup dialog ──────────────────────────────────────────────── */}
+      <PatientLookupDialog
+        open={lookupOpen}
+        onOpenChange={setLookupOpen}
+        onNewPatient={(prefill) => {
+          setPrefillPatient(prefill);
+          setIsNewPatientOpen(true);
+        }}
+      />
+
       {/* ── new patient dialog ─────────────────────────────────────────── */}
-      <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
+      <Dialog open={isNewPatientOpen} onOpenChange={open => { setIsNewPatientOpen(open); if (!open) setPrefillPatient(undefined); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nova Admissão</DialogTitle>
-            <DialogDescription>Preencha os dados do paciente para registrar a admissão.</DialogDescription>
+            <DialogDescription>
+              {prefillPatient
+                ? "Dados pré-preenchidos do cadastro existente — revise e ajuste conforme necessário."
+                : "Preencha os dados do paciente para registrar a admissão."}
+            </DialogDescription>
           </DialogHeader>
           <PatientForm
-            onSuccess={() => setIsNewPatientOpen(false)}
-            onCancel={() => setIsNewPatientOpen(false)}
+            patient={prefillPatient as Patient | undefined}
+            onSuccess={() => { setIsNewPatientOpen(false); setPrefillPatient(undefined); }}
+            onCancel={() => { setIsNewPatientOpen(false); setPrefillPatient(undefined); }}
           />
         </DialogContent>
       </Dialog>

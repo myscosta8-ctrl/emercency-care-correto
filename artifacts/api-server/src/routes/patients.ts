@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requirePermissao } from "../middleware/require-auth";
 import { db, pool, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable } from "@workspace/db";
-import { eq, sql, desc, and, inArray } from "drizzle-orm";
+import { eq, sql, desc, and, inArray, or, ilike } from "drizzle-orm";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   CreatePatientBody,
@@ -57,9 +57,17 @@ const serialize = (p: typeof patientsTable.$inferSelect) => ({
   full_name:    p.fullName,
   triage_level: p.triageLevel,
   careStatus:   p.careStatus,
-  careStatusChangedAt: p.careStatusChangedAt.toISOString(),
+  careStatusChangedAt:  p.careStatusChangedAt.toISOString(),
   createdAt:    p.createdAt.toISOString(),
   updatedAt:    p.updatedAt.toISOString(),
+  // timestamps por etapa (nullable → ISO string ou null)
+  horaRecepcao:          p.horaRecepcao          ? p.horaRecepcao.toISOString()          : null,
+  horaTriagem:           p.horaTriagem           ? p.horaTriagem.toISOString()           : null,
+  horaAtendimentoMedico: p.horaAtendimentoMedico ? p.horaAtendimentoMedico.toISOString() : null,
+  horaMedicacao:         p.horaMedicacao         ? p.horaMedicacao.toISOString()         : null,
+  horaAlta:              p.horaAlta              ? p.horaAlta.toISOString()              : null,
+  horaInternacao:        p.horaInternacao        ? p.horaInternacao.toISOString()        : null,
+  horaTransferencia:     p.horaTransferencia     ? p.horaTransferencia.toISOString()     : null,
 });
 
 const serializeEvolution = (e: typeof patientEvolutionsTable.$inferSelect) => ({
@@ -111,6 +119,14 @@ function buildPatientInsert(body: typeof CreatePatientBody._type) {
   const age = body.birthDate ? ageFromBirthDate(body.birthDate) : (body.age ?? 0);
   const rawCareStatus = (body as Record<string, unknown>).care_status as string | undefined;
   const careStatus = (CARE_STATUSES.includes(rawCareStatus as CareStatus) ? rawCareStatus : "Em Triagem") as CareStatus;
+  const bodyAny = body as Record<string, unknown>;
+  const addressStreet       = (bodyAny["addressStreet"]       as string | undefined) ?? "";
+  const addressNumber       = (bodyAny["addressNumber"]       as string | undefined) ?? "";
+  const addressNeighborhood = (bodyAny["addressNeighborhood"] as string | undefined) ?? "";
+  const addressCity         = (bodyAny["addressCity"]         as string | undefined) ?? "";
+  const addressCep          = (bodyAny["addressCep"]          as string | undefined) ?? "";
+  const addressConcat = [addressStreet, addressNumber, addressNeighborhood, addressCity, addressCep]
+    .filter(Boolean).join(", ") || (body.address ?? "");
   return {
     fullName:                body.full_name,
     birthDate:               body.birthDate ?? "",
@@ -120,9 +136,15 @@ function buildPatientInsert(body: typeof CreatePatientBody._type) {
     cns:                     body.cns ?? "",
     cpf:                     body.cpf ?? "",
     rg:                      body.rg ?? "",
-    address:                 body.address ?? "",
+    address:                 addressConcat,
+    addressStreet,
+    addressNumber,
+    addressNeighborhood,
+    addressCity,
+    addressCep,
     phone:                   body.phone ?? "",
     email:                   body.email ?? "",
+    horaRecepcao:            new Date(),
     triageLevel:             (body.triage_level ?? "green") as TriageLevel,
     sector:                  body.sector as PatientSector,
     internmentStatus:        (body.internmentStatus ?? "nao_internado") as InternStatus,
@@ -150,6 +172,7 @@ function buildPatientInsert(body: typeof CreatePatientBody._type) {
 /** Partial patch payload for patient update */
 function buildPatientPatch(body: typeof UpdatePatientBody._type): Partial<typeof patientsTable.$inferInsert> {
   const patch: Partial<typeof patientsTable.$inferInsert> = {};
+  const bodyAny = body as Record<string, unknown>;
   if (body.full_name         !== undefined) patch.fullName         = body.full_name;
   if (body.birthDate         !== undefined) {
     patch.birthDate = body.birthDate;
@@ -162,6 +185,21 @@ function buildPatientPatch(body: typeof UpdatePatientBody._type): Partial<typeof
   if (body.cpf               !== undefined) patch.cpf              = body.cpf;
   if (body.rg                !== undefined) patch.rg               = body.rg;
   if (body.address           !== undefined) patch.address          = body.address;
+  // endereço separado
+  if (bodyAny["addressStreet"]       !== undefined) patch.addressStreet       = bodyAny["addressStreet"]       as string;
+  if (bodyAny["addressNumber"]       !== undefined) patch.addressNumber       = bodyAny["addressNumber"]       as string;
+  if (bodyAny["addressNeighborhood"] !== undefined) patch.addressNeighborhood = bodyAny["addressNeighborhood"] as string;
+  if (bodyAny["addressCity"]         !== undefined) patch.addressCity         = bodyAny["addressCity"]         as string;
+  if (bodyAny["addressCep"]          !== undefined) patch.addressCep          = bodyAny["addressCep"]          as string;
+  // re-construir campo legado se campos separados foram enviados
+  const hasAddrParts = ["addressStreet","addressNumber","addressNeighborhood","addressCity","addressCep"]
+    .some(k => bodyAny[k] !== undefined);
+  if (hasAddrParts) {
+    patch.address = [
+      patch.addressStreet ?? "", patch.addressNumber ?? "",
+      patch.addressNeighborhood ?? "", patch.addressCity ?? "", patch.addressCep ?? "",
+    ].filter(Boolean).join(", ");
+  }
   if (body.phone             !== undefined) patch.phone            = body.phone;
   if (body.email             !== undefined) patch.email            = body.email;
   if (body.triage_level      !== undefined) patch.triageLevel      = body.triage_level as TriageLevel;
@@ -326,6 +364,34 @@ router.get("/summary", async (req, res) => {
   res.json(summary);
 });
 
+// GET /patients/lookup?q=texto — busca geral por nome, CPF, CNS ou data de nascimento
+// Inclui pacientes arquivados (com Alta) para cadastro único
+router.get("/lookup", async (req, res) => {
+  const q = ((req.query["q"] as string) ?? "").trim();
+  if (!q) { res.json([]); return; }
+
+  const qLower = q.toLowerCase();
+  const qDigits = q.replace(/\D/g, "");
+
+  const conditions = [ilike(patientsTable.fullName, `%${qLower}%`)];
+  if (qDigits.length >= 3) {
+    conditions.push(sql`${patientsTable.cpf} LIKE ${`%${qDigits}%`}`);
+    conditions.push(sql`${patientsTable.cns} LIKE ${`%${qDigits}%`}`);
+  }
+  // date format DD/MM/YYYY or YYYY-MM-DD
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(q) || /^\d{4}-\d{2}-\d{2}$/.test(q)) {
+    conditions.push(eq(patientsTable.birthDate, q));
+  }
+
+  const results = await db.select()
+    .from(patientsTable)
+    .where(or(...conditions))
+    .orderBy(desc(patientsTable.createdAt))
+    .limit(20);
+
+  res.json(results.map(serialize));
+});
+
 // GET /patients/previous-visits?cpf=xxx&excludeId=yyy
 // Returns Alta'd patients with that CPF (previous visits of the same person)
 router.get("/previous-visits", async (req, res) => {
@@ -429,6 +495,19 @@ router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
   if (newCareStatus)  {
     patch.careStatus = newCareStatus;
     patch.careStatusChangedAt = new Date();
+    // ── rastreamento automático de tempo por etapa ─────────────────────────
+    if (newCareStatus === "Aguardando Atendimento" && !current.horaTriagem)
+      patch.horaTriagem = new Date();
+    if ((newCareStatus === "Em Atendimento (Cons. 1)" || newCareStatus === "Em Atendimento (Cons. 2)") && !current.horaAtendimentoMedico)
+      patch.horaAtendimentoMedico = new Date();
+    if (newCareStatus === "Em Medicação" && !current.horaMedicacao)
+      patch.horaMedicacao = new Date();
+    if (newCareStatus === "Alta" && !current.horaAlta)
+      patch.horaAlta = new Date();
+    if (newCareStatus === "Internado" && !current.horaInternacao)
+      patch.horaInternacao = new Date();
+    if (newCareStatus === "Em Transferência" && !current.horaTransferencia)
+      patch.horaTransferencia = new Date();
   }
 
   const [patient] = await db.update(patientsTable)

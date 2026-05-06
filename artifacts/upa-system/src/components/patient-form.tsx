@@ -140,11 +140,11 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       cpf: patient?.cpf ?? "",
       rg:  patient?.rg  ?? "",
 
-      addressStreet:       patient?.address ?? "",
-      addressNumber:       "",
-      addressNeighborhood: "",
-      addressCity:         "",
-      addressCep:          "",
+      addressStreet:       (patient as unknown as Record<string, string> | undefined)?.["addressStreet"] ?? "",
+      addressNumber:       (patient as unknown as Record<string, string> | undefined)?.["addressNumber"] ?? "",
+      addressNeighborhood: (patient as unknown as Record<string, string> | undefined)?.["addressNeighborhood"] ?? "",
+      addressCity:         (patient as unknown as Record<string, string> | undefined)?.["addressCity"] ?? "",
+      addressCep:          (patient as unknown as Record<string, string> | undefined)?.["addressCep"] ?? "",
       phone:   patient?.phone   ?? "",
       email:   patient?.email   ?? "",
 
@@ -187,7 +187,15 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
     const { addressStreet, addressNumber, addressNeighborhood, addressCity, addressCep, ...rest } = data;
     const address = [addressStreet, addressNumber, addressNeighborhood, addressCity, addressCep]
       .filter(Boolean).join(", ");
-    const payload = { ...rest, address } as unknown as CreatePatientBody;
+    const payload = {
+      ...rest,
+      address,
+      addressStreet,
+      addressNumber,
+      addressNeighborhood,
+      addressCity,
+      addressCep,
+    } as unknown as CreatePatientBody;
 
     if (patient) {
       updatePatient.mutate({ id: patient.id, data: payload }, {

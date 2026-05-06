@@ -79,6 +79,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Patient"
 
+  /api/patients/lookup:
+    get:
+      operationId: lookupPatients
+      summary: Search patients by name, CPF or CNS (all records including archived)
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search term (name, CPF digits, CNS, or birth date)
+      responses:
+        "200":
+          description: List of matching patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Patient"
+
   /api/patients/summary:
     get:
       operationId: getPatientsSummary
@@ -1200,6 +1221,77 @@ paths:
               schema:
                 $ref: "#/components/schemas/ExamResult"
 
+  /api/patients/{id}/alerts:
+    get:
+      operationId: getPatientAlerts
+      summary: List clinical alerts for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientAlert"
+    post:
+      operationId: createPatientAlert
+      summary: Create a clinical alert for a patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePatientAlertBody"
+      responses:
+        "201":
+          description: Created alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientAlert"
+
+  /api/patients/{id}/alerts/{alertId}/deactivate:
+    patch:
+      operationId: deactivatePatientAlert
+      summary: Deactivate a clinical alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeactivatePatientAlertBody"
+      responses:
+        "200":
+          description: Deactivated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientAlert"
+
   /api/patients/{id}/exam-results/{examId}/notified:
     put:
       operationId: markExamNotified
@@ -1303,6 +1395,44 @@ components:
           type: string
         address:
           type: string
+        addressStreet:
+          type: string
+        addressNumber:
+          type: string
+        addressNeighborhood:
+          type: string
+        addressCity:
+          type: string
+        addressCep:
+          type: string
+        horaRecepcao:
+          type: string
+          format: date-time
+          nullable: true
+        horaTriagem:
+          type: string
+          format: date-time
+          nullable: true
+        horaAtendimentoMedico:
+          type: string
+          format: date-time
+          nullable: true
+        horaMedicacao:
+          type: string
+          format: date-time
+          nullable: true
+        horaAlta:
+          type: string
+          format: date-time
+          nullable: true
+        horaInternacao:
+          type: string
+          format: date-time
+          nullable: true
+        horaTransferencia:
+          type: string
+          format: date-time
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -1398,6 +1528,16 @@ components:
           type: string
         address:
           type: string
+        addressStreet:
+          type: string
+        addressNumber:
+          type: string
+        addressNeighborhood:
+          type: string
+        addressCity:
+          type: string
+        addressCep:
+          type: string
         phone:
           type: string
         email:
@@ -1467,6 +1607,16 @@ components:
         rg:
           type: string
         address:
+          type: string
+        addressStreet:
+          type: string
+        addressNumber:
+          type: string
+        addressNeighborhood:
+          type: string
+        addressCity:
+          type: string
+        addressCep:
           type: string
         phone:
           type: string
@@ -2720,6 +2870,65 @@ components:
         - createdBy
         - createdAt
         - updatedAt
+
+    PatientAlert:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        type:
+          type: string
+          enum: [alergia, risco_queda, isolamento, critico, retorno_72h, outro]
+        descricao:
+          type: string
+        ativo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        createdByName:
+          type: string
+        deactivatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        deactivatedByName:
+          type: string
+        motivoDesativacao:
+          type: string
+      required:
+        - id
+        - patientId
+        - type
+        - descricao
+        - ativo
+        - createdAt
+        - createdByName
+        - deactivatedByName
+        - motivoDesativacao
+
+    CreatePatientAlertBody:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [alergia, risco_queda, isolamento, critico, retorno_72h, outro]
+        descricao:
+          type: string
+        createdByName:
+          type: string
+      required:
+        - type
+
+    DeactivatePatientAlertBody:
+      type: object
+      properties:
+        deactivatedByName:
+          type: string
+        motivoDesativacao:
+          type: string
 
     AddPatientDeviceBody:
       type: object

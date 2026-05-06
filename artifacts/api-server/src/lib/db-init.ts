@@ -67,7 +67,32 @@ CREATE TABLE IF NOT EXISTS public.patients (
   prontuario_number text NOT NULL DEFAULT '',
   atendimento_number text NOT NULL DEFAULT '',
   archived_at timestamp without time zone,
-  archive_reason text NOT NULL DEFAULT ''
+  archive_reason text NOT NULL DEFAULT '',
+  address_street text NOT NULL DEFAULT '',
+  address_number text NOT NULL DEFAULT '',
+  address_neighborhood text NOT NULL DEFAULT '',
+  address_city text NOT NULL DEFAULT '',
+  address_cep text NOT NULL DEFAULT '',
+  hora_recepcao timestamp without time zone,
+  hora_triagem timestamp without time zone,
+  hora_atendimento_medico timestamp without time zone,
+  hora_medicacao timestamp without time zone,
+  hora_alta timestamp without time zone,
+  hora_internacao timestamp without time zone,
+  hora_transferencia timestamp without time zone
+);
+
+CREATE TABLE IF NOT EXISTS public.patient_alerts (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  type text NOT NULL,
+  descricao text NOT NULL DEFAULT '',
+  ativo boolean NOT NULL DEFAULT true,
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  created_by_name text NOT NULL DEFAULT '',
+  deactivated_at timestamp without time zone,
+  deactivated_by_name text NOT NULL DEFAULT '',
+  motivo_desativacao text NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS public.audit_log (
@@ -451,6 +476,36 @@ export async function initializeDatabase(): Promise<void> {
         -- patient_exam_requests: invalidação
         ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS invalidado boolean NOT NULL DEFAULT false;
         ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS motivo_invalidacao text NOT NULL DEFAULT '';
+
+        -- patients: endereço separado em campos individuais
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS address_street text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS address_number text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS address_neighborhood text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS address_city text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS address_cep text NOT NULL DEFAULT '';
+
+        -- patients: rastreamento de tempo por etapa do fluxo
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_recepcao timestamp without time zone;
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_triagem timestamp without time zone;
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_atendimento_medico timestamp without time zone;
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_medicacao timestamp without time zone;
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_alta timestamp without time zone;
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_internacao timestamp without time zone;
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_transferencia timestamp without time zone;
+
+        -- tabela de alertas clínicos por paciente
+        CREATE TABLE IF NOT EXISTS public.patient_alerts (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          type text NOT NULL,
+          descricao text NOT NULL DEFAULT '',
+          ativo boolean NOT NULL DEFAULT true,
+          created_at timestamp without time zone NOT NULL DEFAULT now(),
+          created_by_name text NOT NULL DEFAULT '',
+          deactivated_at timestamp without time zone,
+          deactivated_by_name text NOT NULL DEFAULT '',
+          motivo_desativacao text NOT NULL DEFAULT ''
+        );
       `);
 
       // ── restore admin account (idempotent) ──────────────────────────────────

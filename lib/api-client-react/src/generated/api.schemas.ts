@@ -114,6 +114,25 @@ export interface Patient {
   classificacaoFinal: string;
   criterioConfirmacao: string;
   address?: string;
+  addressStreet?: string;
+  addressNumber?: string;
+  addressNeighborhood?: string;
+  addressCity?: string;
+  addressCep?: string;
+  /** @nullable */
+  horaRecepcao?: string | null;
+  /** @nullable */
+  horaTriagem?: string | null;
+  /** @nullable */
+  horaAtendimentoMedico?: string | null;
+  /** @nullable */
+  horaMedicacao?: string | null;
+  /** @nullable */
+  horaAlta?: string | null;
+  /** @nullable */
+  horaInternacao?: string | null;
+  /** @nullable */
+  horaTransferencia?: string | null;
   createdAt: string;
   updatedAt: string;
   /** Matching pending exam requests (only present when exam filter params are used) */
@@ -147,6 +166,11 @@ export interface CreatePatientBody {
   cpf?: string;
   rg?: string;
   address?: string;
+  addressStreet?: string;
+  addressNumber?: string;
+  addressNeighborhood?: string;
+  addressCity?: string;
+  addressCep?: string;
   phone?: string;
   email?: string;
   symptoms?: string;
@@ -198,6 +222,11 @@ export interface UpdatePatientBody {
   cpf?: string;
   rg?: string;
   address?: string;
+  addressStreet?: string;
+  addressNumber?: string;
+  addressNeighborhood?: string;
+  addressCity?: string;
+  addressCep?: string;
   phone?: string;
   email?: string;
   symptoms?: string;
@@ -1027,6 +1056,55 @@ export interface PatientDevice {
   updatedAt: string;
 }
 
+export type PatientAlertType =
+  (typeof PatientAlertType)[keyof typeof PatientAlertType];
+
+export const PatientAlertType = {
+  alergia: "alergia",
+  risco_queda: "risco_queda",
+  isolamento: "isolamento",
+  critico: "critico",
+  retorno_72h: "retorno_72h",
+  outro: "outro",
+} as const;
+
+export interface PatientAlert {
+  id: number;
+  patientId: number;
+  type: PatientAlertType;
+  descricao: string;
+  ativo: boolean;
+  createdAt: string;
+  createdByName: string;
+  /** @nullable */
+  deactivatedAt?: string | null;
+  deactivatedByName: string;
+  motivoDesativacao: string;
+}
+
+export type CreatePatientAlertBodyType =
+  (typeof CreatePatientAlertBodyType)[keyof typeof CreatePatientAlertBodyType];
+
+export const CreatePatientAlertBodyType = {
+  alergia: "alergia",
+  risco_queda: "risco_queda",
+  isolamento: "isolamento",
+  critico: "critico",
+  retorno_72h: "retorno_72h",
+  outro: "outro",
+} as const;
+
+export interface CreatePatientAlertBody {
+  type: CreatePatientAlertBodyType;
+  descricao?: string;
+  createdByName?: string;
+}
+
+export interface DeactivatePatientAlertBody {
+  deactivatedByName?: string;
+  motivoDesativacao?: string;
+}
+
 export type AddPatientDeviceBodyDeviceType =
   (typeof AddPatientDeviceBodyDeviceType)[keyof typeof AddPatientDeviceBodyDeviceType];
 
@@ -1142,6 +1220,13 @@ export const ListPatientsExamPriority = {
   rotina: "rotina",
   eletivo: "eletivo",
 } as const;
+
+export type LookupPatientsParams = {
+  /**
+   * Search term (name, CPF digits, CNS, or birth date)
+   */
+  q?: string;
+};
 
 export type GetPatientDevicesParams = {
   active?: boolean;

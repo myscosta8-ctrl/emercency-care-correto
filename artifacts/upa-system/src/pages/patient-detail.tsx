@@ -55,6 +55,7 @@ import {
 } from "lucide-react";
 import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 import { PatientLabTab } from "@/components/patient-lab-tab";
+import { PatientAlertsPanel } from "@/components/patient-alerts-panel";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -732,6 +733,11 @@ export default function PatientDetail() {
             )}
           </div>
         )}
+
+        {/* Alertas Clínicos */}
+        <div className="mb-4">
+          <PatientAlertsPanel patientId={id} userName={activeUser?.name ?? ""} />
+        </div>
 
         {/* Tabs */}
         <Tabs defaultValue="identificacao">
