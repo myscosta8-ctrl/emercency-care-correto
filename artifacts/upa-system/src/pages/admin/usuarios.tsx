@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { AdminLayout } from "./layout";
 import {
-  useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff,
+  useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, getListStaffQueryKey,
 } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -55,7 +55,7 @@ interface FormState {
 }
 
 const EMPTY_FORM: FormState = {
-  name: "", login: "", role: "enfermeiro",
+  name: "", login: "", role: "recepcionista",
   email: "", sector: "todos_os_setores", corenCrm: "", active: true,
 };
 
@@ -196,7 +196,7 @@ export default function AdminUsuariosPage() {
   const [deletingId,    setDeletingId]    = useState<number | null>(null);
 
   const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["staff"] });
+    queryClient.invalidateQueries({ queryKey: getListStaffQueryKey() });
   }, [queryClient]);
 
   const filtered = (staff ?? []).filter(m => {

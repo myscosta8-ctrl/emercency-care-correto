@@ -41,6 +41,9 @@ const CARE_STATUS_CONFIG = {
   "Aguardando Atendimento":    { label: "Aguardando",          color: "text-yellow-400", bg: "bg-yellow-500/15", border: "border-yellow-500/30", dot: "bg-yellow-400" },
   "Em Atendimento (Cons. 1)":  { label: "Cons. 1",             color: "text-sky-400",    bg: "bg-sky-500/15",    border: "border-sky-500/30",    dot: "bg-sky-400"    },
   "Em Atendimento (Cons. 2)":  { label: "Cons. 2",             color: "text-violet-400", bg: "bg-violet-500/15", border: "border-violet-500/30", dot: "bg-violet-400" },
+  "Em Medicação":              { label: "Em Medicação",        color: "text-pink-400",   bg: "bg-pink-500/15",   border: "border-pink-500/30",   dot: "bg-pink-500"   },
+  "Aguardando Exames":         { label: "Ag. Exames",          color: "text-cyan-400",   bg: "bg-cyan-500/15",   border: "border-cyan-500/30",   dot: "bg-cyan-400"   },
+  "Aguardando Reavaliação":    { label: "Ag. Reavaliação",     color: "text-amber-400",  bg: "bg-amber-500/15",  border: "border-amber-500/30",  dot: "bg-amber-400"  },
   "Em Observação":             { label: "Em Observação",       color: "text-orange-400", bg: "bg-orange-500/15", border: "border-orange-500/30", dot: "bg-orange-500" },
   "Internado":                 { label: "Internado",           color: "text-red-400",    bg: "bg-red-500/15",    border: "border-red-500/30",    dot: "bg-red-500"    },
   "Em Transferência":          { label: "Em Transferência",    color: "text-purple-400", bg: "bg-purple-500/15", border: "border-purple-500/30", dot: "bg-purple-500" },
@@ -51,11 +54,13 @@ type CareStatusKey = keyof typeof CARE_STATUS_CONFIG;
 
 const CARE_STATUS_KEYS: CareStatusKey[] = [
   "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)",
+  "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação",
   "Em Observação", "Internado", "Em Transferência", "Alta",
 ];
 
 const CARE_STATUS_SECTION_KEYS: CareStatusKey[] = [
   "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)",
+  "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação",
   "Em Observação", "Internado", "Em Transferência",
 ];
 
@@ -92,11 +97,11 @@ type TriageKey = keyof typeof TRIAGE_CONFIG;
 const TRIAGE_SEVERITY: Record<string, number> = { red: 1, orange: 2, yellow: 3, green: 4, blue: 5 };
 
 const ALL_SECTOR_CONFIG = [
-  { key: "triagem",               name: "Triagem",               emoji: "🩺", headerCls: "bg-teal-950/60 border-teal-700/50 text-teal-300",       emptyBorder: "border-teal-900/30"   },
-  { key: "sala_vermelha",         name: "Sala Vermelha",         emoji: "🔴", headerCls: "bg-red-950/60 border-red-700/50 text-red-300",        emptyBorder: "border-red-900/30"    },
-  { key: "observacao_adulto",     name: "Observação Adulto",     emoji: "🟡", headerCls: "bg-yellow-950/40 border-yellow-700/40 text-yellow-300", emptyBorder: "border-yellow-900/30" },
-  { key: "observacao_pediatrica", name: "Observação Pediátrica", emoji: "🟢", headerCls: "bg-green-950/40 border-green-700/40 text-green-300",   emptyBorder: "border-green-900/30"  },
-  { key: "observacao_pre_adulto", name: "Observação Pré-Adulto", emoji: "🔵", headerCls: "bg-blue-950/40 border-blue-700/40 text-blue-300",      emptyBorder: "border-blue-900/30"   },
+  { key: "triagem",               name: "Triagem",               emoji: "🩺", headerCls: "bg-teal-950/60 border-teal-700/50 text-teal-300",       emptyBorder: "border-teal-900/30",   group: "recepcao"  },
+  { key: "sala_vermelha",         name: "Sala Vermelha",         emoji: "🔴", headerCls: "bg-red-950/60 border-red-700/50 text-red-300",          emptyBorder: "border-red-900/30",    group: "leitos"    },
+  { key: "observacao_adulto",     name: "Observação Adulto",     emoji: "🟡", headerCls: "bg-yellow-950/40 border-yellow-700/40 text-yellow-300", emptyBorder: "border-yellow-900/30", group: "leitos"    },
+  { key: "observacao_pediatrica", name: "Observação Pediátrica", emoji: "🟢", headerCls: "bg-green-950/40 border-green-700/40 text-green-300",   emptyBorder: "border-green-900/30",  group: "leitos"    },
+  { key: "observacao_pre_adulto", name: "Observação Pré-Adulto", emoji: "🔵", headerCls: "bg-blue-950/40 border-blue-700/40 text-blue-300",      emptyBorder: "border-blue-900/30",   group: "leitos"    },
 ];
 
 // ── debounce ──────────────────────────────────────────────────────────────────
@@ -367,7 +372,12 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
             </select>
             {(careStatus === "Em Triagem" || careStatus === "Aguardando Atendimento") && (
               <p className="text-[11px] text-yellow-400">
-                ⚠ Pacientes neste status não podem ser alocados a leitos.
+                ⚠ Pacientes neste status são exibidos na área de Recepção/Triagem.
+              </p>
+            )}
+            {(careStatus === "Em Medicação" || careStatus === "Aguardando Exames" || careStatus === "Aguardando Reavaliação") && (
+              <p className="text-[11px] text-cyan-400">
+                ℹ Status de acompanhamento pós-consulta — paciente permanece no setor atual.
               </p>
             )}
           </div>
@@ -1146,9 +1156,9 @@ export default function Dashboard() {
           <div className="flex gap-1.5 mb-3">
             {(
               [
-                { key: "all",     label: "🏥 Todos",   title: "Exibir todos os setores" },
-                { key: "triagem", label: "📋 Triagem",  title: "Apenas área de triagem" },
-                { key: "leitos",  label: "🛏 Leitos",   title: "Observação e Internação" },
+                { key: "all",     label: "🏥 Todos",    title: "Exibir todos os setores" },
+                { key: "triagem", label: "📋 Recepção",  title: "Triagem e consultórios" },
+                { key: "leitos",  label: "🛏 Leitos",    title: "Sala Vermelha e Observação" },
               ] as const
             ).map(({ key, label, title }) => (
               <button
@@ -1218,8 +1228,8 @@ export default function Dashboard() {
         ) : viewMode === "setor" ? (
           <div className="space-y-4">
             {((grouped ?? []).filter(g => {
-              if (sectorGroup === "triagem") return g.key === "triagem";
-              if (sectorGroup === "leitos")  return g.key !== "triagem";
+              if (sectorGroup === "triagem") return g.group === "recepcao";
+              if (sectorGroup === "leitos")  return g.group === "leitos";
               return true;
             })).map(sector => (
               <div key={sector.name}>

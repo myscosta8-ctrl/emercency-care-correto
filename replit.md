@@ -49,7 +49,7 @@ The project is built as a pnpm workspace monorepo using TypeScript, facilitating
 **Key Features & Implementations:**
 *   **Admin Section:** Full CRUD for staff, permission matrix, feature flags, and audit log viewer.
 *   **Patient Management:** Unique `prontuario_number` and `atendimento_number` for each patient and visit; includes `address` for external system compatibility.
-*   **Care Status Workflow:** Defined states for patient care progression (`Em Triagem` to `Alta`) with rules for transitions and time-based alerts.
+*   **Care Status Workflow:** Full flow with 11 states: `Em Triagem` → `Aguardando Atendimento` → `Em Atendimento (Cons. 1/2)` → `Em Medicação` / `Aguardando Exames` / `Aguardando Reavaliação` → `Em Observação` / `Internado` / `Em Transferência` → `Alta`. Dashboard groups: "📋 Recepção" (triagem sector) vs "🛏 Leitos" (sala vermelha + observação).
 *   **Patient History Archive (`/historico`):** Dedicated page listing all discharged patients (careStatus="Alta") with search by name/CPF/diagnosis, date filters, CSV export, and link to full prontuário.
 *   **Exam Results (Lab) Tab in Prontuário:** `patient-lab-tab.tsx` component embedded in patient-detail.tsx as a "Laboratório" tab. Supports soliciting new exams, inserting text results + file uploads, and auto-refreshes every 30s for real-time visibility.
 *   **Sol. Exames Tab:** Separate "Sol. Exames" tab in patient-detail for requesting lab/imaging exams (add by typing + Enter, prioridade selector, justificativa field). Visible only to users with `registrar_prescricao` permission.
@@ -57,7 +57,7 @@ The project is built as a pnpm workspace monorepo using TypeScript, facilitating
 *   **APAC Laudo PDF:** `GET /api/patients/:id/pdf/apac` generates a structured A4 APAC form with patient data pre-filled; downloadable from patient-detail header.
 *   **Ficha de Referência PDF:** `GET /api/patients/:id/pdf/ficha-referencia` generates a structured transfer/referral form; downloadable from patient-detail header.
 *   **Sumário de Alta Automático:** When a patient receives "Alta" status, the server automatically creates a structured "SUMÁRIO DE ALTA" evolution entry with admission date, time of stay, diagnosis, triage level, and active prescriptions.
-*   **Dashboard Triagem vs Leitos:** Three-tab group selector (🏥 Todos / 📋 Triagem / 🛏 Leitos) in sector view that filters grouped patient lists by sector type; individual sector pills only shown in "Todos" mode.
+*   **Dashboard Recepção vs Leitos:** Three-tab group selector (🏥 Todos / 📋 Recepção / 🛏 Leitos) in sector view. Each sector in `ALL_SECTOR_CONFIG` has a `group` field ("recepcao" or "leitos") used to filter. Individual sector pills only shown in "Todos" mode.
 *   **Consultório Availability Indicator:** In the medical queue (fila-medico.tsx), Cons.1 and Cons.2 buttons show green + "livre" when the room has no active patients, making triage routing immediately visible.
 *   **Triage Sector:** Full "Triagem" sector support across all menus, forms, and filters.
 *   **SINAN Notification Form:** Fully fillable digital form (all fields editable, PDF generated with filled data, only signatures blank).

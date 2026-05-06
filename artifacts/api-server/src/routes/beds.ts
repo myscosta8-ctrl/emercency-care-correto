@@ -137,10 +137,10 @@ router.put("/:id", requirePermissao("registrar_sinais_vitais"), async (req, res)
     if (newPatientId !== null && current.patientId !== newPatientId) {
       // Regra: apenas pacientes "Em Observação" ou "Internado" podem ocupar leito
       const [candidate] = await db.select().from(patientsTable).where(eq(patientsTable.id, newPatientId));
-      const allowed = ["Em Observação", "Internado"];
+      const allowed = ["Em Observação", "Internado", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação"];
       if (candidate && !allowed.includes(candidate.careStatus)) {
         res.status(422).json({
-          error: `Apenas pacientes com status "Em Observação" ou "Internado" podem ser alocados a um leito. Status atual: "${candidate.careStatus}".`,
+          error: `Apenas pacientes já internados ou em acompanhamento podem ser alocados a um leito. Status atual: "${candidate.careStatus}".`,
         });
         return;
       }

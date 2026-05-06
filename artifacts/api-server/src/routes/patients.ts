@@ -86,10 +86,12 @@ function ageFromBirthDate(birthDate: string): number {
 type TriageLevel   = "red" | "orange" | "yellow" | "green" | "blue";
 type PatientSector = "triagem" | "sala_vermelha" | "observacao_adulto" | "observacao_pediatrica" | "observacao_pre_adulto";
 type InternStatus  = "internado" | "nao_internado";
-type CareStatus    = "Em Triagem" | "Aguardando Atendimento" | "Em Atendimento (Cons. 1)" | "Em Atendimento (Cons. 2)" | "Em Observação" | "Internado" | "Em Transferência" | "Alta";
+type CareStatus    = "Em Triagem" | "Aguardando Atendimento" | "Em Atendimento (Cons. 1)" | "Em Atendimento (Cons. 2)" | "Em Medicação" | "Aguardando Exames" | "Aguardando Reavaliação" | "Em Observação" | "Internado" | "Em Transferência" | "Alta";
 
 const CARE_STATUSES: CareStatus[] = [
-  "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Observação", "Internado", "Em Transferência", "Alta",
+  "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)",
+  "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação",
+  "Em Observação", "Internado", "Em Transferência", "Alta",
 ];
 
 function generateProntuarioNumber(id: number): string {

@@ -27,6 +27,7 @@ import { Link } from "wouter";
 type CareStatus =
   | "Em Triagem" | "Aguardando Atendimento"
   | "Em Atendimento (Cons. 1)" | "Em Atendimento (Cons. 2)"
+  | "Em Medicação" | "Aguardando Exames" | "Aguardando Reavaliação"
   | "Em Observação" | "Internado" | "Em Transferência" | "Alta";
 
 const TRIAGE_CONFIG = {
@@ -64,10 +65,13 @@ function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalPro
   useEffect(() => { if (patient) { setStatus("Em Observação"); setSector(patient.sector ?? ""); } }, [patient]);
 
   const OPCOES: { value: CareStatus; label: string; desc: string; color: string }[] = [
-    { value: "Alta",              label: "Alta",                 desc: "Paciente recebe alta médica",                   color: "text-green-400" },
-    { value: "Em Observação",     label: "Em Observação",        desc: "Manter em observação no setor atual",           color: "text-orange-400" },
-    { value: "Internado",         label: "Internação",           desc: "Internar o paciente",                           color: "text-red-400" },
-    { value: "Em Transferência",  label: "Transferência",        desc: "Transferir para outro serviço/hospital",        color: "text-purple-400" },
+    { value: "Alta",                   label: "Alta",                    desc: "Paciente recebe alta médica",                    color: "text-green-400"  },
+    { value: "Em Medicação",           label: "Em Medicação",            desc: "Aguardando/recebendo medicação prescrita",        color: "text-pink-400"   },
+    { value: "Aguardando Exames",      label: "Aguardando Exames",       desc: "Aguardando resultado de exames solicitados",      color: "text-cyan-400"   },
+    { value: "Aguardando Reavaliação", label: "Aguardando Reavaliação",  desc: "Aguardando reavaliação médica após conduta",      color: "text-amber-400"  },
+    { value: "Em Observação",          label: "Em Observação",           desc: "Manter em observação no setor atual",            color: "text-orange-400" },
+    { value: "Internado",              label: "Internação",              desc: "Internar o paciente",                            color: "text-red-400"    },
+    { value: "Em Transferência",       label: "Transferência",           desc: "Transferir para outro serviço/hospital",         color: "text-purple-400" },
   ];
 
   const { featureAtiva } = useFeatures();
@@ -85,7 +89,7 @@ function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalPro
       {
         id: patient.id,
         data: {
-          care_status: status as "Em Triagem" | "Aguardando Atendimento" | "Em Observação" | "Internado" | "Em Transferência" | "Alta",
+          care_status: status as "Em Triagem" | "Aguardando Atendimento" | "Em Medicação" | "Aguardando Exames" | "Aguardando Reavaliação" | "Em Observação" | "Internado" | "Em Transferência" | "Alta",
           triage_level: patient.triage_level as "red" | "orange" | "yellow" | "green" | "blue",
           user_id: userId,
         },
@@ -179,7 +183,7 @@ function ChamarModal({ patient, consultorio, onClose, onSuccess, userId }: Chama
       {
         id: patient.id,
         data: {
-          care_status: careStatus as "Em Triagem" | "Aguardando Atendimento" | "Em Observação" | "Internado" | "Em Transferência" | "Alta",
+          care_status: careStatus as "Em Triagem" | "Aguardando Atendimento" | "Em Medicação" | "Aguardando Exames" | "Aguardando Reavaliação" | "Em Observação" | "Internado" | "Em Transferência" | "Alta",
           triage_level: patient.triage_level as "red" | "orange" | "yellow" | "green" | "blue",
           user_id: userId,
         },
