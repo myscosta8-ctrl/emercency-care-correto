@@ -442,6 +442,23 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS user_id integer NOT NULL DEFAULT 0;
         ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS content text NOT NULL DEFAULT '';
       `);
+
+      // ── restore admin account (idempotent) ──────────────────────────────────
+      // Garante que o login 'admin' existe, está ativo e com senha conhecida.
+      // Hash bcrypt(cost=12) de "admin123" — altere via painel após recuperar acesso.
+      await client.query(`
+        INSERT INTO public.staff (id, name, role, coren_crm, sector, login, password_hash,
+          access_levels, signature, stamp, email, active, must_change_password, setores_atuacao)
+        VALUES (2, 'Administrador', 'administrador', 'ADM-001', 'Administração',
+          'admin',
+          '$2b$12$bf0Rq6eq4kup9tX4sBI2S.0ml/325WD1rO7.a73V66W9APMcXXkkq',
+          '', '', '', '', true, false, 'todos')
+        ON CONFLICT (login) DO UPDATE SET
+          password_hash     = '$2b$12$bf0Rq6eq4kup9tX4sBI2S.0ml/325WD1rO7.a73V66W9APMcXXkkq',
+          active            = true,
+          must_change_password = false,
+          role              = 'administrador';
+      `);
       logger.info("Database initialization complete");
       return;
     }
