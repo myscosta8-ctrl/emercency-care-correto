@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/use-auth";
 import { cn } from "@/lib/utils";
 
 export interface ExamResultItem {
@@ -31,28 +32,31 @@ const PRIORIDADE_CFG = {
   eletivo: { label: "Eletivo", cls: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
 } as const;
 
-async function fetchExamResults(patientId: number): Promise<ExamResultItem[]> {
-  const r = await fetch(`/api/patients/${patientId}/exam-results`, { credentials: "include" });
+async function fetchExamResults(patientId: number, staffId: number): Promise<ExamResultItem[]> {
+  const r = await fetch(`/api/patients/${patientId}/exam-results`, {
+    credentials: "include",
+    headers: { "x-staff-id": String(staffId) },
+  });
   if (!r.ok) throw new Error("Erro ao buscar exames");
   return r.json();
 }
 
-async function postExamResult(patientId: number, data: Partial<ExamResultItem>): Promise<ExamResultItem> {
+async function postExamResult(patientId: number, data: Partial<ExamResultItem>, staffId: number): Promise<ExamResultItem> {
   const r = await fetch(`/api/patients/${patientId}/exam-results`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-staff-id": String(staffId) },
     body: JSON.stringify(data),
   });
   if (!r.ok) throw new Error("Erro ao criar exame");
   return r.json();
 }
 
-async function liberarExam(patientId: number, examId: number, data: Partial<ExamResultItem>): Promise<ExamResultItem> {
+async function liberarExam(patientId: number, examId: number, data: Partial<ExamResultItem>, staffId: number): Promise<ExamResultItem> {
   const r = await fetch(`/api/patients/${patientId}/exam-results/${examId}/liberar`, {
     method: "PUT",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-staff-id": String(staffId) },
     body: JSON.stringify(data),
   });
   if (!r.ok) throw new Error("Erro ao liberar exame");
@@ -66,9 +70,10 @@ interface LiberarFormProps {
   exam: ExamResultItem;
   onSuccess: () => void;
   onCancel: () => void;
+  staffId: number;
 }
 
-function LiberarForm({ patientId, exam, onSuccess, onCancel }: LiberarFormProps) {
+function LiberarForm({ patientId, exam, onSuccess, onCancel, staffId }: LiberarFormProps) {
   const { toast } = useToast();
   const [resultText, setResultText] = useState(exam.resultText ?? "");
   const [file, setFile] = useState<File | null>(null);
@@ -93,7 +98,7 @@ function LiberarForm({ patientId, exam, onSuccess, onCancel }: LiberarFormProps)
         fileName = file.name;
         fileMime = file.type;
       }
-      await liberarExam(patientId, exam.id, { resultText, fileData, fileName, fileMime });
+      await liberarExam(patientId, exam.id, { resultText, fileData, fileName, fileMime }, staffId);
       toast({ title: "Resultado liberado com sucesso", description: exam.examName });
       onSuccess();
     } catch {
@@ -153,9 +158,10 @@ interface NovoExameFormProps {
   patientId: number;
   onSuccess: () => void;
   onCancel: () => void;
+  staffId: number;
 }
 
-function NovoExameForm({ patientId, onSuccess, onCancel }: NovoExameFormProps) {
+function NovoExameForm({ patientId, onSuccess, onCancel, staffId }: NovoExameFormProps) {
   const { toast } = useToast();
   const [examName, setExamName] = useState("");
   const [examType, setExamType] = useState<"laboratorial" | "imagem">("laboratorial");
@@ -167,7 +173,7 @@ function NovoExameForm({ patientId, onSuccess, onCancel }: NovoExameFormProps) {
     if (!examName.trim()) return;
     setLoading(true);
     try {
-      await postExamResult(patientId, { examName: examName.trim(), examType, prioridade });
+      await postExamResult(patientId, { examName: examName.trim(), examType, prioridade }, staffId);
       toast({ title: "Exame registrado", description: examName.trim() });
       onSuccess();
     } catch {
@@ -235,6 +241,8 @@ interface PatientLabTabProps {
 
 export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
   const { toast } = useToast();
+  const { activeUser } = useAuth();
+  const staffId = activeUser?.id ?? 0;
   const [exams, setExams] = useState<ExamResultItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [liberandoId, setLiberandoId] = useState<number | null>(null);
@@ -243,14 +251,14 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
   const loadExams = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchExamResults(patientId);
+      const data = await fetchExamResults(patientId, staffId);
       setExams(data);
     } catch {
       toast({ title: "Erro ao carregar exames do laboratório", variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, [patientId, toast]);
+  }, [patientId, staffId, toast]);
 
   useEffect(() => {
     if (!active) return;
@@ -306,6 +314,7 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
       {novoExame && (
         <NovoExameForm
           patientId={patientId}
+          staffId={staffId}
           onSuccess={() => { setNovoExame(false); loadExams(); }}
           onCancel={() => setNovoExame(false)}
         />
@@ -387,6 +396,7 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
                     <LiberarForm
                       patientId={patientId}
                       exam={exam}
+                      staffId={staffId}
                       onSuccess={() => { setLiberandoId(null); loadExams(); }}
                       onCancel={() => setLiberandoId(null)}
                     />

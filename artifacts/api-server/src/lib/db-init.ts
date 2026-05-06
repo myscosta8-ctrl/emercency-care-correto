@@ -436,6 +436,11 @@ export async function initializeDatabase(): Promise<void> {
 
         -- audit_log: extra column
         ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS staff_id integer;
+
+        -- patient_prescriptions: columns added after initial schema
+        ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS type text NOT NULL DEFAULT 'nursing';
+        ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS user_id integer NOT NULL DEFAULT 0;
+        ALTER TABLE public.patient_prescriptions ADD COLUMN IF NOT EXISTS content text NOT NULL DEFAULT '';
       `);
       logger.info("Database initialization complete");
       return;

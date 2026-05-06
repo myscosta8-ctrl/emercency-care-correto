@@ -49,28 +49,31 @@ const TRIAGE_CFG = {
 
 // ── api helpers ───────────────────────────────────────────────────────────────
 
-async function fetchExamResults(patientId: number): Promise<ExamResult[]> {
-  const r = await fetch(`/api/patients/${patientId}/exam-results`, { credentials: "include" });
+async function fetchExamResults(patientId: number, staffId: number): Promise<ExamResult[]> {
+  const r = await fetch(`/api/patients/${patientId}/exam-results`, {
+    credentials: "include",
+    headers: { "x-staff-id": String(staffId) },
+  });
   if (!r.ok) throw new Error("Erro ao buscar exames");
   return r.json();
 }
 
-async function postExamResult(patientId: number, data: Partial<ExamResult>): Promise<ExamResult> {
+async function postExamResult(patientId: number, data: Partial<ExamResult>, staffId: number): Promise<ExamResult> {
   const r = await fetch(`/api/patients/${patientId}/exam-results`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-staff-id": String(staffId) },
     body: JSON.stringify(data),
   });
   if (!r.ok) throw new Error("Erro ao criar exame");
   return r.json();
 }
 
-async function liberarExam(patientId: number, examId: number, data: Partial<ExamResult>): Promise<ExamResult> {
+async function liberarExam(patientId: number, examId: number, data: Partial<ExamResult>, staffId: number): Promise<ExamResult> {
   const r = await fetch(`/api/patients/${patientId}/exam-results/${examId}/liberar`, {
     method: "PUT",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-staff-id": String(staffId) },
     body: JSON.stringify(data),
   });
   if (!r.ok) throw new Error("Erro ao liberar exame");
@@ -84,9 +87,10 @@ interface LiberarFormProps {
   exam: ExamResult;
   onSuccess: () => void;
   onCancel: () => void;
+  userId: number;
 }
 
-function LiberarForm({ patient, exam, onSuccess, onCancel }: LiberarFormProps) {
+function LiberarForm({ patient, exam, onSuccess, onCancel, userId }: LiberarFormProps) {
   const { toast } = useToast();
   const [resultText, setResultText] = useState(exam.resultText ?? "");
   const [file, setFile] = useState<File | null>(null);
@@ -112,7 +116,7 @@ function LiberarForm({ patient, exam, onSuccess, onCancel }: LiberarFormProps) {
         fileName = file.name;
         fileMime = file.type;
       }
-      await liberarExam(patient.id, exam.id, { resultText, fileData, fileName, fileMime });
+      await liberarExam(patient.id, exam.id, { resultText, fileData, fileName, fileMime }, userId);
       toast({ title: "Exame liberado com sucesso", description: `${exam.examName} — ${patient.full_name}` });
       onSuccess();
     } catch {
@@ -184,7 +188,7 @@ function NovoExameForm({ patient, onSuccess, onCancel, userId }: NovoExameFormPr
     if (!examName.trim()) return;
     setLoading(true);
     try {
-      await postExamResult(patient.id, { examName: examName.trim(), examType, prioridade });
+      await postExamResult(patient.id, { examName: examName.trim(), examType, prioridade }, userId);
       toast({ title: "Solicitação registrada", description: `${examName} para ${patient.full_name}` });
       onSuccess();
     } catch {
@@ -256,7 +260,7 @@ function PatientExamCard({ patient, userId, onExamNotified }: PatientExamCardPro
   const loadExams = async () => {
     setLoading(true);
     try {
-      const data = await fetchExamResults(patient.id);
+      const data = await fetchExamResults(patient.id, userId);
       setExams(data);
     } catch {
       toast({ title: "Erro ao carregar exames", variant: "destructive" });
@@ -362,6 +366,7 @@ function PatientExamCard({ patient, userId, onExamNotified }: PatientExamCardPro
                       <LiberarForm
                         patient={patient}
                         exam={exam}
+                        userId={userId}
                         onSuccess={() => { setLiberandoId(null); loadExams(); onExamNotified?.(); }}
                         onCancel={() => setLiberandoId(null)}
                       />
@@ -397,7 +402,7 @@ function PatientExamCard({ patient, userId, onExamNotified }: PatientExamCardPro
 
 // ── notificação de exames liberados ───────────────────────────────────────────
 
-function useExamNotifications(patients: Patient[]) {
+function useExamNotifications(patients: Patient[], staffId: number) {
   const [newlyReleased, setNewlyReleased] = useState<{ name: string; exam: string }[]>([]);
   const seen = useRef<Set<number>>(new Set());
 
@@ -407,7 +412,7 @@ function useExamNotifications(patients: Patient[]) {
       const alerts: { name: string; exam: string }[] = [];
       for (const p of patients) {
         try {
-          const exams = await fetchExamResults(p.id);
+          const exams = await fetchExamResults(p.id, staffId);
           const fresh = exams.filter(e => e.status === "liberado" && !e.notified && !seen.current.has(e.id));
           for (const e of fresh) {
             alerts.push({ name: p.full_name, exam: e.examName });
@@ -418,7 +423,7 @@ function useExamNotifications(patients: Patient[]) {
       if (alerts.length > 0) setNewlyReleased(prev => [...prev, ...alerts]);
     }, 30_000);
     return () => clearInterval(interval);
-  }, [patients]);
+  }, [patients, staffId]);
 
   const dismiss = () => setNewlyReleased([]);
 
@@ -439,7 +444,7 @@ export default function LaboratorioPage() {
     !search || p.full_name.toLowerCase().includes(search.toLowerCase()) || (p.bed?.toLowerCase().includes(search.toLowerCase()) ?? false)
   );
 
-  const { newlyReleased, dismiss } = useExamNotifications(active);
+  const { newlyReleased, dismiss } = useExamNotifications(active, userId);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
