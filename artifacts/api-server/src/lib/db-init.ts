@@ -65,7 +65,9 @@ CREATE TABLE IF NOT EXISTS public.patients (
   care_status text NOT NULL DEFAULT 'Em Triagem',
   care_status_changed_at timestamp without time zone NOT NULL DEFAULT now(),
   prontuario_number text NOT NULL DEFAULT '',
-  atendimento_number text NOT NULL DEFAULT ''
+  atendimento_number text NOT NULL DEFAULT '',
+  archived_at timestamp without time zone,
+  archive_reason text NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS public.audit_log (
@@ -411,6 +413,8 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS updated_by text NOT NULL DEFAULT '';
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS internment_status text NOT NULL DEFAULT 'nao_internado';
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS nurse text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS archived_at timestamp without time zone;
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS archive_reason text NOT NULL DEFAULT '';
 
         -- staff: extra columns
         ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS setores_atuacao text NOT NULL DEFAULT 'todos';
