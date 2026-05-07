@@ -90,18 +90,9 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-gray-700 text-sm font-semibold">
-                    Senha
-                  </Label>
-                  <button
-                    type="button"
-                    onClick={() => setLocation("/forgot-password")}
-                    className="text-xs text-[#1E88E5] hover:text-[#1565C0] transition-colors font-medium"
-                  >
-                    Esqueci minha senha
-                  </button>
-                </div>
+                <Label htmlFor="password" className="text-gray-700 text-sm font-semibold">
+                  Senha
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
