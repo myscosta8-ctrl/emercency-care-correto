@@ -2,6 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MessageSquare, Send, Printer, ChevronDown, ChevronUp } from "lucide-react";
+import { buildInstitutionalHeader, buildPrintDocStyles, type PrintPatientInfo } from "@/lib/print-header-html";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +22,7 @@ interface Props {
   patientId: number;
   userId: number;
   patientName: string;
+  patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
 }
 
@@ -56,7 +58,7 @@ function buildContent(d: SocialData): string {
   return parts.join("\n\n");
 }
 
-export function EvolutionSocial({ patientId, userId, patientName, staffMap }: Props) {
+export function EvolutionSocial({ patientId, userId, patientName, patient, staffMap }: Props) {
   const [form, setForm] = useState<SocialData>(EMPTY);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const { toast } = useToast();
@@ -102,32 +104,15 @@ export function EvolutionSocial({ patientId, userId, patientName, staffMap }: Pr
     const d = note.structuredData as SocialData | null;
     const authorName = staffMap[note.userId]?.name ?? `Assistente Social ID ${note.userId}`;
     const dateStr = format(new Date(note.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    const baseUrl = window.location.origin + (import.meta.env.BASE_URL ?? "/");
     const win = window.open("", "_blank", "width=794,height=1123");
     if (!win) return;
     win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
 <meta charset="UTF-8">
 <title>Nota Social — ${patientName}</title>
-<style>
-  body { font-family: Arial, sans-serif; font-size: 11pt; color: #111; padding: 24px 32px; margin: 0; }
-  .header-bar { background: #7c3aed; color: white; padding: 10px 16px; border-radius: 4px 4px 0 0; }
-  .header-bar h1 { font-size: 15pt; margin: 0 0 2px; }
-  .header-bar .sub { font-size: 9pt; opacity: .85; }
-  .patient-bar { background: #faf5ff; border: 1px solid #c4b5fd; border-top: none; padding: 8px 16px; margin-bottom: 16px; font-size: 10pt; }
-  .section { margin-bottom: 14px; }
-  .section-label { font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #7c3aed; border-bottom: 1.5px solid #7c3aed; padding-bottom: 2px; margin-bottom: 6px; }
-  .section-body { white-space: pre-wrap; line-height: 1.6; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .sig-area { margin-top: 40px; text-align: center; }
-  .sig-line { border-top: 1.5px solid #111; width: 60%; margin: 0 auto 4px; padding-top: 4px; font-size: 10pt; }
-  .sig-sub { font-size: 9pt; color: #555; }
-  @media print { @page { size: A4; margin: 12mm; } }
-</style></head><body>
-<div class="header-bar"><h1>UPA 24H — BREVES</h1><div class="sub">NOTA DE SERVIÇO SOCIAL</div></div>
-<div class="patient-bar">
-  <strong>Paciente:</strong> ${patientName} &nbsp;|&nbsp;
-  <strong>Data/Hora:</strong> ${dateStr} &nbsp;|&nbsp;
-  <strong>Assistente Social:</strong> ${authorName}
-</div>
+<style>${buildPrintDocStyles("#7c3aed")}</style></head><body>
+${buildInstitutionalHeader(patient ?? null, "NOTA DE SERVIÇO SOCIAL", baseUrl)}
+<p class="doc-meta"><strong>Assistente Social:</strong> ${authorName} &nbsp;|&nbsp; <strong>Data/Hora do Registro:</strong> ${dateStr}</p>
 <div class="two-col">
   ${d?.moradia ? `<div class="section"><div class="section-label">Situação de Moradia</div><div class="section-body">${d.moradia}</div></div>` : ""}
   ${d?.rendaFamiliar ? `<div class="section"><div class="section-label">Renda Familiar</div><div class="section-body">${d.rendaFamiliar}</div></div>` : ""}

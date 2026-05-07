@@ -1062,6 +1062,7 @@ export default function PatientDetail() {
               patientId={id}
               userId={activeUser?.id ?? 0}
               patientName={patient.full_name}
+              patient={patient}
               staffMap={staffMap}
             />
           </TabsContent>
@@ -1077,6 +1078,7 @@ export default function PatientDetail() {
               patientId={id}
               userId={activeUser?.id ?? 0}
               patientName={patient.full_name}
+              patient={patient}
               staffMap={staffMap}
             />
           </TabsContent>
@@ -1096,6 +1098,7 @@ export default function PatientDetail() {
               patientId={id}
               userId={activeUser?.id ?? 0}
               patientName={patient.full_name}
+              patient={patient}
               staffMap={staffMap}
             />
           </TabsContent>
@@ -1111,6 +1114,7 @@ export default function PatientDetail() {
               patientId={id}
               userId={activeUser?.id ?? 0}
               patientName={patient.full_name}
+              patient={patient}
               staffMap={staffMap}
             />
           </TabsContent>
@@ -1596,6 +1600,7 @@ export default function PatientDetail() {
                 patientId={id}
                 userId={activeUser?.id ?? 0}
                 patientName={patient.full_name}
+                patient={patient}
                 staffMap={staffMap}
               />
             </TabsContent>
@@ -1608,6 +1613,7 @@ export default function PatientDetail() {
                 patientId={id}
                 userId={activeUser?.id ?? 0}
                 patientName={patient.full_name}
+                patient={patient}
                 staffMap={staffMap}
               />
             </TabsContent>

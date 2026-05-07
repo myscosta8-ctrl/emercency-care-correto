@@ -2,6 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Stethoscope, Send, Printer, ChevronDown, ChevronUp, Ban, CheckCircle } from "lucide-react";
+import { buildInstitutionalHeader, buildPrintDocStyles, type PrintPatientInfo } from "@/lib/print-header-html";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,7 @@ interface Props {
   patientId: number;
   userId: number;
   patientName: string;
+  patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
 }
 
@@ -62,7 +64,7 @@ interface AugEntry {
   finalizado?: boolean;
 }
 
-export function EvolutionMedico({ patientId, userId, patientName, staffMap }: Props) {
+export function EvolutionMedico({ patientId, userId, patientName, patient, staffMap }: Props) {
   const [form, setForm]               = useState<MedicoData>(EMPTY);
   const [expandedId, setExpandedId]   = useState<number | null>(null);
   const [finalizingId, setFinalizingId]   = useState<number | null>(null);
@@ -156,34 +158,16 @@ export function EvolutionMedico({ patientId, userId, patientName, staffMap }: Pr
     const d = entry.structuredData as MedicoData | null;
     const authorName = staffMap[entry.userId]?.name ?? `Médico ID ${entry.userId}`;
     const dateStr = format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    const baseUrl = window.location.origin + (import.meta.env.BASE_URL ?? "/");
 
     const win = window.open("", "_blank", "width=794,height=1123");
     if (!win) return;
     win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
 <meta charset="UTF-8">
 <title>Evolução Médica — ${patientName}</title>
-<style>
-  body { font-family: Arial, sans-serif; font-size: 11pt; color: #111; padding: 24px 32px; margin: 0; }
-  h1 { font-size: 15pt; margin: 0 0 2px; }
-  .subtitle { font-size: 9pt; color: #555; margin: 0 0 12px; }
-  .header-bar { background: #1e3a8a; color: white; padding: 10px 16px; border-radius: 4px 4px 0 0; margin-bottom: 0; }
-  .patient-bar { background: #f1f5f9; border: 1px solid #cbd5e1; border-top: none; padding: 8px 16px; margin-bottom: 16px; font-size: 10pt; }
-  .section { margin-bottom: 14px; }
-  .section-label { font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #1e3a8a; border-bottom: 1.5px solid #1e3a8a; padding-bottom: 2px; margin-bottom: 6px; }
-  .section-body { white-space: pre-wrap; line-height: 1.6; min-height: 20px; }
-  .inline-row { display: flex; gap: 32px; }
-  .inline-row .section { flex: 1; }
-  .sig-area { margin-top: 40px; text-align: center; }
-  .sig-line { border-top: 1.5px solid #111; width: 60%; margin: 0 auto 4px; padding-top: 4px; font-size: 10pt; }
-  .sig-sub { font-size: 9pt; color: #555; }
-  @media print { @page { size: A4; margin: 12mm; } }
-</style></head><body>
-<div class="header-bar"><h1>UPA 24H — BREVES</h1><div class="subtitle">EVOLUÇÃO MÉDICA</div></div>
-<div class="patient-bar">
-  <strong>Paciente:</strong> ${patientName} &nbsp;|&nbsp;
-  <strong>Data/Hora:</strong> ${dateStr} &nbsp;|&nbsp;
-  <strong>Médico:</strong> ${authorName}
-</div>
+<style>${buildPrintDocStyles("#1e3a8a")}</style></head><body>
+${buildInstitutionalHeader(patient ?? null, "EVOLUÇÃO MÉDICA", baseUrl)}
+<p class="doc-meta"><strong>Médico:</strong> ${authorName} &nbsp;|&nbsp; <strong>Data/Hora do Registro:</strong> ${dateStr}</p>
 
 ${d?.hda ? `<div class="section"><div class="section-label">História da Doença Atual (HDA)</div><div class="section-body">${d.hda}</div></div>` : ""}
 ${d?.exameFisico ? `<div class="section"><div class="section-label">Exame Físico</div><div class="section-body">${d.exameFisico}</div></div>` : ""}
