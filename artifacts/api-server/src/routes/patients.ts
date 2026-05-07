@@ -1185,9 +1185,11 @@ async function buildUpaHeaderPortraitDoc(patient: {
 
   let prefeituraLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
   let upaLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
+  let semsaLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
   try {
     prefeituraLogo = await doc.embedJpg(fs.readFileSync(assetPath("prefeitura-breves.jpeg")));
     upaLogo        = await doc.embedJpg(fs.readFileSync(assetPath("upa24h.jpg")));
+    semsaLogo      = await doc.embedJpg(fs.readFileSync(assetPath("semsa.jpeg")));
   } catch { /* use text fallback */ }
 
   const PAGE_W = 595; const PAGE_H = 842;
@@ -1210,28 +1212,38 @@ async function buildUpaHeaderPortraitDoc(patient: {
 
   page.drawLine({ start: { x: ML, y: HDR_BOT }, end: { x: ML + CW, y: HDR_BOT }, thickness: 1.2, color: BLACK });
 
-  const LEFT_W = 160; const CTR_W = 180;
-  const DIV1_X = ML + LEFT_W;
-  const DIV2_X = ML + LEFT_W + CTR_W;
+  const PREF_W  = 100; const SEMSA_W = 100; const UPA_W = 170;
+  const DIVS_X  = ML + PREF_W;
+  const DIV1_X  = ML + PREF_W + SEMSA_W;
+  const DIV2_X  = ML + PREF_W + SEMSA_W + UPA_W;
+  page.drawLine({ start: { x: DIVS_X, y: HDR_BOT }, end: { x: DIVS_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
   page.drawLine({ start: { x: DIV1_X, y: HDR_BOT }, end: { x: DIV1_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
   page.drawLine({ start: { x: DIV2_X, y: HDR_BOT }, end: { x: DIV2_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
 
-  // LEFT — Prefeitura logo
+  // COL 1 — Prefeitura logo
   if (prefeituraLogo) {
     const pH = HDR_H - 16;
     const pW = (prefeituraLogo.width / prefeituraLogo.height) * pH;
-    page.drawImage(prefeituraLogo, { x: ML + (LEFT_W - pW) / 2, y: HDR_BOT + 8, width: pW, height: pH });
+    page.drawImage(prefeituraLogo, { x: ML + (PREF_W - pW) / 2, y: HDR_BOT + 8, width: pW, height: pH });
   } else {
-    page.drawText("PREFEITURA DE", { x: ML + 8, y: HDR_TOP - 18, font: bold, size: 7, color: BLACK });
-    page.drawText("Breves",        { x: ML + 8, y: HDR_TOP - 45, font: bold, size: 24, color: BLUE });
-    page.drawText("De volta ao trabalho", { x: ML + 8, y: HDR_TOP - 57, font, size: 6, color: MED_GRAY });
+    page.drawText("PREFEITURA DE", { x: ML + 4, y: HDR_TOP - 18, font: bold, size: 6, color: BLACK });
+    page.drawText("Breves",        { x: ML + 4, y: HDR_TOP - 40, font: bold, size: 18, color: BLUE });
   }
 
-  // CENTER — UPA logo
+  // COL 2 — SEMSA logo
+  if (semsaLogo) {
+    const sH = HDR_H - 16;
+    const sW = (semsaLogo.width / semsaLogo.height) * sH;
+    page.drawImage(semsaLogo, { x: DIVS_X + (SEMSA_W - sW) / 2, y: HDR_BOT + 8, width: sW, height: sH });
+  } else {
+    page.drawText("SEMSA", { x: DIVS_X + 4, y: HDR_TOP - 40, font: bold, size: 10, color: BLACK });
+  }
+
+  // COL 3 — UPA logo
   if (upaLogo) {
     const uH = HDR_H - 16;
     const uW = (upaLogo.width / upaLogo.height) * uH;
-    page.drawImage(upaLogo, { x: DIV1_X + (CTR_W - uW) / 2, y: HDR_BOT + 8, width: uW, height: uH });
+    page.drawImage(upaLogo, { x: DIV1_X + (UPA_W - uW) / 2, y: HDR_BOT + 8, width: uW, height: uH });
   } else {
     const cx = DIV1_X + 8;
     page.drawText("UPA",   { x: cx, y: HDR_TOP - 45, font: bold, size: 28, color: DK_GREEN });
@@ -1729,9 +1741,11 @@ async function buildPrescricaoPdf(
 
   let prefeituraLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
   let upaLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
+  let semsaLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
   try {
     prefeituraLogo = await doc.embedJpg(fs.readFileSync(assetPath("prefeitura-breves.jpeg")));
     upaLogo        = await doc.embedJpg(fs.readFileSync(assetPath("upa24h.jpg")));
+    semsaLogo      = await doc.embedJpg(fs.readFileSync(assetPath("semsa.jpeg")));
   } catch { /* use text fallback */ }
 
   // ── Layout constants ─────────────────────────────────────────────────────────
@@ -1769,32 +1783,44 @@ async function buildPrescricaoPdf(
     thickness: 1.2, color: BLACK,
   });
 
-  const LEFT_W  = 220;
-  const CTR_W   = 252;
-  const DIV1_X  = ML + LEFT_W;
-  const DIV2_X  = ML + LEFT_W + CTR_W;
+  const PREF_W  = 150;
+  const SEMSA_W = 150;
+  const UPA_W   = 200;
+  const DIVS_X  = ML + PREF_W;
+  const DIV1_X  = ML + PREF_W + SEMSA_W;
+  const DIV2_X  = ML + PREF_W + SEMSA_W + UPA_W;
 
+  page.drawLine({ start: { x: DIVS_X, y: HDR_BOT }, end: { x: DIVS_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
   page.drawLine({ start: { x: DIV1_X, y: HDR_BOT }, end: { x: DIV1_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
   page.drawLine({ start: { x: DIV2_X, y: HDR_BOT }, end: { x: DIV2_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
 
-  // LEFT — Prefeitura de Breves logo
+  // COL 1 — Prefeitura de Breves logo
   if (prefeituraLogo) {
     const pH = HDR_H - 16;
     const pW = (prefeituraLogo.width / prefeituraLogo.height) * pH;
-    page.drawImage(prefeituraLogo, { x: ML + (LEFT_W - pW) / 2, y: HDR_BOT + 8, width: pW, height: pH });
+    page.drawImage(prefeituraLogo, { x: ML + (PREF_W - pW) / 2, y: HDR_BOT + 8, width: pW, height: pH });
   } else {
     const lx = ML + 8;
     page.drawText("PREFEITURA DE",   { x: lx, y: HDR_TOP - 16, font: bold, size: 7.5, color: BLACK });
     page.drawText("Breves",          { x: lx, y: HDR_TOP - 44, font: bold, size: 28,  color: BLUE });
     page.drawText("De volta ao trabalho", { x: lx, y: HDR_TOP - 56, font, size: 6.5, color: MED_GRAY });
-    page.drawEllipse({ x: DIV1_X - 28, y: HDR_BOT + 35, xScale: 22, yScale: 22, borderColor: BLUE, borderWidth: 1.2, color: rgb(0.92, 0.95, 1) });
   }
 
-  // CENTER — UPA 24h logo
+  // COL 2 — SEMSA logo
+  if (semsaLogo) {
+    const sH = HDR_H - 16;
+    const sW = (semsaLogo.width / semsaLogo.height) * sH;
+    page.drawImage(semsaLogo, { x: DIVS_X + (SEMSA_W - sW) / 2, y: HDR_BOT + 8, width: sW, height: sH });
+  } else {
+    page.drawText("SEMSA", { x: DIVS_X + 8, y: HDR_TOP - 44, font: bold, size: 14, color: BLACK });
+    page.drawText("Secretaria Municipal de Saúde", { x: DIVS_X + 8, y: HDR_TOP - 56, font, size: 6.5, color: MED_GRAY });
+  }
+
+  // COL 3 — UPA 24h logo
   if (upaLogo) {
     const uH = HDR_H - 16;
     const uW = (upaLogo.width / upaLogo.height) * uH;
-    page.drawImage(upaLogo, { x: DIV1_X + (CTR_W - uW) / 2, y: HDR_BOT + 8, width: uW, height: uH });
+    page.drawImage(upaLogo, { x: DIV1_X + (UPA_W - uW) / 2, y: HDR_BOT + 8, width: uW, height: uH });
   } else {
     const cx = DIV1_X + 10;
     page.drawText("UPA",   { x: cx, y: HDR_TOP - 44, font: bold, size: 34, color: DK_GREEN });
