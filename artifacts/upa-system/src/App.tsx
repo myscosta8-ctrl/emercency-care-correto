@@ -26,7 +26,8 @@ const AdminFuncionalidades  = lazy(() => import("@/pages/admin/funcionalidades")
 const AdminAuditoria        = lazy(() => import("@/pages/admin/auditoria"));
 const AdminRedefinicaoSenha = lazy(() => import("@/pages/admin/redefinicao-senha"));
 
-const LeitosPage      = lazy(() => import("@/pages/leitos"));
+const LeitosPage         = lazy(() => import("@/pages/leitos"));
+const ObservacaoPage     = lazy(() => import("@/pages/observacao-leitos"));
 const RecepcaoPage    = lazy(() => import("@/pages/recepcao"));
 const VitaisPage      = lazy(() => import("@/pages/vitais"));
 const SocialPage      = lazy(() => import("@/pages/social"));
@@ -159,6 +160,7 @@ function Router() {
               <Route path="/patients/:id" component={PatientDetail} />
 
               <Route path="/leitos" component={LeitosPage} />
+              <Route path="/observacao" component={ObservacaoPage} />
 
               <Route path="/fila-medico">
                 <RoleGuard acao="registrar_prescricao"><FilaMedicoPage /></RoleGuard>

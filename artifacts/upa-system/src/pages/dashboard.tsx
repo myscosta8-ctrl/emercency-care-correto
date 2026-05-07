@@ -34,6 +34,8 @@ import type { CriticalAlert } from "@/hooks/use-critical-alerts";
 import { useOffline } from "@/hooks/use-offline";
 import { PatientLookupDialog } from "@/components/patient-lookup";
 import { Wifi, WifiOff } from "lucide-react";
+import { OBS_SECTORS } from "@/lib/care-status-config";
+import { DashboardSidebar, MobileSectorTabs } from "@/components/dashboard-sidebar";
 
 // Roles that receive active alert notifications (sound + popup + panel)
 const ALERT_ROLES = new Set(["enfermeiro", "tecnico_enfermagem"]);
@@ -510,7 +512,7 @@ export default function Dashboard() {
   const [filtro, setFiltro]                         = useState("Todos");
   const [triageFilter, setTriageFilter]             = useState("all");
   const [viewMode, setViewMode]                     = useState<"setor" | "status" | "exames">("setor");
-  const [flowTab, setFlowTab]                       = useState<"todos" | "triagem" | "recepcao" | "consultorios" | "medicacao" | "observacao">("todos");
+  const [flowTab, setFlowTab]                       = useState<"todos" | "triagem" | "recepcao" | "consultorios" | "medicacao">("todos");
   const [lookupOpen, setLookupOpen]                 = useState(false);
   const [prefillPatient, setPrefillPatient]         = useState<Partial<Patient> | undefined>(undefined);
   const { isOffline }                               = useOffline();
@@ -542,9 +544,11 @@ export default function Dashboard() {
     return new Set(lista);
   }, [activeUser?.setoresAtuacao]);
 
-  // Config de setores visíveis: filtra pré-adulto (feature flag) e setores do funcionário
+  // Config de setores visíveis: apenas setores de fluxo rápido (grupo "recepcao")
+  // Setores de observação/leitos ficam na página /observacao
   const SECTOR_CONFIG = useMemo(() => {
     return ALL_SECTOR_CONFIG.filter(s => {
+      if (s.group === "leitos") return false;
       if (s.key === "observacao_pre_adulto" && !preAdultoAtivo) return false;
       if (setoresPermitidos && !setoresPermitidos.has(s.key)) return false;
       return true;
@@ -650,11 +654,11 @@ export default function Dashboard() {
     const RECEPCAO_STATUS     = new Set(["Aguardando Atendimento"]);
     const CONSULTORIOS_STATUS = new Set(["Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)"]);
     const MEDICACAO_STATUS    = new Set(["Em Medicação", "Aguardando Exames", "Aguardando Reavaliação"]);
-    const OBS_STATUS          = new Set(["Em Observação", "Internado", "Em Transferência"]);
-    const OBS_SECTORS         = new Set(["sala_vermelha", "observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"]);
 
     const base = patients.filter(p => {
       if (p.careStatus === "Alta") return false;
+      // Pacientes nos setores de leitos/observação ficam em /observacao
+      if (OBS_SECTORS.has(p.sector as string)) return false;
       const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
       const matchesSector = filtro === "Todos" || p.sector === filtro;
       const matchesTriage = triageFilter === "all" || p.triage_level === triageFilter;
@@ -664,7 +668,6 @@ export default function Dashboard() {
           case "recepcao":     return RECEPCAO_STATUS.has(p.careStatus as string);
           case "consultorios": return CONSULTORIOS_STATUS.has(p.careStatus as string);
           case "medicacao":    return MEDICACAO_STATUS.has(p.careStatus as string);
-          case "observacao":   return OBS_STATUS.has(p.careStatus as string) || OBS_SECTORS.has(p.sector);
           default:             return true;
         }
       })();
@@ -800,7 +803,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-row">
+      <DashboardSidebar />
+      <div className="flex-1 flex flex-col min-w-0">
       {/* ── header ─────────────────────────────────────────────────────── */}
       <header className="border-b border-border bg-card sticky top-0 z-10 shadow-sm">
         <div className="px-4 h-16 flex items-center justify-between gap-3">
@@ -823,87 +828,8 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Nav links (desktop) */}
-          <nav className="hidden lg:flex items-center gap-0.5 flex-1 justify-center">
-            {activeUser?.role === "administrador" && (
-              <Link href="/admin/dashboard">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                  <Settings2 className="h-3.5 w-3.5" />Admin
-                </Button>
-              </Link>
-            )}
-            {pode("gerenciar_usuarios") && (
-              <Link href="/funcionarios">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                  <Users className="h-3.5 w-3.5" />Funcionários
-                </Button>
-              </Link>
-            )}
-            <Link href="/fila-medico">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                <Stethoscope className="h-3.5 w-3.5" />Fila Médica
-              </Button>
-            </Link>
-            <Link href="/laboratorio">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                <FlaskConical className="h-3.5 w-3.5" />Laboratório
-              </Button>
-            </Link>
-            <Link href="/historico">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                <Bookmark className="h-3.5 w-3.5" />Histórico
-              </Button>
-            </Link>
-            {pode("registrar_exames") && (
-              <Link href="/exames">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                  <Microscope className="h-3.5 w-3.5" />Pendências
-                </Button>
-              </Link>
-            )}
-            <Link href="/leitos">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                <BedDouble className="h-3.5 w-3.5" />Leitos
-              </Button>
-            </Link>
-            {pode("registrar_evolucao") && (
-              <Link href="/passagem-plantao">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                  <ClipboardList className="h-3.5 w-3.5" />Plantão
-                </Button>
-              </Link>
-            )}
-            {pode("visualizar_relatorios") && (
-              <Link href="/tempos-metas">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                  <Target className="h-3.5 w-3.5" />Tempos
-                </Button>
-              </Link>
-            )}
-            {pode("visualizar_relatorios") && (
-              <Link href="/relatorios">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
-                  <BarChart3 className="h-3.5 w-3.5" />Relatórios
-                </Button>
-              </Link>
-            )}
-          </nav>
-
           {/* Right: actions + user */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Mobile nav (icon-only) */}
-            <div className="flex lg:hidden items-center gap-0.5">
-              <Link href="/fila-medico">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground">
-                  <Stethoscope className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-              <Link href="/leitos">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground">
-                  <BedDouble className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </div>
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
             <Button
               onClick={() => pode("criar_paciente") && setLookupOpen(true)}
               data-testid="button-new-patient"
@@ -948,6 +874,9 @@ export default function Dashboard() {
           <span>Sem conexão com a internet — dados podem estar desatualizados. Reconectará automaticamente.</span>
         </div>
       )}
+
+      {/* ── Mobile sector tabs ─────────────────────────────────────── */}
+      <MobileSectorTabs current="fluxo" />
 
       <main className="flex-1 container mx-auto px-4 py-4 max-w-5xl">
 
@@ -1353,12 +1282,11 @@ export default function Dashboard() {
           <div className="flex gap-1 mb-3 flex-wrap">
             {(
               [
-                { key: "todos",        label: "🏥 Todos",        title: "Todos os pacientes ativos",                              count: grouped?.reduce((n, g) => n + g.patients.length, 0) ?? 0 },
+                { key: "todos",        label: "🏥 Todos",        title: "Todos os pacientes no fluxo rápido",                    count: grouped?.reduce((n, g) => n + g.patients.length, 0) ?? 0 },
                 { key: "triagem",      label: "🩺 Triagem",      title: "Aguardando Triagem + Em Triagem",                        count: grouped?.reduce((n, g) => n + g.patients.filter(p => p.careStatus === "Aguardando Triagem" || p.careStatus === "Em Triagem").length, 0) ?? 0 },
                 { key: "recepcao",     label: "📋 Recepção",     title: "Aguardando Atendimento médico",                          count: grouped?.reduce((n, g) => n + g.patients.filter(p => p.careStatus === "Aguardando Atendimento").length, 0) ?? 0 },
                 { key: "consultorios", label: "🩺 Consultórios", title: "Em Atendimento (Cons. 1 e 2)",                           count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Atendimento (Cons. 1)","Em Atendimento (Cons. 2)"].includes(p.careStatus as string)).length, 0) ?? 0 },
                 { key: "medicacao",    label: "💊 Medicação",    title: "Em Medicação, Aguardando Exames ou Reavaliação",         count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Medicação","Aguardando Exames","Aguardando Reavaliação"].includes(p.careStatus as string)).length, 0) ?? 0 },
-                { key: "observacao",   label: "🛏 Leitos",       title: "Em Observação, Internados, Transferência e Sala Vermelha", count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Observação","Internado","Em Transferência"].includes(p.careStatus as string) || ["sala_vermelha","observacao_adulto","observacao_pediatrica","observacao_pre_adulto"].includes(p.sector as string)).length, 0) ?? 0 },
               ] as const
             ).map(({ key, label, title, count }) => (
               <button
@@ -1807,6 +1735,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
