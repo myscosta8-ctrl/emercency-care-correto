@@ -956,7 +956,8 @@ export default function PatientDetail() {
                   </Card>
                 )}
 
-                {!["observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"].includes(patient.sector ?? "") && (
+                {["enfermeiro", "administrador", "diretoria_geral"].includes(activeUser?.role ?? "") &&
+                 (["Em Triagem", "Aguardando Atendimento"].includes(patient.careStatus ?? "") || patient.sector === "sala_vermelha") && (
                   <Card className="border-border/50">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">

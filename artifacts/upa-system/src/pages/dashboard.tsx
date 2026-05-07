@@ -131,10 +131,13 @@ interface PatientRowProps {
   pendingExams?: PatientPendingExamsItem[];
 }
 
+const RECLASSIFY_ROLES = new Set(["enfermeiro", "administrador", "diretoria_geral"]);
+const RECLASSIFY_STATUSES = new Set(["Em Triagem", "Aguardando Atendimento"]);
+
 const PatientRow = memo(function PatientRow({
   patient, onEdit, onAlta, onReclassify, isCritical = false, criticalDetail, pendingExams,
 }: PatientRowProps) {
-  const { pode } = useAuth();
+  const { pode, activeUser } = useAuth();
   const cfg = TRIAGE_CONFIG[patient.triage_level as TriageKey] ?? TRIAGE_CONFIG.blue;
   const csCfg = CARE_STATUS_CONFIG[patient.careStatus as CareStatusKey] ?? CARE_STATUS_CONFIG["Em Triagem"];
 
@@ -254,7 +257,9 @@ const PatientRow = memo(function PatientRow({
       </Link>
 
       <div className="flex items-center gap-0.5 px-1.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
-        {pode("mudar_setor") && !["observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"].includes(patient.sector ?? "") && (
+        {pode("mudar_setor") &&
+         RECLASSIFY_ROLES.has(activeUser?.role ?? "") &&
+         (RECLASSIFY_STATUSES.has(patient.careStatus ?? "") || patient.sector === "sala_vermelha") && (
           <button
             type="button"
             title="Reclassificar paciente"
