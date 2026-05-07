@@ -424,7 +424,7 @@ export default function Dashboard() {
   const [filtro, setFiltro]                         = useState("Todos");
   const [triageFilter, setTriageFilter]             = useState("all");
   const [viewMode, setViewMode]                     = useState<"setor" | "status" | "exames">("setor");
-  const [flowTab, setFlowTab]                       = useState<"todos" | "recepcao" | "consultorios" | "medicacao" | "observacao">("todos");
+  const [flowTab, setFlowTab]                       = useState<"todos" | "triagem" | "recepcao" | "consultorios" | "medicacao" | "observacao">("todos");
   const [lookupOpen, setLookupOpen]                 = useState(false);
   const [prefillPatient, setPrefillPatient]         = useState<Partial<Patient> | undefined>(undefined);
   const { isOffline }                               = useOffline();
@@ -560,11 +560,12 @@ export default function Dashboard() {
   const { grouped, groupedByStatus } = useMemo(() => {
     if (!patients) return { grouped: null, groupedByStatus: null };
     const q = debouncedSearch.toLowerCase();
-    const RECEPCAO_STATUS    = new Set(["Em Triagem", "Aguardando Atendimento"]);
+    const TRIAGEM_STATUS      = new Set(["Em Triagem"]);
+    const RECEPCAO_STATUS     = new Set(["Aguardando Atendimento"]);
     const CONSULTORIOS_STATUS = new Set(["Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)"]);
-    const MEDICACAO_STATUS   = new Set(["Em Medicação", "Aguardando Exames", "Aguardando Reavaliação"]);
-    const OBS_STATUS         = new Set(["Em Observação", "Internado", "Em Transferência"]);
-    const OBS_SECTORS        = new Set(["sala_vermelha", "observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"]);
+    const MEDICACAO_STATUS    = new Set(["Em Medicação", "Aguardando Exames", "Aguardando Reavaliação"]);
+    const OBS_STATUS          = new Set(["Em Observação", "Internado", "Em Transferência"]);
+    const OBS_SECTORS         = new Set(["sala_vermelha", "observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"]);
 
     const base = patients.filter(p => {
       if (p.careStatus === "Alta") return false;
@@ -573,6 +574,7 @@ export default function Dashboard() {
       const matchesTriage = triageFilter === "all" || p.triage_level === triageFilter;
       const matchesFlow = (() => {
         switch (flowTab) {
+          case "triagem":      return TRIAGEM_STATUS.has(p.careStatus as string);
           case "recepcao":     return RECEPCAO_STATUS.has(p.careStatus as string);
           case "consultorios": return CONSULTORIOS_STATUS.has(p.careStatus as string);
           case "medicacao":    return MEDICACAO_STATUS.has(p.careStatus as string);
@@ -1214,11 +1216,12 @@ export default function Dashboard() {
           <div className="flex gap-1 mb-3 flex-wrap">
             {(
               [
-                { key: "todos",       label: "🏥 Todos",        title: "Todos os pacientes ativos",                          count: grouped?.reduce((n, g) => n + g.patients.length, 0) ?? 0 },
-                { key: "recepcao",    label: "📋 Recepção",     title: "Em Triagem e Aguardando Atendimento",                count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Triagem","Aguardando Atendimento"].includes(p.careStatus as string)).length, 0) ?? 0 },
-                { key: "consultorios",label: "🩺 Consultórios", title: "Em Atendimento (Cons. 1 e 2)",                       count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Atendimento (Cons. 1)","Em Atendimento (Cons. 2)"].includes(p.careStatus as string)).length, 0) ?? 0 },
-                { key: "medicacao",   label: "💊 Medicação",    title: "Em Medicação, Aguardando Exames ou Reavaliação",     count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Medicação","Aguardando Exames","Aguardando Reavaliação"].includes(p.careStatus as string)).length, 0) ?? 0 },
-                { key: "observacao",  label: "🛏 Obs./Leitos",  title: "Em Observação, Internados, Transferência e Sala Vermelha", count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Observação","Internado","Em Transferência"].includes(p.careStatus as string) || ["sala_vermelha","observacao_adulto","observacao_pediatrica","observacao_pre_adulto"].includes(p.sector as string)).length, 0) ?? 0 },
+                { key: "todos",        label: "🏥 Todos",        title: "Todos os pacientes ativos",                              count: grouped?.reduce((n, g) => n + g.patients.length, 0) ?? 0 },
+                { key: "triagem",      label: "🩺 Triagem",      title: "Em Triagem (aguardando classificação)",                  count: grouped?.reduce((n, g) => n + g.patients.filter(p => p.careStatus === "Em Triagem").length, 0) ?? 0 },
+                { key: "recepcao",     label: "📋 Recepção",     title: "Aguardando Atendimento médico",                          count: grouped?.reduce((n, g) => n + g.patients.filter(p => p.careStatus === "Aguardando Atendimento").length, 0) ?? 0 },
+                { key: "consultorios", label: "🩺 Consultórios", title: "Em Atendimento (Cons. 1 e 2)",                           count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Atendimento (Cons. 1)","Em Atendimento (Cons. 2)"].includes(p.careStatus as string)).length, 0) ?? 0 },
+                { key: "medicacao",    label: "💊 Medicação",    title: "Em Medicação, Aguardando Exames ou Reavaliação",         count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Medicação","Aguardando Exames","Aguardando Reavaliação"].includes(p.careStatus as string)).length, 0) ?? 0 },
+                { key: "observacao",   label: "🛏 Leitos",       title: "Em Observação, Internados, Transferência e Sala Vermelha", count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Observação","Internado","Em Transferência"].includes(p.careStatus as string) || ["sala_vermelha","observacao_adulto","observacao_pediatrica","observacao_pre_adulto"].includes(p.sector as string)).length, 0) ?? 0 },
               ] as const
             ).map(({ key, label, title, count }) => (
               <button

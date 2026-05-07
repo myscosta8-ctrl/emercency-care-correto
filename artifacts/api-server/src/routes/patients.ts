@@ -1,8 +1,18 @@
 import { Router } from "express";
+import fs from "node:fs";
+import path from "node:path";
 import { requirePermissao } from "../middleware/require-auth";
 import { db, pool, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable } from "@workspace/db";
 import { eq, sql, desc, and, inArray, or, ilike } from "drizzle-orm";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+
+function templatePath(filename: string): string {
+  // After build: dist/templates/<filename>  (process.cwd() = artifacts/api-server)
+  // Dev fallback: src/templates/<filename>
+  const distPath = path.join(process.cwd(), "dist", "templates", filename);
+  const srcPath  = path.join(process.cwd(), "src",  "templates", filename);
+  return fs.existsSync(distPath) ? distPath : srcPath;
+}
 import {
   CreatePatientBody,
   UpdatePatientBody,
@@ -242,7 +252,10 @@ router.get("/", async (req, res) => {
   const hasExamFilter = exam || examType || examStatus || examPriority;
 
   if (!hasExamFilter) {
-    const patients = await db.select().from(patientsTable).orderBy(patientsTable.createdAt);
+    // Exclui pacientes com Alta — eles ficam no histórico (/historico)
+    const patients = await db.select().from(patientsTable)
+      .where(sql`${patientsTable.careStatus} != 'Alta'`)
+      .orderBy(patientsTable.createdAt);
     res.json(patients.map(serialize));
     return;
   }
@@ -299,9 +312,9 @@ router.get("/", async (req, res) => {
     return;
   }
 
-  // Fetch patient records
+  // Fetch patient records — exclui pacientes com Alta
   const patients = await db.select().from(patientsTable)
-    .where(inArray(patientsTable.id, matchingIds))
+    .where(and(inArray(patientsTable.id, matchingIds), sql`${patientsTable.careStatus} != 'Alta'`))
     .orderBy(patientsTable.createdAt);
 
   // Fetch the matching pending exam requests for each patient
@@ -1029,112 +1042,72 @@ router.get("/:id/pdf/apac", async (req, res) => {
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
-  const doc  = await PDFDocument.create();
+  // Load official APAC template and overlay patient data
+  const tplBytes = fs.readFileSync(templatePath("apac-laudo.pdf"));
+  const doc  = await PDFDocument.load(tplBytes);
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const page = doc.getPage(0);
 
-  const PAGE_W = 595; const PAGE_H = 842;
-  const ML = 36; const MR = 36; const CW = PAGE_W - ML - MR;
-  const NAVY   = rgb(0.06, 0.09, 0.18);
-  const ACCENT = rgb(0.15, 0.35, 0.78);
-  const WHITE  = rgb(1, 1, 1);
-  const DARK   = rgb(0.06, 0.07, 0.12);
-  const MUTED  = rgb(0.42, 0.44, 0.54);
-  const BORDER = rgb(0.75, 0.77, 0.84);
-  const SECBG  = rgb(0.93, 0.95, 0.97);
-
-  const page = doc.addPage([PAGE_W, PAGE_H]);
-  let y = PAGE_H - 36;
-
-  // Header
-  page.drawRectangle({ x: ML, y: y - 56, width: CW, height: 56, color: NAVY });
-  page.drawRectangle({ x: ML, y: y - 56, width: 6, height: 56, color: ACCENT });
-  page.drawText("AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL DE ALTA COMPLEXIDADE", {
-    x: ML + 16, y: y - 18, font: bold, size: 8, color: WHITE,
-  });
-  page.drawText("APAC — LAUDO PARA EMISSÃO", {
-    x: ML + 16, y: y - 30, font: bold, size: 11, color: rgb(0.72, 0.78, 0.96),
-  });
-  page.drawText("UPA 24H — BREVES / PA", {
-    x: ML + 16, y: y - 46, font, size: 8, color: rgb(0.72, 0.78, 0.96),
-  });
-  y -= 64;
-
-  function drawField(label: string, value: string, x: number, fy: number, w: number) {
-    page.drawRectangle({ x, y: fy - 28, width: w, height: 28, color: SECBG, borderColor: BORDER, borderWidth: 0.5 });
-    page.drawText(label, { x: x + 4, y: fy - 11, font: bold, size: 6.5, color: MUTED });
-    page.drawText(value || "—", { x: x + 4, y: fy - 24, font, size: 9, color: DARK });
-  }
+  const BLACK = rgb(0, 0, 0);
+  const BLUE  = rgb(0.06, 0.09, 0.35);
 
   const fmtDate = (d: string | null | undefined) => {
     if (!d) return "";
     const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
     return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
   };
-  const age = patient.age ? `${patient.age} anos` : "";
-  const sex = patient.sex === "M" ? "Masculino" : patient.sex === "F" ? "Feminino" : "Outro";
 
-  // Section: Identificação do Paciente
-  page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: NAVY });
-  page.drawText("I — IDENTIFICAÇÃO DO PACIENTE", { x: ML + 6, y: y - 13, font: bold, size: 8, color: WHITE });
-  y -= 18;
+  // Helper: overlay text value at position
+  function ov(text: string | null | undefined, x: number, y: number, size = 8) {
+    if (!text) return;
+    page.drawText(String(text), { x, y, font, size, color: BLUE });
+  }
+  function ovBold(text: string | null | undefined, x: number, y: number, size = 8) {
+    if (!text) return;
+    page.drawText(String(text), { x, y, font: bold, size, color: BLACK });
+  }
 
-  drawField("Nome do Paciente", patient.fullName, ML, y, CW); y -= 28;
-  const col2 = CW / 3;
-  drawField("Data de Nascimento", fmtDate(patient.birthDate), ML, y, col2);
-  drawField("Idade", age, ML + col2, y, col2 * 0.6);
-  drawField("Sexo", sex, ML + col2 * 1.6, y, col2 * 0.8);
-  drawField("CPF", patient.cpf || "—", ML + col2 * 2.4, y, col2 * 0.6); y -= 28;
-  drawField("Nome da Mãe", patient.motherName || "—", ML, y, CW); y -= 28;
-  drawField("CNS (Cartão Nac. Saúde)", patient.cns || "—", ML, y, col2);
-  drawField("RG", patient.rg || "—", ML + col2, y, col2);
-  drawField("Telefone", patient.phone || "—", ML + col2 * 2, y, col2); y -= 28;
-  drawField("Endereço", patient.address || "—", ML, y, CW); y -= 28;
-  y -= 6;
+  // ── Identificação do Estabelecimento (campo 1) ──────────────────────────────
+  ovBold("UPA 24H — Unidade de Pronto Atendimento — Breves / PA", 57, 740);
 
-  // Section: Procedimento Solicitado
-  page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: NAVY });
-  page.drawText("II — PROCEDIMENTO SOLICITADO", { x: ML + 6, y: y - 13, font: bold, size: 8, color: WHITE });
-  y -= 18;
+  // ── Identificação do Paciente ───────────────────────────────────────────────
+  // Campo 3 — Nome do Paciente
+  ovBold(patient.fullName, 57, 703);
+  // Campo 4 — Sexo (Mas./Fem. checkboxes)
+  if (patient.sex === "M") ov("X", 395, 704, 9);
+  if (patient.sex === "F") ov("X", 422, 704, 9);
+  // Campo 5 — Nº do Prontuário
+  ov(patient.prontuarioNumber, 478, 703);
 
-  drawField("Código do Procedimento Principal (SIGTAP)", "", ML, y, col2 * 1.5);
-  drawField("Procedimento Secundário (se houver)", "", ML + col2 * 1.5, y, col2 * 1.5); y -= 28;
-  drawField("Diagnóstico / Agravo", patient.diagnosis || "—", ML, y, CW * 0.7);
-  drawField("CID-10", "", ML + CW * 0.7, y, CW * 0.3); y -= 28;
-  y -= 6;
+  // Campo 6 — CNS
+  ov(patient.cns, 57, 681);
+  // Campo 7 — Data de Nascimento
+  ov(fmtDate(patient.birthDate), 285, 681);
+  // Campo 8 — Raça/Cor
+  ov("—", 402, 681, 7);
 
-  // Section: Dados Clínicos
-  page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: NAVY });
-  page.drawText("III — DADOS CLÍNICOS / JUSTIFICATIVA", { x: ML + 6, y: y - 13, font: bold, size: 8, color: WHITE });
-  y -= 18;
+  // Campo 9 — Nome da Mãe
+  ov(patient.motherName, 57, 659);
+  // Campo 10 — Telefone
+  ov(patient.phone ?? "", 395, 659);
 
-  page.drawRectangle({ x: ML, y: y - 60, width: CW, height: 60, color: SECBG, borderColor: BORDER, borderWidth: 0.5 });
-  page.drawText("Anamnese / Histórico Clínico / Justificativa da Solicitação:", { x: ML + 4, y: y - 11, font: bold, size: 6.5, color: MUTED });
-  y -= 60; y -= 6;
+  // Campo 11 — Nome do Responsável (mesma pessoa se adulto)
+  ov(patient.fullName, 57, 637);
 
-  // Section: Profissional Solicitante
-  page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: NAVY });
-  page.drawText("IV — IDENTIFICAÇÃO DO PROFISSIONAL SOLICITANTE", { x: ML + 6, y: y - 13, font: bold, size: 8, color: WHITE });
-  y -= 18;
+  // Campo 13 — Endereço
+  ov(patient.address, 57, 613);
 
-  const today = new Date().toLocaleDateString("pt-BR");
-  drawField("Nome do Profissional", "", ML, y, col2 * 1.5);
-  drawField("CRM / Registro", "", ML + col2 * 1.5, y, col2 * 0.8);
-  drawField("Data", today, ML + col2 * 2.3, y, col2 * 0.7); y -= 28;
-  y -= 20;
+  // Campo 14 — Município de Residência
+  ov("Breves", 57, 591);
+  // Campo 16 — UF
+  ov("PA", 380, 591);
 
-  // Signature line
-  const sigX = ML + CW / 2 - 90;
-  page.drawLine({ start: { x: sigX, y }, end: { x: sigX + 180, y }, thickness: 1, color: DARK });
-  page.drawText("Assinatura e Carimbo do Médico Solicitante", {
-    x: sigX + 90 - font.widthOfTextAtSize("Assinatura e Carimbo do Médico Solicitante", 7) / 2,
-    y: y - 12, font, size: 7, color: MUTED,
-  });
-  y -= 30;
+  // Campo 36 — Diagnóstico
+  ov(patient.diagnosis ?? "", 57, 395);
 
-  // Footer
-  page.drawLine({ start: { x: ML, y: 38 }, end: { x: ML + CW, y: 38 }, thickness: 0.4, color: BORDER });
-  page.drawText("UPA Breves — Gestão de Pacientes  |  Documento gerado automaticamente pelo sistema", { x: ML, y: 26, font, size: 6.5, color: MUTED });
+  // Campo 41 — Profissional Solicitante + Data
+  ov(new Date().toLocaleDateString("pt-BR"), 285, 272);
 
   const pdfBytes = await doc.save();
   res.setHeader("Content-Type", "application/pdf");
@@ -1149,117 +1122,59 @@ router.get("/:id/pdf/ficha-referencia", async (req, res) => {
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
-  const doc  = await PDFDocument.create();
+  // Load official Ficha de Referência template and overlay patient data
+  const tplBytes = fs.readFileSync(templatePath("ficha-referencia.pdf"));
+  const doc  = await PDFDocument.load(tplBytes);
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const page = doc.getPage(0);
 
-  const PAGE_W = 595; const PAGE_H = 842;
-  const ML = 36; const MR = 36; const CW = PAGE_W - ML - MR;
-  const NAVY   = rgb(0.06, 0.09, 0.18);
-  const ACCENT = rgb(0.15, 0.35, 0.78);
-  const WHITE  = rgb(1, 1, 1);
-  const DARK   = rgb(0.06, 0.07, 0.12);
-  const MUTED  = rgb(0.42, 0.44, 0.54);
-  const BORDER = rgb(0.75, 0.77, 0.84);
-  const SECBG  = rgb(0.93, 0.95, 0.97);
-  const RED_BG = rgb(0.95, 0.25, 0.20);
-
-  const page = doc.addPage([PAGE_W, PAGE_H]);
-  let y = PAGE_H - 36;
-
-  // Header
-  page.drawRectangle({ x: ML, y: y - 56, width: CW, height: 56, color: NAVY });
-  page.drawRectangle({ x: ML, y: y - 56, width: 6, height: 56, color: ACCENT });
-  page.drawText("FICHA DE REFERÊNCIA / CONTRARREFERÊNCIA", {
-    x: ML + 16, y: y - 20, font: bold, size: 12, color: WHITE,
-  });
-  page.drawText("Regulação e Transporte  |  UPA 24H — BREVES / PA", {
-    x: ML + 16, y: y - 38, font, size: 8, color: rgb(0.72, 0.78, 0.96),
-  });
-  y -= 64;
-
-  function drawField(label: string, value: string, x: number, fy: number, w: number) {
-    page.drawRectangle({ x, y: fy - 28, width: w, height: 28, color: SECBG, borderColor: BORDER, borderWidth: 0.5 });
-    page.drawText(label, { x: x + 4, y: fy - 11, font: bold, size: 6.5, color: MUTED });
-    page.drawText(value || "—", { x: x + 4, y: fy - 24, font, size: 9, color: DARK });
-  }
+  const BLACK = rgb(0,    0,    0);
+  const BLUE  = rgb(0.06, 0.09, 0.35);
 
   const fmtDate = (d: string | null | undefined) => {
     if (!d) return "";
     const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
     return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
   };
-  const sex = patient.sex === "M" ? "Masculino" : patient.sex === "F" ? "Feminino" : "Outro";
-  const today = new Date().toLocaleDateString("pt-BR");
-  const col2 = CW / 2; const col3 = CW / 3;
 
-  // Section: Origem / Destino
-  page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: ACCENT });
-  page.drawText("ORIGEM E DESTINO", { x: ML + 6, y: y - 13, font: bold, size: 8, color: WHITE });
-  y -= 18;
-  drawField("Unidade de Origem", "UPA 24H — Breves / PA", ML, y, col2);
-  drawField("Data / Hora da Referência", today, ML + col2, y, col2); y -= 28;
-  drawField("Unidade de Destino (Hospital / Especialidade)", "", ML, y, col2 * 1.5);
-  drawField("Município Destino", "", ML + col2 * 1.5, y, col2 * 0.5); y -= 28; y -= 6;
+  function ov(text: string | null | undefined, x: number, y: number, size = 8) {
+    if (!text) return;
+    page.drawText(String(text), { x, y, font, size, color: BLUE });
+  }
+  function ovBold(text: string | null | undefined, x: number, y: number, size = 8) {
+    if (!text) return;
+    page.drawText(String(text), { x, y, font: bold, size, color: BLACK });
+  }
 
-  // Section: Paciente
-  page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: NAVY });
-  page.drawText("I — IDENTIFICAÇÃO DO PACIENTE", { x: ML + 6, y: y - 13, font: bold, size: 8, color: WHITE });
-  y -= 18;
-  drawField("Nome Completo", patient.fullName, ML, y, CW); y -= 28;
-  drawField("Data de Nascimento", fmtDate(patient.birthDate), ML, y, col3);
-  drawField("Sexo", sex, ML + col3, y, col3 * 0.6);
-  drawField("CPF", patient.cpf || "—", ML + col3 * 1.6, y, col3 * 0.7);
-  drawField("CNS", patient.cns || "—", ML + col3 * 2.3, y, col3 * 0.7); y -= 28;
-  drawField("Nome da Mãe", patient.motherName || "—", ML, y, col2);
-  drawField("Telefone de Contato", patient.phone || "—", ML + col2, y, col2); y -= 28;
-  drawField("Endereço", patient.address || "—", ML, y, CW); y -= 28; y -= 6;
+  // ── Seção 1 — DO (Unidade de Origem) ───────────────────────────────────────
+  ov("UPA 24H — Breves / PA", 57, 723);
 
-  // Section: Motivo da Referência
-  page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: NAVY });
-  page.drawText("II — MOTIVO DA REFERÊNCIA / HISTÓRICO CLÍNICO", { x: ML + 6, y: y - 13, font: bold, size: 8, color: WHITE });
-  y -= 18;
-  drawField("Diagnóstico / Hipótese Diagnóstica", patient.diagnosis || "—", ML, y, CW * 0.7);
-  drawField("CID-10", "", ML + CW * 0.7, y, CW * 0.3); y -= 28;
+  // ── Dados Pessoais ──────────────────────────────────────────────────────────
+  // NOME
+  ovBold(patient.fullName, 57, 653);
+  // CNS
+  ov(patient.cns, 430, 653);
 
-  page.drawRectangle({ x: ML, y: y - 70, width: CW, height: 70, color: SECBG, borderColor: BORDER, borderWidth: 0.5 });
-  page.drawText("Histórico Clínico / Anamnese / Conduta na UPA:", { x: ML + 4, y: y - 11, font: bold, size: 6.5, color: MUTED });
-  y -= 70; y -= 6;
+  // DN (data de nascimento) / ID (idade) / SEXO
+  ov(fmtDate(patient.birthDate), 57, 637);
+  ov(patient.age ? String(patient.age) : "", 165, 637);
+  if (patient.sex === "M") ov("X", 237, 637, 9);
+  if (patient.sex === "F") ov("X", 270, 637, 9);
 
-  // Section: Sinais Vitais
-  page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: NAVY });
-  page.drawText("III — SINAIS VITAIS NA TRANSFERÊNCIA", { x: ML + 6, y: y - 13, font: bold, size: 8, color: WHITE });
-  y -= 18;
-  const qcol = CW / 5;
-  drawField("PA (mmHg)", "", ML, y, qcol);
-  drawField("FC (bpm)", "", ML + qcol, y, qcol);
-  drawField("FR (irpm)", "", ML + qcol * 2, y, qcol);
-  drawField("Temp (°C)", "", ML + qcol * 3, y, qcol);
-  drawField("SpO₂ (%)", "", ML + qcol * 4, y, qcol); y -= 28;
-  drawField("Glasgow", "", ML, y, qcol);
-  drawField("Nível de Consciência", "", ML + qcol, y, qcol * 1.5);
-  drawField("Via Aérea", "", ML + qcol * 2.5, y, qcol * 1.2);
-  drawField("Acesso Venoso", "", ML + qcol * 3.7, y, qcol * 1.3); y -= 28; y -= 6;
+  // ENDEREÇO / MUNICÍPIO
+  ov(patient.address, 57, 620);
+  ov("Breves — PA", 430, 620);
 
-  // Section: Profissional
-  page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: NAVY });
-  page.drawText("IV — PROFISSIONAL RESPONSÁVEL PELA REFERÊNCIA", { x: ML + 6, y: y - 13, font: bold, size: 8, color: WHITE });
-  y -= 18;
-  drawField("Nome do Médico", "", ML, y, col2);
-  drawField("CRM", "", ML + col2, y, col3 * 0.8);
-  drawField("Data", today, ML + col2 + col3 * 0.8, y, CW - col2 - col3 * 0.8); y -= 28;
-  y -= 24;
+  // NOME DA MÃE
+  ov(patient.motherName, 57, 600);
 
-  const sigX = ML + CW / 2 - 100;
-  page.drawLine({ start: { x: sigX, y }, end: { x: sigX + 200, y }, thickness: 1, color: DARK });
-  page.drawText("Assinatura e Carimbo do Médico Responsável", {
-    x: sigX + 100 - font.widthOfTextAtSize("Assinatura e Carimbo do Médico Responsável", 7) / 2,
-    y: y - 12, font, size: 7, color: MUTED,
-  });
+  // ── Hipótese Diagnóstica (campo 8) ──────────────────────────────────────────
+  ov(patient.diagnosis ?? "", 57, 258);
 
-  // Footer
-  page.drawLine({ start: { x: ML, y: 38 }, end: { x: ML + CW, y: 38 }, thickness: 0.4, color: BORDER });
-  page.drawText("UPA Breves — Gestão de Pacientes  |  Documento gerado automaticamente pelo sistema", { x: ML, y: 26, font, size: 6.5, color: MUTED });
+  // ── Dados do CPF (extra, seção dados pessoais) ─────────────────────────────
+  // Alguns formulários têm campo extra; colocamos junto ao RG/CPF
+  ov(patient.cpf ?? "", 57, 584);
 
   const pdfBytes = await doc.save();
   res.setHeader("Content-Type", "application/pdf");
@@ -1291,170 +1206,373 @@ function wrapTextPdf(
   return lines.length ? lines : [""];
 }
 
+interface PrescricaoPaciente {
+  fullName: string;
+  birthDate: string | null;
+  age: number | null;
+  sex: string | null;
+  cpf: string | null;
+  rg: string | null;
+  motherName: string | null;
+  address: string | null;
+  cns: string | null;
+  prontuarioNumber: string | null;
+  atendimentoNumber: string | null;
+  triageLevel: string | null;
+}
+
 async function buildPrescricaoPdf(
-  patientName: string,
-  birthDate: string | null,
-  age: number | null,
-  sex: string | null,
-  cpf: string | null,
+  patient: PrescricaoPaciente,
   content: string,
   createdAt: Date,
   authorName: string | null,
+  authorCrm: string | null,
 ): Promise<Uint8Array> {
   const doc  = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-  // A4 landscape (842 × 595 pt)
-  const PAGE_W = 842;
+  // ── Layout constants ─────────────────────────────────────────────────────────
+  const PAGE_W = 842; // A4 landscape
   const PAGE_H = 595;
-  const ML     = 50;
-  const CW     = PAGE_W - ML - 50;
+  const ML = 18; const MR = 18; const MT = 12; const MB = 12;
+  const CW = PAGE_W - ML - MR; // 806
 
-  const NAVY   = rgb(0.06, 0.09, 0.18);
-  const ACCENT = rgb(0.15, 0.35, 0.78);
-  const WHITE  = rgb(1, 1, 1);
-  const LTBLUE = rgb(0.72, 0.78, 0.96);
-  const DARK   = rgb(0.06, 0.07, 0.12);
-  const MUTED  = rgb(0.42, 0.44, 0.54);
-  const BORDER = rgb(0.80, 0.82, 0.88);
-  const SECBG  = rgb(0.93, 0.95, 0.97);
+  // ── Colors ───────────────────────────────────────────────────────────────────
+  const BLACK    = rgb(0,    0,    0);
+  const WHITE    = rgb(1,    1,    1);
+  const DK_GREEN = rgb(0.02, 0.36, 0.15); // green table headers
+  const LT_GREEN = rgb(0.88, 0.94, 0.88); // green sub-headers
+  const BLUE     = rgb(0.07, 0.36, 0.65); // branding blue
+  const MED_GRAY = rgb(0.45, 0.45, 0.45);
 
-  let page = doc.addPage([PAGE_W, PAGE_H]);
-  let y    = PAGE_H - 36;
+  const page = doc.addPage([PAGE_W, PAGE_H]);
 
-  function drawContinuationHeader() {
-    page.drawRectangle({ x: ML, y: y - 24, width: CW, height: 24, color: NAVY });
-    page.drawText("UPA 24H — BREVES  |  PRESCRIÇÃO MÉDICA (continuação)", {
-      x: ML + 8, y: y - 16, font: bold, size: 8, color: WHITE,
-    });
-    y -= 32;
-  }
-
-  function ensureSpace(needed: number) {
-    if (y - needed < 50) {
-      page = doc.addPage([PAGE_W, PAGE_H]);
-      y = PAGE_H - 36;
-      drawContinuationHeader();
-    }
-  }
-
-  // ── header ──────────────────────────────────────────────────────────────────
-  const HDR_H = 54;
-  page.drawRectangle({ x: ML, y: y - HDR_H, width: CW, height: HDR_H, color: NAVY });
-  page.drawRectangle({ x: ML, y: y - HDR_H, width: 5, height: HDR_H, color: ACCENT });
-  page.drawText("UPA 24H — BREVES", { x: ML + 14, y: y - 20, font: bold, size: 14, color: WHITE });
-  page.drawText("PRESCRIÇÃO MÉDICA", { x: ML + 14, y: y - 36, font: bold, size: 9.5, color: LTBLUE });
-
-  const emitida = `Emitida em: ${createdAt.toLocaleDateString("pt-BR")} ${createdAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
-  page.drawText(emitida, {
-    x: ML + CW - font.widthOfTextAtSize(emitida, 6.5) - 6, y: y - HDR_H + 6,
-    font, size: 6.5, color: LTBLUE,
+  // ── Outer border ─────────────────────────────────────────────────────────────
+  const FORM_H = PAGE_H - MT - MB; // 571
+  page.drawRectangle({
+    x: ML, y: MB, width: CW, height: FORM_H,
+    borderColor: BLACK, borderWidth: 1.5, color: WHITE,
   });
-  y -= HDR_H + 10;
 
-  // ── patient info ────────────────────────────────────────────────────────────
-  const INFO_H = 36;
-  page.drawRectangle({ x: ML, y: y - INFO_H, width: CW, height: INFO_H, color: SECBG, borderColor: BORDER, borderWidth: 0.5 });
+  // ════════════════════════════════════════════════════════════════════════════
+  // HEADER (72pt)
+  // ════════════════════════════════════════════════════════════════════════════
+  const HDR_H   = 72;
+  const HDR_TOP = MB + FORM_H;     // 583
+  const HDR_BOT = HDR_TOP - HDR_H; // 511
 
-  const fmtDate = (d: string | null) => {
-    if (!d) return "";
+  page.drawLine({
+    start: { x: ML, y: HDR_BOT }, end: { x: ML + CW, y: HDR_BOT },
+    thickness: 1.2, color: BLACK,
+  });
+
+  const LEFT_W  = 220;
+  const CTR_W   = 252;
+  const DIV1_X  = ML + LEFT_W;
+  const DIV2_X  = ML + LEFT_W + CTR_W;
+
+  page.drawLine({ start: { x: DIV1_X, y: HDR_BOT }, end: { x: DIV1_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
+  page.drawLine({ start: { x: DIV2_X, y: HDR_BOT }, end: { x: DIV2_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
+
+  // LEFT — Prefeitura de Breves
+  const lx = ML + 8;
+  page.drawText("PREFEITURA DE",   { x: lx, y: HDR_TOP - 16, font: bold, size: 7.5, color: BLACK });
+  page.drawText("Breves",          { x: lx, y: HDR_TOP - 44, font: bold, size: 28,  color: BLUE });
+  page.drawText("De volta ao trabalho", { x: lx, y: HDR_TOP - 56, font, size: 6.5, color: MED_GRAY });
+  // Simplified crest circle
+  page.drawEllipse({ x: DIV1_X - 28, y: HDR_BOT + 35, xScale: 22, yScale: 22, borderColor: BLUE, borderWidth: 1.2, color: rgb(0.92, 0.95, 1) });
+
+  // CENTER — UPA 24h
+  const cx = DIV1_X + 10;
+  page.drawText("UPA",   { x: cx,      y: HDR_TOP - 44, font: bold, size: 34, color: DK_GREEN });
+  const upaW = bold.widthOfTextAtSize("UPA", 34);
+  page.drawText("24h",   { x: cx + upaW + 3, y: HDR_TOP - 44, font: bold, size: 28, color: rgb(0.75, 0.1, 0.1) });
+  page.drawText("UNIDADE DE PRONTO ATENDIMENTO", { x: cx, y: HDR_TOP - 58, font: bold, size: 6.5, color: BLACK });
+
+  // RIGHT — PRESCRIÇÃO MÉDICA box
+  const rx   = DIV2_X + 10;
+  const rBoxW = CW - (DIV2_X - ML) - 20;
+  const rBoxH = 52;
+  const rBoxY = HDR_BOT + (HDR_H - rBoxH) / 2;
+  page.drawRectangle({ x: rx, y: rBoxY, width: rBoxW, height: rBoxH, borderColor: BLACK, borderWidth: 1.8, color: WHITE });
+  const pmText = "PRESCRIÇÃO MÉDICA";
+  page.drawText(pmText, {
+    x: rx + (rBoxW - bold.widthOfTextAtSize(pmText, 11)) / 2,
+    y: rBoxY + rBoxH - 22, font: bold, size: 11, color: BLACK,
+  });
+  // EKG line
+  const ekgY = rBoxY + 10;
+  const ekgX = rx + 8;
+  const ekgW = rBoxW - 16;
+  const ekgPts: [number, number][] = [
+    [0, 0], [0.28, 0], [0.34, 6], [0.39, 12], [0.44, -14],
+    [0.49, 7], [0.54, 2], [0.59, 0], [1, 0],
+  ];
+  for (let i = 0; i < ekgPts.length - 1; i++) {
+    page.drawLine({
+      start: { x: ekgX + ekgPts[i][0] * ekgW,     y: ekgY + ekgPts[i][1] },
+      end:   { x: ekgX + ekgPts[i+1][0] * ekgW,   y: ekgY + ekgPts[i+1][1] },
+      thickness: 0.9, color: BLACK,
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // PATIENT INFO — 8 rows × 13pt = 104pt
+  // ════════════════════════════════════════════════════════════════════════════
+  const PI_ROW_H = 13;
+  const PI_ROWS  = 8;
+  const PI_TOP   = HDR_BOT;              // 511
+  const PI_BOT   = PI_TOP - PI_ROWS * PI_ROW_H; // 407
+
+  for (let i = 1; i <= PI_ROWS; i++) {
+    page.drawLine({
+      start: { x: ML, y: PI_TOP - i * PI_ROW_H },
+      end:   { x: ML + CW, y: PI_TOP - i * PI_ROW_H },
+      thickness: 0.3, color: BLACK,
+    });
+  }
+
+  const fmtDate = (d: string | null | undefined): string => {
+    if (!d) return "___/___/______";
     const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
     return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
   };
-  const ageStr = [fmtDate(birthDate), age ? `${age} anos` : ""].filter(Boolean).join(" — ");
 
-  page.drawText("PACIENTE", { x: ML + 8, y: y - 10, font: bold, size: 6.5, color: MUTED });
-  page.drawText(patientName, { x: ML + 8, y: y - 23, font: bold, size: 10.5, color: DARK });
-  if (ageStr) {
-    const colX = ML + CW / 2;
-    page.drawText("DATA NASC. / IDADE", { x: colX, y: y - 10, font: bold, size: 6.5, color: MUTED });
-    page.drawText(ageStr, { x: colX, y: y - 23, font, size: 9, color: DARK });
+  function piField(label: string, value: string, x: number, rowTop: number) {
+    page.drawText(label, { x: x + 2, y: rowTop - 4,  font: bold, size: 4.8, color: BLACK });
+    page.drawText(value,  { x: x + 2, y: rowTop - 11, font,       size: 7,   color: BLACK });
   }
-  y -= INFO_H + 4;
-
-  if (cpf || sex) {
-    page.drawRectangle({ x: ML, y: y - 22, width: CW, height: 22, color: rgb(0.97, 0.97, 1), borderColor: BORDER, borderWidth: 0.5 });
-    let xc = ML + 8;
-    if (cpf) {
-      page.drawText("CPF:", { x: xc, y: y - 8, font: bold, size: 6.5, color: MUTED });
-      page.drawText(cpf, { x: xc, y: y - 18, font, size: 8.5, color: DARK });
-      xc += 120;
-    }
-    if (sex) {
-      const sexStr = sex === "M" ? "Masculino" : sex === "F" ? "Feminino" : "Não inf.";
-      page.drawText("SEXO:", { x: xc, y: y - 8, font: bold, size: 6.5, color: MUTED });
-      page.drawText(sexStr, { x: xc, y: y - 18, font, size: 8.5, color: DARK });
-    }
-    y -= 22 + 4;
+  function piVline(x: number, rowTop: number, h: number = PI_ROW_H) {
+    page.drawLine({ start: { x, y: rowTop - h }, end: { x, y: rowTop }, thickness: 0.3, color: BLACK });
   }
 
-  // ── separator ───────────────────────────────────────────────────────────────
-  page.drawLine({ start: { x: ML, y: y - 2 }, end: { x: ML + CW, y: y - 2 }, thickness: 1, color: ACCENT });
-  y -= 14;
+  // Row 1: PRONTUÁRIO | REGISTRO | DATA INTERNAÇÃO | DATA ALTA
+  const r1 = PI_TOP;
+  piField("PRONTUÁRIO:", patient.prontuarioNumber || "_______________", ML + 2, r1);
+  const r1v1 = ML + 148; piVline(r1v1, r1);
+  piField("REGISTRO:", patient.atendimentoNumber || "_______________", r1v1 + 2, r1);
+  const r1v2 = r1v1 + 148; piVline(r1v2, r1);
+  piField("DATA INTERNAÇÃO:", "___/___/______   ___:___", r1v2 + 2, r1);
+  const r1v3 = ML + CW - 148; piVline(r1v3, r1);
+  piField("DATA ALTA:", "___/___/______", r1v3 + 2, r1);
 
-  // ── content ─────────────────────────────────────────────────────────────────
-  const SECTION_KEYS = ["MEDICAMENTOS:", "CURATIVOS:", "MONITORIZAÇÃO:", "DIETA:", "EXAMES SOLICITADOS", "OUTROS:"];
-
-  for (const rawLine of content.split("\n")) {
-    const trimmed = rawLine.trim();
-    if (!trimmed) { y -= 6; continue; }
-
-    const isSection = SECTION_KEYS.some(k => trimmed.toUpperCase().startsWith(k.toUpperCase()));
-    const isDocHeader = trimmed.startsWith("PRESCRIÇÃO MÉDICA —") || trimmed.startsWith("Paciente:");
-
-    if (isSection) {
-      ensureSpace(24);
-      page.drawRectangle({ x: ML, y: y - 18, width: CW, height: 18, color: SECBG });
-      page.drawText(trimmed, { x: ML + 8, y: y - 13, font: bold, size: 9, color: ACCENT });
-      y -= 20;
-    } else if (isDocHeader) {
-      ensureSpace(14);
-      page.drawText(trimmed, { x: ML + 8, y: y - 2, font: bold, size: 7.5, color: MUTED });
-      y -= 13;
-    } else {
-      const wrapped = wrapTextPdf(trimmed, font, 9, CW - 16);
-      for (const wl of wrapped) {
-        ensureSpace(13);
-        page.drawText(wl, { x: ML + 8, y: y - 2, font, size: 9, color: DARK });
-        y -= 13;
-      }
-    }
-  }
-
-  // ── author + date ────────────────────────────────────────────────────────────
-  y -= 10;
-  ensureSpace(20);
-  const rxDateStr = `${createdAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })} às ${createdAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
-  page.drawText(`Prescrição registrada em: ${rxDateStr}`, { x: ML + 8, y: y - 2, font, size: 8, color: MUTED });
-  if (authorName) {
-    y -= 13;
-    ensureSpace(14);
-    page.drawText(`Prescritor(a): ${authorName}`, { x: ML + 8, y: y - 2, font, size: 8, color: MUTED });
-  }
-
-  // ── signature ────────────────────────────────────────────────────────────────
-  ensureSpace(80);
-  y -= 40;
-  const SIG_W = 180;
-  const SIG_X = ML + (CW - SIG_W) / 2;
-  page.drawLine({ start: { x: SIG_X, y }, end: { x: SIG_X + SIG_W, y }, thickness: 1, color: DARK });
-  const sigLabel = authorName ?? "Assinatura / Carimbo do Médico";
-  const sigLabelW = font.widthOfTextAtSize(sigLabel, 7.5);
-  page.drawText(sigLabel, { x: SIG_X + (SIG_W - sigLabelW) / 2, y: y - 12, font, size: 7.5, color: MUTED });
-  if (authorName) {
-    const crmLabel = "CRM: ________________";
-    const crmW = font.widthOfTextAtSize(crmLabel, 7.5);
-    page.drawText(crmLabel, { x: SIG_X + (SIG_W - crmW) / 2, y: y - 24, font, size: 7.5, color: MUTED });
-  }
-
-  // ── footer ───────────────────────────────────────────────────────────────────
-  const lastPage = doc.getPage(doc.getPageCount() - 1);
-  lastPage.drawLine({ start: { x: ML, y: 38 }, end: { x: ML + CW, y: 38 }, thickness: 0.4, color: BORDER });
-  lastPage.drawText(
-    "UPA Breves — Gestão de Pacientes  |  Documento gerado automaticamente pelo sistema",
-    { x: ML, y: 26, font, size: 6.5, color: MUTED },
+  // Row 2: PACIENTE | NACIONALIDADE | CLASSIFICAÇÃO
+  const r2 = PI_TOP - PI_ROW_H;
+  piField("PACIENTE:", patient.fullName.toUpperCase(), ML + 2, r2);
+  const r2v1 = ML + Math.min(
+    4 + bold.widthOfTextAtSize("PACIENTE:", 4.8) + font.widthOfTextAtSize(patient.fullName, 7) + 10,
+    Math.floor(CW * 0.55),
   );
+  piVline(r2v1, r2);
+  piField("NACIONALIDADE:", "Brasileira", r2v1 + 2, r2);
+  const r2v2 = ML + Math.floor(CW * 0.76); piVline(r2v2, r2);
+  const triageLabel: Record<string, string> = { red: "VERMELHO", orange: "LARANJA", yellow: "AMARELO", green: "VERDE", blue: "AZUL" };
+  piField("CLASSIFICAÇÃO:", triageLabel[patient.triageLevel ?? ""] ?? "____________", r2v2 + 2, r2);
+
+  // Row 3: MÃE | CONVÊNIO
+  const r3 = PI_TOP - 2 * PI_ROW_H;
+  piField("MÃE:", patient.motherName || "__________________________________________________", ML + 2, r3);
+  const r3v1 = ML + Math.floor(CW * 0.76); piVline(r3v1, r3);
+  piField("CONVÊNIO:", "SUS", r3v1 + 2, r3);
+
+  // Row 4: SEXO | DATA NASC. | IDADE | C.N.S. | RAÇA
+  const r4 = PI_TOP - 3 * PI_ROW_H;
+  const sexTxt = patient.sex === "F"
+    ? "SEXO:  (X) FEMININO    ( ) MASCULINO"
+    : patient.sex === "M"
+      ? "SEXO:  ( ) FEMININO    (X) MASCULINO"
+      : "SEXO:  ( ) FEMININO    ( ) MASCULINO";
+  page.drawText(sexTxt, { x: ML + 2, y: r4 - 7, font: bold, size: 5.5, color: BLACK });
+  const r4v1 = ML + 200; piVline(r4v1, r4);
+  piField("DATA NASC.:", fmtDate(patient.birthDate), r4v1 + 2, r4);
+  const r4v2 = r4v1 + 100; piVline(r4v2, r4);
+  piField("IDADE:", patient.age ? `${patient.age} A   ___ M   ___ D` : "___ A   ___ M   ___ D", r4v2 + 2, r4);
+  const r4v3 = r4v2 + 128; piVline(r4v3, r4);
+  piField("C.N.S.:", patient.cns || "__________________", r4v3 + 2, r4);
+  const r4v4 = ML + CW - 100; piVline(r4v4, r4);
+  piField("RAÇA:", "_____________", r4v4 + 2, r4);
+
+  // Row 5: RG | CPF | TELEFONE
+  const r5 = PI_TOP - 4 * PI_ROW_H;
+  piField("RG:", patient.rg || "__________________", ML + 2, r5);
+  const r5v1 = ML + 200; piVline(r5v1, r5);
+  piField("CPF:", patient.cpf || "__________________", r5v1 + 2, r5);
+  const r5v2 = ML + CW - 165; piVline(r5v2, r5);
+  piField("TELEFONE:", "(____) __________", r5v2 + 2, r5);
+
+  // Row 6: ENDEREÇO
+  const r6 = PI_TOP - 5 * PI_ROW_H;
+  piField("ENDEREÇO:", patient.address || "____________________________________________________________________________", ML + 2, r6);
+
+  // Row 7: RECEPÇÃO | LEITO | CARÁTER | PESO | DT FICHA
+  const r7 = PI_TOP - 6 * PI_ROW_H;
+  piField("RECEPÇÃO:", "________________________", ML + 2, r7);
+  const r7v1 = ML + 174; piVline(r7v1, r7);
+  piField("LEITO:", "_________", r7v1 + 2, r7);
+  const r7v2 = r7v1 + 74; piVline(r7v2, r7);
+  piField("CARÁTER:", "_________________________", r7v2 + 2, r7);
+  const r7v3 = r7v2 + 170; piVline(r7v3, r7);
+  piField("PESO:", "__________ kg", r7v3 + 2, r7);
+  const r7v4 = r7v3 + 104; piVline(r7v4, r7);
+  piField("DT FICHA:", createdAt.toLocaleDateString("pt-BR") + "  ___:___", r7v4 + 2, r7);
+
+  // Row 8: MÉDICO ASSISTENTE | UNIDADE | QUARTO
+  const r8 = PI_TOP - 7 * PI_ROW_H;
+  piField("MÉDICO ASSISTENTE:", authorName || "_____________________________", ML + 2, r8);
+  const r8v1 = ML + Math.floor(CW * 0.60); piVline(r8v1, r8);
+  piField("UNIDADE:", "UPA 24H — Breves", r8v1 + 2, r8);
+  const r8v2 = ML + Math.floor(CW * 0.85); piVline(r8v2, r8);
+  piField("QUARTO:", "____________", r8v2 + 2, r8);
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TABLE AREA — 3 columns
+  // ════════════════════════════════════════════════════════════════════════════
+  const FOOTER_H = 36;
+  const TBL_TOP  = PI_BOT;            // 407
+  const TBL_BOT  = MB + FOOTER_H;     // 48
+  const TBL_H    = TBL_TOP - TBL_BOT; // 359
+
+  const MED_W = Math.round(CW * 0.44); // ~355 — medicações
+  const APR_W = Math.round(CW * 0.30); // ~242 — aprazamento
+  const OBS_W = CW - MED_W - APR_W;   // ~209 — observações
+
+  const MED_X = ML;
+  const APR_X = MED_X + MED_W;
+  const OBS_X = APR_X + APR_W;
+
+  page.drawLine({ start: { x: APR_X, y: TBL_BOT }, end: { x: APR_X, y: TBL_TOP }, thickness: 0.8, color: BLACK });
+  page.drawLine({ start: { x: OBS_X, y: TBL_BOT }, end: { x: OBS_X, y: TBL_TOP }, thickness: 0.8, color: BLACK });
+
+  // Column headers (dark green)
+  const COL_HDR_H = 14;
+  const COL_SUB_H = 10;
+
+  const colHeaders: [number, number, string][] = [
+    [MED_X, MED_W, "MEDICAÇÕES PRESCRITAS"],
+    [APR_X, APR_W, "APRAZAMENTO"],
+    [OBS_X, OBS_W, "OBSERVAÇÕES"],
+  ];
+  for (const [x, w, txt] of colHeaders) {
+    page.drawRectangle({ x, y: TBL_TOP - COL_HDR_H, width: w, height: COL_HDR_H, color: DK_GREEN });
+    page.drawText(txt, {
+      x: x + (w - bold.widthOfTextAtSize(txt, 7)) / 2,
+      y: TBL_TOP - COL_HDR_H + 4, font: bold, size: 7, color: WHITE,
+    });
+  }
+
+  // Sub-headers (light green)
+  const SUB_Y = TBL_TOP - COL_HDR_H - COL_SUB_H;
+  for (const [x, w] of colHeaders) {
+    page.drawRectangle({ x, y: SUB_Y, width: w, height: COL_SUB_H, color: LT_GREEN });
+  }
+
+  // Medication sub-columns: ITEM | RX | DOSE | VIA
+  const ITEM_W = 28;
+  const DOSE_W = 45;
+  const VIA_W  = 35;
+  const RX_W   = MED_W - ITEM_W - DOSE_W - VIA_W;
+
+  const ITEM_X = MED_X;
+  const RX_X   = ITEM_X + ITEM_W;
+  const DOSE_X = RX_X + RX_W;
+  const VIA_X  = DOSE_X + DOSE_W;
+
+  [RX_X, DOSE_X, VIA_X].forEach(x => {
+    page.drawLine({ start: { x, y: TBL_BOT }, end: { x, y: TBL_TOP }, thickness: 0.3, color: BLACK });
+  });
+
+  page.drawText("ITEM",  { x: ITEM_X + 2, y: SUB_Y + 3, font: bold, size: 5,   color: BLACK });
+  page.drawText("MEDICAÇÃO / APRESENTAÇÃO / CONCENTRAÇÃO / VIA", { x: RX_X + 2, y: SUB_Y + 3, font: bold, size: 4.5, color: BLACK });
+  page.drawText("DOSE",  { x: DOSE_X + 2, y: SUB_Y + 3, font: bold, size: 5,   color: BLACK });
+  page.drawText("VIA",   { x: VIA_X  + 2, y: SUB_Y + 3, font: bold, size: 5,   color: BLACK });
+  page.drawText("HORÁRIOS (PREENCHER MANUALMENTE)", { x: APR_X + 4, y: SUB_Y + 3, font: bold, size: 4.8, color: BLACK });
+
+  // ── Parse medication items from content ──────────────────────────────────────
+  const SKIP_HDR = ["PRESCRIÇÃO MÉDICA —", "PACIENTE:", "MEDICAMENTOS:", "CURATIVOS:", "MONITORIZAÇÃO:", "DIETA:", "EXAMES SOLICITADOS", "OUTROS:"];
+  const medItems: string[] = [];
+  for (const rawLine of content.split("\n")) {
+    const t = rawLine.trim();
+    if (!t) continue;
+    if (SKIP_HDR.some(h => t.toUpperCase().startsWith(h.toUpperCase()))) continue;
+    const nm = t.match(/^(\d+)[.)]\s+(.+)/);
+    if (nm) {
+      medItems.push(nm[2]);
+    } else if (!t.startsWith("PRESCRIÇÃO") && !t.startsWith("Paciente:")) {
+      medItems.push(t);
+    }
+  }
+
+  // ── 10 medication rows ───────────────────────────────────────────────────────
+  const NUM_ROWS = 10;
+  const DATA_TOP = SUB_Y;
+  const ROW_H    = Math.floor((DATA_TOP - TBL_BOT) / NUM_ROWS);
+
+  for (let i = 0; i < NUM_ROWS; i++) {
+    const rowTop = DATA_TOP - i * ROW_H;
+    const rowBot = rowTop - ROW_H;
+    page.drawLine({ start: { x: ML, y: rowBot }, end: { x: ML + CW, y: rowBot }, thickness: 0.3, color: BLACK });
+
+    // Item number
+    const numLbl = `${i + 1}.`;
+    page.drawText(numLbl, {
+      x: ITEM_X + (ITEM_W - font.widthOfTextAtSize(numLbl, 7)) / 2,
+      y: rowTop - 9, font: bold, size: 7, color: BLACK,
+    });
+
+    // Medication text
+    const med = medItems[i] ?? "";
+    if (med) {
+      const viaMatch  = med.match(/\b(VO|EV|IV|SC|IM|SL|ORAL|INALATÓRIO|NASAL|RETAL|SUBLINGUAL|TÓPICO)\b/i);
+      const doseMatch = med.match(/\b(\d+[\.,]?\d*\s*(?:mg|g|ml|mcg|UI|comp?|cáps?|gts?|amp|mEq|U))\b/i);
+      const viaStr  = viaMatch  ? viaMatch[1].toUpperCase()  : "";
+      const doseStr = doseMatch ? doseMatch[1] : "";
+
+      wrapTextPdf(med, font, 6.5, RX_W - 4).slice(0, 2).forEach((wl, li) => {
+        page.drawText(wl, { x: RX_X + 2, y: rowTop - 8 - li * 8, font, size: 6.5, color: BLACK });
+      });
+      if (doseStr) page.drawText(doseStr, { x: DOSE_X + 2, y: rowTop - 8, font, size: 6.5, color: BLACK });
+      if (viaStr)  page.drawText(viaStr,  { x: VIA_X  + 2, y: rowTop - 8, font, size: 6.5, color: BLACK });
+    }
+
+    // APRAZAMENTO number
+    page.drawText(`${i + 1}.`, { x: APR_X + 4, y: rowTop - 9, font, size: 7, color: BLACK });
+
+    // OBSERVAÇÕES subtle line
+    page.drawLine({
+      start: { x: OBS_X + 4, y: rowTop - 8 },
+      end:   { x: ML + CW - 4, y: rowTop - 8 },
+      thickness: 0.15, color: rgb(0.75, 0.75, 0.75),
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // FOOTER — Assinatura | CRM | DATA
+  // ════════════════════════════════════════════════════════════════════════════
+  const FTR_Y = MB + FOOTER_H; // 48
+  page.drawLine({ start: { x: ML, y: FTR_Y }, end: { x: ML + CW, y: FTR_Y }, thickness: 0.5, color: BLACK });
+
+  const SIG_LINE_Y = MB + 22;
+  const SIG_X      = ML + 20;
+  const SIG_W      = 205;
+  page.drawLine({ start: { x: SIG_X, y: SIG_LINE_Y }, end: { x: SIG_X + SIG_W, y: SIG_LINE_Y }, thickness: 0.8, color: BLACK });
+  const sigLbl = "ASSINATURA E CARIMBO DO MÉDICO";
+  page.drawText(sigLbl, {
+    x: SIG_X + (SIG_W - font.widthOfTextAtSize(sigLbl, 5.5)) / 2,
+    y: SIG_LINE_Y - 9, font, size: 5.5, color: BLACK,
+  });
+
+  const crmStr = `CRM: ${authorCrm ?? "______________________________"}`;
+  page.drawText(crmStr, {
+    x: ML + CW / 2 - font.widthOfTextAtSize(crmStr, 8) / 2,
+    y: SIG_LINE_Y, font, size: 8, color: BLACK,
+  });
+
+  const dateStr = `DATA: ___/___/______     ___:___`;
+  page.drawText(dateStr, {
+    x: ML + CW - font.widthOfTextAtSize(dateStr, 8) - 20,
+    y: SIG_LINE_Y, font, size: 8, color: BLACK,
+  });
 
   return doc.save();
 }
@@ -1475,25 +1593,36 @@ router.get("/:id/prescriptions/:prescriptionId/pdf", requirePermissao("gerar_pdf
   if (!prescription) { res.status(404).json({ error: "Prescrição não encontrada" }); return; }
   if (prescription.type !== "medical") { res.status(400).json({ error: "Apenas prescrições médicas podem ser impressas" }); return; }
 
-  // look up the prescriber name if available
   let authorName: string | null = null;
+  let authorCrm:  string | null = null;
   if (prescription.userId) {
-    const [staff] = await db.select({ name: staffTable.name })
+    const [staff] = await db.select({ name: staffTable.name, crm: staffTable.corenCrm })
       .from(staffTable)
       .where(eq(staffTable.id, prescription.userId))
       .limit(1);
     authorName = staff?.name ?? null;
+    authorCrm  = staff?.crm  ?? null;
   }
 
   const pdfBytes = await buildPrescricaoPdf(
-    patient.fullName,
-    patient.birthDate ?? null,
-    patient.age ?? null,
-    patient.sex ?? null,
-    patient.cpf ?? null,
+    {
+      fullName:         patient.fullName,
+      birthDate:        patient.birthDate        ?? null,
+      age:              patient.age              ?? null,
+      sex:              patient.sex              ?? null,
+      cpf:              patient.cpf              ?? null,
+      rg:               patient.rg               ?? null,
+      motherName:       patient.motherName       ?? null,
+      address:          patient.address          ?? null,
+      cns:              patient.cns              ?? null,
+      prontuarioNumber: patient.prontuarioNumber ?? null,
+      atendimentoNumber:patient.atendimentoNumber?? null,
+      triageLevel:      patient.triageLevel       ?? null,
+    },
     prescription.content,
     prescription.createdAt,
     authorName,
+    authorCrm,
   );
 
   const safeName = patient.fullName.replace(/\s+/g, "_");
