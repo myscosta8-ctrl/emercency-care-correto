@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { useAuth } from "@/lib/use-auth";
 import { usePode } from "@/hooks/use-pode";
 import { useFeatures } from "@/lib/features-context";
-import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle, Mail, ToggleLeft, ToggleRight, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Users, X, Check, ChevronDown, UserCircle, Mail, ToggleLeft, ToggleRight, ShieldCheck, KeyRound } from "lucide-react";
 import { useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -294,9 +294,11 @@ interface StaffFormProps {
 
 function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
   const { toast } = useToast();
+  const { activeUser } = useAuth();
   const createMut = useCreateStaff();
   const updateMut = useUpdateStaff();
   const { featureAtiva } = useFeatures();
+  const [resetting, setResetting] = useState(false);
   const preAdultoAtivo = featureAtiva("setor_pre_adulto");
 
   const [form, setForm] = useState<FormData>(() => {
@@ -371,6 +373,24 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
     { value: "todos",                 label: "Sem restrição (todos os setores)" },
     ...SETORES_PLANTAO.filter(s => s.value !== "observacao_pre_adulto" || preAdultoAtivo),
   ];
+
+  const handleResetPassword = async () => {
+    if (!initial) return;
+    setResetting(true);
+    try {
+      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+      const res = await fetch(`${base}/api/staff/${initial.id}/reset-password`, {
+        method: "POST",
+        headers: { "x-staff-id": String(activeUser?.id ?? "") },
+      });
+      if (!res.ok) throw new Error();
+      toast({ title: "Senha redefinida", description: `A senha de ${initial.name} foi redefinida para 1234. O usuário será obrigado a alterá-la no próximo acesso.` });
+    } catch {
+      toast({ title: "Erro ao redefinir senha", variant: "destructive" });
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -614,6 +634,28 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
               />
             </div>
           </div>
+
+          {/* reset rápido para 1234 — apenas no modo edição */}
+          {initial && (
+            <div className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/10 px-4 py-3">
+              <KeyRound className="h-4 w-4 text-amber-400 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium">Redefinir senha</p>
+                <p className="text-[11px] text-muted-foreground">A senha será redefinida para <strong>1234</strong> e o usuário deverá alterá-la no próximo acesso.</p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="shrink-0 border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                disabled={resetting}
+                onClick={handleResetPassword}
+              >
+                {resetting ? "Redefinindo…" : "Redefinir para 1234"}
+              </Button>
+            </div>
+          )}
+
           {!initial && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
               A senha inicial deve ter no mínimo 8 caracteres. O funcionário poderá alterá-la após o primeiro acesso.

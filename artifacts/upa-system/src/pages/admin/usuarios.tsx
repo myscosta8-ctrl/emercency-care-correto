@@ -1,11 +1,12 @@
 import { useState, useCallback } from "react";
 import { AdminLayout } from "./layout";
+import { useAuth } from "@/lib/use-auth";
 import {
   useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, getListStaffQueryKey,
 } from "@workspace/api-client-react";
 import type { StaffMember } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Search, UserCircle, Check, Minus, ToggleLeft, ToggleRight, ShieldCheck } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, UserCircle, Check, Minus, ToggleLeft, ToggleRight, ShieldCheck, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,19 +94,42 @@ function PermissoesPreview({ perfil }: { perfil: Perfil }) {
 function StaffForm({
   initial,
   isEditing,
+  memberId,
   onSave,
   onCancel,
   isPending,
 }: {
   initial: FormState;
   isEditing: boolean;
+  memberId?: number;
   onSave: (f: FormState) => void;
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { activeUser } = useAuth();
+  const { toast } = useToast();
   const [form, setForm] = useState<FormState>(initial);
+  const [resetting, setResetting] = useState(false);
   const set = (k: keyof FormState, v: string | boolean) =>
     setForm(prev => ({ ...prev, [k]: v }));
+
+  async function handleResetPassword() {
+    if (!memberId) return;
+    setResetting(true);
+    try {
+      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+      const res = await fetch(`${base}/api/staff/${memberId}/reset-password`, {
+        method: "POST",
+        headers: { "x-staff-id": String(activeUser?.id ?? "") },
+      });
+      if (!res.ok) throw new Error();
+      toast({ title: "Senha redefinida", description: `Senha de ${form.name} redefinida para 1234. Usuário deverá alterá-la no próximo acesso.` });
+    } catch {
+      toast({ title: "Erro ao redefinir senha", variant: "destructive" });
+    } finally {
+      setResetting(false);
+    }
+  }
 
   return (
     <div className="space-y-4 pt-1">
@@ -177,6 +201,27 @@ function StaffForm({
         <div className="col-span-2">
           <PermissoesPreview perfil={form.role as Perfil} />
         </div>
+
+        {/* Reset rápido para 1234 — apenas no modo edição */}
+        {isEditing && memberId && (
+          <div className="col-span-2 flex items-center gap-3 rounded-lg border border-border/40 bg-muted/10 px-3 py-2.5">
+            <KeyRound className="h-4 w-4 text-amber-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium">Redefinir senha</p>
+              <p className="text-[11px] text-muted-foreground">Redefine para <strong>1234</strong> — usuário alterará no próximo acesso.</p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="shrink-0 border-amber-500/40 text-amber-400 hover:bg-amber-500/10 text-xs"
+              disabled={resetting}
+              onClick={handleResetPassword}
+            >
+              {resetting ? "Redefinindo…" : "Redefinir para 1234"}
+            </Button>
+          </div>
+        )}
       </div>
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="outline" size="sm" onClick={onCancel} disabled={isPending}>Cancelar</Button>
@@ -412,6 +457,7 @@ export default function AdminUsuariosPage() {
               active: editingMember.active,
             } : EMPTY_FORM}
             isEditing={!!editingMember}
+            memberId={editingMember?.id}
             onSave={handleSave}
             onCancel={() => setIsFormOpen(false)}
             isPending={isPending}

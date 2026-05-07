@@ -131,6 +131,17 @@ router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   res.json(serialize(updated));
 });
 
+router.post("/:id/reset-password", requirePermissao("gerenciar_usuarios"), async (req, res) => {
+  const id = Number(req.params["id"]);
+  const defaultHash = await bcrypt.hash("1234", 12);
+  const [updated] = await db.update(staffTable)
+    .set({ passwordHash: defaultHash, mustChangePassword: true, updatedAt: new Date() })
+    .where(eq(staffTable.id, id))
+    .returning();
+  if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+  res.json({ ok: true });
+});
+
 router.delete("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   const id = Number(req.params["id"]);
   await db.delete(staffTable).where(eq(staffTable.id, id));
