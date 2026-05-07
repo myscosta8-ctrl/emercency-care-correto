@@ -90,8 +90,9 @@ The project is built as a pnpm workspace monorepo using TypeScript, facilitating
 # Banco de Dados & Persistência
 
 *   **Banco primário (desenvolvimento):** PostgreSQL do Replit — acessado via `DATABASE_URL`.
-*   **Banco externo (Supabase):** Configurado via `SUPABASE_DATABASE_URL`. Quando essa variável estiver definida, o sistema se conecta ao Supabase em vez do banco local. Isso é configurado automaticamente no deploy.
-*   **Prioridade de conexão:** `SUPABASE_DATABASE_URL` > `DATABASE_URL` (em `lib/db/src/index.ts`).
+*   **Banco externo (Supabase):** Configurado via `SUPABASE_DATABASE_URL`. Quando `NODE_ENV=production`, o sistema usa Supabase; em dev usa o banco local do Replit.
+*   **Prioridade de conexão:** Supabase (produção) > Replit PostgreSQL (dev) — ver `lib/db/src/index.ts`.
+*   **Supabase Storage:** Uploads de laudos/exames vão para bucket `exam-files` quando `SUPABASE_SERVICE_KEY` estiver definida. Sem ela, fallback automático para base64 no banco. Helper: `artifacts/api-server/src/lib/supabase-storage.ts`.
 *   **Backup de dados:** `GET /api/backup/export` (requer permissão `admin`) — retorna JSON com todos os dados do sistema para download.
 
 # External Dependencies

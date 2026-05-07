@@ -2,6 +2,7 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { requirePermissao } from "../middleware/require-auth";
+import { uploadToStorage, deleteFromStorage } from "../lib/supabase-storage";
 import { db, pool, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable } from "@workspace/db";
 import { eq, sql, desc, and, inArray, or, ilike } from "drizzle-orm";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -776,6 +777,7 @@ const serializeExam = (e: typeof examResultsTable.$inferSelect) => ({
   liberadoAt: e.liberadoAt ? e.liberadoAt.toISOString() : null,
   createdAt:  e.createdAt.toISOString(),
   updatedAt:  e.updatedAt.toISOString(),
+  fileUrl:    e.fileUrl ?? "",
 });
 
 router.get("/:id/exam-results", async (req, res) => {
@@ -793,6 +795,14 @@ router.post("/:id/exam-results", async (req, res) => {
     examType: "laboratorial" | "imagem"; prioridade?: "urgente" | "rotina" | "eletivo";
     resultText?: string; fileData?: string; fileName?: string; fileMime?: string;
   };
+
+  let fileData = body.fileData ?? "";
+  let fileUrl  = "";
+  if (fileData && body.fileName && body.fileMime) {
+    const url = await uploadToStorage(body.fileName, body.fileMime, fileData);
+    if (url) { fileUrl = url; fileData = ""; }
+  }
+
   const [exam] = await db.insert(examResultsTable).values({
     patientId:   id,
     uploadedBy:  body.uploadedBy ?? 0,
@@ -800,9 +810,10 @@ router.post("/:id/exam-results", async (req, res) => {
     examType:    body.examType,
     prioridade:  body.prioridade ?? "rotina",
     resultText:  body.resultText ?? "",
-    fileData:    body.fileData ?? "",
+    fileData,
     fileName:    body.fileName ?? "",
     fileMime:    body.fileMime ?? "",
+    fileUrl,
     status:      "pendente",
     notified:    false,
     updatedAt:   new Date(),
@@ -816,15 +827,24 @@ router.put("/:id/exam-results/:examId/liberar", async (req, res) => {
   const body = req.body as {
     resultText?: string; fileData?: string; fileName?: string; fileMime?: string;
   };
+
+  let fileData = body.fileData ?? "";
+  let fileUrl  = "";
+  if (fileData && body.fileName && body.fileMime) {
+    const url = await uploadToStorage(body.fileName, body.fileMime, fileData);
+    if (url) { fileUrl = url; fileData = ""; }
+  }
+
   const [exam] = await db.update(examResultsTable)
     .set({
       status:     "liberado",
       liberadoAt: new Date(),
       notified:   false,
       resultText: body.resultText ?? "",
-      fileData:   body.fileData ?? "",
+      fileData,
       fileName:   body.fileName ?? "",
       fileMime:   body.fileMime ?? "",
+      fileUrl,
       updatedAt:  new Date(),
     })
     .where(eq(examResultsTable.id, examId))
@@ -943,8 +963,19 @@ router.patch("/:id/exam-requests/:examRequestId/status", requirePermissao("regis
   if (body.status === "laudado") {
     if (body.resultText !== undefined)     patch.resultText     = body.resultText;
     if (body.resultFileName !== undefined) patch.resultFileName = body.resultFileName;
-    if (body.resultFileData !== undefined) patch.resultFileData = body.resultFileData;
     if (body.resultFileMime !== undefined) patch.resultFileMime = body.resultFileMime;
+
+    if (body.resultFileData && body.resultFileName && body.resultFileMime) {
+      const url = await uploadToStorage(body.resultFileName, body.resultFileMime, body.resultFileData);
+      if (url) {
+        patch.resultFileUrl  = url;
+        patch.resultFileData = "";
+      } else {
+        patch.resultFileData = body.resultFileData;
+      }
+    } else if (body.resultFileData !== undefined) {
+      patch.resultFileData = body.resultFileData;
+    }
   }
 
   const [examRequest] = await db.update(patientExamRequestsTable)

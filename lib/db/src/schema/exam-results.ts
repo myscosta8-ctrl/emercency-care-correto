@@ -16,6 +16,7 @@ export const examResultsTable = pgTable("exam_results", {
   fileData:       text("file_data").notNull().default(""),
   fileName:       text("file_name").notNull().default(""),
   fileMime:       text("file_mime").notNull().default(""),
+  fileUrl:        text("file_url").notNull().default(""),
 
   // ── status e notificação ───────────────────────────────────────────────────
   status:         text("status", { enum: ["pendente", "liberado"] }).notNull().default("pendente"),

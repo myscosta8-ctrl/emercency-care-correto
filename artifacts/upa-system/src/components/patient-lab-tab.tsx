@@ -19,6 +19,7 @@ export interface ExamResultItem {
   fileData: string;
   fileName: string;
   fileMime: string;
+  fileUrl?: string;
   status: "pendente" | "liberado";
   liberadoAt: string | null;
   notified: boolean;
@@ -373,8 +374,10 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
                   )}
                   {exam.fileName && (
                     <a
-                      href={`data:${exam.fileMime || "application/octet-stream"};base64,${exam.fileData}`}
-                      download={exam.fileName}
+                      href={exam.fileUrl || `data:${exam.fileMime || "application/octet-stream"};base64,${exam.fileData}`}
+                      download={!exam.fileUrl ? exam.fileName : undefined}
+                      target={exam.fileUrl ? "_blank" : undefined}
+                      rel={exam.fileUrl ? "noopener noreferrer" : undefined}
                       className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"
                     >
                       <FileText className="h-3 w-3" />{exam.fileName}

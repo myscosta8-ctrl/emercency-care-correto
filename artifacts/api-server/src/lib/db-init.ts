@@ -495,6 +495,10 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_internacao timestamp without time zone;
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_transferencia timestamp without time zone;
 
+        -- Supabase Storage: URLs de arquivos de exame
+        ALTER TABLE public.exam_results ADD COLUMN IF NOT EXISTS file_url text NOT NULL DEFAULT '';
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_url text NOT NULL DEFAULT '';
+
         -- tabela de alertas clínicos por paciente
         CREATE TABLE IF NOT EXISTS public.patient_alerts (
           id serial PRIMARY KEY,

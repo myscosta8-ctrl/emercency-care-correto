@@ -23,6 +23,7 @@ export const patientExamRequestsTable = pgTable("patient_exam_requests", {
   resultFileName: text("result_file_name").notNull().default(""),
   resultFileData: text("result_file_data").notNull().default(""),
   resultFileMime: text("result_file_mime").notNull().default(""),
+  resultFileUrl:  text("result_file_url").notNull().default(""),
   invalidado: boolean("invalidado").notNull().default(false),
   motivoInvalidacao: text("motivo_invalidacao").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
