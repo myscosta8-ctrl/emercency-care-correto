@@ -556,6 +556,12 @@ export const UpdatePatientStatusBody = zod.object({
     ])
     .optional(),
   user_id: zod.number().optional(),
+  bed_id: zod
+    .number()
+    .optional()
+    .describe(
+      "ID do leito específico para alocação (obrigatório no frontend para setores de observação)",
+    ),
 });
 
 export const UpdatePatientStatusResponse = zod.object({

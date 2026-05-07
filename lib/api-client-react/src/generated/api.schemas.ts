@@ -283,6 +283,8 @@ export interface UpdatePatientStatusBody {
   triage_level?: UpdatePatientStatusBodyTriageLevel;
   care_status?: UpdatePatientStatusBodyCareStatus;
   user_id?: number;
+  /** ID do leito específico para alocação (obrigatório no frontend para setores de observação) */
+  bed_id?: number;
 }
 
 export type ExamResultExamType =

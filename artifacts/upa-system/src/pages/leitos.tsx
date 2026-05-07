@@ -740,12 +740,12 @@ export default function LeitosPage() {
 
   useEffect(() => { fetchBeds(); }, [fetchBeds]);
 
-  /* Auto-refresh every 60 seconds (data + stay time tick) */
+  /* Auto-refresh every 30 seconds (data + stay time tick) */
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setTick(v => v + 1);
       fetchBeds(true);
-    }, 60_000);
+    }, 30_000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [fetchBeds]);
 

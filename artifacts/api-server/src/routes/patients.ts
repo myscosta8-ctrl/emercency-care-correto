@@ -498,7 +498,7 @@ router.put("/:id", requirePermissao("editar_paciente"), async (req, res) => {
 
 router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
   const { id }              = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
-  const { triage_level, care_status, user_id } = UpdatePatientStatusBody.parse(req.body);
+  const { triage_level, care_status, user_id, bed_id } = UpdatePatientStatusBody.parse(req.body);
 
   const [current] = await db.select().from(patientsTable).where(eq(patientsTable.id, id));
   if (!current) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
@@ -546,27 +546,53 @@ router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
         .where(eq(bedsTable.patientId, id));
     }
 
-    // Alocar leito automático ao mover para setor de internação/observação
+    // Alocar leito ao mover para setor de internação/observação
     if (newCareStatus === "Em Observação" || newCareStatus === "Internado") {
-      const targetSector = current.sector ? BED_SECTOR_MAP[current.sector] : null;
-      if (targetSector) {
-        const existing = await db.select({ id: bedsTable.id })
-          .from(bedsTable).where(eq(bedsTable.patientId, id)).limit(1);
+      if (bed_id) {
+        // Leito escolhido explicitamente pelo usuário
+        const [chosenBed] = await db.select().from(bedsTable).where(eq(bedsTable.id, bed_id));
+        if (chosenBed) {
+          if (chosenBed.isOccupied && chosenBed.patientId !== id) {
+            res.status(409).json({ error: `Leito ${chosenBed.bedId} já está ocupado. Escolha outro leito.` });
+            return;
+          }
+          // Libera qualquer leito anterior do paciente (exceto o que está sendo alocado)
+          await db.update(bedsTable)
+            .set({ isOccupied: false, patientId: null, admissionTime: null, updatedAt: new Date() })
+            .where(and(eq(bedsTable.patientId, id), sql`${bedsTable.id} != ${bed_id}`));
+          // Aloca o leito escolhido
+          await db.update(bedsTable)
+            .set({ isOccupied: true, patientId: id, admissionTime: new Date(), updatedAt: new Date() })
+            .where(eq(bedsTable.id, bed_id));
+          // Atualiza o setor do paciente para o setor do leito escolhido
+          type PatientSector = "triagem" | "sala_vermelha" | "observacao_adulto" | "observacao_pediatrica" | "observacao_pre_adulto";
+          await db.update(patientsTable)
+            .set({ sector: chosenBed.sector as PatientSector, updatedAt: new Date() })
+            .where(eq(patientsTable.id, id));
+          req.log.info({ action: "bed_explicit_allocated", bedId: chosenBed.bedId, patientId: id, sector: chosenBed.sector }, "Leito alocado por escolha do usuário");
+        }
+      } else {
+        // Fallback: alocar o primeiro leito livre no setor (retrocompatibilidade)
+        const targetSector = current.sector ? BED_SECTOR_MAP[current.sector] : null;
+        if (targetSector) {
+          const existing = await db.select({ id: bedsTable.id })
+            .from(bedsTable).where(eq(bedsTable.patientId, id)).limit(1);
 
-        if (existing.length === 0) {
-          const [freeBed] = await db.select()
-            .from(bedsTable)
-            .where(and(eq(bedsTable.sector, targetSector), eq(bedsTable.isOccupied, false)))
-            .orderBy(bedsTable.bedNumber)
-            .limit(1);
+          if (existing.length === 0) {
+            const [freeBed] = await db.select()
+              .from(bedsTable)
+              .where(and(eq(bedsTable.sector, targetSector), eq(bedsTable.isOccupied, false)))
+              .orderBy(bedsTable.bedNumber)
+              .limit(1);
 
-          if (freeBed) {
-            await db.update(bedsTable)
-              .set({ isOccupied: true, patientId: id, admissionTime: new Date(), updatedAt: new Date() })
-              .where(eq(bedsTable.id, freeBed.id));
-            req.log.info({ action: "bed_auto_allocated", bedId: freeBed.bedId, patientId: id, sector: targetSector }, "Leito alocado automaticamente");
-          } else {
-            req.log.warn({ action: "bed_no_vacancy", patientId: id, sector: targetSector }, "Nenhum leito livre no setor para alocação automática");
+            if (freeBed) {
+              await db.update(bedsTable)
+                .set({ isOccupied: true, patientId: id, admissionTime: new Date(), updatedAt: new Date() })
+                .where(eq(bedsTable.id, freeBed.id));
+              req.log.info({ action: "bed_auto_allocated", bedId: freeBed.bedId, patientId: id, sector: targetSector }, "Leito alocado automaticamente");
+            } else {
+              req.log.warn({ action: "bed_no_vacancy", patientId: id, sector: targetSector }, "Nenhum leito livre no setor");
+            }
           }
         }
       }

@@ -1675,6 +1675,9 @@ components:
           enum: ["Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação", "Em Observação", "Internado", "Em Transferência", "Alta"]
         user_id:
           type: integer
+        bed_id:
+          type: integer
+          description: ID do leito específico para alocação (obrigatório no frontend para setores de observação)
 
     ExamResult:
       type: object
