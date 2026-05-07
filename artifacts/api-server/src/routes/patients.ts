@@ -498,7 +498,7 @@ router.put("/:id", requirePermissao("editar_paciente"), async (req, res) => {
 
 router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
   const { id }              = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
-  const { triage_level, care_status, user_id, bed_id } = UpdatePatientStatusBody.parse(req.body);
+  const { triage_level, care_status, user_id, bed_id, alertaEnfermeiro } = UpdatePatientStatusBody.parse(req.body);
 
   const [current] = await db.select().from(patientsTable).where(eq(patientsTable.id, id));
   if (!current) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
@@ -508,6 +508,7 @@ router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
 
   const patch: Partial<typeof patientsTable.$inferInsert> = { updatedAt: new Date() };
   if (triage_level)   patch.triageLevel = triage_level as TriageLevel;
+  if (alertaEnfermeiro !== undefined) patch.alertaEnfermeiro = alertaEnfermeiro;
   if (newCareStatus)  {
     patch.careStatus = newCareStatus;
     patch.careStatusChangedAt = new Date();

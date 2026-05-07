@@ -5,7 +5,15 @@ import type { Request } from "express";
 
 const router = Router();
 
-type AlertReason = "triage_red" | "spo2_baixo" | "fc_alta" | "pas_baixa" | "multiplos";
+type AlertReason =
+  | "triage_red"
+  | "spo2_baixo"
+  | "fc_alta"
+  | "pas_baixa"
+  | "temp_alta"
+  | "fr_alta"
+  | "alerta_enf"
+  | "multiplos";
 
 interface CriticalAlert {
   patientId: number;
@@ -20,15 +28,22 @@ interface CriticalAlert {
   spo2: number | null;
   hr: number | null;
   bpSystolic: number | null;
+  temp: number | null;
+  rr: number | null;
+  alertaEnfermeiro: string;
 }
 
 /**
  * GET /api/alerts/critical
  * Returns all patients in a critical state based on:
  *   - triage_level = 'red'
- *   - SpO2 < 90
+ *   - SpO₂ < 90
  *   - HR > 130
  *   - Systolic BP < 90
+ *   - Temperature ≥ 38.5 °C  (febre)
+ *   - Temperature ≥ 40 °C    (febre alta — crítico)
+ *   - RR > 25 irpm           (taquipneia)
+ *   - alerta_enfermeiro ≠ '' (nota de gravidade do enfermeiro)
  *
  * Uses a LATERAL join to efficiently fetch each patient's latest vitals
  * in a single query (no N+1).
@@ -37,35 +52,43 @@ router.get("/critical", async (req: Request, res) => {
   try {
     const rows = await db.execute(sql`
       SELECT
-        p.id                 AS "patientId",
-        p.full_name          AS "full_name",
-        p.triage_level       AS "triage_level",
-        p.sector             AS "sector",
-        p.bed                AS "bed",
-        p.diagnosis          AS "diagnosis",
-        v.spo2               AS "spo2",
-        v.hr                 AS "hr",
-        v.bp                 AS "bp",
-        v.created_at         AS "vitalAt"
+        p.id                   AS "patientId",
+        p.full_name            AS "full_name",
+        p.triage_level         AS "triage_level",
+        p.sector               AS "sector",
+        p.bed                  AS "bed",
+        p.diagnosis            AS "diagnosis",
+        p.alerta_enfermeiro    AS "alertaEnfermeiro",
+        v.spo2                 AS "spo2",
+        v.hr                   AS "hr",
+        v.rr                   AS "rr",
+        v.temp                 AS "temp",
+        v.bp                   AS "bp",
+        v.created_at           AS "vitalAt"
       FROM patients p
       LEFT JOIN LATERAL (
-        SELECT spo2, hr, bp, created_at
+        SELECT spo2, hr, rr, temp, bp, created_at
         FROM vitals
         WHERE patient_id = p.id
         ORDER BY created_at DESC
         LIMIT 1
       ) v ON true
-      WHERE
-        p.triage_level = 'red'
-        OR (v.spo2 IS NOT NULL AND v.spo2 > 0 AND v.spo2 < 90)
-        OR (v.hr   IS NOT NULL AND v.hr   > 0 AND v.hr   > 130)
-        OR (
-          v.bp IS NOT NULL
-          AND v.bp != ''
-          AND v.bp LIKE '%/%'
-          AND SPLIT_PART(v.bp, '/', 1) ~ '^[0-9]+$'
-          AND SPLIT_PART(v.bp, '/', 1)::integer > 0
-          AND SPLIT_PART(v.bp, '/', 1)::integer < 90
+      WHERE p.care_status != 'Alta'
+        AND (
+          p.triage_level = 'red'
+          OR (p.alerta_enfermeiro IS NOT NULL AND p.alerta_enfermeiro != '')
+          OR (v.spo2 IS NOT NULL AND v.spo2 > 0 AND v.spo2 < 90)
+          OR (v.hr   IS NOT NULL AND v.hr   > 0 AND v.hr   > 130)
+          OR (v.temp IS NOT NULL AND v.temp >= 38.5)
+          OR (v.rr   IS NOT NULL AND v.rr   > 0 AND v.rr   > 25)
+          OR (
+            v.bp IS NOT NULL
+            AND v.bp != ''
+            AND v.bp LIKE '%/%'
+            AND SPLIT_PART(v.bp, '/', 1) ~ '^[0-9]+$'
+            AND SPLIT_PART(v.bp, '/', 1)::integer > 0
+            AND SPLIT_PART(v.bp, '/', 1)::integer < 90
+          )
         )
       ORDER BY p.triage_level = 'red' DESC, p.id
     `);
@@ -77,10 +100,13 @@ router.get("/critical", async (req: Request, res) => {
       const reasons: AlertReason[] = [];
       const details: string[] = [];
 
-      const triage  = row["triage_level"] as string;
-      const spo2    = row["spo2"]  as number | null;
-      const hr      = row["hr"]    as number | null;
-      const bp      = row["bp"]    as string | null;
+      const triage          = row["triage_level"]     as string;
+      const spo2            = row["spo2"]             as number | null;
+      const hr              = row["hr"]               as number | null;
+      const rr              = row["rr"]               as number | null;
+      const temp            = row["temp"]             as number | null;
+      const bp              = row["bp"]               as string | null;
+      const alertaEnf       = (row["alertaEnfermeiro"] as string | null) ?? "";
 
       // Parse systolic BP
       let bpSystolic: number | null = null;
@@ -92,6 +118,10 @@ router.get("/critical", async (req: Request, res) => {
       if (triage === "red") {
         reasons.push("triage_red");
         details.push("Triagem Vermelha");
+      }
+      if (alertaEnf) {
+        reasons.push("alerta_enf");
+        details.push(`⚠ ${alertaEnf}`);
       }
       if (spo2 !== null && spo2 > 0 && spo2 < 90) {
         reasons.push("spo2_baixo");
@@ -105,6 +135,14 @@ router.get("/critical", async (req: Request, res) => {
         reasons.push("pas_baixa");
         details.push(`PAS ${bpSystolic} mmHg`);
       }
+      if (temp !== null && temp >= 38.5) {
+        reasons.push("temp_alta");
+        details.push(`Temp ${temp.toFixed(1)}°C`);
+      }
+      if (rr !== null && rr > 0 && rr > 25) {
+        reasons.push("fr_alta");
+        details.push(`FR ${rr} irpm`);
+      }
 
       if (reasons.length === 0) continue;
 
@@ -112,18 +150,21 @@ router.get("/critical", async (req: Request, res) => {
         reasons.length > 1 ? "multiplos" : reasons[0]!;
 
       criticals.push({
-        patientId:   row["patientId"] as number,
-        full_name:   row["full_name"] as string,
-        triage_level: triage,
-        sector:      row["sector"] as string,
-        bed:         (row["bed"] as string | null) || null,
-        diagnosis:   (row["diagnosis"] as string | null) || null,
+        patientId:        row["patientId"]  as number,
+        full_name:        row["full_name"]  as string,
+        triage_level:     triage,
+        sector:           row["sector"]     as string,
+        bed:              (row["bed"] as string | null) || null,
+        diagnosis:        (row["diagnosis"] as string | null) || null,
         alertReason,
-        alertDetail: details.join(" · "),
-        triggeredAt: now,
-        spo2:        spo2 && spo2 > 0 ? spo2 : null,
-        hr:          hr   && hr   > 0 ? hr   : null,
+        alertDetail:      details.join(" · "),
+        triggeredAt:      now,
+        spo2:             spo2 && spo2 > 0 ? spo2 : null,
+        hr:               hr   && hr   > 0 ? hr   : null,
         bpSystolic,
+        temp:             temp ?? null,
+        rr:               rr   && rr   > 0 ? rr   : null,
+        alertaEnfermeiro: alertaEnf,
       });
     }
 

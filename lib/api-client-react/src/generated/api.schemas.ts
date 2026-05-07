@@ -115,6 +115,8 @@ export interface Patient {
   evolucaoCaso: string;
   classificacaoFinal: string;
   criterioConfirmacao: string;
+  /** Alerta de gravidade registrado pelo enfermeiro durante a triagem */
+  alertaEnfermeiro: string;
   address?: string;
   addressStreet?: string;
   addressNumber?: string;
@@ -197,6 +199,8 @@ export interface CreatePatientBody {
   evolucaoCaso?: string;
   classificacaoFinal?: string;
   criterioConfirmacao?: string;
+  /** Alerta de gravidade registrado pelo enfermeiro durante a triagem */
+  alertaEnfermeiro?: string;
 }
 
 export type UpdatePatientBodyCareStatus =
@@ -255,6 +259,8 @@ export interface UpdatePatientBody {
   evolucaoCaso?: string;
   classificacaoFinal?: string;
   criterioConfirmacao?: string;
+  /** Alerta de gravidade registrado pelo enfermeiro durante a triagem */
+  alertaEnfermeiro?: string;
 }
 
 export type UpdatePatientStatusBodyTriageLevel =
@@ -291,6 +297,8 @@ export interface UpdatePatientStatusBody {
   user_id?: number;
   /** ID do leito específico para alocação (obrigatório no frontend para setores de observação) */
   bed_id?: number;
+  /** Nota de alerta de gravidade registrada pelo enfermeiro na triagem */
+  alertaEnfermeiro?: string;
 }
 
 export type ExamResultExamType =

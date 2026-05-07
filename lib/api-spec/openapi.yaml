@@ -1684,6 +1684,9 @@ components:
           type: string
         criterioConfirmacao:
           type: string
+        alertaEnfermeiro:
+          type: string
+          description: Alerta de gravidade registrado pelo enfermeiro durante a triagem
 
     UpdatePatientStatusBody:
       type: object

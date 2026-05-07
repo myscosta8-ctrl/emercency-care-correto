@@ -309,9 +309,10 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
   const { toast } = useToast();
   const { activeUser } = useAuth();
   const reclassify = useUpdatePatientStatus();
-  const [triageLevel,   setTriageLevel]   = useState<string>("");
-  const [careStatus,    setCareStatus]    = useState<string>("");
-  const [selectedBedId, setSelectedBedId] = useState<number | null>(null);
+  const [triageLevel,      setTriageLevel]      = useState<string>("");
+  const [careStatus,       setCareStatus]       = useState<string>("");
+  const [selectedBedId,    setSelectedBedId]    = useState<number | null>(null);
+  const [alertaEnfermeiro, setAlertaEnfermeiro] = useState<string>("");
 
   const needsBedPick = (careStatus === "Em Observação" || careStatus === "Internado")
     && BED_SECTORS.has(patient?.sector ?? "");
@@ -321,6 +322,7 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
       setTriageLevel(patient.triage_level);
       setCareStatus(patient.careStatus as string);
       setSelectedBedId(null);
+      setAlertaEnfermeiro((patient as unknown as Record<string, unknown>).alertaEnfermeiro as string ?? "");
     }
   }, [patient]);
 
@@ -348,6 +350,7 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
           triage_level: triageLevel as "red" | "orange" | "yellow" | "green" | "blue",
           care_status: careStatus as "Em Triagem" | "Aguardando Atendimento" | "Em Atendimento (Cons. 1)" | "Em Atendimento (Cons. 2)" | "Em Observação" | "Internado" | "Em Transferência" | "Alta",
           user_id: userId,
+          alertaEnfermeiro,
           ...(selectedBedId ? { bed_id: selectedBedId } : {}),
         },
       },
@@ -411,6 +414,24 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
                 ℹ Status de acompanhamento pós-consulta — paciente permanece no setor atual.
               </p>
             )}
+          </div>
+
+          {/* Alerta de gravidade do enfermeiro */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-orange-400 uppercase tracking-wider flex items-center gap-1">
+              ⚠ Alerta de Gravidade (visível ao médico)
+            </label>
+            <textarea
+              value={alertaEnfermeiro}
+              onChange={e => setAlertaEnfermeiro(e.target.value)}
+              rows={2}
+              maxLength={200}
+              placeholder="Ex: Febre 40°C, Picada de cobra há 5h, Angina com irradiação, Choque séptico..."
+              className="w-full rounded-md border border-orange-500/40 bg-orange-950/20 px-3 py-2 text-sm text-orange-100 placeholder:text-orange-400/40 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Esta nota aparece em destaque na fila médica. Deixe em branco para limpar o alerta.
+            </p>
           </div>
 
           {/* Bed picker — obrigatório ao mover para setor de observação/internação */}

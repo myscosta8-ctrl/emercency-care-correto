@@ -90,6 +90,11 @@ export const ListPatientsResponseItem = zod.object({
   evolucaoCaso: zod.string(),
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
+  alertaEnfermeiro: zod
+    .string()
+    .describe(
+      "Alerta de gravidade registrado pelo enfermeiro durante a triagem",
+    ),
   address: zod.string().optional(),
   addressStreet: zod.string().optional(),
   addressNumber: zod.string().optional(),
@@ -179,6 +184,12 @@ export const CreatePatientBody = zod.object({
   evolucaoCaso: zod.string().optional(),
   classificacaoFinal: zod.string().optional(),
   criterioConfirmacao: zod.string().optional(),
+  alertaEnfermeiro: zod
+    .string()
+    .optional()
+    .describe(
+      "Alerta de gravidade registrado pelo enfermeiro durante a triagem",
+    ),
 });
 
 /**
@@ -246,6 +257,11 @@ export const LookupPatientsResponseItem = zod.object({
   evolucaoCaso: zod.string(),
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
+  alertaEnfermeiro: zod
+    .string()
+    .describe(
+      "Alerta de gravidade registrado pelo enfermeiro durante a triagem",
+    ),
   address: zod.string().optional(),
   addressStreet: zod.string().optional(),
   addressNumber: zod.string().optional(),
@@ -353,6 +369,11 @@ export const GetPatientResponse = zod.object({
   evolucaoCaso: zod.string(),
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
+  alertaEnfermeiro: zod
+    .string()
+    .describe(
+      "Alerta de gravidade registrado pelo enfermeiro durante a triagem",
+    ),
   address: zod.string().optional(),
   addressStreet: zod.string().optional(),
   addressNumber: zod.string().optional(),
@@ -445,6 +466,12 @@ export const UpdatePatientBody = zod.object({
   evolucaoCaso: zod.string().optional(),
   classificacaoFinal: zod.string().optional(),
   criterioConfirmacao: zod.string().optional(),
+  alertaEnfermeiro: zod
+    .string()
+    .optional()
+    .describe(
+      "Alerta de gravidade registrado pelo enfermeiro durante a triagem",
+    ),
 });
 
 export const UpdatePatientResponse = zod.object({
@@ -502,6 +529,11 @@ export const UpdatePatientResponse = zod.object({
   evolucaoCaso: zod.string(),
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
+  alertaEnfermeiro: zod
+    .string()
+    .describe(
+      "Alerta de gravidade registrado pelo enfermeiro durante a triagem",
+    ),
   address: zod.string().optional(),
   addressStreet: zod.string().optional(),
   addressNumber: zod.string().optional(),
@@ -574,6 +606,12 @@ export const UpdatePatientStatusBody = zod.object({
     .describe(
       "ID do leito específico para alocação (obrigatório no frontend para setores de observação)",
     ),
+  alertaEnfermeiro: zod
+    .string()
+    .optional()
+    .describe(
+      "Nota de alerta de gravidade registrada pelo enfermeiro na triagem",
+    ),
 });
 
 export const UpdatePatientStatusResponse = zod.object({
@@ -631,6 +669,11 @@ export const UpdatePatientStatusResponse = zod.object({
   evolucaoCaso: zod.string(),
   classificacaoFinal: zod.string(),
   criterioConfirmacao: zod.string(),
+  alertaEnfermeiro: zod
+    .string()
+    .describe(
+      "Alerta de gravidade registrado pelo enfermeiro durante a triagem",
+    ),
   address: zod.string().optional(),
   addressStreet: zod.string().optional(),
   addressNumber: zod.string().optional(),

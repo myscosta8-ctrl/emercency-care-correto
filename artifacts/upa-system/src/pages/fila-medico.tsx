@@ -6,7 +6,11 @@ import {
   getListPatientsQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
-import { Stethoscope, Clock, User, ArrowLeft, CheckCircle2, Eye, BedDouble, LogOut } from "lucide-react";
+import {
+  Stethoscope, Clock, User, ArrowLeft, CheckCircle2, Eye,
+  BedDouble, LogOut, AlertTriangle, Thermometer, Wind,
+  Activity, ShieldAlert,
+} from "lucide-react";
 import { RoleHeader } from "@/components/role-header";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +25,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Link } from "wouter";
+import { useCriticalAlerts } from "@/hooks/use-critical-alerts";
 
 // ── tipos ────────────────────────────────────────────────────────────────────
 
@@ -186,6 +191,7 @@ interface ChamarModalProps {
 function ChamarModal({ patient, consultorio, onClose, onSuccess, userId }: ChamarModalProps) {
   const { toast } = useToast();
   const update = useUpdatePatientStatus();
+  const p = patient as (Patient & { alertaEnfermeiro?: string }) | null;
 
   const handleConfirm = () => {
     if (!patient) return;
@@ -209,13 +215,29 @@ function ChamarModal({ patient, consultorio, onClose, onSuccess, userId }: Chama
     );
   };
 
+  const tc = p ? (TRIAGE_CONFIG[p.triage_level as keyof typeof TRIAGE_CONFIG] ?? TRIAGE_CONFIG.blue) : null;
+
   return (
     <AlertDialog open={!!patient} onOpenChange={open => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Chamar para Consultório {consultorio}</AlertDialogTitle>
-          <AlertDialogDescription>
-            Confirma o atendimento de <strong>{patient?.full_name}</strong> no Consultório {consultorio}?
+          <AlertDialogDescription asChild>
+            <div className="space-y-2">
+              <p>Confirma o atendimento de <strong>{p?.full_name}</strong> no Consultório {consultorio}?</p>
+              {tc && (
+                <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded", tc.bg, tc.text)}>
+                  <span className={cn("h-2 w-2 rounded-full inline-block", tc.dot)} />
+                  {tc.label}
+                </span>
+              )}
+              {p?.alertaEnfermeiro && (
+                <div className="flex items-start gap-2 mt-2 rounded-md border border-orange-500/50 bg-orange-950/30 px-3 py-2">
+                  <AlertTriangle className="h-4 w-4 text-orange-400 shrink-0 mt-0.5" />
+                  <p className="text-sm text-orange-200 font-medium">{p.alertaEnfermeiro}</p>
+                </div>
+              )}
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -284,6 +306,23 @@ function ConsultorioCard({ numero, label, sub, patients, onChamar, onDesfecho }:
   );
 }
 
+// ── badge de alerta de sinal vital ────────────────────────────────────────────
+
+interface VitalBadgeProps { icon: React.ReactNode; label: string; critical?: boolean }
+function VitalBadge({ icon, label, critical }: VitalBadgeProps) {
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded",
+      critical
+        ? "bg-red-500/20 text-red-300 border border-red-500/40"
+        : "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+    )}>
+      {icon}
+      {label}
+    </span>
+  );
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 export default function FilaMedicoPage() {
@@ -292,6 +331,11 @@ export default function FilaMedicoPage() {
   const { toast } = useToast();
   const { data: patients, isLoading } = useListPatients();
   const userId = activeUser?.id ?? 0;
+
+  // Alertas críticos em tempo real (30s de polling)
+  const { criticalPatientIds, criticalDetailMap } = useCriticalAlerts({
+    alertsEnabled: false,
+  });
 
   // Consultório do médico logado: "1", "2", "ambos" ou "" (sem restrição)
   const consultorioDoMedico = activeUser?.consultorio ?? "";
@@ -304,9 +348,19 @@ export default function FilaMedicoPage() {
   const [chamarConsultorio, setChamarConsultorio] = useState<1 | 2>(soCons2 ? 2 : 1);
   const [desfechoPatient, setDesfechoPatient] = useState<Patient | null>(null);
 
-  const aguardando = (patients ?? [])
-    .filter(p => p.careStatus === "Aguardando Atendimento")
-    .sort((a, b) => (TRIAGE_ORDER[a.triage_level] ?? 9) - (TRIAGE_ORDER[b.triage_level] ?? 9));
+  const aguardando = useMemo(() =>
+    (patients ?? [])
+      .filter(p => p.careStatus === "Aguardando Atendimento")
+      .sort((a, b) => {
+        // Pacientes com alerta do enfermeiro têm prioridade extra dentro do mesmo nível
+        const aAlerta = !!((a as Patient & { alertaEnfermeiro?: string }).alertaEnfermeiro);
+        const bAlerta = !!((b as Patient & { alertaEnfermeiro?: string }).alertaEnfermeiro);
+        const aOrder = (TRIAGE_ORDER[a.triage_level] ?? 9) * 10 + (aAlerta ? 0 : 1);
+        const bOrder = (TRIAGE_ORDER[b.triage_level] ?? 9) * 10 + (bAlerta ? 0 : 1);
+        return aOrder - bOrder;
+      }),
+    [patients]
+  );
 
   const cons1Livre = !(patients ?? []).some(p => p.careStatus === "Em Atendimento (Cons. 1)");
   const cons2Livre = !(patients ?? []).some(p => p.careStatus === "Em Atendimento (Cons. 2)");
@@ -367,55 +421,111 @@ export default function FilaMedicoPage() {
           ) : (
             <div className="divide-y divide-border/20">
               {aguardando.map((p, idx) => {
+                const pt = p as Patient & { alertaEnfermeiro?: string };
                 const tc = TRIAGE_CONFIG[p.triage_level as keyof typeof TRIAGE_CONFIG] ?? TRIAGE_CONFIG.blue;
                 const elapsed = formatElapsed(p.careStatusChangedAt as string);
+                const isCritical = criticalPatientIds.has(p.id);
+                const vitalDetail = criticalDetailMap.get(p.id) ?? "";
+                const hasNurseAlert = !!pt.alertaEnfermeiro;
+                const hasAnyAlert = isCritical || hasNurseAlert;
+
+                // Extrair alertas de sinais vitais do detail map
+                const hasFever     = vitalDetail.includes("Temp");
+                const hasRR        = vitalDetail.includes("FR");
+                const hasSpo2      = vitalDetail.includes("SpO₂");
+                const hasFC        = vitalDetail.includes("FC");
+                const hasPAS       = vitalDetail.includes("PAS");
+
                 return (
-                  <div key={p.id} className={cn("flex items-center gap-3 px-4 py-3 border-l-4 hover:bg-muted/10 transition-colors", tc.border)}>
-                    <div className="w-7 shrink-0 text-center text-xs font-bold text-muted-foreground/60">#{idx + 1}</div>
-                    <div className={cn("shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded", tc.bg, tc.text)}>{tc.label}</div>
-                    <div className="flex-1 min-w-0">
-                      <Link href={`/patients/${p.id}`} className="text-sm font-semibold hover:underline truncate block">{p.full_name}</Link>
-                      <p className="text-xs text-muted-foreground">{p.age}a · Aguardando {elapsed}</p>
-                    </div>
-                    {p.prontuarioNumber && (
-                      <span className="text-[10px] font-mono text-muted-foreground/60 hidden md:block shrink-0">{p.prontuarioNumber}</span>
+                  <div
+                    key={p.id}
+                    className={cn(
+                      "flex flex-col gap-1 px-4 py-3 border-l-4 transition-colors",
+                      tc.border,
+                      hasAnyAlert && "bg-orange-950/10",
+                      isCritical && p.triage_level === "red" && "bg-red-950/15 animate-pulse-subtle",
                     )}
-                    <div className="flex gap-1 shrink-0">
-                      {mostrarCons1 && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className={cn(
-                            "h-7 text-xs gap-1",
-                            cons1Livre
-                              ? "border-green-500/50 text-green-400 hover:bg-green-500/10"
-                              : "border-blue-500/40 text-blue-400 hover:bg-blue-500/10",
-                          )}
-                          onClick={() => { setChamarPatient(p); setChamarConsultorio(1); }}
-                        >
-                          <Stethoscope className="h-3 w-3" />
-                          Cons. 1
-                          {cons1Livre && <span className="text-[9px] opacity-80">livre</span>}
-                        </Button>
+                  >
+                    {/* Linha principal */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-7 shrink-0 text-center text-xs font-bold text-muted-foreground/60">#{idx + 1}</div>
+                      <div className={cn("shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded", tc.bg, tc.text)}>{tc.label}</div>
+                      <div className="flex-1 min-w-0">
+                        <Link href={`/patients/${p.id}`} className="text-sm font-semibold hover:underline truncate block">{p.full_name}</Link>
+                        <p className="text-xs text-muted-foreground">{p.age}a · Aguardando {elapsed}</p>
+                      </div>
+                      {p.prontuarioNumber && (
+                        <span className="text-[10px] font-mono text-muted-foreground/60 hidden md:block shrink-0">{p.prontuarioNumber}</span>
                       )}
-                      {mostrarCons2 && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className={cn(
-                            "h-7 text-xs gap-1",
-                            cons2Livre
-                              ? "border-green-500/50 text-green-400 hover:bg-green-500/10"
-                              : "border-purple-500/40 text-purple-400 hover:bg-purple-500/10",
-                          )}
-                          onClick={() => { setChamarPatient(p); setChamarConsultorio(2); }}
-                        >
-                          <Stethoscope className="h-3 w-3" />
-                          Cons. 2
-                          {cons2Livre && <span className="text-[9px] opacity-80">livre</span>}
-                        </Button>
-                      )}
+                      <div className="flex gap-1 shrink-0">
+                        {mostrarCons1 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={cn(
+                              "h-7 text-xs gap-1",
+                              cons1Livre
+                                ? "border-green-500/50 text-green-400 hover:bg-green-500/10"
+                                : "border-blue-500/40 text-blue-400 hover:bg-blue-500/10",
+                            )}
+                            onClick={() => { setChamarPatient(p); setChamarConsultorio(1); }}
+                          >
+                            <Stethoscope className="h-3 w-3" />
+                            Cons. 1
+                            {cons1Livre && <span className="text-[9px] opacity-80">livre</span>}
+                          </Button>
+                        )}
+                        {mostrarCons2 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={cn(
+                              "h-7 text-xs gap-1",
+                              cons2Livre
+                                ? "border-green-500/50 text-green-400 hover:bg-green-500/10"
+                                : "border-purple-500/40 text-purple-400 hover:bg-purple-500/10",
+                            )}
+                            onClick={() => { setChamarPatient(p); setChamarConsultorio(2); }}
+                          >
+                            <Stethoscope className="h-3 w-3" />
+                            Cons. 2
+                            {cons2Livre && <span className="text-[9px] opacity-80">livre</span>}
+                          </Button>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Alerta do enfermeiro */}
+                    {hasNurseAlert && (
+                      <div className="ml-10 flex items-start gap-2 rounded-md border border-orange-500/50 bg-orange-950/30 px-3 py-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 text-orange-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-orange-200 font-semibold leading-snug">{pt.alertaEnfermeiro}</p>
+                      </div>
+                    )}
+
+                    {/* Badges de sinais vitais críticos */}
+                    {isCritical && (
+                      <div className="ml-10 flex flex-wrap gap-1.5 items-center">
+                        {p.triage_level === "red" && !hasNurseAlert && (
+                          <VitalBadge icon={<ShieldAlert className="h-2.5 w-2.5" />} label="Triagem Vermelha" critical />
+                        )}
+                        {hasFever && (
+                          <VitalBadge icon={<Thermometer className="h-2.5 w-2.5" />} label={vitalDetail.match(/Temp [\d.]+°C/)?.[0] ?? "Febre"} critical />
+                        )}
+                        {hasSpo2 && (
+                          <VitalBadge icon={<Activity className="h-2.5 w-2.5" />} label={vitalDetail.match(/SpO₂ \d+%/)?.[0] ?? "SpO₂ baixo"} critical />
+                        )}
+                        {hasFC && (
+                          <VitalBadge icon={<Activity className="h-2.5 w-2.5" />} label={vitalDetail.match(/FC \d+ bpm/)?.[0] ?? "FC alta"} critical />
+                        )}
+                        {hasPAS && (
+                          <VitalBadge icon={<Activity className="h-2.5 w-2.5" />} label={vitalDetail.match(/PAS \d+ mmHg/)?.[0] ?? "PA baixa"} critical />
+                        )}
+                        {hasRR && (
+                          <VitalBadge icon={<Wind className="h-2.5 w-2.5" />} label={vitalDetail.match(/FR \d+ irpm/)?.[0] ?? "FR alta"} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}

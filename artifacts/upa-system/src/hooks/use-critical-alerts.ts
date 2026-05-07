@@ -15,6 +15,9 @@ export interface CriticalAlert {
   spo2: number | null;
   hr: number | null;
   bpSystolic: number | null;
+  temp: number | null;
+  rr: number | null;
+  alertaEnfermeiro: string;
 }
 
 // ---------------------------------------------------------------------------
