@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ClipboardList, Send, Printer, ChevronDown, ChevronUp } from "lucide-react";
+import { ClipboardList, Send, Printer, ChevronDown, ChevronUp, Ban, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,9 +47,23 @@ function buildSoapText(d: EnfermeiroData): string {
   return parts.join("\n\n");
 }
 
+interface AugEntry {
+  id: number;
+  userId: number;
+  createdAt: string;
+  professionalCategory?: string | null;
+  soapText: string;
+  structuredData: unknown;
+  invalidado?: boolean;
+  motivoInvalidacao?: string;
+  finalizado?: boolean;
+}
+
 export function EvolutionEnfermeiro({ patientId, userId, patientName, staffMap }: Props) {
-  const [form, setForm] = useState<EnfermeiroData>(EMPTY);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [form, setForm]               = useState<EnfermeiroData>(EMPTY);
+  const [expandedId, setExpandedId]   = useState<number | null>(null);
+  const [finalizingId, setFinalizingId]     = useState<number | null>(null);
+  const [invalidatingId, setInvalidatingId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -59,7 +73,7 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, staffMap }
 
   const addHistory = useAddPatientHistory();
 
-  const enfermeiroHistory = (history ?? []).filter(
+  const enfermeiroHistory = ((history ?? []) as AugEntry[]).filter(
     e => e.professionalCategory === "enfermeiro" && e.soapText !== "Admissão inicial"
   );
 
@@ -85,14 +99,57 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, staffMap }
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
           setForm(EMPTY);
-          toast({ title: "SAE registrada com sucesso" });
+          toast({ title: "SAE salva como rascunho. Publique quando estiver pronto." });
         },
         onError: () => toast({ title: "Erro ao registrar evolução", variant: "destructive" }),
       }
     );
   };
 
-  const handlePrint = (entry: (typeof enfermeiroHistory)[number]) => {
+  const handleFinalizar = async (entry: AugEntry) => {
+    setFinalizingId(entry.id);
+    try {
+      const resp = await fetch(`/api/patients/${patientId}/evolutions/${entry.id}/finalizar`, {
+        method: "PATCH",
+        headers: { "x-staff-id": String(userId) },
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Erro ao publicar");
+      }
+      queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
+      toast({ title: "SAE publicada com sucesso" });
+    } catch (e: unknown) {
+      toast({ title: e instanceof Error ? e.message : "Erro ao publicar", variant: "destructive" });
+    } finally {
+      setFinalizingId(null);
+    }
+  };
+
+  const handleInvalidarEntry = async (entry: AugEntry) => {
+    const motivo = window.prompt("Motivo da invalidação (opcional):");
+    if (motivo === null) return;
+    setInvalidatingId(entry.id);
+    try {
+      const resp = await fetch(`/api/patients/${patientId}/evolutions/${entry.id}/invalidar`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-staff-id": String(userId) },
+        body: JSON.stringify({ motivo }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Erro ao invalidar");
+      }
+      queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
+      toast({ title: "SAE invalidada" });
+    } catch (e: unknown) {
+      toast({ title: e instanceof Error ? e.message : "Erro ao invalidar", variant: "destructive" });
+    } finally {
+      setInvalidatingId(null);
+    }
+  };
+
+  const handlePrint = (entry: AugEntry) => {
     const d = entry.structuredData as EnfermeiroData | null;
     const authorName = staffMap[entry.userId]?.name ?? `Enfermeiro(a) ID ${entry.userId}`;
     const dateStr = format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
@@ -204,7 +261,7 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
             className="gap-1.5 self-end"
           >
             <Send className="h-3.5 w-3.5" />
-            {addHistory.isPending ? "Salvando…" : "Registrar SAE"}
+            {addHistory.isPending ? "Salvando…" : "Salvar Rascunho"}
           </Button>
         </div>
       </div>
@@ -219,21 +276,61 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
       ) : (
         <div className="space-y-3">
           {enfermeiroHistory.map(entry => {
-            const d = entry.structuredData as EnfermeiroData | null;
-            const isOpen = expandedId === entry.id;
+            const d            = entry.structuredData as EnfermeiroData | null;
+            const isOpen       = expandedId === entry.id;
+            const isInvalidado = !!entry.invalidado;
+            const isFinalizado = !!entry.finalizado;
+            const isAuthor     = entry.userId === userId;
             return (
-              <div key={entry.id} className="bg-card rounded-lg border border-blue-500/20 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2 bg-blue-500/5 border-b border-blue-500/10">
-                  <div className="flex items-center gap-2">
+              <div key={entry.id} className={`bg-card rounded-lg border overflow-hidden ${isInvalidado ? "opacity-50 border-red-500/20" : "border-blue-500/20"}`}>
+                <div className={`flex items-center justify-between px-4 py-2 border-b ${isInvalidado ? "bg-red-500/5 border-red-500/10" : "bg-blue-500/5 border-blue-500/10"}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
                     <ClipboardList className="h-3.5 w-3.5 text-blue-400 shrink-0" />
                     <span className="text-xs font-semibold">
                       {staffMap[entry.userId]?.name ?? `Enfermeiro(a) ID ${entry.userId}`}
                     </span>
+                    {isInvalidado && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-red-500/30 bg-red-500/10 text-red-400 font-semibold flex items-center gap-0.5">
+                        <Ban className="h-2.5 w-2.5" /> Invalidado
+                      </span>
+                    )}
+                    {!isInvalidado && !isFinalizado && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-yellow-500/30 bg-yellow-500/10 text-yellow-400 font-semibold">
+                        Rascunho
+                      </span>
+                    )}
+                    {!isInvalidado && isFinalizado && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-green-500/30 bg-green-500/10 text-green-400 font-semibold flex items-center gap-0.5">
+                        <CheckCircle className="h-2.5 w-2.5" /> Publicado
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                     </span>
+                    {isAuthor && !isFinalizado && !isInvalidado && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10 gap-0.5"
+                        disabled={finalizingId === entry.id}
+                        onClick={() => handleFinalizar(entry)}
+                      >
+                        <CheckCircle className="h-2.5 w-2.5" />
+                        {finalizingId === entry.id ? "…" : "Publicar"}
+                      </Button>
+                    )}
+                    {isAuthor && !isInvalidado && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10 gap-0.5"
+                        disabled={invalidatingId === entry.id}
+                        onClick={() => handleInvalidarEntry(entry)}
+                      >
+                        <Ban className="h-2.5 w-2.5" />
+                        {invalidatingId === entry.id ? "…" : "Invalidar"}
+                      </Button>
+                    )}
                     <Button
                       size="sm" variant="ghost"
                       className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
@@ -250,6 +347,11 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
                     </Button>
                   </div>
                 </div>
+                {isInvalidado && entry.motivoInvalidacao && (
+                  <div className="px-4 py-1.5 bg-red-500/5 border-b border-red-500/10">
+                    <p className="text-xs text-red-400/80">Motivo: {entry.motivoInvalidacao}</p>
+                  </div>
+                )}
                 <div className="px-4 py-3 space-y-2">
                   {d?.diagnosticoNanda && (
                     <p className="text-xs font-medium text-foreground/90 line-clamp-2">{d.diagnosticoNanda}</p>

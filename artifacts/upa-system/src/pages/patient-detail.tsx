@@ -343,14 +343,18 @@ export default function PatientDetail() {
         headers: { "Content-Type": "application/json", "x-staff-id": String(activeUser?.id ?? 0) },
         body: JSON.stringify({ motivo: invalidarMotivo }),
       });
-      if (!resp.ok) throw new Error("Erro ao invalidar");
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Erro ao invalidar");
+      }
       if (type === "prescricao") queryClient.invalidateQueries({ queryKey: getGetPatientPrescriptionsQueryKey(id) });
       else if (type === "evolucao") queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(id) });
       else queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) });
       toast({ title: "Registro invalidado com sucesso" });
       setIsInvalidarOpen(false);
-    } catch {
-      toast({ title: "Erro ao invalidar registro", variant: "destructive" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erro ao invalidar registro";
+      toast({ title: msg, variant: "destructive" });
     } finally {
       setInvalidarLoading(false);
     }
@@ -1210,7 +1214,7 @@ export default function PatientDetail() {
                                           onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Concluir</Button>
                                   </>
                                 )}
-                                {!(rx as unknown as { invalidado: boolean }).invalidado && pode("registrar_prescricao") && (
+                                {!(rx as unknown as { invalidado: boolean }).invalidado && (rx as unknown as { userId: number }).userId === activeUser?.id && (
                                   <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
                                     onClick={() => { setInvalidarTarget({ type: "prescricao", id: rx.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}>
                                     <Ban className="h-3 w-3 mr-0.5" /> Invalidar
@@ -1297,7 +1301,7 @@ export default function PatientDetail() {
                                           onError: () => toast({ title: "Erro ao atualizar prescrição", variant: "destructive" }) })}>Concluir</Button>
                                   </>
                                 )}
-                                {!(rx as unknown as { invalidado: boolean }).invalidado && pode("registrar_prescricao") && (
+                                {!(rx as unknown as { invalidado: boolean }).invalidado && (rx as unknown as { userId: number }).userId === activeUser?.id && (
                                   <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
                                     onClick={() => { setInvalidarTarget({ type: "prescricao", id: rx.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}>
                                     <Ban className="h-3 w-3 mr-0.5" /> Invalidar
@@ -1797,7 +1801,7 @@ export default function PatientDetail() {
                                     }}>Marcar Laudado</Button>
                                 </>
                               )}
-                              {!(exam as unknown as { invalidado: boolean }).invalidado && pode("registrar_prescricao") && (
+                              {!(exam as unknown as { invalidado: boolean }).invalidado && (exam as unknown as { userId?: number }).userId === activeUser?.id && (
                                 <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
                                   onClick={() => { setInvalidarTarget({ type: "exame", id: exam.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}>
                                   <Ban className="h-3 w-3 mr-0.5" /> Invalidar

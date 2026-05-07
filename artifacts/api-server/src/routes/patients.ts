@@ -996,10 +996,8 @@ router.patch("/:id/exam-requests/:examRequestId/status", requirePermissao("regis
 
 // ── invalidação ───────────────────────────────────────────────────────────────
 
-const ADMIN_ROLES = new Set(["administrador", "diretoria_geral"]);
-
-function podeInvalidar(staffId: number, role: string, recordUserId: number): boolean {
-  return staffId === recordUserId || ADMIN_ROLES.has(role);
+function podeInvalidar(staffId: number, recordUserId: number): boolean {
+  return staffId === recordUserId;
 }
 
 router.patch("/:id/prescriptions/:rxId/invalidar", requirePermissao("registrar_prescricao"), async (req, res) => {
@@ -1013,8 +1011,8 @@ router.patch("/:id/prescriptions/:rxId/invalidar", requirePermissao("registrar_p
     .limit(1);
   if (!existing) { res.status(404).json({ error: "Prescrição não encontrada" }); return; }
 
-  if (!podeInvalidar(req.staff!.id, req.staff!.role, existing.userId)) {
-    res.status(403).json({ error: "Somente o autor ou um administrador pode invalidar este registro" });
+  if (!podeInvalidar(req.staff!.id, existing.userId)) {
+    res.status(403).json({ error: "Somente o autor pode invalidar este registro" });
     return;
   }
 
@@ -1035,13 +1033,39 @@ router.patch("/:id/evolutions/:evolId/invalidar", requirePermissao("registrar_ev
     .limit(1);
   if (!existing) { res.status(404).json({ error: "Evolução não encontrada" }); return; }
 
-  if (!podeInvalidar(req.staff!.id, req.staff!.role, existing.userId)) {
-    res.status(403).json({ error: "Somente o autor ou um administrador pode invalidar este registro" });
+  if (!podeInvalidar(req.staff!.id, existing.userId)) {
+    res.status(403).json({ error: "Somente o autor pode invalidar este registro" });
     return;
   }
 
   await db.update(patientEvolutionsTable)
     .set({ invalidado: true, motivoInvalidacao: motivo ?? "" })
+    .where(eq(patientEvolutionsTable.id, evolId));
+  res.json({ ok: true });
+});
+
+router.patch("/:id/evolutions/:evolId/finalizar", requirePermissao("registrar_evolucao"), async (req, res) => {
+  const patientId = Number(req.params.id);
+  const evolId    = Number(req.params.evolId);
+
+  const [existing] = await db.select({ userId: patientEvolutionsTable.userId, finalizado: patientEvolutionsTable.finalizado })
+    .from(patientEvolutionsTable)
+    .where(and(eq(patientEvolutionsTable.id, evolId), eq(patientEvolutionsTable.patientId, patientId)))
+    .limit(1);
+  if (!existing) { res.status(404).json({ error: "Evolução não encontrada" }); return; }
+
+  if (existing.userId !== req.staff!.id) {
+    res.status(403).json({ error: "Somente o autor pode publicar este registro" });
+    return;
+  }
+
+  if (existing.finalizado) {
+    res.status(409).json({ error: "Este registro já foi publicado" });
+    return;
+  }
+
+  await db.update(patientEvolutionsTable)
+    .set({ finalizado: true, finalizadoAt: new Date() })
     .where(eq(patientEvolutionsTable.id, evolId));
   res.json({ ok: true });
 });
@@ -1057,8 +1081,8 @@ router.patch("/:id/exam-requests/:examId/invalidar", requirePermissao("registrar
     .limit(1);
   if (!existing) { res.status(404).json({ error: "Solicitação de exame não encontrada" }); return; }
 
-  if (!podeInvalidar(req.staff!.id, req.staff!.role, existing.userId)) {
-    res.status(403).json({ error: "Somente o autor ou um administrador pode invalidar este registro" });
+  if (!podeInvalidar(req.staff!.id, existing.userId)) {
+    res.status(403).json({ error: "Somente o autor pode invalidar este registro" });
     return;
   }
 
@@ -1866,8 +1890,8 @@ router.patch("/:id/nir/:nirId/invalidar", requirePermissao("mudar_setor"), async
   );
   if (!existing.rows[0]) { res.status(404).json({ error: "Registro NIR não encontrado" }); return; }
 
-  if (!podeInvalidar(req.staff!.id, req.staff!.role, existing.rows[0].staff_id ?? -1)) {
-    res.status(403).json({ error: "Somente o autor ou um administrador pode invalidar este registro" });
+  if (!podeInvalidar(req.staff!.id, existing.rows[0].staff_id ?? -1)) {
+    res.status(403).json({ error: "Somente o autor pode invalidar este registro" });
     return;
   }
 

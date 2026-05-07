@@ -475,6 +475,10 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.patient_evolutions ADD COLUMN IF NOT EXISTS invalidado boolean NOT NULL DEFAULT false;
         ALTER TABLE public.patient_evolutions ADD COLUMN IF NOT EXISTS motivo_invalidacao text NOT NULL DEFAULT '';
 
+        -- patient_evolutions: finalização (rascunho → publicado)
+        ALTER TABLE public.patient_evolutions ADD COLUMN IF NOT EXISTS finalizado boolean NOT NULL DEFAULT false;
+        ALTER TABLE public.patient_evolutions ADD COLUMN IF NOT EXISTS finalizado_at timestamp without time zone;
+
         -- patient_exam_requests: invalidação
         ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS invalidado boolean NOT NULL DEFAULT false;
         ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS motivo_invalidacao text NOT NULL DEFAULT '';

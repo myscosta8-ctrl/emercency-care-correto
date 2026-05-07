@@ -80,8 +80,7 @@ export function PatientNirTab({ patientId }: { patientId: number }) {
   function podeInvalidarEntry(entry: NirEntry): boolean {
     if (!activeUser) return false;
     if (entry.invalidado) return false;
-    const isAdmin = activeUser.role === "administrador" || activeUser.role === "diretoria_geral";
-    return isAdmin || entry.staffId === activeUser.id;
+    return entry.staffId === activeUser.id;
   }
 
   async function handleInvalidar(entry: NirEntry) {

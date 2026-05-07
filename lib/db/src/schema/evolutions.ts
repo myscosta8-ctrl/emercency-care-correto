@@ -10,6 +10,8 @@ export const patientEvolutionsTable = pgTable("patient_evolutions", {
   structuredData:       jsonb("structured_data"),
   invalidado:           boolean("invalidado").notNull().default(false),
   motivoInvalidacao:    text("motivo_invalidacao").notNull().default(""),
+  finalizado:           boolean("finalizado").notNull().default(false),
+  finalizadoAt:         timestamp("finalizado_at"),
   createdAt:            timestamp("created_at").defaultNow().notNull(),
 });
 
