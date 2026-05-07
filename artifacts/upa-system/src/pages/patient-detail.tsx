@@ -56,6 +56,9 @@ import {
 import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 import { PatientLabTab } from "@/components/patient-lab-tab";
 import { PatientAlertsPanel } from "@/components/patient-alerts-panel";
+import { PatientTimelineTab } from "@/components/patient-timeline-tab";
+import { PatientNirTab } from "@/components/patient-nir-tab";
+import { PatientResumoTab } from "@/components/patient-resumo-tab";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -740,17 +743,30 @@ export default function PatientDetail() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="identificacao">
-          <TabsList className="flex flex-wrap h-auto gap-1 mb-4 bg-muted/30 p-1 rounded-lg overflow-x-auto">
-            <TabsTrigger value="identificacao" className="text-xs">Identificação</TabsTrigger>
+        <Tabs defaultValue="resumo">
+          <TabsList className="flex flex-wrap h-auto gap-1 mb-4 bg-muted/30 p-1 rounded-lg">
+            {/* ── Geral ── */}
+            <TabsTrigger value="resumo" className="text-xs">📋 Resumo</TabsTrigger>
+            <TabsTrigger value="identificacao" className="text-xs">Atendimento</TabsTrigger>
             <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
-            {pode("registrar_evolucao") && <TabsTrigger value="evolucao" className="text-xs">Evolução</TabsTrigger>}
+            <TabsTrigger value="timeline" className="text-xs">Linha do Tempo</TabsTrigger>
+            {/* ── Médico ── */}
+            <TabsTrigger value="evol-medico" className="text-xs">Evol. Médica</TabsTrigger>
             {pode("registrar_prescricao") && <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>}
-            {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">SINAN</TabsTrigger>}
-            {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
-            {pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Social</TabsTrigger>}
+            {pode("registrar_prescricao") && (
+              <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
+                <FlaskConical className="h-3 w-3" /> Sol. Exames
+              </TabsTrigger>
+            )}
+            {/* ── Enfermagem ── */}
+            <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
+            <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>
+            <TabsTrigger value="tecnico" className="text-xs">Técnico Enf.</TabsTrigger>
+            {/* ── Outros profissionais ── */}
+            {pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
             {pode("registrar_avaliacao_nutricional") && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
             {pode("registrar_farmacia") && <TabsTrigger value="farmacia" className="text-xs">Farmácia</TabsTrigger>}
+            {/* ── Exames ── */}
             {pode("registrar_prescricao") && (
               <TabsTrigger value="exames" className="text-xs flex items-center gap-1">
                 Exames
@@ -761,14 +777,13 @@ export default function PatientDetail() {
                 )}
               </TabsTrigger>
             )}
-            {pode("registrar_prescricao") && (
-              <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
-                <FlaskConical className="h-3 w-3" /> Sol. Exames
-              </TabsTrigger>
-            )}
             <TabsTrigger value="laboratorio" className="text-xs flex items-center gap-1">
               <FlaskConical className="h-3 w-3" /> Laboratório
             </TabsTrigger>
+            {/* ── Gestão ── */}
+            <TabsTrigger value="regulacao" className="text-xs">Regulação/NIR</TabsTrigger>
+            {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
+            {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">SINAN</TabsTrigger>}
             <TabsTrigger value="dispositivos" className="text-xs flex items-center gap-1">
               <Plug className="h-3 w-3" /> Dispositivos
               {devices && devices.filter(d => !d.removedAt).length > 0 && (
@@ -779,7 +794,19 @@ export default function PatientDetail() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ── TAB: IDENTIFICAÇÃO ─────────────────────────────────────── */}
+          {/* ── TAB: RESUMO CLÍNICO ───────────────────────────────────────── */}
+          <TabsContent value="resumo">
+            <PatientResumoTab
+              patient={patient as Parameters<typeof PatientResumoTab>[0]["patient"]}
+              vitals={vitals as Parameters<typeof PatientResumoTab>[0]["vitals"]}
+              history={history as Parameters<typeof PatientResumoTab>[0]["history"]}
+              prescriptions={prescriptions as Parameters<typeof PatientResumoTab>[0]["prescriptions"]}
+              examRequests={examRequests as Parameters<typeof PatientResumoTab>[0]["examRequests"]}
+              staffMap={staffMap}
+            />
+          </TabsContent>
+
+          {/* ── TAB: ATENDIMENTO ATUAL ─────────────────────────────────── */}
           <TabsContent value="identificacao">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="border-border/50">
@@ -1012,94 +1039,73 @@ export default function PatientDetail() {
             </div>
           </TabsContent>
 
-          {/* ── TAB: EVOLUÇÃO ─────────────────────────────────────────── */}
-          <TabsContent value="evolucao">
+          {/* ── TAB: EVOLUÇÕES MÉDICAS ───────────────────────────────────── */}
+          <TabsContent value="evol-medico">
             <div className="mb-4">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-primary" /> Evolução Clínica
-                {history && history.filter(e => e.soapText !== "Admissão inicial").length > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
-                    {history.filter(e => e.soapText !== "Admissão inicial").length}
+                <Stethoscope className="h-4 w-4 text-blue-400" /> Evoluções Médicas
+                {history && history.filter(e => !e.soapText.includes("Admissão inicial") && (e as unknown as {professionalCategory?: string}).professionalCategory === "medico").length > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    {history.filter(e => !e.soapText.includes("Admissão inicial") && (e as unknown as {professionalCategory?: string}).professionalCategory === "medico").length}
                   </span>
                 )}
               </h3>
             </div>
-            {activeUser?.role === "medico" && (
-              <EvolutionMedico
-                patientId={id}
-                userId={activeUser.id}
-                patientName={patient.full_name}
-                staffMap={staffMap}
-              />
-            )}
-            {activeUser?.role === "enfermeiro" && (
-              <EvolutionEnfermeiro
-                patientId={id}
-                userId={activeUser.id}
-                patientName={patient.full_name}
-                staffMap={staffMap}
-              />
-            )}
-            {activeUser?.role === "tecnico_enfermagem" && (
-              <EvolutionTecnico
-                patientId={id}
-                userId={activeUser.id}
-                patientName={patient.full_name}
-                staffMap={staffMap}
-              />
-            )}
-            {activeUser?.role !== "medico" && activeUser?.role !== "enfermeiro" && activeUser?.role !== "tecnico_enfermagem" && (
-              <div className="space-y-3">
-                {isLoadingHistory ? (
-                  <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
-                ) : !history || history.filter(e => e.soapText !== "Admissão inicial").length === 0 ? (
-                  <div className="text-center py-8 bg-card rounded-lg border border-border/50">
-                    <p className="text-sm text-muted-foreground">Nenhuma evolução registrada ainda.</p>
-                  </div>
-                ) : (
-                  history.filter(e => e.soapText !== "Admissão inicial").map(entry => {
-                    const isInvalid = (entry as unknown as { invalidado: boolean }).invalidado;
-                    return (
-                      <div key={entry.id} className={cn("bg-card rounded-lg border border-border/50 overflow-hidden", isInvalid && "opacity-60")}>
-                        <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold">
-                              {staffMap[entry.userId]?.name ?? `Profissional ID ${entry.userId}`}
-                            </span>
-                            {isInvalid && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-500/20 text-red-400 border-red-500/30">
-                                <Ban className="h-2.5 w-2.5" /> Invalidado
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </span>
-                            {!isInvalid && pode("registrar_evolucao") && (
-                              <button
-                                type="button"
-                                title="Invalidar evolução"
-                                className="text-muted-foreground/50 hover:text-red-400 transition-colors"
-                                onClick={() => { setInvalidarTarget({ type: "evolucao", id: entry.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}
-                              >
-                                <Ban className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="px-4 py-3">
-                          <p className={cn("text-sm font-mono whitespace-pre-wrap text-foreground/90", isInvalid && "line-through text-muted-foreground")}>{entry.soapText}</p>
-                          {isInvalid && (entry as unknown as { motivoInvalidacao: string }).motivoInvalidacao && (
-                            <p className="text-xs text-red-400/70 mt-1">Motivo: {(entry as unknown as { motivoInvalidacao: string }).motivoInvalidacao}</p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            )}
+            <EvolutionMedico
+              patientId={id}
+              userId={activeUser?.id ?? 0}
+              patientName={patient.full_name}
+              staffMap={staffMap}
+            />
+          </TabsContent>
+
+          {/* ── TAB: ENFERMAGEM ────────────────────────────────────────────── */}
+          <TabsContent value="enfermagem">
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-teal-400" /> Evoluções de Enfermagem
+              </h3>
+            </div>
+            <EvolutionEnfermeiro
+              patientId={id}
+              userId={activeUser?.id ?? 0}
+              patientName={patient.full_name}
+              staffMap={staffMap}
+            />
+          </TabsContent>
+
+          {/* ── TAB: SAE ─────────────────────────────────────────────────── */}
+          <TabsContent value="sae">
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4 text-emerald-400" /> SAE — Sistematização da Assistência de Enfermagem
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Registre aqui as avaliações sistematizadas (NANDA, prescrição de enfermagem, resultados esperados).
+                O formulário SAE é o mesmo da aba Enfermagem — os registros aparecem em ambas as abas.
+              </p>
+            </div>
+            <EvolutionEnfermeiro
+              patientId={id}
+              userId={activeUser?.id ?? 0}
+              patientName={patient.full_name}
+              staffMap={staffMap}
+            />
+          </TabsContent>
+
+          {/* ── TAB: TÉCNICO ENFERMAGEM ───────────────────────────────────── */}
+          <TabsContent value="tecnico">
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-cyan-400" /> Anotações do Técnico de Enfermagem
+              </h3>
+            </div>
+            <EvolutionTecnico
+              patientId={id}
+              userId={activeUser?.id ?? 0}
+              patientName={patient.full_name}
+              staffMap={staffMap}
+            />
           </TabsContent>
 
           {/* ── TAB: PRESCRIÇÃO ───────────────────────────────────────── */}
@@ -2072,6 +2078,17 @@ export default function PatientDetail() {
               </div>
             )}
           </TabsContent>
+
+          {/* ── TAB: REGULAÇÃO / NIR ────────────────────────────────────── */}
+          <TabsContent value="regulacao">
+            <PatientNirTab patientId={id} />
+          </TabsContent>
+
+          {/* ── TAB: LINHA DO TEMPO ─────────────────────────────────────── */}
+          <TabsContent value="timeline">
+            <PatientTimelineTab patientId={id} />
+          </TabsContent>
+
         </Tabs>
       </main>
 

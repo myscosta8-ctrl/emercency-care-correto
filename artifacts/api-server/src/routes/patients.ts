@@ -1804,6 +1804,160 @@ router.get("/:id/prescriptions/:prescriptionId/pdf", requirePermissao("gerar_pdf
   res.send(Buffer.from(pdfBytes));
 });
 
+// ── NIR / Regulação ───────────────────────────────────────────────────────────
+
+router.get("/:id/nir", async (req, res) => {
+  const patientId = Number(req.params.id);
+  const result = await pool.query<{
+    id: number; patient_id: number; tipo: string; conteudo: string;
+    status_vaga: string; prioridade: string; destino: string;
+    staff_id: number | null; staff_name: string | null;
+    created_at: Date;
+  }>(
+    `SELECT n.id, n.patient_id, n.tipo, n.conteudo, n.status_vaga, n.prioridade,
+            n.destino, n.staff_id, s.name AS staff_name, n.created_at
+     FROM patient_nir_entries n
+     LEFT JOIN staff s ON s.id = n.staff_id
+     WHERE n.patient_id = $1
+     ORDER BY n.created_at DESC`,
+    [patientId]
+  );
+  res.json(result.rows.map(r => ({
+    id:          r.id,
+    patientId:   r.patient_id,
+    tipo:        r.tipo,
+    conteudo:    r.conteudo,
+    statusVaga:  r.status_vaga,
+    prioridade:  r.prioridade,
+    destino:     r.destino,
+    staffId:     r.staff_id,
+    staffName:   r.staff_name,
+    createdAt:   r.created_at.toISOString(),
+  })));
+});
+
+router.post("/:id/nir", async (req, res) => {
+  const patientId = Number(req.params.id);
+  const staffId   = req.staff?.id ?? null;
+  const { tipo, conteudo, statusVaga, prioridade, destino } = req.body as {
+    tipo?: string; conteudo: string; statusVaga?: string; prioridade?: string; destino?: string;
+  };
+  if (!conteudo?.trim()) { res.status(400).json({ error: "Conteúdo obrigatório" }); return; }
+  const result = await pool.query<{ id: number; created_at: Date }>(
+    `INSERT INTO patient_nir_entries (patient_id, tipo, conteudo, status_vaga, prioridade, destino, staff_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, created_at`,
+    [patientId, tipo ?? "atualizacao", conteudo.trim(), statusVaga ?? "aguardando", prioridade ?? "eletivo", destino ?? "", staffId]
+  );
+  res.status(201).json({ id: result.rows[0].id, createdAt: result.rows[0].created_at.toISOString() });
+});
+
+// ── Timeline ─────────────────────────────────────────────────────────────────
+
+router.get("/:id/timeline", async (req, res) => {
+  const patientId = Number(req.params.id);
+
+  const [evols, rxs, vits, exams, transfers, pharma, nir, patient] = await Promise.all([
+    pool.query<{ id: number; soap_text: string; user_id: number; staff_name: string | null; professional_category: string | null; created_at: Date }>(
+      `SELECT e.id, e.soap_text, e.user_id, s.name AS staff_name, e.professional_category, e.created_at
+       FROM patient_evolutions e LEFT JOIN staff s ON s.id = e.user_id
+       WHERE e.patient_id = $1 AND (e.invalidado IS NULL OR e.invalidado = false)
+       ORDER BY e.created_at DESC LIMIT 50`,
+      [patientId]
+    ),
+    pool.query<{ id: number; medications: string; user_id: number; staff_name: string | null; created_at: Date }>(
+      `SELECT p.id, p.medications, p.user_id, s.name AS staff_name, p.created_at
+       FROM patient_prescriptions p LEFT JOIN staff s ON s.id = p.user_id
+       WHERE p.patient_id = $1 AND (p.invalidado IS NULL OR p.invalidado = false)
+       ORDER BY p.created_at DESC LIMIT 30`,
+      [patientId]
+    ),
+    pool.query<{ id: number; bp: string | null; heart_rate: number | null; staff_name: string | null; created_at: Date }>(
+      `SELECT v.id, v.bp, v.heart_rate, s.name AS staff_name, v.created_at
+       FROM vitals v LEFT JOIN staff s ON s.id = v.staff_id
+       WHERE v.patient_id = $1
+       ORDER BY v.created_at DESC LIMIT 20`,
+      [patientId]
+    ),
+    pool.query<{ id: number; laboratoriais: string[] | null; imagem: string[] | null; prioridade: string; staff_name: string | null; created_at: Date }>(
+      `SELECT e.id, e.laboratoriais, e.imagem, e.prioridade, s.name AS staff_name, e.created_at
+       FROM patient_exam_requests e LEFT JOIN staff s ON s.id = e.user_id
+       WHERE e.patient_id = $1 AND (e.invalidado IS NULL OR e.invalidado = false)
+       ORDER BY e.created_at DESC LIMIT 30`,
+      [patientId]
+    ),
+    pool.query<{ id: number; hospital_name: string | null; transfer_status: string; staff_name: string | null; created_at: Date }>(
+      `SELECT t.id, t.hospital_name, t.transfer_status, s.name AS staff_name, t.created_at
+       FROM patient_transfers t LEFT JOIN staff s ON s.id = t.staff_id
+       WHERE t.patient_id = $1
+       ORDER BY t.created_at DESC LIMIT 10`,
+      [patientId]
+    ),
+    pool.query<{ id: number; medication: string; status: string; staff_name: string | null; created_at: Date }>(
+      `SELECT p.id, p.medication, p.status, s.name AS staff_name, p.created_at
+       FROM patient_pharmacy_entries p LEFT JOIN staff s ON s.id = p.user_id
+       WHERE p.patient_id = $1
+       ORDER BY p.created_at DESC LIMIT 20`,
+      [patientId]
+    ),
+    pool.query<{ id: number; tipo: string; conteudo: string; staff_name: string | null; created_at: Date }>(
+      `SELECT n.id, n.tipo, n.conteudo, s.name AS staff_name, n.created_at
+       FROM patient_nir_entries n LEFT JOIN staff s ON s.id = n.staff_id
+       WHERE n.patient_id = $1
+       ORDER BY n.created_at DESC LIMIT 20`,
+      [patientId]
+    ),
+    pool.query<{ full_name: string; created_at: Date; care_status: string }>(
+      `SELECT full_name, created_at, care_status FROM patients WHERE id = $1`,
+      [patientId]
+    ),
+  ]);
+
+  const events: { id: string; type: string; label: string; detail?: string; authorName?: string; sector?: string; timestamp: string }[] = [];
+
+  // Admissão
+  if (patient.rows[0]) {
+    events.push({ id: "admissao-0", type: "admissao", label: "Admissão na UPA", detail: patient.rows[0].full_name, timestamp: patient.rows[0].created_at.toISOString() });
+  }
+
+  for (const e of evols.rows) {
+    const isAlta = e.soap_text.includes("SUMÁRIO DE ALTA");
+    events.push({
+      id: `evol-${e.id}`,
+      type: isAlta ? "alta" : "evolucao",
+      label: isAlta ? "Alta do Paciente" : "Evolução Clínica",
+      detail: e.soap_text.slice(0, 120),
+      authorName: e.staff_name ?? undefined,
+      timestamp: e.created_at.toISOString(),
+    });
+  }
+  for (const r of rxs.rows) {
+    events.push({ id: `rx-${r.id}`, type: "prescricao", label: "Prescrição Médica", detail: r.medications.slice(0, 80), authorName: r.staff_name ?? undefined, timestamp: r.created_at.toISOString() });
+  }
+  for (const v of vits.rows) {
+    const detail = [v.bp && `PA: ${v.bp}`, v.heart_rate && `FC: ${v.heart_rate}bpm`].filter(Boolean).join(" · ");
+    events.push({ id: `vit-${v.id}`, type: "vitais", label: "Sinais Vitais Registrados", detail, authorName: v.staff_name ?? undefined, timestamp: v.created_at.toISOString() });
+  }
+  for (const e of exams.rows) {
+    const labs  = (e.laboratoriais ?? []).slice(0, 3).join(", ");
+    const imgs  = (e.imagem ?? []).slice(0, 2).join(", ");
+    const detail = [labs, imgs].filter(Boolean).join(" · ") || "Exame solicitado";
+    events.push({ id: `exam-${e.id}`, type: "exame", label: "Solicitação de Exame", detail: `[${e.prioridade}] ${detail}`, authorName: e.staff_name ?? undefined, timestamp: e.created_at.toISOString() });
+  }
+  for (const t of transfers.rows) {
+    events.push({ id: `transf-${t.id}`, type: "transferencia", label: "Transferência", detail: t.hospital_name ?? undefined, authorName: t.staff_name ?? undefined, timestamp: t.created_at.toISOString() });
+  }
+  for (const p of pharma.rows) {
+    events.push({ id: `pharma-${p.id}`, type: "farmacia", label: `Farmácia — ${p.status}`, detail: p.medication, authorName: p.staff_name ?? undefined, timestamp: p.created_at.toISOString() });
+  }
+  for (const n of nir.rows) {
+    events.push({ id: `nir-${n.id}`, type: "nir", label: "Regulação / NIR", detail: n.conteudo.slice(0, 100), authorName: n.staff_name ?? undefined, timestamp: n.created_at.toISOString() });
+  }
+
+  events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  res.json(events);
+});
+
 // ── delete ────────────────────────────────────────────────────────────────────
 
 router.delete("/:id", requirePermissao("excluir_paciente"), async (req, res) => {

@@ -499,6 +499,20 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.exam_results ADD COLUMN IF NOT EXISTS file_url text NOT NULL DEFAULT '';
         ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_url text NOT NULL DEFAULT '';
 
+        -- tabela NIR / Regulação
+        CREATE TABLE IF NOT EXISTS public.patient_nir_entries (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          tipo text NOT NULL DEFAULT 'atualizacao',
+          conteudo text NOT NULL DEFAULT '',
+          status_vaga text NOT NULL DEFAULT 'aguardando',
+          prioridade text NOT NULL DEFAULT 'eletivo',
+          destino text NOT NULL DEFAULT '',
+          staff_id integer,
+          created_at timestamp without time zone NOT NULL DEFAULT now(),
+          updated_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+
         -- tabela de alertas clínicos por paciente
         CREATE TABLE IF NOT EXISTS public.patient_alerts (
           id serial PRIMARY KEY,
