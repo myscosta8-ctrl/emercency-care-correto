@@ -1352,6 +1352,521 @@ async function buildUpaHeaderPortraitDoc(patient: {
 
 // ── APAC Laudo PDF ────────────────────────────────────────────────────────────
 
+// ── Ficha de Triagem / Admissão Inicial PDF ───────────────────────────────────
+
+router.get("/:id/pdf/ficha-triagem", requirePermissao("gerar_pdf"), async (req, res) => {
+  const patientId = Number(req.params.id);
+  const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
+  if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
+
+  try {
+    const doc  = await PDFDocument.create();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+    let prefeituraLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
+    let semsaLogo:      Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
+    let upaLogo:        Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
+    try {
+      prefeituraLogo = await doc.embedJpg(fs.readFileSync(assetPath("prefeitura-breves.jpeg")));
+      semsaLogo      = await doc.embedJpg(fs.readFileSync(assetPath("semsa.jpeg")));
+      upaLogo        = await doc.embedJpg(fs.readFileSync(assetPath("upa24h.jpg")));
+    } catch { /* text fallback */ }
+
+    const PAGE_W = 595; const PAGE_H = 842;
+    const ML = 14; const MR = 14; const MT = 10; const MB = 10;
+    const CW = PAGE_W - ML - MR; // 567
+
+    const BLACK     = rgb(0,    0,    0);
+    const WHITE     = rgb(1,    1,    1);
+    const DARK_BLUE = rgb(0.10, 0.16, 0.27);
+    const LIGHT_BG  = rgb(0.93, 0.95, 0.98);
+    const MED_GRAY  = rgb(0.45, 0.45, 0.45);
+    const BLUE      = rgb(0.05, 0.30, 0.65);
+    const DK_GREEN  = rgb(0.02, 0.36, 0.15);
+    const MID_GRAY  = rgb(0.60, 0.60, 0.60);
+    const C_RED    = rgb(0.85, 0.07, 0.07);
+    const C_ORANGE = rgb(0.95, 0.47, 0.04);
+    const C_YELLOW = rgb(0.93, 0.80, 0.02);
+    const C_GREEN  = rgb(0.05, 0.60, 0.18);
+    const C_BLUE   = rgb(0.05, 0.40, 0.80);
+
+    const fmtDate = (d: string | null | undefined) => {
+      if (!d) return "";
+      const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
+    };
+    const page = doc.addPage([PAGE_W, PAGE_H]);
+
+    // ── 3-logo header ────────────────────────────────────────────────────────
+    const HDR_H   = 68;
+    const HDR_TOP = PAGE_H - MT;
+    const HDR_BOT = HDR_TOP - HDR_H;
+    page.drawRectangle({ x: ML, y: HDR_BOT, width: CW, height: HDR_H, borderColor: BLACK, borderWidth: 0.8, color: WHITE });
+
+    const PREF_W  = 100; const SEMSA_W = 100; const UPA_W = 170;
+    const DIVS_X  = ML + PREF_W;
+    const DIV1_X  = ML + PREF_W + SEMSA_W;
+    const DIV2_X  = ML + PREF_W + SEMSA_W + UPA_W;
+    page.drawLine({ start: { x: DIVS_X, y: HDR_BOT }, end: { x: DIVS_X, y: HDR_TOP }, thickness: 0.7, color: BLACK });
+    page.drawLine({ start: { x: DIV1_X, y: HDR_BOT }, end: { x: DIV1_X, y: HDR_TOP }, thickness: 0.7, color: BLACK });
+    page.drawLine({ start: { x: DIV2_X, y: HDR_BOT }, end: { x: DIV2_X, y: HDR_TOP }, thickness: 0.7, color: BLACK });
+
+    if (prefeituraLogo) {
+      const pH = HDR_H - 12; const pW = (prefeituraLogo.width / prefeituraLogo.height) * pH;
+      page.drawImage(prefeituraLogo, { x: ML + (PREF_W - pW) / 2, y: HDR_BOT + 6, width: pW, height: pH });
+    } else {
+      page.drawText("PREFEITURA DE", { x: ML + 4, y: HDR_BOT + 38, font: bold, size: 6.5, color: BLACK });
+      page.drawText("Breves", { x: ML + 4, y: HDR_BOT + 22, font: bold, size: 16, color: BLUE });
+    }
+    if (semsaLogo) {
+      const sH = HDR_H - 12; const sW = (semsaLogo.width / semsaLogo.height) * sH;
+      page.drawImage(semsaLogo, { x: DIVS_X + (SEMSA_W - sW) / 2, y: HDR_BOT + 6, width: sW, height: sH });
+    } else {
+      page.drawText("SEMSA", { x: DIVS_X + 4, y: HDR_BOT + 30, font: bold, size: 11, color: BLACK });
+      page.drawText("Sec. Municipal de Saúde", { x: DIVS_X + 4, y: HDR_BOT + 18, font, size: 5.5, color: MED_GRAY });
+    }
+    if (upaLogo) {
+      const uH = HDR_H - 12; const uW = (upaLogo.width / upaLogo.height) * uH;
+      page.drawImage(upaLogo, { x: DIV1_X + (UPA_W - uW) / 2, y: HDR_BOT + 6, width: uW, height: uH });
+    } else {
+      const ux = DIV1_X + 6;
+      page.drawText("UPA", { x: ux, y: HDR_BOT + 35, font: bold, size: 28, color: DK_GREEN });
+      const uw = bold.widthOfTextAtSize("UPA", 28);
+      page.drawText("24h", { x: ux + uw + 2, y: HDR_BOT + 35, font: bold, size: 22, color: rgb(0.75, 0.1, 0.1) });
+      page.drawText("UNIDADE DE PRONTO ATENDIMENTO", { x: ux, y: HDR_BOT + 22, font: bold, size: 5, color: BLACK });
+    }
+    // COL 4 — title
+    const TW = CW - (DIV2_X - ML);
+    const t1 = "FICHA DE TRIAGEM"; const t2 = "ADMISSÃO INICIAL";
+    page.drawText(t1, { x: DIV2_X + (TW - bold.widthOfTextAtSize(t1, 9)) / 2,  y: HDR_BOT + 40, font: bold, size: 9, color: DARK_BLUE });
+    page.drawLine({ start: { x: DIV2_X + 6, y: HDR_BOT + 33 }, end: { x: DIV2_X + TW - 6, y: HDR_BOT + 33 }, thickness: 0.5, color: MID_GRAY });
+    page.drawText(t2, { x: DIV2_X + (TW - bold.widthOfTextAtSize(t2, 9)) / 2, y: HDR_BOT + 20, font: bold, size: 9, color: DARK_BLUE });
+    // re-draw outer border on top
+    page.drawRectangle({ x: ML, y: HDR_BOT, width: CW, height: HDR_H, borderColor: BLACK, borderWidth: 0.8 });
+
+    // ── Inner helpers ─────────────────────────────────────────────────────────
+    const SECT_H = 11;
+    const ROW_H  = 13;
+
+    function secHdr(label: string, x: number, y: number, w: number) {
+      page.drawRectangle({ x, y: y - SECT_H, width: w, height: SECT_H, color: DARK_BLUE });
+      page.drawText(label, { x: x + 4, y: y - SECT_H + 3, font: bold, size: 6.5, color: WHITE });
+    }
+    function outlineBox(x: number, y: number, w: number, h: number) {
+      page.drawRectangle({ x, y: y - h, width: w, height: h, borderColor: MID_GRAY, borderWidth: 0.5, color: WHITE });
+    }
+    function lbl(text: string, x: number, y: number, sz = 6.5) {
+      page.drawText(text, { x, y, font: bold, size: sz, color: BLACK });
+    }
+    function val(text: string | null | undefined, x: number, y: number, sz = 7.5) {
+      if (!text) return;
+      page.drawText(String(text), { x, y, font, size: sz, color: BLUE });
+    }
+    function hline(x: number, y: number, w: number) {
+      page.drawLine({ start: { x, y }, end: { x: x + w, y }, thickness: 0.4, color: MID_GRAY });
+    }
+    function vline(x: number, topY: number, botY: number) {
+      page.drawLine({ start: { x, y: topY }, end: { x, y: botY }, thickness: 0.4, color: MID_GRAY });
+    }
+    function hrow(topY: number) {
+      page.drawLine({ start: { x: ML, y: topY }, end: { x: ML + CW, y: topY }, thickness: 0.3, color: rgb(0.75, 0.75, 0.75) });
+    }
+    function altBg(x: number, y: number, w: number, h: number) {
+      page.drawRectangle({ x: x + 0.5, y: y - h, width: w - 1, height: h, color: LIGHT_BG });
+    }
+    function chkbox(label: string, x: number, y: number, checked = false) {
+      page.drawRectangle({ x, y: y - 6, width: 6, height: 6, borderColor: BLACK, borderWidth: 0.5, color: WHITE });
+      if (checked) page.drawText("X", { x: x + 0.8, y: y - 5.5, font: bold, size: 5, color: BLACK });
+      page.drawText(label, { x: x + 9, y: y - 5.5, font, size: 6.5, color: BLACK });
+    }
+    function ghostText(text: string, x: number, y: number, sz = 6.5) {
+      page.drawText(text, { x, y, font, size: sz, color: rgb(0.75, 0.75, 0.75) });
+    }
+
+    let cy = HDR_BOT - 2;
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 1. IDENTIFICAÇÃO DO PACIENTE  (8 rows × ROW_H = 104)
+    // ══════════════════════════════════════════════════════════════════════════
+    secHdr("1. IDENTIFICAÇÃO DO PACIENTE", ML, cy, CW);
+    cy -= SECT_H;
+    outlineBox(ML, cy, CW, 8 * ROW_H);
+
+    // --- Row 1: Nº FICHA | PRONTUÁRIO | REGISTRO ---
+    let ry = cy;
+    lbl("Nº FICHA:", ML + 2, ry - 9);
+    hline(ML + 38, ry - 10, 137);
+    val(patient.atendimentoNumber, ML + 40, ry - 9);
+    vline(ML + 178, ry, ry - ROW_H);
+    lbl("PRONTUÁRIO:", ML + 181, ry - 9);
+    hline(ML + 231, ry - 10, 152);
+    val(patient.prontuarioNumber, ML + 233, ry - 9);
+    vline(ML + 386, ry, ry - ROW_H);
+    lbl("REGISTRO:", ML + 389, ry - 9);
+    hline(ML + 428, ry - 10, 130);
+    hrow(ry - ROW_H); ry -= ROW_H;
+
+    // --- Row 2: DATA | HORA DA CHEGADA | HORA DA TRIAGEM ---
+    lbl("DATA:", ML + 2, ry - 9);
+    ghostText("___/___/______", ML + 28, ry - 9);
+    vline(ML + 178, ry, ry - ROW_H);
+    lbl("HORA DA CHEGADA:", ML + 181, ry - 9);
+    ghostText("___:___", ML + 263, ry - 9);
+    hline(ML + 261, ry - 10, 100);
+    vline(ML + 364, ry, ry - ROW_H);
+    lbl("HORA DA TRIAGEM:", ML + 367, ry - 9);
+    ghostText("___:___", ML + 449, ry - 9);
+    hline(ML + 447, ry - 10, 110);
+    hrow(ry - ROW_H); ry -= ROW_H;
+
+    // --- Row 3: NOME COMPLETO ---
+    altBg(ML, ry, CW, ROW_H);
+    lbl("NOME COMPLETO:", ML + 2, ry - 9);
+    hline(ML + 68, ry - 10, CW - 70);
+    val(patient.fullName, ML + 70, ry - 9, 8);
+    hrow(ry - ROW_H); ry -= ROW_H;
+
+    // --- Row 4: NOME DA MÃE ---
+    lbl("NOME DA MÃE:", ML + 2, ry - 9);
+    hline(ML + 58, ry - 10, CW - 60);
+    val(patient.motherName, ML + 60, ry - 9);
+    hrow(ry - ROW_H); ry -= ROW_H;
+
+    // --- Row 5: SEXO | DATA NASC | IDADE ---
+    altBg(ML, ry, CW, ROW_H);
+    lbl("SEXO:", ML + 2, ry - 9);
+    chkbox("Masculino", ML + 28,  ry - 3.5, patient.sex === "M");
+    chkbox("Feminino",  ML + 82,  ry - 3.5, patient.sex === "F");
+    chkbox("Outro",     ML + 134, ry - 3.5);
+    vline(ML + 178, ry, ry - ROW_H);
+    lbl("DATA DE NASCIMENTO:", ML + 181, ry - 9);
+    hline(ML + 279, ry - 10, 100);
+    ghostText("___/___/______", ML + 281, ry - 9);
+    val(fmtDate(patient.birthDate), ML + 281, ry - 9);
+    vline(ML + 382, ry, ry - ROW_H);
+    lbl("IDADE:", ML + 385, ry - 9);
+    val(patient.age ? String(patient.age) + " anos" : "", ML + 412, ry - 9);
+    hrow(ry - ROW_H); ry -= ROW_H;
+
+    // --- Row 6: CPF | RG | CNS/SUS ---
+    lbl("CPF:", ML + 2, ry - 9);
+    hline(ML + 22, ry - 10, 124);
+    val(patient.cpf, ML + 24, ry - 9);
+    vline(ML + 148, ry, ry - ROW_H);
+    lbl("RG:", ML + 151, ry - 9);
+    hline(ML + 165, ry - 10, 157);
+    val(patient.rg, ML + 167, ry - 9);
+    vline(ML + 325, ry, ry - ROW_H);
+    lbl("CNS / SUS:", ML + 328, ry - 9);
+    hline(ML + 374, ry - 10, 184);
+    val(patient.cns, ML + 376, ry - 9);
+    hrow(ry - ROW_H); ry -= ROW_H;
+
+    // --- Row 7: TELEFONE | ENDEREÇO ---
+    altBg(ML, ry, CW, ROW_H);
+    lbl("TELEFONE:", ML + 2, ry - 9);
+    hline(ML + 44, ry - 10, 119);
+    val(patient.phone, ML + 46, ry - 9);
+    vline(ML + 166, ry, ry - ROW_H);
+    lbl("ENDEREÇO:", ML + 169, ry - 9);
+    hline(ML + 206, ry - 10, CW - 208);
+    val(patient.address, ML + 208, ry - 9);
+    hrow(ry - ROW_H); ry -= ROW_H;
+
+    // --- Row 8: BAIRRO | CIDADE | CEP ---
+    lbl("BAIRRO:", ML + 2, ry - 9);
+    hline(ML + 32, ry - 10, 150);
+    vline(ML + 185, ry, ry - ROW_H);
+    lbl("CIDADE:", ML + 188, ry - 9);
+    hline(ML + 216, ry - 10, 165);
+    val("Breves", ML + 218, ry - 9);
+    vline(ML + 384, ry, ry - ROW_H);
+    lbl("CEP:", ML + 387, ry - 9);
+    hline(ML + 407, ry - 10, 151);
+    cy -= 8 * ROW_H + 2;
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 2. DADOS ASSISTENCIAIS (55%)  +  3. CLASSIFICAÇÃO DE RISCO (45%)
+    // ══════════════════════════════════════════════════════════════════════════
+    const SEC23_H = 95;
+    const S2W = Math.round(CW * 0.56);
+    const S3W = CW - S2W;
+    const S3X = ML + S2W;
+    secHdr("2. DADOS ASSISTENCIAIS INICIAIS", ML, cy, S2W);
+    secHdr("3. CLASSIFICAÇÃO DE RISCO", S3X, cy, S3W);
+    cy -= SECT_H;
+    outlineBox(ML,  cy, S2W, SEC23_H);
+    outlineBox(S3X, cy, S3W, SEC23_H);
+
+    const ProcW = Math.round(S2W * 0.46);
+    const QX    = ML + ProcW;
+    vline(QX, cy, cy - SEC23_H);
+
+    let sy = cy - 2;
+    lbl("PROCEDÊNCIA:", ML + 2, sy - 6);
+    sy -= 11;
+    for (const p of ["Demanda espontânea", "SAMU", "Transferência", "UBS", "Hospital", "Outros: __________"]) {
+      chkbox(p, ML + 4, sy - 1.5);
+      sy -= 10;
+    }
+
+    let qy = cy - 2;
+    lbl("QUEIXA PRINCIPAL:", QX + 2, qy - 6);
+    qy -= 12;
+    for (let i = 0; i < 4; i++) { hline(QX + 2, qy - 2, S2W - ProcW - 5); qy -= 10; }
+
+    qy -= 3;
+    lbl("INÍCIO DOS SINTOMAS:", ML + 2, qy - 6);
+    qy -= 11;
+    let ix = ML + 4;
+    for (const s of ["Hoje", "< 24h", "1–3 dias", "> 3 dias"]) {
+      chkbox(s, ix, qy - 1.5); ix += 37;
+    }
+    qy -= 10;
+    lbl("Descrição:", ML + 2, qy - 5);
+    qy -= 10;
+    for (let i = 0; i < 2; i++) { hline(ML + 2, qy - 2, S2W - 5); qy -= 9; }
+
+    // Classificação de risco
+    const CLW  = Math.round(S3W * 0.54);
+    const PRX  = S3X + CLW;
+    vline(PRX, cy, cy - SEC23_H);
+
+    const triageRows = [
+      { label: "VERMELHO", color: C_RED,    level: "red" },
+      { label: "LARANJA",  color: C_ORANGE, level: "orange" },
+      { label: "AMARELO",  color: C_YELLOW, level: "yellow" },
+      { label: "VERDE",    color: C_GREEN,  level: "green" },
+      { label: "AZUL",     color: C_BLUE,   level: "blue" },
+    ];
+    let cry = cy - 2;
+    lbl("CLASSIFICAÇÃO:", S3X + 2, cry - 6);
+    cry -= 12;
+    for (const tc of triageRows) {
+      page.drawRectangle({ x: S3X + 4, y: cry - 8, width: 22, height: 8, color: tc.color, borderColor: BLACK, borderWidth: 0.3 });
+      const isAct = patient.triageLevel === tc.level;
+      const txtColor = tc.color === C_YELLOW ? rgb(0.5, 0.4, 0) : tc.color;
+      page.drawText(tc.label, { x: S3X + 28, y: cry - 7, font: isAct ? bold : font, size: 7, color: txtColor });
+      if (isAct) page.drawText("◄", { x: S3X + 26, y: cry - 7, font, size: 7, color: BLACK });
+      cry -= 11;
+    }
+
+    let pry = cy - 2;
+    lbl("PRIORIDADE CLÍNICA:", PRX + 2, pry - 6);
+    pry -= 12;
+    for (const { label, level } of [
+      { label: "Emergência",    level: "red" },
+      { label: "Muito urgente", level: "orange" },
+      { label: "Urgente",       level: "yellow" },
+      { label: "Pouco urgente", level: "green" },
+      { label: "Não urgente",   level: "blue" },
+    ]) { chkbox(label, PRX + 4, pry - 1.5, patient.triageLevel === level); pry -= 11; }
+
+    cy -= SEC23_H + 2;
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 4. SINAIS VITAIS
+    // ══════════════════════════════════════════════════════════════════════════
+    const VR_H   = 10;
+    const VHdr   = 9;
+    const SEC4_H = VHdr + VR_H * 5;
+    secHdr("4. SINAIS VITAIS", ML, cy, CW);
+    cy -= SECT_H;
+    outlineBox(ML, cy, CW, SEC4_H);
+
+    const HW   = Math.floor(CW / 2);
+    const PW4  = 94;
+    // column header band
+    page.drawRectangle({ x: ML, y: cy - VHdr, width: CW, height: VHdr, color: DARK_BLUE });
+    vline(ML + HW, cy, cy - SEC4_H);
+    vline(ML + PW4, cy - VHdr, cy - SEC4_H);
+    vline(ML + HW + PW4, cy - VHdr, cy - SEC4_H);
+    for (const [ox, pw] of [[0, HW], [HW, HW]] as [number, number][]) {
+      const bx = ML + ox;
+      page.drawText("PARÂMETRO", { x: bx + (PW4 - bold.widthOfTextAtSize("PARÂMETRO", 6)) / 2, y: cy - VHdr + 2, font: bold, size: 6, color: WHITE });
+      page.drawText("VALOR",    { x: bx + PW4 + (pw - PW4 - bold.widthOfTextAtSize("VALOR", 6)) / 2, y: cy - VHdr + 2, font: bold, size: 6, color: WHITE });
+    }
+    cy -= VHdr;
+    const vitalsL = ["PA", "FC", "FR", "Temperatura", "Saturação O₂"];
+    const vitalsR = ["Glicemia", "Dor (0–10)", "Peso (kg)", "Altura (cm)", "IMC"];
+    for (let i = 0; i < 5; i++) {
+      const vy = cy - i * VR_H;
+      if (i % 2 === 1) {
+        altBg(ML, vy, HW, VR_H);
+        altBg(ML + HW, vy, HW, VR_H);
+      }
+      page.drawLine({ start: { x: ML, y: vy - VR_H }, end: { x: ML + CW, y: vy - VR_H }, thickness: 0.3, color: rgb(0.78, 0.78, 0.78) });
+      const labelY = vy - VR_H / 2 - 2.5;
+      page.drawText(vitalsL[i], { x: ML + 3, y: labelY, font: bold, size: 6.5, color: BLACK });
+      page.drawText(vitalsR[i], { x: ML + HW + 3, y: labelY, font: bold, size: 6.5, color: BLACK });
+    }
+    cy -= 5 * VR_H + 2;
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 5. ESCALAS E AVALIAÇÕES (52%) + 6. ALERTAS CLÍNICOS (48%)
+    // ══════════════════════════════════════════════════════════════════════════
+    const SEC56_H = 64;
+    const S5W = Math.round(CW * 0.52);
+    const S6W = CW - S5W;
+    const S6X = ML + S5W;
+    secHdr("5. ESCALAS E AVALIAÇÕES", ML, cy, S5W);
+    secHdr("6. ALERTAS CLÍNICOS", S6X, cy, S6W);
+    cy -= SECT_H;
+    outlineBox(ML,  cy, S5W, SEC56_H);
+    outlineBox(S6X, cy, S6W, SEC56_H);
+
+    const SUB5 = Math.round(S5W / 3);
+    vline(ML + SUB5,     cy, cy - SEC56_H);
+    vline(ML + SUB5 * 2, cy, cy - SEC56_H);
+
+    // DOR
+    let d5y = cy - 2; lbl("DOR (0–10):", ML + 2, d5y - 5, 6);  d5y -= 10;
+    for (const d of ["Sem dor (0)", "Leve (1–3)", "Moderada (4–7)", "Intensa (8–10)"]) { chkbox(d, ML + 3, d5y - 1.5); d5y -= 9.5; }
+    lbl("Valor: ________", ML + 3, d5y - 5, 6);
+
+    // NÍVEL CONSCIÊNCIA
+    const CN_X = ML + SUB5;
+    let cny2 = cy - 2; lbl("NÍVEL DE CONSCIÊNCIA:", CN_X + 2, cny2 - 5, 5.5); cny2 -= 10;
+    for (const c of ["Lúcido", "Sonolento", "Confuso", "Inconsciente"]) { chkbox(c, CN_X + 3, cny2 - 1.5); cny2 -= 9.5; }
+
+    // DEAMBULAÇÃO
+    const DB_X = ML + SUB5 * 2;
+    let dby = cy - 2; lbl("DEAMBULAÇÃO:", DB_X + 2, dby - 5, 5.5); dby -= 10;
+    for (const d of ["Independente", "Auxiliado", "Cadeirante", "Acamado"]) { chkbox(d, DB_X + 3, dby - 1.5); dby -= 9.5; }
+
+    // ALERTAS CLÍNICOS
+    const ALS = Math.floor(S6W / 2);
+    vline(S6X + ALS, cy, cy - SEC56_H);
+    let aly = cy - 2;
+    let aly2 = cy - 2;
+    for (const a of ["Dispneia", "Hipotensão", "Hipertensão grave", "Dessaturação", "Dor torácica", "Convulsão"]) { chkbox(a, S6X + 3, aly - 1.5); aly -= 9.5; }
+    for (const a of ["AVC suspeito", "Trauma", "Sangramento ativo", "Febre persistente", "Rebaixamento consciência", "Outros: _______"]) { chkbox(a, S6X + ALS + 3, aly2 - 1.5); aly2 -= 9.5; }
+
+    cy -= SEC56_H + 2;
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 7. COMORBIDADES (50%) + 8. ALERGIAS (25%) + 9. MEDICAÇÕES (25%)
+    // ══════════════════════════════════════════════════════════════════════════
+    const SEC789_H = 38;
+    const S7W = Math.round(CW * 0.50);
+    const S8W = Math.round(CW * 0.25);
+    const S9W = CW - S7W - S8W;
+    const S8X = ML + S7W;
+    const S9X = S8X + S8W;
+    secHdr("7. COMORBIDADES",         ML,  cy, S7W);
+    secHdr("8. ALERGIAS",             S8X, cy, S8W);
+    secHdr("9. MEDICAÇÕES EM USO",    S9X, cy, S9W);
+    cy -= SECT_H;
+    outlineBox(ML,  cy, S7W, SEC789_H);
+    outlineBox(S8X, cy, S8W, SEC789_H);
+    outlineBox(S9X, cy, S9W, SEC789_H);
+
+    let comy = cy - 4;
+    const c1 = ["HAS", "Diabetes", "Cardiopatia", "Asma", "DPOC"];
+    const c2 = ["Doença renal", "AVC prévio", "Epilepsia", "Psiquiátrico", "Gestante", "Outros: ___"];
+    let cx7 = ML + 3;
+    for (const c of c1) { chkbox(c, cx7, comy - 1.5); cx7 += Math.floor(S7W / c1.length); }
+    comy -= 12; cx7 = ML + 3;
+    for (const c of c2) { chkbox(c, cx7, comy - 1.5); cx7 += Math.floor(S7W / c2.length); }
+
+    let aly8 = cy - 4;
+    chkbox("Não", S8X + 4, aly8 - 1.5);
+    chkbox("Sim → Qual?", S8X + 32, aly8 - 1.5);
+    aly8 -= 14;
+    for (let i = 0; i < 2; i++) { hline(S8X + 4, aly8 - 3, S8W - 8); aly8 -= 10; }
+
+    let medy = cy - 4;
+    for (let i = 0; i < 3; i++) { hline(S9X + 3, medy - 3, S9W - 6); medy -= 11; }
+
+    cy -= SEC789_H + 2;
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 10. CONDUTA (34%) + 11. ALERTA AUTOMÁTICO (37%) + 12. OBSERVAÇÕES (29%)
+    // ══════════════════════════════════════════════════════════════════════════
+    const SEC101112_H = 78;
+    const S10W = Math.round(CW * 0.34);
+    const S11W = Math.round(CW * 0.37);
+    const S12W = CW - S10W - S11W;
+    const S11X = ML + S10W;
+    const S12X = S11X + S11W;
+    secHdr("10. CONDUTA DA TRIAGEM",              ML,   cy, S10W);
+    secHdr("11. ALERTA AUTOMÁTICO DE REAVALIAÇÃO", S11X, cy, S11W);
+    secHdr("12. OBSERVAÇÕES DE ENFERMAGEM",        S12X, cy, S12W);
+    cy -= SECT_H;
+    outlineBox(ML,   cy, S10W, SEC101112_H);
+    outlineBox(S11X, cy, S11W, SEC101112_H);
+    outlineBox(S12X, cy, S12W, SEC101112_H);
+
+    let cdt = cy - 3;
+    lbl("Nº Consultório:", ML + 3, cdt - 5, 5.5);
+    chkbox("1", ML + 68, cdt - 1.5); chkbox("2", ML + 86, cdt - 1.5);
+    cdt -= 12;
+    for (const c of ["Encaminhado para consultório médico", "Encaminhado direto Sala Vermelha", "Encaminhado observação temporária", "Encaminhado medicação", "Encaminhado exames", "Outros: ___________________"]) {
+      chkbox(c, ML + 3, cdt - 1.5); cdt -= 10.5;
+    }
+
+    let aut = cy - 3;
+    lbl("REAVALIAÇÃO AUTOMÁTICA:", S11X + 3, aut - 5, 6.5); aut -= 11;
+    for (const r of ["Não necessária", "Reavaliar em 10 min", "Reavaliar em 30 min", "Reavaliar em 1h"]) { chkbox(r, S11X + 5, aut - 1.5); aut -= 10; }
+    aut -= 3;
+    lbl("ALERTA CRÍTICO AUTOMÁTICO:", S11X + 3, aut - 5, 6.5); aut -= 11;
+    for (const a of ["Laranja → acionamento imediato enfermeiro/médico", "Vermelho → encaminhamento direto Sala Vermelha"]) {
+      chkbox(a, S11X + 5, aut - 1.5); aut -= 10;
+    }
+
+    let oby = cy - 4;
+    for (let i = 0; i < 6; i++) { hline(S12X + 3, oby - 3, S12W - 6); oby -= 12; }
+
+    cy -= SEC101112_H + 2;
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 13. IDENTIFICAÇÃO PROFISSIONAL (62%) + FLUXO APÓS TRIAGEM (38%)
+    // ══════════════════════════════════════════════════════════════════════════
+    const SEC13_H = 40;
+    const S13W = Math.round(CW * 0.62);
+    const FLW  = CW - S13W;
+    const FLX  = ML + S13W;
+    secHdr("13. IDENTIFICAÇÃO PROFISSIONAL", ML,  cy, S13W);
+    secHdr("FLUXO APÓS TRIAGEM",            FLX, cy, FLW);
+    cy -= SECT_H;
+    outlineBox(ML,  cy, S13W, SEC13_H);
+    outlineBox(FLX, cy, FLW,  SEC13_H);
+
+    let iy = cy - 5;
+    lbl("ENFERMEIRO RESPONSÁVEL:", ML + 3, iy - 5, 6.5);
+    hline(ML + 97, iy - 6, S13W - 100);
+    iy -= 15;
+    lbl("COREN:", ML + 3, iy - 5, 6.5);
+    hline(ML + 32, iy - 6, 100);
+    lbl("ASSINATURA:", ML + 140, iy - 5, 6.5);
+    hline(ML + 176, iy - 6, S13W - 178);
+
+    const FLSUB = Math.floor(FLW / 2);
+    vline(FLX + FLSUB, cy, cy - SEC13_H);
+    const fluxoL = ["Aguardando médico", "Em atendimento médico", "Medicação", "Exames"];
+    const fluxoR = ["Observação temporária", "Observação clínica", "Internação", "Transferência", "Alta"];
+    let fy = cy - 4;
+    for (const item of fluxoL) { chkbox(item, FLX + 4, fy - 1.5); fy -= 8; }
+    fy = cy - 4;
+    for (const item of fluxoR) { chkbox(item, FLX + FLSUB + 4, fy - 1.5); fy -= 8; }
+
+    cy -= SEC13_H + 4;
+
+    // ── footer ────────────────────────────────────────────────────────────────
+    const footer = "ATENDIMENTO HUMANIZADO, COM RESPEITO E SEGURANÇA.";
+    page.drawText(footer, { x: ML + (CW - bold.widthOfTextAtSize(footer, 7.5)) / 2, y: cy - 6, font: bold, size: 7.5, color: DARK_BLUE });
+
+    const pdfBytes = await doc.save();
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="ficha-triagem-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
+    res.send(Buffer.from(pdfBytes));
+  } catch (err) {
+    req.log.error(err, "Erro ao gerar ficha de triagem");
+    res.status(500).json({ error: "Erro ao gerar ficha de triagem" });
+  }
+});
+
 router.get("/:id/pdf/apac", async (req, res) => {
   const patientId = Number(req.params.id);
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);

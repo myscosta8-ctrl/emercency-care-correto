@@ -305,6 +305,7 @@ export default function PatientDetail() {
   const [downloadingApac, setDownloadingApac]         = useState(false);
   const [downloadingFichaRef, setDownloadingFichaRef] = useState(false);
   const [downloadingAih, setDownloadingAih]           = useState(false);
+  const [downloadingFichaTriagem, setDownloadingFichaTriagem] = useState(false);
 
   const [prevVisits, setPrevVisits]               = useState<Patient[] | null>(null);
   const [prevVisitsLoading, setPrevVisitsLoading] = useState(false);
@@ -638,6 +639,26 @@ export default function PatientDetail() {
             >
               <FileDown className="h-4 w-4 mr-1.5" />
               {downloadingAih ? "Gerando…" : "AIH"}
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="print-hide hidden sm:flex"
+              disabled={downloadingFichaTriagem || !pode("gerar_pdf")}
+              onClick={async () => {
+                setDownloadingFichaTriagem(true);
+                try {
+                  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                  const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-triagem`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                  if (!resp.ok) throw new Error();
+                  const blob = await resp.blob();
+                  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaTriagem_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                } catch { toast({ title: "Erro ao gerar Ficha de Triagem", variant: "destructive" }); }
+                finally { setDownloadingFichaTriagem(false); }
+              }}
+            >
+              <FileDown className="h-4 w-4 mr-1.5" />
+              {downloadingFichaTriagem ? "Gerando…" : "Triagem"}
             </Button>
             {pode("editar_paciente") && (
               <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
