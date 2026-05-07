@@ -69,6 +69,9 @@ export const patientsTable = pgTable("patients", {
   horaInternacao:         timestamp("hora_internacao"),
   horaTransferencia:      timestamp("hora_transferencia"),
 
+  // ── alerta do enfermeiro ───────────────────────────────────────────────────
+  alertaEnfermeiro: text("alerta_enfermeiro").notNull().default(""),
+
   // ── clínico ────────────────────────────────────────────────────────────────
   diagnosis:        text("diagnosis").notNull().default(""),
   symptoms:         text("symptoms").notNull().default(""),
