@@ -12,6 +12,7 @@ interface PendingReset {
   userId: number;
   userName: string;
   userLogin: string;
+  userEmail?: string;
   expiresAt: string;
   createdAt: string;
 }
@@ -108,7 +109,10 @@ export default function RedefinicaoSenhaPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="font-medium text-sm truncate">{r.userName}</p>
-                    <p className="text-xs text-muted-foreground truncate">{r.userLogin}</p>
+                    <p className="text-xs text-muted-foreground truncate">Login: <span className="font-mono">{r.userLogin}</span></p>
+                    {r.userEmail && (
+                      <p className="text-xs text-blue-400 truncate">✉ {r.userEmail}</p>
+                    )}
                     <p className="text-xs text-amber-400 flex items-center gap-1 mt-0.5">
                       <Clock className="h-3 w-3 shrink-0" />
                       {formatExpiry(r.expiresAt)}

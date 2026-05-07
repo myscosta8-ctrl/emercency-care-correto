@@ -150,6 +150,7 @@ router.get("/password-resets", async (req, res) => {
         createdAt: passwordResetsTable.createdAt,
         userName:  staffTable.name,
         userLogin: staffTable.login,
+        userEmail: staffTable.email,
       })
       .from(passwordResetsTable)
       .innerJoin(staffTable, eq(passwordResetsTable.userId, staffTable.id))

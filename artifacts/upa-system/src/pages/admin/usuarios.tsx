@@ -116,7 +116,14 @@ function StaffForm({
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Login *</Label>
-          <Input value={form.login} onChange={e => set("login", e.target.value)} placeholder="Ex: maria.silva" />
+          {isEditing ? (
+            <div className="flex items-center gap-2 h-9 px-3 rounded-md border border-border/50 bg-muted/30 text-sm text-muted-foreground">
+              <span className="font-mono">{form.login}</span>
+              <span className="text-[10px] ml-auto opacity-60">não editável</span>
+            </div>
+          ) : (
+            <Input value={form.login} onChange={e => set("login", e.target.value)} placeholder="Ex: maria.silva" />
+          )}
         </div>
         {!isEditing && (
           <div className="col-span-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">

@@ -91,7 +91,7 @@ router.get("/:id", async (req, res) => {
 
 router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   const id = Number(req.params["id"]);
-  const { role: roleRaw, ...rest } = req.body as {
+  const { role: roleRaw, password: newPassword, ...rest } = req.body as {
     name?: string;
     role?: string;
     email?: string;
@@ -99,6 +99,7 @@ router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
     corenCrm?: string;
     sector?: string;
     login?: string;
+    password?: string;
     accessLevels?: string;
     signature?: string;
     stamp?: string;
@@ -113,6 +114,12 @@ router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
     ...(roleRaw ? { role: roleRaw as typeof staffTable.$inferInsert["role"] } : {}),
     updatedAt: new Date(),
   };
+
+  // Hash and persist new password if provided by admin
+  if (newPassword && newPassword.length >= 8) {
+    patch.passwordHash = await bcrypt.hash(newPassword, 12);
+    patch.mustChangePassword = false;
+  }
 
   const [updated] = await db
     .update(staffTable)

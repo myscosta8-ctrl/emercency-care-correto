@@ -7,15 +7,6 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
-async function sha256hex(input: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data    = encoder.encode(input);
-  const hash    = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 export default function ChangePasswordPage() {
   const { activeUser, refreshUser } = useAuth();
   const [, setLocation] = useLocation();
@@ -30,7 +21,7 @@ export default function ChangePasswordPage() {
 
   function validate(): string[] {
     const errs: string[] = [];
-    if (newPassword.length < 6) errs.push("A senha deve ter no mínimo 6 caracteres.");
+    if (newPassword.length < 8) errs.push("A senha deve ter no mínimo 8 caracteres.");
     if (newPassword !== confirmPassword) errs.push("As senhas não coincidem.");
     return errs;
   }
@@ -43,7 +34,6 @@ export default function ChangePasswordPage() {
     setIsPending(true);
 
     try {
-      const hashed = await sha256hex(newPassword + "upa_salt_2026");
       const base   = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
       const res    = await fetch(`${base}/api/auth/change-password`, {
         method:  "POST",
@@ -51,7 +41,7 @@ export default function ChangePasswordPage() {
           "Content-Type": "application/json",
           "x-staff-id":   String(activeUser?.id ?? ""),
         },
-        body: JSON.stringify({ password: hashed }),
+        body: JSON.stringify({ password: newPassword }),
       });
 
       if (!res.ok) {
@@ -104,7 +94,7 @@ export default function ChangePasswordPage() {
                   type={showNew ? "text" : "password"}
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   className="pl-9 pr-10"
                   autoComplete="new-password"
                 />

@@ -23,7 +23,7 @@ export default function ResetPasswordPage() {
 
   function validate(): string[] {
     const errs: string[] = [];
-    if (newPassword.length < 6) errs.push("A senha deve ter no mínimo 6 caracteres.");
+    if (newPassword.length < 8) errs.push("A senha deve ter no mínimo 8 caracteres.");
     if (newPassword !== confirmPassword) errs.push("As senhas não coincidem.");
     return errs;
   }
@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
                     type={showNew ? "text" : "password"}
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                     className="pl-9 pr-10"
                     autoComplete="new-password"
                     autoFocus

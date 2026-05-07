@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { requirePermissao } from "../middleware/require-auth";
 import { uploadToStorage, deleteFromStorage } from "../lib/supabase-storage";
-import { db, pool, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable } from "@workspace/db";
+import { db, pool, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable, bedsTable } from "@workspace/db";
 import { eq, sql, desc, and, inArray, or, ilike } from "drizzle-orm";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
@@ -529,6 +529,49 @@ router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
   const [patient] = await db.update(patientsTable)
     .set(patch)
     .where(eq(patientsTable.id, id)).returning();
+
+  // ── Auto-gerenciamento de leitos por mudança de status ────────────────────
+  const BED_SECTOR_MAP: Record<string, string> = {
+    sala_vermelha:         "sala_vermelha",
+    observacao_adulto:     "observacao_adulto",
+    observacao_pediatrica: "observacao_pediatrica",
+    observacao_pre_adulto: "observacao_pre_adulto",
+  };
+
+  if (newCareStatus) {
+    // Liberar leito ao dar Alta ou Transferência
+    if (newCareStatus === "Alta" || newCareStatus === "Em Transferência") {
+      await db.update(bedsTable)
+        .set({ isOccupied: false, patientId: null, admissionTime: null, updatedAt: new Date() })
+        .where(eq(bedsTable.patientId, id));
+    }
+
+    // Alocar leito automático ao mover para setor de internação/observação
+    if (newCareStatus === "Em Observação" || newCareStatus === "Internado") {
+      const targetSector = current.sector ? BED_SECTOR_MAP[current.sector] : null;
+      if (targetSector) {
+        const existing = await db.select({ id: bedsTable.id })
+          .from(bedsTable).where(eq(bedsTable.patientId, id)).limit(1);
+
+        if (existing.length === 0) {
+          const [freeBed] = await db.select()
+            .from(bedsTable)
+            .where(and(eq(bedsTable.sector, targetSector), eq(bedsTable.isOccupied, false)))
+            .orderBy(bedsTable.bedNumber)
+            .limit(1);
+
+          if (freeBed) {
+            await db.update(bedsTable)
+              .set({ isOccupied: true, patientId: id, admissionTime: new Date(), updatedAt: new Date() })
+              .where(eq(bedsTable.id, freeBed.id));
+            req.log.info({ action: "bed_auto_allocated", bedId: freeBed.bedId, patientId: id, sector: targetSector }, "Leito alocado automaticamente");
+          } else {
+            req.log.warn({ action: "bed_no_vacancy", patientId: id, sector: targetSector }, "Nenhum leito livre no setor para alocação automática");
+          }
+        }
+      }
+    }
+  }
 
   // Sumário de Alta automático
   if (newCareStatus === "Alta") {

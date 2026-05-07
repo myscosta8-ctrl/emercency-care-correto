@@ -585,13 +585,20 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
           {/* login + senha */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Login (e-mail ou usuário) <span className="text-red-400">*</span></Label>
-              <Input
-                value={form.login}
-                onChange={e => set({ login: e.target.value })}
-                placeholder="email@upa.gov.br"
-                autoComplete="off"
-              />
+              <Label>Login (e-mail ou usuário) {!initial && <span className="text-red-400">*</span>}</Label>
+              {initial ? (
+                <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-border/50 bg-muted/30 text-sm text-muted-foreground">
+                  <span className="font-mono flex-1">{form.login}</span>
+                  <span className="text-[10px] opacity-60">não editável</span>
+                </div>
+              ) : (
+                <Input
+                  value={form.login}
+                  onChange={e => set({ login: e.target.value })}
+                  placeholder="email@upa.gov.br"
+                  autoComplete="off"
+                />
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>
@@ -602,11 +609,16 @@ function StaffForm({ initial, onClose, onSaved }: StaffFormProps) {
                 type="password"
                 value={form.password}
                 onChange={e => set({ password: e.target.value })}
-                placeholder={initial ? "Nova senha (opcional)" : "Senha individual"}
+                placeholder={initial ? "Nova senha (mín. 8 chars)" : "Senha individual"}
                 autoComplete="new-password"
               />
             </div>
           </div>
+          {!initial && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+              A senha inicial deve ter no mínimo 8 caracteres. O funcionário poderá alterá-la após o primeiro acesso.
+            </div>
+          )}
 
           {/* nível de acesso */}
           <div className="space-y-2">
