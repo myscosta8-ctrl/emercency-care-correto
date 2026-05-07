@@ -718,7 +718,7 @@ export default function PatientDetail() {
                   </p>
                 ) : (
                   prevVisits.map(v => (
-                    <a
+                    <Link
                       key={v.id}
                       href={`/patients/${v.id}`}
                       className="flex items-center gap-3 px-4 py-3 hover:bg-muted/20 transition-colors group"
@@ -733,7 +733,7 @@ export default function PatientDetail() {
                       <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/25 shrink-0">
                         Alta
                       </span>
-                    </a>
+                    </Link>
                   ))
                 )}
               </div>
