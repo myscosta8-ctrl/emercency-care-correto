@@ -128,7 +128,8 @@ export default function HistoricoPage() {
         p.full_name.toLowerCase().includes(q) ||
         (p.cpf ?? "").includes(q) ||
         (p.diagnosis ?? "").toLowerCase().includes(q) ||
-        (p.prontuarioNumber ?? "").toLowerCase().includes(q)
+        (p.prontuarioNumber ?? "").toLowerCase().includes(q) ||
+        (p.atendimentoNumber ?? "").toLowerCase().includes(q)
       )) return false;
 
       if (dateFrom) {
@@ -202,7 +203,7 @@ export default function HistoricoPage() {
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por nome, CPF, diagnóstico ou prontuário..."
+              placeholder="Nome, CPF, diagnóstico, nº prontuário ou nº registro..."
               className="pl-9 text-sm"
             />
           </div>

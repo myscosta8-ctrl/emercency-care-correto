@@ -380,20 +380,33 @@ router.get("/summary", async (req, res) => {
   res.json(summary);
 });
 
-// GET /patients/lookup?q=texto — busca geral por nome, CPF, CNS ou data de nascimento
+// GET /patients/lookup?q=texto — busca geral por nome, CPF, CNS, data de nascimento, prontuário ou registro
 // Inclui pacientes arquivados (com Alta) para cadastro único
 router.get("/lookup", async (req, res) => {
   const q = ((req.query["q"] as string) ?? "").trim();
   if (!q) { res.json([]); return; }
 
-  const qLower = q.toLowerCase();
-  const qDigits = q.replace(/\D/g, "");
+  const qLower   = q.toLowerCase();
+  const qDigits  = q.replace(/\D/g, "");
+  const qNumeric = /^\d+$/.test(qDigits) && qDigits.length >= 1;
 
   const conditions = [ilike(patientsTable.fullName, `%${qLower}%`)];
+
+  // CPF / CNS (digits)
   if (qDigits.length >= 3) {
     conditions.push(sql`${patientsTable.cpf} LIKE ${`%${qDigits}%`}`);
     conditions.push(sql`${patientsTable.cns} LIKE ${`%${qDigits}%`}`);
   }
+
+  // Prontuário e Registro Hospitalar (atendimento)
+  if (qNumeric) {
+    const padded = qDigits.padStart(6, "0");
+    conditions.push(eq(patientsTable.prontuarioNumber, padded));
+    conditions.push(eq(patientsTable.atendimentoNumber, padded));
+    conditions.push(ilike(patientsTable.prontuarioNumber, `%${qDigits}%`));
+    conditions.push(ilike(patientsTable.atendimentoNumber, `%${qDigits}%`));
+  }
+
   // date format DD/MM/YYYY or YYYY-MM-DD
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(q) || /^\d{4}-\d{2}-\d{2}$/.test(q)) {
     conditions.push(eq(patientsTable.birthDate, q));
@@ -405,9 +418,12 @@ router.get("/lookup", async (req, res) => {
     .orderBy(desc(patientsTable.createdAt))
     .limit(50);
 
-  // Deduplicate: show each person only once (most recent record per CPF, or per name)
+  // Deduplicate: show each person only once (most recent record per CPF/prontuário, or per name)
+  // Exception: when searching by prontuário or atendimento number, skip dedup to show exact matches
+  const isExactNumberSearch = qNumeric && qDigits.length >= 4;
   const seen = new Set<string>();
   const results = rows.filter(p => {
+    if (isExactNumberSearch) return true; // show all matches for number searches
     const key = p.cpf?.replace(/\D/g, "") || `name:${p.fullName.toLowerCase().trim()}`;
     if (seen.has(key)) return false;
     seen.add(key);

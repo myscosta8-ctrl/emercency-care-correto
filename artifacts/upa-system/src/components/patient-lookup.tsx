@@ -166,7 +166,7 @@ export function PatientLookupDialog({ open, onOpenChange, onNewPatient }: Props)
           <Input
             autoFocus
             className="pl-9 pr-9"
-            placeholder="Nome, CPF, CNS ou data de nascimento..."
+            placeholder="Nome, CPF, CNS, prontuário, nº registro ou nascimento..."
             value={query}
             onChange={e => setQuery(e.target.value)}
           />

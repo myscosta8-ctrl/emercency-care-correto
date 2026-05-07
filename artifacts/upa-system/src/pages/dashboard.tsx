@@ -659,7 +659,7 @@ export default function Dashboard() {
       if (p.careStatus === "Alta") return false;
       // Pacientes nos setores de leitos/observação ficam em /observacao
       if (OBS_SECTORS.has(p.sector as string)) return false;
-      const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
+      const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false) || (p.prontuarioNumber ?? "").includes(q) || (p.atendimentoNumber ?? "").includes(q);
       const matchesSector = filtro === "Todos" || p.sector === filtro;
       const matchesTriage = triageFilter === "all" || p.triage_level === triageFilter;
       const matchesFlow = (() => {
@@ -711,7 +711,7 @@ export default function Dashboard() {
     if (!patients) return [];
     const q = debouncedSearch.toLowerCase();
     const base = patients.filter(p => {
-      const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false);
+      const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false) || (p.prontuarioNumber ?? "").includes(q) || (p.atendimentoNumber ?? "").includes(q);
       const matchesTriage = triageFilter === "all" || p.triage_level === triageFilter;
       const matchesSector = !setoresPermitidos || !p.sector || setoresPermitidos.has(p.sector);
       return matchesSearch && matchesTriage && matchesSector;
