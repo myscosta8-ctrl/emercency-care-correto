@@ -188,7 +188,7 @@ export function EvolutionTecnico({ patientId, userId, patientName, patient, staf
 <meta charset="UTF-8">
 <title>Evolução Técnico — ${patientName}</title>
 <style>${buildPrintDocStyles("#0f766e")}</style></head><body>
-${buildInstitutionalHeader(patient ?? null, "EVOLUÇÃO — TÉCNICO(A) DE ENFERMAGEM", baseUrl)}
+${buildInstitutionalHeader(patient ?? null, "ANOTAÇÕES DE ENFERMAGEM — TÉCNICO(A) DE ENFERMAGEM", baseUrl)}
 <p class="doc-meta"><strong>Técnico(a):</strong> ${authorName} &nbsp;|&nbsp; <strong>Turno:</strong> ${d?.turno ?? "—"} &nbsp;|&nbsp; <strong>Data/Hora do Registro:</strong> ${dateStr}</p>
 ${d?.procedimentos?.length ? `<div class="section"><div class="section-label">Procedimentos Realizados</div><div class="proc-grid">${d.procedimentos.map(p => `<div class="proc-item">✓ ${p}</div>`).join("")}</div></div>` : ""}
 ${d?.intercorrencias ? `<div class="section"><div class="section-label">Intercorrências</div><div class="section-body">${d.intercorrencias}</div></div>` : ""}

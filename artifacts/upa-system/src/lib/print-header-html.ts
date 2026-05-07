@@ -104,25 +104,25 @@ function compositeAddress(p: PrintPatientInfo): string {
 
 export function buildPrintDocStyles(sectionColor = "#1e3a8a"): string {
   return `
-body { font-family: Arial, sans-serif; font-size: 11pt; color: #111; padding: 20px 28px; margin: 0; }
-.doc-meta { font-size: 9pt; color: #444; margin: 0 0 14px; border-bottom: 1px dashed #ccc; padding-bottom: 6px; }
-.section { margin-bottom: 14px; }
-.section-label { font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  color: ${sectionColor}; border-bottom: 1.5px solid ${sectionColor}; padding-bottom: 2px; margin-bottom: 6px; }
-.section-body { white-space: pre-wrap; line-height: 1.6; min-height: 20px; }
-.inline-row { display: flex; gap: 32px; }
+body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #111; padding: 10px 16px; margin: 0; }
+.doc-meta { font-size: 8pt; color: #444; margin: 0 0 8px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
+.section { margin-bottom: 8px; }
+.section-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: ${sectionColor}; border-bottom: 1.5px solid ${sectionColor}; padding-bottom: 1px; margin-bottom: 4px; }
+.section-body { white-space: pre-wrap; line-height: 1.4; min-height: 10px; }
+.inline-row { display: flex; gap: 16px; }
 .inline-row .section { flex: 1; }
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.proc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; }
-.proc-item { font-size: 10pt; padding: 3px 0; }
-.metrics { display: flex; gap: 24px; padding: 8px 12px; background: #f0fdf4; border-radius: 4px; border: 1px solid #bbf7d0; margin-bottom: 14px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.proc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 12px; }
+.proc-item { font-size: 8.5pt; padding: 2px 0; }
+.metrics { display: flex; gap: 16px; padding: 4px 8px; background: #f0fdf4; border-radius: 4px; border: 1px solid #bbf7d0; margin-bottom: 8px; }
 .metric { text-align: center; }
-.metric-val { font-size: 18pt; font-weight: 700; color: ${sectionColor}; }
-.metric-label { font-size: 8pt; color: #6b7280; text-transform: uppercase; }
-.sig-area { margin-top: 48px; text-align: center; }
-.sig-line { border-top: 1.5px solid #111; width: 60%; margin: 0 auto 4px; padding-top: 4px; font-size: 10pt; }
-.sig-sub { font-size: 9pt; color: #555; }
-@media print { @page { size: A4; margin: 12mm; } }
+.metric-val { font-size: 14pt; font-weight: 700; color: ${sectionColor}; }
+.metric-label { font-size: 7pt; color: #6b7280; text-transform: uppercase; }
+.sig-area { margin-top: 28px; text-align: center; }
+.sig-line { border-top: 1.5px solid #111; width: 60%; margin: 0 auto 4px; padding-top: 4px; font-size: 9pt; }
+.sig-sub { font-size: 8pt; color: #555; }
+@media print { @page { size: A4; margin: 8mm; } }
   `.trim();
 }
 
@@ -141,8 +141,8 @@ export function buildInstitutionalHeader(
   baseUrl = "/",
 ): string {
   const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-  const logoUpa  = `${base}logos/upa24h.jpg`;
-  const logoPref = `${base}logos/prefeitura-breves.jpeg`;
+  const logoUpa   = `${base}logos/upa24h.jpg`;
+  const logoPref  = `${base}logos/prefeitura-breves.jpeg`;
   const logoSemsa = `${base}logos/semsa.jpeg`;
 
   const now = new Date();
@@ -156,20 +156,21 @@ export function buildInstitutionalHeader(
   const sectorLabel = patient?.sector ? (SECTOR_LABEL[patient.sector] ?? patient.sector) : "—";
   const fullAddress = patient ? esc(compositeAddress(patient)) : "—";
 
-  const C = "border:1px solid #aaa; padding:2px 6px; font-size:7.5pt; vertical-align:top;";
-  const L = "font-weight:700; font-size:6pt; color:#444; text-transform:uppercase; letter-spacing:0.04em; display:block; margin-bottom:1px;";
-  const V = "font-size:8pt; color:#000; font-weight:600;";
+  // Compact cell style for patient grid
+  const C = "border:1px solid #bbb; padding:1.5px 5px; font-size:7pt; vertical-align:top;";
+  const L = "font-weight:700; font-size:5.5pt; color:#555; text-transform:uppercase; letter-spacing:0.04em; display:block; margin-bottom:0.5px;";
+  const V = "font-size:7.5pt; color:#000; font-weight:600;";
 
   const cell = (label: string, value: string, extra = "") =>
     `<td style="${C}${extra}"><span style="${L}">${label}</span><span style="${V}">${value}</span></td>`;
 
   const patientGrid = patient ? `
-<table style="width:100%; border-collapse:collapse; margin-top:4pt;">
+<table style="width:100%; border-collapse:collapse; margin-top:3pt;">
   <tbody>
     <tr>
       ${cell("Prontuário", esc(patient.prontuarioNumber), "width:10%")}
       ${cell("Nº Atendimento", esc(patient.atendimentoNumber), "width:10%")}
-      ${cell("Nome completo do paciente", `<span style="font-size:9pt;font-weight:800;">${esc(patient.full_name)}</span>`, "width:44%")}
+      ${cell("Nome completo do paciente", `<span style="font-size:8.5pt;font-weight:800;">${esc(patient.full_name)}</span>`, "width:44%")}
       ${cell("Nome da Mãe", esc(patient.motherName), "width:36%")}
     </tr>
     <tr>
@@ -214,37 +215,33 @@ export function buildInstitutionalHeader(
 </table>` : "";
 
   return `
-<div style="font-family:Arial,Helvetica,sans-serif; margin-bottom:10pt;">
+<div style="font-family:Arial,Helvetica,sans-serif; margin-bottom:8pt;">
 
-  <!-- Logos + título -->
-  <table style="width:100%; border-collapse:collapse; margin-bottom:4pt;">
+  <!-- 3 logos + título -->
+  <table style="width:100%; border-collapse:collapse; border:1px solid #888; margin-bottom:3pt;">
     <tbody>
       <tr>
-        <td style="width:16%; text-align:center; vertical-align:middle; padding:0 4px;">
-          <img src="${logoPref}" alt="Prefeitura de Breves" style="height:44px; object-fit:contain;" />
+        <td style="width:17%; border-right:1px solid #888; text-align:center; vertical-align:middle; padding:3px 2px;">
+          <img src="${logoPref}" alt="Prefeitura de Breves" style="height:36px; max-width:100%; object-fit:contain;" />
         </td>
-        <td style="text-align:center; vertical-align:middle; padding:2px 8px;">
-          <div style="font-size:12pt; font-weight:800; letter-spacing:0.07em; text-transform:uppercase; color:#000;">UPA 24H — BREVES</div>
-          <div style="font-size:8pt; color:#444; margin-top:1pt;">Unidade de Pronto Atendimento · Breves/PA</div>
-          <div style="font-size:8pt; color:#444;">Secretaria Municipal de Saúde — SEMSA</div>
-          <div style="font-size:10pt; font-weight:700; margin-top:3pt; text-transform:uppercase; letter-spacing:0.05em; color:#000;">${esc(title)}</div>
+        <td style="width:13%; border-right:1px solid #888; text-align:center; vertical-align:middle; padding:3px 2px;">
+          <img src="${logoSemsa}" alt="SEMSA" style="height:36px; max-width:100%; object-fit:contain;" />
         </td>
-        <td style="width:16%; text-align:center; vertical-align:middle; padding:0 4px;">
-          <img src="${logoUpa}" alt="UPA 24h" style="height:44px; object-fit:contain;" />
+        <td style="width:17%; border-right:1px solid #888; text-align:center; vertical-align:middle; padding:3px 2px;">
+          <img src="${logoUpa}" alt="UPA 24h" style="height:36px; max-width:100%; object-fit:contain;" />
         </td>
-        <td style="width:13%; text-align:center; vertical-align:middle; padding:0 4px;">
-          <img src="${logoSemsa}" alt="SEMSA" style="height:44px; object-fit:contain;" />
+        <td style="text-align:center; vertical-align:middle; padding:3px 8px;">
+          <div style="font-size:9.5pt; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:#000;">UPA 24H — BREVES</div>
+          <div style="font-size:7pt; color:#555; margin-top:1pt;">Unidade de Pronto Atendimento · Breves/PA · SEMSA</div>
+          <div style="font-size:9pt; font-weight:700; margin-top:3pt; text-transform:uppercase; letter-spacing:0.04em; color:#1a2744;">${esc(title)}</div>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div style="border-top:2px solid #222; border-bottom:1px solid #999; margin-bottom:4pt;"></div>
-
   ${patientGrid}
 
-  <div style="border-bottom:1.5px solid #444; margin-top:${patient ? "4pt" : "0"};"></div>
-
-  <div style="text-align:right; font-size:7pt; color:#888; margin-top:2pt;">Emitido em: ${emittedStr}</div>
+  <div style="border-bottom:1.5px solid #444; margin-top:${patient ? "3pt" : "0"};"></div>
+  <div style="text-align:right; font-size:6.5pt; color:#888; margin-top:2pt;">Emitido em: ${emittedStr}</div>
 </div>`.trim();
 }

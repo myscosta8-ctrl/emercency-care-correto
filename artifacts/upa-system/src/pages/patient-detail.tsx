@@ -54,6 +54,7 @@ import {
   Plug, Unplug, AlertCircle, ChevronDown, Ban, X as XIcon,
 } from "lucide-react";
 import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
+import { buildInstitutionalHeader, buildPrintDocStyles, type PrintPatientInfo } from "@/lib/print-header-html";
 import { PatientLabTab } from "@/components/patient-lab-tab";
 import { PatientAlertsPanel } from "@/components/patient-alerts-panel";
 import { PatientTimelineTab } from "@/components/patient-timeline-tab";
@@ -432,6 +433,137 @@ export default function PatientDetail() {
         onError: () => toast({ title: "Erro ao salvar registro", variant: "destructive" }),
       },
     );
+  };
+
+  // ── Funções de impressão de documentos internos ──────────────────────────
+
+  const _printBase = () => window.location.origin + (import.meta.env.BASE_URL ?? "/");
+
+  const handlePrintVitals = () => {
+    if (!patient) return;
+    const win = window.open("", "_blank", "width=794,height=1123");
+    if (!win) return;
+    const now = new Date();
+    const dateStr = now.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const aferido = latestVitals?.createdAt
+      ? new Date(latestVitals.createdAt as string).toLocaleString("pt-BR")
+      : dateStr;
+    const row = (bg: string, label: string, val: string | number | null | undefined, unit: string, ref: string) =>
+      `<tr style="background:${bg}"><td style="border:1px solid #bbb;padding:3px 8px;">${label}</td><td style="border:1px solid #bbb;padding:3px 8px;text-align:center;font-weight:700;">${val ?? "—"}</td><td style="border:1px solid #bbb;padding:3px 8px;text-align:center;">${unit}</td><td style="border:1px solid #bbb;padding:3px 8px;text-align:center;font-size:7.5pt;color:#555;">${ref}</td></tr>`;
+    win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Sinais Vitais — ${patient.full_name}</title><style>${buildPrintDocStyles("#0369a1")}</style></head><body>
+${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "REGISTRO DE SINAIS VITAIS", _printBase())}
+<p class="doc-meta"><strong>Aferição registrada em:</strong> ${aferido}</p>
+<table style="width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:10px;">
+<thead><tr style="background:#e0f2fe;"><th style="border:1px solid #bbb;padding:4px 8px;text-align:left;">Parâmetro</th><th style="border:1px solid #bbb;padding:4px 8px;text-align:center;">Valor</th><th style="border:1px solid #bbb;padding:4px 8px;text-align:center;">Unidade</th><th style="border:1px solid #bbb;padding:4px 8px;text-align:center;">Referência</th></tr></thead>
+<tbody>
+${row("#fff","Pressão Arterial",(latestVitals as {bp?:string}|undefined)?.bp,"mmHg","&lt;120/80")}
+${row("#f8fafc","Frequência Cardíaca",(latestVitals as {hr?:number}|undefined)?.hr,"bpm","60–100")}
+${row("#fff","Frequência Respiratória",(latestVitals as {rr?:number}|undefined)?.rr,"irpm","12–20")}
+${row("#f8fafc","SpO₂ — Saturação de O₂",(latestVitals as {spo2?:number}|undefined)?.spo2,"%","≥95")}
+${row("#fff","Temperatura",(latestVitals as {temp?:number}|undefined)?.temp,"°C","36,1–37,2")}
+${row("#f8fafc","Glicemia Capilar",(latestVitals as {glucose?:number}|undefined)?.glucose,"mg/dL","70–99 (jejum)")}
+</tbody></table>
+<div class="sig-area"><div class="sig-line">__________________________________________</div><div class="sig-sub">Profissional Responsável pela Aferição — Carimbo / Assinatura</div></div>
+<script>window.onload=()=>{window.print();}</script></body></html>`);
+    win.document.close();
+  };
+
+  const handlePrintAdmissaoMedica = () => {
+    if (!patient) return;
+    const win = window.open("", "_blank", "width=794,height=1123");
+    if (!win) return;
+    const entryDate = format(new Date(patient.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    const dash = "border:1px dashed #ccc; padding:4px;";
+    win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Admissão Médica — ${patient.full_name}</title><style>${buildPrintDocStyles("#1e3a8a")}</style></head><body>
+${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ADMISSÃO MÉDICA", _printBase())}
+<p class="doc-meta"><strong>Data/Hora da Admissão:</strong> ${entryDate} &nbsp;|&nbsp; <strong>Setor:</strong> ${patient.sector ?? "—"} &nbsp;|&nbsp; <strong>Leito:</strong> ${(patient as {bed?:string}).bed ?? "—"}</p>
+<div class="section"><div class="section-label">Queixa Principal e HDA</div><div class="section-body" style="${dash} min-height:55px;"> </div></div>
+<div class="two-col">
+  <div class="section"><div class="section-label">Antecedentes Patológicos / Comorbidades</div><div class="section-body" style="${dash} min-height:45px;"> </div></div>
+  <div class="section"><div class="section-label">Medicamentos em Uso Habitual</div><div class="section-body" style="${dash} min-height:45px;"> </div></div>
+</div>
+<div class="section"><div class="section-label">Exame Físico Inicial</div><div class="section-body" style="${dash} min-height:65px;"> </div></div>
+<div class="two-col">
+  <div class="section"><div class="section-label">Hipótese Diagnóstica / CID-10</div><div class="section-body" style="${dash} min-height:40px;"> </div></div>
+  <div class="section"><div class="section-label">Classificação de Risco (Manchester)</div><div class="section-body" style="${dash} min-height:40px;"> </div></div>
+</div>
+<div class="section"><div class="section-label">Conduta Médica Inicial</div><div class="section-body" style="${dash} min-height:55px;"> </div></div>
+<div class="section"><div class="section-label">Alergias</div><div class="section-body" style="${dash} min-height:18px;">☐ Não &nbsp; ☐ Sim → Qual: _______________________________________</div></div>
+<div class="sig-area"><div class="sig-line">__________________________________________</div><div class="sig-sub">Médico Responsável — Nome completo / CRM / Assinatura</div></div>
+<script>window.onload=()=>{window.print();}</script></body></html>`);
+    win.document.close();
+  };
+
+  const handlePrintAdmissaoEnfermagem = () => {
+    if (!patient) return;
+    const win = window.open("", "_blank", "width=794,height=1123");
+    if (!win) return;
+    const entryDate = format(new Date(patient.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    const dash = "border:1px dashed #ccc; padding:4px;";
+    const bp = (latestVitals as {bp?:string}|undefined)?.bp ?? "___/___";
+    const hr = (latestVitals as {hr?:number}|undefined)?.hr ?? "___";
+    const rr = (latestVitals as {rr?:number}|undefined)?.rr ?? "___";
+    const spo2 = (latestVitals as {spo2?:number}|undefined)?.spo2 ? `${(latestVitals as {spo2?:number}).spo2}%` : "___%";
+    const temp = (latestVitals as {temp?:number}|undefined)?.temp ? `${(latestVitals as {temp?:number}).temp}°C` : "___°C";
+    const glic = (latestVitals as {glucose?:number}|undefined)?.glucose ? `${(latestVitals as {glucose?:number}).glucose} mg/dL` : "___ mg/dL";
+    win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Admissão de Enfermagem — ${patient.full_name}</title><style>${buildPrintDocStyles("#0d9488")}</style></head><body>
+${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ADMISSÃO DE ENFERMAGEM", _printBase())}
+<p class="doc-meta"><strong>Data/Hora da Admissão:</strong> ${entryDate} &nbsp;|&nbsp; <strong>Setor:</strong> ${patient.sector ?? "—"} &nbsp;|&nbsp; <strong>Leito:</strong> ${(patient as {bed?:string}).bed ?? "—"}</p>
+<div class="section"><div class="section-label">Queixa Principal (referida pelo paciente)</div><div class="section-body" style="${dash} min-height:35px;"> </div></div>
+<div class="two-col">
+  <div class="section"><div class="section-label">Dados Vitais na Admissão</div><div class="section-body" style="${dash} font-size:8.5pt; line-height:1.8;">PA: ${bp} &nbsp; FC: ${hr} bpm &nbsp; FR: ${rr} irpm<br/>SpO₂: ${spo2} &nbsp; Temp: ${temp} &nbsp; Glicemia: ${glic}</div></div>
+  <div class="section"><div class="section-label">Estado Geral</div><div class="section-body" style="${dash} min-height:40px;"> </div></div>
+</div>
+<div class="two-col">
+  <div class="section"><div class="section-label">Nível de Consciência</div><div class="section-body" style="${dash}">☐ Alerta &nbsp; ☐ Confuso &nbsp; ☐ Sonolento &nbsp; ☐ Inconsciente</div></div>
+  <div class="section"><div class="section-label">Escala de Dor (EVA 0–10)</div><div class="section-body" style="${dash}">Intensidade: ___ &nbsp; Local: _______________________</div></div>
+</div>
+<div class="section"><div class="section-label">Avaliação de Enfermagem por Sistemas</div><div class="section-body" style="${dash} min-height:65px;"> </div></div>
+<div class="two-col">
+  <div class="section"><div class="section-label">Histórico de Saúde / Comorbidades</div><div class="section-body" style="${dash} min-height:40px;"> </div></div>
+  <div class="section"><div class="section-label">Alergias Conhecidas</div><div class="section-body" style="${dash}">☐ Não &nbsp; ☐ Sim → ___________________________</div></div>
+</div>
+<div class="section"><div class="section-label">Prescrição de Enfermagem na Admissão</div><div class="section-body" style="${dash} min-height:55px;"> </div></div>
+<div class="section"><div class="section-label">Observações Gerais</div><div class="section-body" style="${dash} min-height:28px;"> </div></div>
+<div class="sig-area"><div class="sig-line">__________________________________________</div><div class="sig-sub">Enfermeiro(a) Responsável — Nome completo / COREN / Assinatura</div></div>
+<script>window.onload=()=>{window.print();}</script></body></html>`);
+    win.document.close();
+  };
+
+  const handlePrintAtualizacaoQuadro = () => {
+    if (!patient) return;
+    const win = window.open("", "_blank", "width=794,height=1123");
+    if (!win) return;
+    const entryDate = format(new Date(patient.createdAt), "dd/MM/yyyy", { locale: ptBR });
+    const today = format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    const dash = "border:1px dashed #ccc; padding:4px;";
+    const bp = (latestVitals as {bp?:string}|undefined)?.bp ?? "___/___";
+    const hr = (latestVitals as {hr?:number}|undefined)?.hr ?? "___";
+    const rr = (latestVitals as {rr?:number}|undefined)?.rr ?? "___";
+    const spo2 = (latestVitals as {spo2?:number}|undefined)?.spo2 ? `${(latestVitals as {spo2?:number}).spo2}%` : "___%";
+    const temp = (latestVitals as {temp?:number}|undefined)?.temp ? `${(latestVitals as {temp?:number}).temp}°C` : "___°C";
+    const glic = (latestVitals as {glucose?:number}|undefined)?.glucose ? `${(latestVitals as {glucose?:number}).glucose} mg/dL` : "___ mg/dL";
+    win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Atualização de Quadro Clínico — ${patient.full_name}</title><style>${buildPrintDocStyles("#7c3aed")}</style></head><body>
+${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃO DE QUADRO CLÍNICO", _printBase())}
+<p class="doc-meta"><strong>Emissão:</strong> ${today} &nbsp;|&nbsp; <strong>Admissão:</strong> ${entryDate} &nbsp;|&nbsp; <strong>Destinatário:</strong> Central de Regulação / NIR</p>
+<div class="section"><div class="section-label">Diagnóstico Atual / Hipótese Diagnóstica / CID-10</div><div class="section-body" style="${dash} min-height:35px;"> </div></div>
+<div class="two-col">
+  <div class="section"><div class="section-label">Situação Clínica Atual (últimas 24 horas)</div><div class="section-body" style="${dash} min-height:75px;"> </div></div>
+  <div>
+    <div class="section"><div class="section-label">Sinais Vitais Atuais</div><div class="section-body" style="${dash} font-size:8.5pt; line-height:1.8;">PA: ${bp} mmHg<br/>FC: ${hr} bpm &nbsp; FR: ${rr} irpm<br/>SpO₂: ${spo2} &nbsp; Temp: ${temp}<br/>Glicemia: ${glic}</div></div>
+    <div class="section" style="margin-top:6px;"><div class="section-label">Prioridade de Regulação</div><div class="section-body" style="${dash} font-size:8.5pt;">☐ Urgência &nbsp; ☐ Alta Urgência &nbsp; ☐ Emergência</div></div>
+  </div>
+</div>
+<div class="section"><div class="section-label">Exames Realizados e Resultados Relevantes</div><div class="section-body" style="${dash} min-height:45px;"> </div></div>
+<div class="section"><div class="section-label">Prescrições e Condutas Atuais</div><div class="section-body" style="${dash} min-height:45px;"> </div></div>
+<div class="two-col">
+  <div class="section"><div class="section-label">Necessidade de Transferência</div><div class="section-body" style="${dash} font-size:8.5pt; line-height:1.8;">☐ Sim &nbsp; ☐ Não<br/>Motivo: ___________________________<br/>Destino solicitado: ___________________________</div></div>
+  <div class="section"><div class="section-label">Prognóstico</div><div class="section-body" style="${dash} font-size:8.5pt; line-height:1.8;">☐ Favorável &nbsp; ☐ Reservado<br/>☐ Grave &nbsp; ☐ Crítico</div></div>
+</div>
+<div class="section"><div class="section-label">Informações Adicionais à Regulação / NIR</div><div class="section-body" style="${dash} min-height:28px;"> </div></div>
+<div class="sig-area"><div class="sig-line">__________________________________________</div><div class="sig-sub">Médico Responsável — Nome completo / CRM / Assinatura &nbsp;|&nbsp; Data: ___/___/______</div></div>
+<script>window.onload=()=>{window.print();}</script></body></html>`);
+    win.document.close();
   };
 
   if (isLoading) {
@@ -854,6 +986,14 @@ export default function PatientDetail() {
 
           {/* ── TAB: ATENDIMENTO ATUAL ─────────────────────────────────── */}
           <TabsContent value="identificacao">
+            <div className="flex justify-end gap-2 mb-3">
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handlePrintAdmissaoMedica}>
+                <Printer className="h-3.5 w-3.5" /> Admissão Médica
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handlePrintAdmissaoEnfermagem}>
+                <Printer className="h-3.5 w-3.5" /> Admissão de Enfermagem
+              </Button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="border-border/50">
                 <CardHeader className="pb-2">
@@ -1043,6 +1183,9 @@ export default function PatientDetail() {
                     <Activity className="h-3.5 w-3.5" /> Registrar SVs
                   </Button>
                 )}
+                <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handlePrintVitals}>
+                  <Printer className="h-3.5 w-3.5" /> Imprimir SVs
+                </Button>
                 {pode("registrar_evolucao") && (
                   <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setIsVitalsOpen(true)} data-testid="button-update-vitals">
                     <Stethoscope className="h-3.5 w-3.5" /> Registrar Evolução
@@ -2136,6 +2279,11 @@ export default function PatientDetail() {
 
           {/* ── TAB: REGULAÇÃO / NIR ────────────────────────────────────── */}
           <TabsContent value="regulacao">
+            <div className="flex justify-end mb-3">
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handlePrintAtualizacaoQuadro}>
+                <Printer className="h-3.5 w-3.5" /> Atualização de Quadro Clínico
+              </Button>
+            </div>
             <PatientNirTab patientId={id} />
           </TabsContent>
 
