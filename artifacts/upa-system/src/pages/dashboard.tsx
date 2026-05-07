@@ -254,7 +254,7 @@ const PatientRow = memo(function PatientRow({
       </Link>
 
       <div className="flex items-center gap-0.5 px-1.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
-        {pode("mudar_setor") && (
+        {pode("mudar_setor") && !["observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"].includes(patient.sector ?? "") && (
           <button
             type="button"
             title="Reclassificar paciente"

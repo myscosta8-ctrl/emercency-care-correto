@@ -956,32 +956,34 @@ export default function PatientDetail() {
                   </Card>
                 )}
 
-                <Card className="border-border/50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <RefreshCw className="h-3.5 w-3.5" /> Reclassificação
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Select value={pendingStatus ?? patient.triage_level} onValueChange={setPendingStatus}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TRIAGE_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      className="w-full"
-                      disabled={!pendingStatus || pendingStatus === patient.triage_level || updateStatus.isPending}
-                      onClick={() => pendingStatus && handleStatusChange(pendingStatus)}
-                    >
-                      {updateStatus.isPending ? "Salvando..." : "Confirmar Reclassificação"}
-                    </Button>
-                  </CardContent>
-                </Card>
+                {!["observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"].includes(patient.sector ?? "") && (
+                  <Card className="border-border/50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                        <RefreshCw className="h-3.5 w-3.5" /> Reclassificação
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Select value={pendingStatus ?? patient.triage_level} onValueChange={setPendingStatus}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TRIAGE_OPTIONS.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        className="w-full"
+                        disabled={!pendingStatus || pendingStatus === patient.triage_level || updateStatus.isPending}
+                        onClick={() => pendingStatus && handleStatusChange(pendingStatus)}
+                      >
+                        {updateStatus.isPending ? "Salvando..." : "Confirmar Reclassificação"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           </TabsContent>
