@@ -302,8 +302,9 @@ export default function PatientDetail() {
   const [solExameLabInput, setSolExameLabInput]     = useState("");
   const [solExameImgInput, setSolExameImgInput]     = useState("");
   const [solExameLoading, setSolExameLoading]       = useState(false);
-  const [downloadingApac, setDownloadingApac]       = useState(false);
+  const [downloadingApac, setDownloadingApac]         = useState(false);
   const [downloadingFichaRef, setDownloadingFichaRef] = useState(false);
+  const [downloadingAih, setDownloadingAih]           = useState(false);
 
   const [prevVisits, setPrevVisits]               = useState<Patient[] | null>(null);
   const [prevVisitsLoading, setPrevVisitsLoading] = useState(false);
@@ -617,6 +618,26 @@ export default function PatientDetail() {
             >
               <FileDown className="h-4 w-4 mr-1.5" />
               {downloadingFichaRef ? "Gerando…" : "Ficha Ref."}
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              className="print-hide hidden sm:flex"
+              disabled={downloadingAih || !pode("gerar_pdf")}
+              onClick={async () => {
+                setDownloadingAih(true);
+                try {
+                  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                  const resp = await fetch(`${base}/api/patients/${id}/pdf/aih`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                  if (!resp.ok) throw new Error();
+                  const blob = await resp.blob();
+                  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `AIH_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                } catch { toast({ title: "Erro ao gerar AIH", variant: "destructive" }); }
+                finally { setDownloadingAih(false); }
+              }}
+            >
+              <FileDown className="h-4 w-4 mr-1.5" />
+              {downloadingAih ? "Gerando…" : "AIH"}
             </Button>
             {pode("editar_paciente") && (
               <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>

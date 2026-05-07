@@ -1428,6 +1428,255 @@ router.get("/:id/pdf/ficha-referencia", async (req, res) => {
   res.send(Buffer.from(pdfBytes));
 });
 
+// ── AIH (Autorização de Internação Hospitalar) PDF ────────────────────────────
+
+function wrapAihText(text: string, font: { widthOfTextAtSize: (s: string, n: number) => number }, fontSize: number, maxWidth: number): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(test, fontSize) > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = test;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+router.get("/:id/pdf/aih", requirePermissao("gerar_pdf"), async (req, res) => {
+  const patientId = Number(req.params.id);
+  const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
+  if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
+
+  const doc  = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  // A4 portrait: 595 × 842 pts
+  const page = doc.addPage([595, 842]);
+
+  const BLACK = rgb(0, 0, 0);
+  const DGRAY = rgb(0.35, 0.35, 0.35);
+  const LGRAY = rgb(0.6, 0.6, 0.6);
+
+  const L = 30;   // left margin
+  const R = 565;  // right margin
+  const W = R - L;
+
+  const fmtDate = (d: string | null | undefined) => {
+    if (!d) return "";
+    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
+  };
+
+  const todayStr = new Date().toLocaleDateString("pt-BR");
+
+  // Draw a labeled box with optional text value
+  const box = (
+    bx: number, by: number, bw: number, bh: number,
+    label: string, value = "",
+    opts: { bold?: boolean; center?: boolean; size?: number } = {},
+  ) => {
+    page.drawRectangle({ x: bx, y: by, width: bw, height: bh, borderColor: BLACK, borderWidth: 0.4 });
+    page.drawText(label, { x: bx + 2, y: by + bh - 7, font, size: 5, color: LGRAY });
+    if (!value) return;
+    const f  = opts.bold ? bold : font;
+    const sz = opts.size ?? 7.5;
+    const vx = opts.center ? bx + bw / 2 - f.widthOfTextAtSize(value, sz) / 2 : bx + 3;
+    const vy = by + bh / 2 - sz / 2 - 0.5;
+    page.drawText(value, { x: vx, y: vy, font: f, size: sz, color: BLACK });
+  };
+
+  const txt = (t: string, x: number, y: number, sz = 8, isBold = false) => {
+    if (!t) return;
+    page.drawText(t, { x, y, font: isBold ? bold : font, size: sz, color: BLACK });
+  };
+
+  const blkTitle = (t: string, y: number) => {
+    page.drawRectangle({ x: L, y: y - 1, width: W, height: 10, color: rgb(0.88, 0.88, 0.88) });
+    page.drawText(t, { x: L + 2, y, font: bold, size: 6.5, color: BLACK });
+  };
+
+  const ROW = 22; // default row height
+
+  // Address
+  const addrFull = [patient.addressStreet, patient.addressNumber].filter(Boolean).join(", ");
+  const addressStr = addrFull || patient.address || "";
+  const sexLabel = patient.sex === "M" ? "Masculino" : patient.sex === "F" ? "Feminino" : "Outro";
+  const internDate = patient.horaInternacao
+    ? new Date(patient.horaInternacao).toLocaleDateString("pt-BR")
+    : (patient.attendanceDate ? fmtDate(patient.attendanceDate) : todayStr);
+  const competencia = todayStr.slice(3); // MM/AAAA
+
+  // ── CABEÇALHO ─────────────────────────────────────────────────────────────
+  let cy = 842 - 18;
+
+  page.drawLine({ start: { x: L, y: cy + 2 }, end: { x: R, y: cy + 2 }, thickness: 1.2, color: BLACK });
+
+  txt("Ministério da Saúde / SUS — Sistema Único de Saúde", L, cy, 6.5);
+
+  cy -= 16;
+  const titleStr = "AUTORIZAÇÃO DE INTERNAÇÃO HOSPITALAR";
+  txt(titleStr, L + W / 2 - bold.widthOfTextAtSize(titleStr, 13) / 2, cy, 13, true);
+
+  cy -= 5;
+  page.drawLine({ start: { x: L, y: cy }, end: { x: R, y: cy }, thickness: 0.8, color: BLACK });
+
+  // Nº AIH / Tipo / Competência / Folha
+  cy -= ROW;
+  box(L,              cy, W * 0.10, ROW, "Tipo AIH", "1");
+  box(L + W * 0.10,   cy, W * 0.40, ROW, "Nº da AIH", patient.atendimentoNumber ?? "");
+  box(L + W * 0.50,   cy, W * 0.25, ROW, "Competência (MM/AAAA)", competencia);
+  box(L + W * 0.75,   cy, W * 0.25, ROW, "Folha Nº / Total", "01 / 01");
+
+  // ── BLOCO I — ESTABELECIMENTO ──────────────────────────────────────────────
+  cy -= 14;
+  blkTitle("BLOCO I — IDENTIFICAÇÃO DO ESTABELECIMENTO DE SAÚDE SOLICITANTE", cy);
+
+  cy -= ROW;
+  box(L,            cy, W * 0.75, ROW, "Nome do Estabelecimento de Saúde", "UPA 24H — Unidade de Pronto Atendimento — Breves / PA", { bold: true });
+  box(L + W * 0.75, cy, W * 0.25, ROW, "Código CNES", "");
+
+  cy -= ROW;
+  box(L,            cy, W * 0.50, ROW, "Município do Estabelecimento", "Breves");
+  box(L + W * 0.50, cy, W * 0.08, ROW, "UF", "PA");
+  box(L + W * 0.58, cy, W * 0.25, ROW, "Especialidade", "Clínica Geral / Emergência");
+  box(L + W * 0.83, cy, W * 0.17, ROW, "Caráter Internação", "01 — Urgência");
+
+  cy -= ROW;
+  box(L,            cy, W * 0.40, ROW, "Setor / Clínica", patient.sector ?? "");
+  box(L + W * 0.40, cy, W * 0.20, ROW, "Nº do Leito", patient.bed ?? "");
+  box(L + W * 0.60, cy, W * 0.40, ROW, "Unidade de Saúde / Serviço", patient.healthUnit ?? "UPA Breves — Breves/PA");
+
+  // ── BLOCO II — PACIENTE ────────────────────────────────────────────────────
+  cy -= 14;
+  blkTitle("BLOCO II — IDENTIFICAÇÃO DO PACIENTE", cy);
+
+  cy -= ROW;
+  box(L,            cy, W * 0.70, ROW, "Nome do Paciente", patient.fullName, { bold: true });
+  box(L + W * 0.70, cy, W * 0.30, ROW, "Nº do Prontuário", patient.prontuarioNumber ?? "");
+
+  cy -= ROW;
+  box(L,            cy, W * 0.40, ROW, "Nº Cartão Nacional de Saúde (CNS)", patient.cns ?? "");
+  box(L + W * 0.40, cy, W * 0.20, ROW, "Data de Nascimento", fmtDate(patient.birthDate));
+  box(L + W * 0.60, cy, W * 0.14, ROW, "Sexo", sexLabel);
+  box(L + W * 0.74, cy, W * 0.16, ROW, "Raça/Cor", patient.corRaca ?? "");
+  box(L + W * 0.90, cy, W * 0.10, ROW, "Etnia", "");
+
+  cy -= ROW;
+  box(L, cy, W, ROW, "Nome da Mãe", patient.motherName ?? "");
+
+  cy -= ROW;
+  box(L,            cy, W * 0.50, ROW, "Logradouro", patient.addressStreet || addressStr);
+  box(L + W * 0.50, cy, W * 0.10, ROW, "Número", patient.addressNumber ?? "");
+  box(L + W * 0.60, cy, W * 0.20, ROW, "Complemento", "");
+  box(L + W * 0.80, cy, W * 0.20, ROW, "Bairro", patient.addressNeighborhood ?? "");
+
+  cy -= ROW;
+  box(L,            cy, W * 0.15, ROW, "CEP", patient.addressCep ?? "");
+  box(L + W * 0.15, cy, W * 0.45, ROW, "Município de Residência", patient.addressCity || "Breves");
+  box(L + W * 0.60, cy, W * 0.08, ROW, "UF", "PA");
+  box(L + W * 0.68, cy, W * 0.32, ROW, "Telefone de Contato", patient.phone ?? "");
+
+  cy -= ROW;
+  box(L,            cy, W * 0.25, ROW, "Nacionalidade", "Brasileira");
+  box(L + W * 0.25, cy, W * 0.25, ROW, "Estado Civil", patient.estadoCivil ?? "");
+  box(L + W * 0.50, cy, W * 0.25, ROW, "CPF do Paciente", patient.cpf ?? "");
+  box(L + W * 0.75, cy, W * 0.25, ROW, "RG", patient.rg ?? "");
+
+  // ── BLOCO III — PROCEDIMENTO E DIAGNÓSTICO ────────────────────────────────
+  cy -= 14;
+  blkTitle("BLOCO III — PROCEDIMENTO SOLICITADO / DIAGNÓSTICO", cy);
+
+  cy -= ROW;
+  box(L,            cy, W * 0.20, ROW, "Código do Procedimento Solicitado", "03.01.01.007-2");
+  box(L + W * 0.20, cy, W * 0.55, ROW, "Descrição do Procedimento", "TRATAMENTO DE DOENÇAS — CLÍNICA MÉDICA / URGÊNCIA");
+  box(L + W * 0.75, cy, W * 0.10, ROW, "Qtd.", "1");
+  box(L + W * 0.85, cy, W * 0.15, ROW, "Nº Reg. DRS/CRS", "");
+
+  cy -= ROW;
+  box(L,            cy, W * 0.22, ROW, "CID-10 Principal", "");
+  box(L + W * 0.22, cy, W * 0.22, ROW, "CID-10 Secundário", "");
+  box(L + W * 0.44, cy, W * 0.22, ROW, "CID-10 Causas Associadas", "");
+  box(L + W * 0.66, cy, W * 0.17, ROW, "CID-10 Óbito", "");
+  box(L + W * 0.83, cy, W * 0.17, ROW, "Caráter do Atend.", "01 — Urgência");
+
+  // ── BLOCO IV — INDICAÇÃO CLÍNICA ──────────────────────────────────────────
+  cy -= 14;
+  blkTitle("BLOCO IV — INDICAÇÃO CLÍNICA / MOTIVO DA INTERNAÇÃO", cy);
+
+  const indicH = 65;
+  cy -= indicH;
+  page.drawRectangle({ x: L, y: cy, width: W, height: indicH, borderColor: BLACK, borderWidth: 0.4 });
+  page.drawText("Diagnóstico / Indicação Clínica / Motivo da Internação", { x: L + 2, y: cy + indicH - 7, font, size: 5, color: LGRAY });
+  const diagText = [patient.diagnosis, patient.symptoms].filter(Boolean).join(" | ");
+  if (diagText) {
+    const lines = wrapAihText(diagText, font, 8, W - 8);
+    for (let i = 0; i < Math.min(lines.length, 5); i++) {
+      txt(lines[i], L + 3, cy + indicH - 18 - i * 11);
+    }
+  }
+
+  // ── BLOCO V — MÉDICO SOLICITANTE ──────────────────────────────────────────
+  cy -= 14;
+  blkTitle("BLOCO V — DADOS DO MÉDICO SOLICITANTE / RESPONSÁVEL PELO LAUDO", cy);
+
+  cy -= ROW;
+  box(L,            cy, W * 0.55, ROW, "Nome do Médico Responsável pelo Laudo", patient.responsibleProfessional ?? "");
+  box(L + W * 0.55, cy, W * 0.20, ROW, "Código CBO", "225120");
+  box(L + W * 0.75, cy, W * 0.25, ROW, "CRM / Conselho", "");
+
+  const sigH = 32;
+  cy -= sigH;
+  page.drawRectangle({ x: L, y: cy, width: W * 0.60, height: sigH, borderColor: BLACK, borderWidth: 0.4 });
+  page.drawText("Assinatura e Carimbo do Médico Solicitante", { x: L + 2, y: cy + sigH - 8, font, size: 5, color: LGRAY });
+  box(L + W * 0.60, cy, W * 0.40, sigH, "Data do Laudo Médico", todayStr);
+
+  // ── BLOCO VI — AUTORIZAÇÃO ────────────────────────────────────────────────
+  cy -= 14;
+  blkTitle("BLOCO VI — AUTORIZAÇÃO (USO EXCLUSIVO DO ÓRGÃO AUTORIZADOR)", cy);
+
+  cy -= ROW;
+  box(L,            cy, W * 0.55, ROW, "Nome do Médico Auditor Autorizador", "");
+  box(L + W * 0.55, cy, W * 0.20, ROW, "CRM do Auditor", "");
+  box(L + W * 0.75, cy, W * 0.25, ROW, "Data da Autorização", "");
+
+  const authH = 32;
+  cy -= authH;
+  page.drawRectangle({ x: L, y: cy, width: W * 0.60, height: authH, borderColor: BLACK, borderWidth: 0.4 });
+  page.drawText("Assinatura e Carimbo do Médico Auditor / Autorizador", { x: L + 2, y: cy + authH - 8, font, size: 5, color: LGRAY });
+  box(L + W * 0.60, cy, W * 0.20, authH, "Código da Operadora", "");
+  box(L + W * 0.80, cy, W * 0.20, authH, "Nº de Autorização", "");
+
+  // ── BLOCO VII — DADOS DA INTERNAÇÃO ───────────────────────────────────────
+  cy -= 14;
+  blkTitle("BLOCO VII — DADOS DA INTERNAÇÃO", cy);
+
+  cy -= ROW;
+  box(L,            cy, W * 0.25, ROW, "Data da Internação", internDate);
+  box(L + W * 0.25, cy, W * 0.25, ROW, "Nº do Leito / Quarto", patient.bed ?? "");
+  box(L + W * 0.50, cy, W * 0.25, ROW, "Previsão de Permanência (dias)", "");
+  box(L + W * 0.75, cy, W * 0.25, ROW, "Data Provável de Alta", "");
+
+  // ── RODAPÉ ────────────────────────────────────────────────────────────────
+  cy -= 12;
+  page.drawLine({ start: { x: L, y: cy }, end: { x: R, y: cy }, thickness: 0.5, color: BLACK });
+  cy -= 9;
+  page.drawText(
+    `Documento gerado em ${todayStr} | Nº Prontuário: ${patient.prontuarioNumber} | Nº Atendimento: ${patient.atendimentoNumber} | UPA 24H — Breves/PA — SUS/SIH-SUS`,
+    { x: L, y: cy, font, size: 5.5, color: DGRAY },
+  );
+
+  const pdfBytes = await doc.save();
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="AIH_${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
+  res.send(Buffer.from(pdfBytes));
+});
+
 // ── prescription PDF ──────────────────────────────────────────────────────────
 
 function wrapTextPdf(
