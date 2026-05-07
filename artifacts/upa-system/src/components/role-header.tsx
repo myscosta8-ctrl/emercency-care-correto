@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { PERFIL_LABELS } from "@/lib/permissions";
 import type { Perfil } from "@/lib/permissions";
 import { getRoleHome } from "@/lib/role-home";
+import { InternalNotificationsBell } from "@/components/internal-notifications-bell";
 
 const ROLE_COLORS: Record<string, string> = {
   recepcionista:      "bg-sky-100 text-sky-700 border-sky-300",
@@ -68,6 +69,7 @@ export function RoleHeader({ title, icon }: Props) {
               </Button>
             </Link>
           )}
+          <InternalNotificationsBell />
           <span className="text-xs text-muted-foreground hidden md:block max-w-32 truncate">
             {activeUser?.name}
           </span>

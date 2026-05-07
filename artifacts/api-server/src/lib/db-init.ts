@@ -549,6 +549,159 @@ export async function initializeDatabase(): Promise<void> {
           deactivated_by_name text NOT NULL DEFAULT '',
           motivo_desativacao text NOT NULL DEFAULT ''
         );
+
+        -- gestão de alergias
+        CREATE TABLE IF NOT EXISTS public.patient_allergies (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          allergen text NOT NULL DEFAULT '',
+          reaction_type text NOT NULL DEFAULT '',
+          severity text NOT NULL DEFAULT 'moderada',
+          notes text NOT NULL DEFAULT '',
+          recorded_by_name text NOT NULL DEFAULT '',
+          recorded_by_id integer NOT NULL DEFAULT 0,
+          created_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+
+        -- consentimento informado (TCLE)
+        CREATE TABLE IF NOT EXISTS public.patient_consents (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          consent_type text NOT NULL DEFAULT 'geral',
+          title text NOT NULL DEFAULT '',
+          description text NOT NULL DEFAULT '',
+          patient_or_guardian_name text NOT NULL DEFAULT '',
+          guardian_relationship text NOT NULL DEFAULT '',
+          agreed boolean NOT NULL DEFAULT false,
+          professional_id integer NOT NULL DEFAULT 0,
+          professional_name text NOT NULL DEFAULT '',
+          notes text NOT NULL DEFAULT '',
+          created_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+
+        -- declaração de óbito
+        CREATE TABLE IF NOT EXISTS public.patient_deaths (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          death_date text NOT NULL DEFAULT '',
+          death_time text NOT NULL DEFAULT '',
+          cause_1a text NOT NULL DEFAULT '',
+          cause_1b text NOT NULL DEFAULT '',
+          cause_1c text NOT NULL DEFAULT '',
+          cause_2 text NOT NULL DEFAULT '',
+          icd text NOT NULL DEFAULT '',
+          type_of_death text NOT NULL DEFAULT 'natural',
+          physician_id integer NOT NULL DEFAULT 0,
+          physician_name text NOT NULL DEFAULT '',
+          physician_crm text NOT NULL DEFAULT '',
+          witness_name text NOT NULL DEFAULT '',
+          notes text NOT NULL DEFAULT '',
+          created_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+
+        -- formulários de procedimentos
+        CREATE TABLE IF NOT EXISTS public.patient_procedures (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          procedure_name text NOT NULL DEFAULT '',
+          procedure_type text NOT NULL DEFAULT '',
+          description text NOT NULL DEFAULT '',
+          materials_used text NOT NULL DEFAULT '',
+          complications text NOT NULL DEFAULT '',
+          outcome text NOT NULL DEFAULT '',
+          performed_by_name text NOT NULL DEFAULT '',
+          performed_by_id integer NOT NULL DEFAULT 0,
+          performed_at text NOT NULL DEFAULT '',
+          created_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+
+        -- notas de interconsulta
+        CREATE TABLE IF NOT EXISTS public.interconsults (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          requesting_specialty text NOT NULL DEFAULT '',
+          requested_specialty text NOT NULL DEFAULT '',
+          reason text NOT NULL DEFAULT '',
+          urgency text NOT NULL DEFAULT 'eletivo',
+          status text NOT NULL DEFAULT 'solicitado',
+          response text NOT NULL DEFAULT '',
+          requested_by_id integer NOT NULL DEFAULT 0,
+          requested_by_name text NOT NULL DEFAULT '',
+          responded_by_id integer NOT NULL DEFAULT 0,
+          responded_by_name text NOT NULL DEFAULT '',
+          requested_at timestamp without time zone NOT NULL DEFAULT now(),
+          responded_at timestamp without time zone,
+          created_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+
+        -- plano de cuidados
+        CREATE TABLE IF NOT EXISTS public.care_plans (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          goal text NOT NULL DEFAULT '',
+          interventions text NOT NULL DEFAULT '',
+          responsible_team text NOT NULL DEFAULT '',
+          target_date text NOT NULL DEFAULT '',
+          status text NOT NULL DEFAULT 'ativo',
+          created_by_id integer NOT NULL DEFAULT 0,
+          created_by_name text NOT NULL DEFAULT '',
+          resolved_by_name text NOT NULL DEFAULT '',
+          resolved_at timestamp without time zone,
+          created_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+
+        -- medicamentos controlados (receita especial)
+        CREATE TABLE IF NOT EXISTS public.controlled_substances (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          medication_name text NOT NULL DEFAULT '',
+          portaria_class text NOT NULL DEFAULT 'B1',
+          dose text NOT NULL DEFAULT '',
+          route text NOT NULL DEFAULT '',
+          quantity text NOT NULL DEFAULT '',
+          unit text NOT NULL DEFAULT '',
+          instructions text NOT NULL DEFAULT '',
+          prescriber_id integer NOT NULL DEFAULT 0,
+          prescriber_name text NOT NULL DEFAULT '',
+          prescriber_crm text NOT NULL DEFAULT '',
+          status text NOT NULL DEFAULT 'pendente',
+          dispensed_by_name text NOT NULL DEFAULT '',
+          dispensed_at timestamp without time zone,
+          created_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+
+        -- farmácia: dispensação efetiva
+        CREATE TABLE IF NOT EXISTS public.pharmacy_dispensations (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          prescription_id integer,
+          medication_name text NOT NULL DEFAULT '',
+          quantity text NOT NULL DEFAULT '',
+          unit text NOT NULL DEFAULT '',
+          batch_number text NOT NULL DEFAULT '',
+          expiry_date text NOT NULL DEFAULT '',
+          dispensed_by_id integer NOT NULL DEFAULT 0,
+          dispensed_by_name text NOT NULL DEFAULT '',
+          notes text NOT NULL DEFAULT '',
+          returned boolean NOT NULL DEFAULT false,
+          returned_at timestamp without time zone,
+          created_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+
+        -- notificações internas em tempo real
+        CREATE TABLE IF NOT EXISTS public.internal_notifications (
+          id serial PRIMARY KEY,
+          sender_id integer NOT NULL DEFAULT 0,
+          sender_name text NOT NULL DEFAULT 'Sistema',
+          recipient_id integer,
+          patient_id integer,
+          patient_name text NOT NULL DEFAULT '',
+          type text NOT NULL DEFAULT 'observacao',
+          title text NOT NULL DEFAULT '',
+          message text NOT NULL DEFAULT '',
+          read_at timestamp without time zone,
+          created_at timestamp without time zone NOT NULL DEFAULT now()
+        );
       `);
 
       // ── restore admin account (idempotent) ──────────────────────────────────

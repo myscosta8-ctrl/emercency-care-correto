@@ -11,7 +11,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient, ListPatientsParams, PatientPendingExamsItem } from "@workspace/api-client-react";
-import { UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List, ChevronUp, ChevronDown, Check, PhoneCall } from "lucide-react";
+import { UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List, ChevronUp, ChevronDown, Check, PhoneCall, BarChart3, Target } from "lucide-react";
 import { BedPickerInline } from "@/components/bed-picker-inline";
 import { useExamFilterBookmarks } from "@/lib/use-exam-filter-bookmarks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -870,6 +870,20 @@ export default function Dashboard() {
               <Link href="/passagem-plantao">
                 <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
                   <ClipboardList className="h-3.5 w-3.5" />Plantão
+                </Button>
+              </Link>
+            )}
+            {pode("visualizar_relatorios") && (
+              <Link href="/tempos-metas">
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                  <Target className="h-3.5 w-3.5" />Tempos
+                </Button>
+              </Link>
+            )}
+            {pode("visualizar_relatorios") && (
+              <Link href="/relatorios">
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                  <BarChart3 className="h-3.5 w-3.5" />Relatórios
                 </Button>
               </Link>
             )}

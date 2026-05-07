@@ -37,6 +37,8 @@ const LaboratorioPage = lazy(() => import("@/pages/laboratorio"));
 const ExamesPage      = lazy(() => import("@/pages/exames"));
 const HistoricoPage   = lazy(() => import("@/pages/historico"));
 const PainelTvPage    = lazy(() => import("@/pages/painel-tv"));
+const RelatoriosPage  = lazy(() => import("@/pages/relatorios"));
+const TemposMetasPage = lazy(() => import("@/pages/tempos-metas"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -194,6 +196,13 @@ function Router() {
               </Route>
               <Route path="/admin/redefinicao-senha">
                 <AdminGuard><AdminRedefinicaoSenha /></AdminGuard>
+              </Route>
+
+              <Route path="/relatorios">
+                <RoleGuard acao="visualizar_relatorios"><RelatoriosPage /></RoleGuard>
+              </Route>
+              <Route path="/tempos-metas">
+                <RoleGuard acao="visualizar_relatorios"><TemposMetasPage /></RoleGuard>
               </Route>
 
               <Route component={NotFound} />

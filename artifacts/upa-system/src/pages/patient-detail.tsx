@@ -60,6 +60,14 @@ import { PatientAlertsPanel } from "@/components/patient-alerts-panel";
 import { PatientTimelineTab } from "@/components/patient-timeline-tab";
 import { PatientNirTab } from "@/components/patient-nir-tab";
 import { PatientResumoTab } from "@/components/patient-resumo-tab";
+import { PatientAllergiesTab } from "@/components/patient-allergies-tab";
+import { PatientTcleTab } from "@/components/patient-tcle-tab";
+import { PatientObitoTab } from "@/components/patient-obito-tab";
+import { PatientProceduresTab } from "@/components/patient-procedures-tab";
+import { PatientInterconsultsTab } from "@/components/patient-interconsults-tab";
+import { PatientCarePlanTab } from "@/components/patient-care-plan-tab";
+import { PatientControlledMedsTab } from "@/components/patient-controlled-meds-tab";
+import { PatientDispensationsTab } from "@/components/patient-dispensations-tab";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -970,6 +978,15 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 </span>
               )}
             </TabsTrigger>
+            {/* ── Clínico Avançado ── */}
+            <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>
+            {pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
+            {pode("registrar_procedimento") && <TabsTrigger value="procedimentos" className="text-xs">Procedimentos</TabsTrigger>}
+            {pode("registrar_interconsulta") && <TabsTrigger value="interconsulta" className="text-xs">Interconsulta</TabsTrigger>}
+            {pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano Cuidados</TabsTrigger>}
+            {pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Med. Controlados</TabsTrigger>}
+            {pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação Farm.</TabsTrigger>}
+            {pode("registrar_obito") && <TabsTrigger value="obito" className="text-xs text-red-400">Óbito</TabsTrigger>}
           </TabsList>
 
           {/* ── TAB: RESUMO CLÍNICO ───────────────────────────────────────── */}
@@ -2290,6 +2307,51 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           {/* ── TAB: LINHA DO TEMPO ─────────────────────────────────────── */}
           <TabsContent value="timeline">
             <PatientTimelineTab patientId={id} />
+          </TabsContent>
+
+          {/* ── TAB: ALERGIAS ─────────────────────────────────────────── */}
+          <TabsContent value="alergias">
+            <PatientAllergiesTab patientId={id} canEdit={pode("registrar_alergia")} />
+          </TabsContent>
+
+          {/* ── TAB: TCLE ─────────────────────────────────────────────── */}
+          <TabsContent value="tcle">
+            <PatientTcleTab patientId={id} canEdit={pode("registrar_consentimento")} patientName={patient?.full_name ?? ""} />
+          </TabsContent>
+
+          {/* ── TAB: PROCEDIMENTOS ────────────────────────────────────── */}
+          <TabsContent value="procedimentos">
+            <PatientProceduresTab patientId={id} canEdit={pode("registrar_procedimento")} patientName={patient?.full_name ?? ""} />
+          </TabsContent>
+
+          {/* ── TAB: INTERCONSULTA ────────────────────────────────────── */}
+          <TabsContent value="interconsulta">
+            <PatientInterconsultsTab patientId={id} canEdit={pode("registrar_interconsulta")} />
+          </TabsContent>
+
+          {/* ── TAB: PLANO DE CUIDADOS ────────────────────────────────── */}
+          <TabsContent value="plano-cuidados">
+            <PatientCarePlanTab patientId={id} canEdit={pode("registrar_plano_cuidados")} />
+          </TabsContent>
+
+          {/* ── TAB: MED. CONTROLADOS ─────────────────────────────────── */}
+          <TabsContent value="med-controlados">
+            <PatientControlledMedsTab
+              patientId={id}
+              patientName={patient?.full_name ?? ""}
+              canEdit={pode("registrar_medicamento_controlado")}
+              canDispense={pode("registrar_dispensacao")}
+            />
+          </TabsContent>
+
+          {/* ── TAB: DISPENSAÇÃO ──────────────────────────────────────── */}
+          <TabsContent value="dispensacao">
+            <PatientDispensationsTab patientId={id} canEdit={pode("registrar_dispensacao")} />
+          </TabsContent>
+
+          {/* ── TAB: ÓBITO ────────────────────────────────────────────── */}
+          <TabsContent value="obito">
+            <PatientObitoTab patientId={id} patientName={patient?.full_name ?? ""} canEdit={pode("registrar_obito")} />
           </TabsContent>
 
         </Tabs>

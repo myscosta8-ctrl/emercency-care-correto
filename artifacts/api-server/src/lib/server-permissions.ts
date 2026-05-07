@@ -1,11 +1,11 @@
 const PERMISSOES: Record<string, string[]> = {
   recepcionista:           ["criar_paciente", "editar_paciente", "visualizar_setores"],
-  enfermeiro:              ["editar_paciente", "excluir_paciente", "classificacao_risco", "gerar_pdf", "mudar_setor", "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao"],
+  enfermeiro:              ["editar_paciente", "excluir_paciente", "classificacao_risco", "gerar_pdf", "mudar_setor", "registrar_sinais_vitais", "registrar_evolucao", "registrar_prescricao", "registrar_alergia", "registrar_consentimento", "registrar_procedimento", "registrar_interconsulta", "registrar_plano_cuidados"],
   tecnico_enfermagem:      ["registrar_sinais_vitais", "registrar_evolucao"],
   medico:                  ["*"],
   assistente_social:       ["visualizar_setores", "visualizar_relatorios", "editar_paciente", "registrar_nota_social"],
   nutricionista:           ["visualizar_setores", "visualizar_relatorios", "registrar_avaliacao_nutricional"],
-  farmaceutico:            ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao", "registrar_farmacia"],
+  farmaceutico:            ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao", "registrar_farmacia", "registrar_medicamento_controlado", "registrar_dispensacao"],
   administrador:           ["*"],
   auxiliar_administrativo: ["editar_paciente", "visualizar_setores", "visualizar_relatorios"],
   diretoria_geral:         ["*"],
