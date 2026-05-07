@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, patientAlertsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
+import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router({ mergeParams: true });
 
@@ -42,7 +43,7 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/patients/:id/alerts
-router.post("/", async (req, res) => {
+router.post("/", requirePermissao("editar_paciente"), async (req, res) => {
   const patientId = getParam(req as Parameters<typeof getParam>[0], "id");
   if (!patientId) { res.status(400).json({ error: "Invalid patient ID" }); return; }
 
@@ -60,7 +61,7 @@ router.post("/", async (req, res) => {
 });
 
 // PATCH /api/patients/:id/alerts/:alertId/deactivate
-router.patch("/:alertId/deactivate", async (req, res) => {
+router.patch("/:alertId/deactivate", requirePermissao("editar_paciente"), async (req, res) => {
   const p = req as Parameters<typeof getParam>[0];
   const patientId = getParam(p, "id");
   const alertId   = getParam(p, "alertId");
@@ -82,8 +83,12 @@ router.patch("/:alertId/deactivate", async (req, res) => {
   res.json(serializeAlert(alert));
 });
 
-// DELETE /api/patients/:id/alerts/:alertId
-router.delete("/:alertId", async (req, res) => {
+// DELETE /api/patients/:id/alerts/:alertId — restrito a administradores
+router.delete("/:alertId", requirePermissao("editar_paciente"), async (req, res) => {
+  const role = req.staff?.role ?? "";
+  const isAdmin = role === "administrador" || role === "diretoria_geral";
+  if (!isAdmin) { res.status(403).json({ error: "Apenas administradores podem excluir alertas permanentemente. Use desativar." }); return; }
+
   const p = req as Parameters<typeof getParam>[0];
   const patientId = getParam(p, "id");
   const alertId   = getParam(p, "alertId");

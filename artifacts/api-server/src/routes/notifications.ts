@@ -5,6 +5,7 @@ import {
   AddPatientNotificationBody,
   UpdatePatientNotificationBody,
 } from "@workspace/api-zod";
+import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router({ mergeParams: true });
 type Params = Record<string, string>;
@@ -24,7 +25,7 @@ router.get("/", async (req, res) => {
   res.json(notifications.map(serializeNotif));
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requirePermissao("registrar_evolucao"), async (req, res) => {
   const patientId = Number((req.params as Params)["id"]);
   const body = AddPatientNotificationBody.parse(req.body);
   const [notif] = await db
@@ -51,7 +52,7 @@ router.post("/", async (req, res) => {
   res.status(201).json(serializeNotif(notif));
 });
 
-router.put("/:notificationId", async (req, res) => {
+router.put("/:notificationId", requirePermissao("registrar_evolucao"), async (req, res) => {
   const patientId      = Number((req.params as Params)["id"]);
   const notificationId = Number((req.params as Params)["notificationId"]);
   const body = UpdatePatientNotificationBody.parse(req.body);
@@ -87,7 +88,11 @@ router.put("/:notificationId", async (req, res) => {
   res.json(serializeNotif(notif));
 });
 
-router.delete("/:notificationId", async (req, res) => {
+router.delete("/:notificationId", requirePermissao("admin"), async (req, res) => {
+  const role = req.staff?.role ?? "";
+  const isAdmin = role === "administrador" || role === "diretoria_geral";
+  if (!isAdmin) { res.status(403).json({ error: "Apenas administradores podem excluir notificações" }); return; }
+
   const patientId      = Number((req.params as Params)["id"]);
   const notificationId = Number((req.params as Params)["notificationId"]);
   await db.delete(patientNotificationsTable).where(

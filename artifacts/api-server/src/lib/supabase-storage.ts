@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { logger } from "./logger";
 
 export const STORAGE_BUCKET = "exam-files";
 
@@ -42,7 +43,7 @@ export async function uploadToStorage(
     .upload(path, buf, { contentType: mimeType, upsert: false });
 
   if (error) {
-    console.error("Supabase Storage upload error:", error.message);
+    logger.error({ err: error.message }, "Supabase Storage upload error");
     return null;
   }
 

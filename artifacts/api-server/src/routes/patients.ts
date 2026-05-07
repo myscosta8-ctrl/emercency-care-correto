@@ -788,7 +788,7 @@ router.get("/:id/exam-results", async (req, res) => {
   res.json(results.map(serializeExam));
 });
 
-router.post("/:id/exam-results", async (req, res) => {
+router.post("/:id/exam-results", requirePermissao("registrar_evolucao"), async (req, res) => {
   const id   = Number(req.params.id);
   const body = req.body as {
     uploadedBy?: number; examName: string;
@@ -821,7 +821,7 @@ router.post("/:id/exam-results", async (req, res) => {
   res.status(201).json(serializeExam(exam));
 });
 
-router.put("/:id/exam-results/:examId/liberar", async (req, res) => {
+router.put("/:id/exam-results/:examId/liberar", requirePermissao("registrar_evolucao"), async (req, res) => {
   const patientId = Number(req.params.id);
   const examId    = Number(req.params.examId);
   const body = req.body as {

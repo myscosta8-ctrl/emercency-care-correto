@@ -7,6 +7,7 @@
 import { Router } from "express";
 import { db, patientNotificationsTable, patientsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { requirePermissao } from "../middleware/require-auth";
 
 const router = Router();
 
@@ -53,7 +54,7 @@ const serializePatient = (p: typeof patientsTable.$inferSelect) => ({
 });
 
 // ── POST /api/notifications ───────────────────────────────────────────────────
-router.post("/", async (req, res) => {
+router.post("/", requirePermissao("registrar_evolucao"), async (req, res) => {
   const {
     patient_id,
     disease,
