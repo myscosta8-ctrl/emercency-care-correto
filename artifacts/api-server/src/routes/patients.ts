@@ -362,10 +362,17 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/summary", async (req, res) => {
+  // Only count patients in the "fluxo rápido" (triagem → recepção → consultórios → medicação).
+  // Exclude: Alta, Em Observação, Internado, Em Transferência and any patient allocated to an
+  // observation sector (sala vermelha, obs adulto/pediátrico/pré-adulto) — those appear in /observacao.
   const rows = await db
     .select({ triageLevel: patientsTable.triageLevel, count: sql<number>`count(*)::int` })
     .from(patientsTable)
-    .where(sql`${patientsTable.careStatus} != 'Alta'`)
+    .where(sql`
+      ${patientsTable.careStatus} NOT IN ('Alta', 'Em Observação', 'Internado', 'Em Transferência')
+      AND COALESCE(${patientsTable.sector}, '') NOT IN
+        ('sala_vermelha', 'observacao_adulto', 'observacao_pediatrica', 'observacao_pre_adulto')
+    `)
     .groupBy(patientsTable.triageLevel);
 
   const summary = { total: 0, red: 0, orange: 0, yellow: 0, green: 0, blue: 0 };

@@ -382,6 +382,20 @@ export default function FilaMedicoPage() {
     [patients]
   );
 
+  // Pacientes em triagem — ordenados por Manchester (classificados primeiro, depois por tempo de espera)
+  const emTriagem = useMemo(() =>
+    (patients ?? [])
+      .filter(p => p.careStatus === "Em Triagem" || p.careStatus === "Aguardando Triagem")
+      .sort((a, b) => {
+        const aLvl = TRIAGE_ORDER[a.triage_level] ?? 99;
+        const bLvl = TRIAGE_ORDER[b.triage_level] ?? 99;
+        if (aLvl !== bLvl) return aLvl - bLvl;
+        // Mesmo nível: mais antigo primeiro
+        return new Date(a.careStatusChangedAt as string).getTime() - new Date(b.careStatusChangedAt as string).getTime();
+      }),
+    [patients]
+  );
+
   const cons1Livre = !(patients ?? []).some(p => p.careStatus === "Em Atendimento (Cons. 1)");
   const cons2Livre = !(patients ?? []).some(p => p.careStatus === "Em Atendimento (Cons. 2)");
 
@@ -420,6 +434,58 @@ export default function FilaMedicoPage() {
             />
           )}
         </div>
+
+        {/* ── Fila em Triagem (informativo para os consultórios) ── */}
+        {emTriagem.length > 0 && (
+          <div className="rounded-lg border border-border/50 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-card border-b border-border/30">
+              <Activity className="h-4 w-4 text-violet-400 shrink-0" />
+              <span className="text-sm font-bold text-violet-300">Em Triagem</span>
+              <span className="text-xs text-muted-foreground/60 ml-1">— classificações em andamento pela enfermagem</span>
+              <span className="ml-auto text-xs font-mono text-muted-foreground">{emTriagem.length} paciente{emTriagem.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="divide-y divide-border/20">
+              {emTriagem.map((p, idx) => {
+                const hasLevel = !!p.triage_level && p.triage_level !== "blue" || p.triage_level === "blue";
+                const classified = !!p.triage_level;
+                const tc = classified ? (TRIAGE_CONFIG[p.triage_level as keyof typeof TRIAGE_CONFIG] ?? TRIAGE_CONFIG.blue) : null;
+                const elapsed = formatElapsed(p.careStatusChangedAt as string);
+                const maxWait = p.triage_level ? (TRIAGE_MAX_WAIT[p.triage_level] ?? 120) : 120;
+                const waitMins = minutesSince(p.careStatusChangedAt as string);
+                const isOverdue = classified && waitMins > maxWait;
+                return (
+                  <div
+                    key={p.id}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 border-l-4",
+                      tc ? tc.border : "border-l-violet-500/40",
+                    )}
+                  >
+                    <div className="w-7 shrink-0 text-center text-xs font-bold text-muted-foreground/60">#{idx + 1}</div>
+                    {tc ? (
+                      <div className={cn("shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded", tc.bg, tc.text)}>{tc.label}</div>
+                    ) : (
+                      <div className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400">Aguard.</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <Link href={`/patients/${p.id}`} className="text-sm font-semibold hover:underline truncate block">{p.full_name}</Link>
+                      <p className={cn(
+                        "text-xs",
+                        isOverdue ? "text-amber-400 font-semibold" : "text-muted-foreground",
+                      )}>
+                        {p.age}a · Aguardando há {elapsed}
+                        {isOverdue && <span className="ml-1.5 text-[10px] font-bold uppercase">⚠ Prazo excedido</span>}
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-violet-400/60 italic shrink-0 hidden md:block">
+                      {p.careStatus === "Aguardando Triagem" ? "Ag. triagem" : "Em triagem"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── Fila de aguardando atendimento ── */}
         <div className="rounded-lg border border-border/50 overflow-hidden">

@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/use-auth";
 
 const DESTINATION_HOSPITALS = [
+  "Hospital Municipal de Breves",
   "Hospital Regional Público do Marajó de Breves",
   "Hospital de Clínicas Gaspar Vianna (Belém)",
   "Hospital Abelardo Santos (Belém)",
