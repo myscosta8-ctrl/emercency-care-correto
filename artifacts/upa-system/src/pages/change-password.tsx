@@ -78,12 +78,12 @@ export default function ChangePasswordPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <div className="flex justify-center">
-            <div className="h-16 w-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-              <ShieldAlert className="h-8 w-8 text-amber-400" />
+            <div className="h-16 w-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center">
+              <ShieldAlert className="h-8 w-8 text-amber-600" />
             </div>
           </div>
           <h1 className="text-2xl font-bold">Alterar Senha</h1>
-          <p className="text-sm text-amber-400 font-medium">
+          <p className="text-sm text-amber-700 font-medium">
             Por segurança, você deve alterar sua senha no primeiro acesso.
           </p>
           {activeUser && (

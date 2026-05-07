@@ -8,14 +8,14 @@ import type { Perfil } from "@/lib/permissions";
 import { getRoleHome } from "@/lib/role-home";
 
 const ROLE_COLORS: Record<string, string> = {
-  recepcionista:      "bg-sky-500/20 text-sky-400 border-sky-500/30",
-  tecnico_enfermagem: "bg-teal-500/20 text-teal-400 border-teal-500/30",
-  enfermeiro:         "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
-  medico:             "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  assistente_social:  "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  nutricionista:      "bg-green-500/20 text-green-400 border-green-500/30",
-  farmaceutico:       "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  administrador:      "bg-red-500/20 text-red-400 border-red-500/30",
+  recepcionista:      "bg-sky-100 text-sky-700 border-sky-300",
+  tecnico_enfermagem: "bg-teal-100 text-teal-700 border-teal-300",
+  enfermeiro:         "bg-cyan-100 text-cyan-700 border-cyan-300",
+  medico:             "bg-purple-100 text-purple-700 border-purple-300",
+  assistente_social:  "bg-orange-100 text-orange-700 border-orange-300",
+  nutricionista:      "bg-green-100 text-green-700 border-green-300",
+  farmaceutico:       "bg-yellow-100 text-yellow-700 border-yellow-300",
+  administrador:      "bg-red-100 text-red-700 border-red-300",
 };
 
 interface Props {
@@ -32,27 +32,37 @@ export function RoleHeader({ title, icon }: Props) {
   const home = getRoleHome(role);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-sm">
-      <div className="flex items-center gap-2 px-4 h-12">
+    <header className="sticky top-0 z-40 border-b border-border bg-card shadow-sm">
+      <div className="flex items-center gap-3 px-4 h-14">
+        {/* Logo + branding */}
         <Link href={home}>
-          <button className="flex items-center gap-1.5 hover:opacity-75 transition-opacity shrink-0">
-            <Activity className="h-4 w-4 text-primary" />
-            <span className="font-bold text-sm hidden sm:block">UPA Breves</span>
+          <button className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0">
+            <div className="bg-primary text-primary-foreground rounded-md px-2 py-1 leading-none">
+              <div className="font-black text-xs tracking-tight">UPA</div>
+              <div className="font-bold text-[8px] tracking-widest text-center opacity-90">24h</div>
+            </div>
+            <div className="hidden sm:block">
+              <div className="font-black text-xs text-foreground tracking-wide leading-tight">UPA BREVES</div>
+              <div className="text-[9px] text-muted-foreground leading-tight">SEMSA — Breves</div>
+            </div>
           </button>
         </Link>
+
+        <span className="text-border">|</span>
 
         <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border shrink-0", roleColor)}>
           {roleLabel}
         </span>
 
         <span className="text-sm font-semibold truncate flex-1 min-w-0 text-muted-foreground">
+          {icon && <span className="mr-1.5 inline-flex">{icon}</span>}
           {title}
         </span>
 
         <div className="flex items-center gap-1 shrink-0">
           {role !== "recepcionista" && role !== "tecnico_enfermagem" && role !== "assistente_social" && role !== "nutricionista" && role !== "farmaceutico" && (
             <Link href="/">
-              <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs">
+              <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground">
                 <LayoutDashboard className="h-3 w-3" />
                 <span className="hidden sm:inline">Dashboard</span>
               </Button>

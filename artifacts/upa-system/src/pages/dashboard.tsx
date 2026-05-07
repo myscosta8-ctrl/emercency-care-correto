@@ -11,7 +11,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient, ListPatientsParams, PatientPendingExamsItem } from "@workspace/api-client-react";
-import { Activity, UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List, ChevronUp, ChevronDown, Check } from "lucide-react";
+import { UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List, ChevronUp, ChevronDown, Check } from "lucide-react";
 import { useExamFilterBookmarks } from "@/lib/use-exam-filter-bookmarks";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -40,17 +40,17 @@ const ALERT_ROLES = new Set(["enfermeiro", "tecnico_enfermagem"]);
 // ── care status config ─────────────────────────────────────────────────────────
 
 const CARE_STATUS_CONFIG = {
-  "Em Triagem":                { label: "Em Triagem",          color: "text-blue-400",   bg: "bg-blue-500/15",   border: "border-blue-500/30",   dot: "bg-blue-500"   },
-  "Aguardando Atendimento":    { label: "Aguardando",          color: "text-yellow-400", bg: "bg-yellow-500/15", border: "border-yellow-500/30", dot: "bg-yellow-400" },
-  "Em Atendimento (Cons. 1)":  { label: "Cons. 1",             color: "text-sky-400",    bg: "bg-sky-500/15",    border: "border-sky-500/30",    dot: "bg-sky-400"    },
-  "Em Atendimento (Cons. 2)":  { label: "Cons. 2",             color: "text-violet-400", bg: "bg-violet-500/15", border: "border-violet-500/30", dot: "bg-violet-400" },
-  "Em Medicação":              { label: "Em Medicação",        color: "text-pink-400",   bg: "bg-pink-500/15",   border: "border-pink-500/30",   dot: "bg-pink-500"   },
-  "Aguardando Exames":         { label: "Ag. Exames",          color: "text-cyan-400",   bg: "bg-cyan-500/15",   border: "border-cyan-500/30",   dot: "bg-cyan-400"   },
-  "Aguardando Reavaliação":    { label: "Ag. Reavaliação",     color: "text-amber-400",  bg: "bg-amber-500/15",  border: "border-amber-500/30",  dot: "bg-amber-400"  },
-  "Em Observação":             { label: "Em Observação",       color: "text-orange-400", bg: "bg-orange-500/15", border: "border-orange-500/30", dot: "bg-orange-500" },
-  "Internado":                 { label: "Internado",           color: "text-red-400",    bg: "bg-red-500/15",    border: "border-red-500/30",    dot: "bg-red-500"    },
-  "Em Transferência":          { label: "Em Transferência",    color: "text-purple-400", bg: "bg-purple-500/15", border: "border-purple-500/30", dot: "bg-purple-500" },
-  "Alta":                      { label: "Alta",                color: "text-green-400",  bg: "bg-green-500/15",  border: "border-green-500/30",  dot: "bg-green-500"  },
+  "Em Triagem":                { label: "Em Triagem",          color: "text-blue-700",    bg: "bg-blue-100",    border: "border-blue-300",    dot: "bg-blue-500"    },
+  "Aguardando Atendimento":    { label: "Aguardando",          color: "text-amber-700",   bg: "bg-amber-100",   border: "border-amber-300",   dot: "bg-amber-500"   },
+  "Em Atendimento (Cons. 1)":  { label: "Cons. 1",             color: "text-sky-700",     bg: "bg-sky-100",     border: "border-sky-300",     dot: "bg-sky-500"     },
+  "Em Atendimento (Cons. 2)":  { label: "Cons. 2",             color: "text-violet-700",  bg: "bg-violet-100",  border: "border-violet-300",  dot: "bg-violet-500"  },
+  "Em Medicação":              { label: "Em Medicação",        color: "text-pink-700",    bg: "bg-pink-100",    border: "border-pink-300",    dot: "bg-pink-500"    },
+  "Aguardando Exames":         { label: "Ag. Exames",          color: "text-cyan-700",    bg: "bg-cyan-100",    border: "border-cyan-300",    dot: "bg-cyan-500"    },
+  "Aguardando Reavaliação":    { label: "Ag. Reavaliação",     color: "text-orange-700",  bg: "bg-orange-100",  border: "border-orange-300",  dot: "bg-orange-500"  },
+  "Em Observação":             { label: "Em Observação",       color: "text-teal-700",    bg: "bg-teal-100",    border: "border-teal-300",    dot: "bg-teal-500"    },
+  "Internado":                 { label: "Internado",           color: "text-red-700",     bg: "bg-red-100",     border: "border-red-300",     dot: "bg-red-500"     },
+  "Em Transferência":          { label: "Em Transferência",    color: "text-purple-700",  bg: "bg-purple-100",  border: "border-purple-300",  dot: "bg-purple-500"  },
+  "Alta":                      { label: "Alta",                color: "text-green-700",   bg: "bg-green-100",   border: "border-green-300",   dot: "bg-green-500"   },
 } as const;
 
 type CareStatusKey = keyof typeof CARE_STATUS_CONFIG;
@@ -88,11 +88,11 @@ function formatElapsed(iso: string): string {
 // ── triage config ─────────────────────────────────────────────────────────────
 
 const TRIAGE_CONFIG = {
-  red:    { label: "Vermelho",  sub: "EMERGÊNCIA",    border: "border-l-red-500",    dot: "bg-red-500",    text: "text-red-400",    bg: "bg-red-500/10"    },
-  orange: { label: "Laranja",   sub: "MUITO URGENTE", border: "border-l-orange-500", dot: "bg-orange-500", text: "text-orange-400", bg: "bg-orange-500/10" },
-  yellow: { label: "Amarelo",   sub: "URGENTE",       border: "border-l-yellow-400", dot: "bg-yellow-400", text: "text-yellow-400", bg: "bg-yellow-400/10" },
-  green:  { label: "Verde",     sub: "POUCO URGENTE", border: "border-l-green-500",  dot: "bg-green-500",  text: "text-green-400",  bg: "bg-green-500/10"  },
-  blue:   { label: "Azul",      sub: "NÃO URGENTE",   border: "border-l-blue-500",   dot: "bg-blue-500",   text: "text-blue-400",   bg: "bg-blue-500/10"   },
+  red:    { label: "Vermelho",  sub: "EMERGÊNCIA",    border: "border-l-red-500",    dot: "bg-red-500",    text: "text-red-700",    bg: "bg-red-100"    },
+  orange: { label: "Laranja",   sub: "MUITO URGENTE", border: "border-l-orange-500", dot: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-100" },
+  yellow: { label: "Amarelo",   sub: "URGENTE",       border: "border-l-yellow-500", dot: "bg-yellow-500", text: "text-yellow-700", bg: "bg-yellow-100" },
+  green:  { label: "Verde",     sub: "POUCO URGENTE", border: "border-l-green-500",  dot: "bg-green-500",  text: "text-green-700",  bg: "bg-green-100"  },
+  blue:   { label: "Azul",      sub: "NÃO URGENTE",   border: "border-l-blue-500",   dot: "bg-blue-500",   text: "text-blue-700",   bg: "bg-blue-100"   },
 } as const;
 
 type TriageKey = keyof typeof TRIAGE_CONFIG;
@@ -100,11 +100,11 @@ type TriageKey = keyof typeof TRIAGE_CONFIG;
 const TRIAGE_SEVERITY: Record<string, number> = { red: 1, orange: 2, yellow: 3, green: 4, blue: 5 };
 
 const ALL_SECTOR_CONFIG = [
-  { key: "triagem",               name: "Triagem",               emoji: "🩺", headerCls: "bg-teal-950/60 border-teal-700/50 text-teal-300",       emptyBorder: "border-teal-900/30",   group: "recepcao"  },
-  { key: "sala_vermelha",         name: "Sala Vermelha",         emoji: "🔴", headerCls: "bg-red-950/60 border-red-700/50 text-red-300",          emptyBorder: "border-red-900/30",    group: "leitos"    },
-  { key: "observacao_adulto",     name: "Observação Adulto",     emoji: "🟡", headerCls: "bg-yellow-950/40 border-yellow-700/40 text-yellow-300", emptyBorder: "border-yellow-900/30", group: "leitos"    },
-  { key: "observacao_pediatrica", name: "Observação Pediátrica", emoji: "🟢", headerCls: "bg-green-950/40 border-green-700/40 text-green-300",   emptyBorder: "border-green-900/30",  group: "leitos"    },
-  { key: "observacao_pre_adulto", name: "Observação Pré-Adulto", emoji: "🔵", headerCls: "bg-blue-950/40 border-blue-700/40 text-blue-300",      emptyBorder: "border-blue-900/30",   group: "leitos"    },
+  { key: "triagem",               name: "Triagem",               emoji: "🩺", headerCls: "bg-blue-50 border-blue-200 text-blue-700",    emptyBorder: "border-blue-100",   group: "recepcao"  },
+  { key: "sala_vermelha",         name: "Sala Vermelha",         emoji: "🔴", headerCls: "bg-red-50 border-red-200 text-red-700",       emptyBorder: "border-red-100",    group: "leitos"    },
+  { key: "observacao_adulto",     name: "Observação Adulto",     emoji: "🟡", headerCls: "bg-amber-50 border-amber-200 text-amber-700", emptyBorder: "border-amber-100",  group: "leitos"    },
+  { key: "observacao_pediatrica", name: "Observação Pediátrica", emoji: "🟢", headerCls: "bg-green-50 border-green-200 text-green-700", emptyBorder: "border-green-100",  group: "leitos"    },
+  { key: "observacao_pre_adulto", name: "Observação Pré-Adulto", emoji: "🔵", headerCls: "bg-sky-50 border-sky-200 text-sky-700",       emptyBorder: "border-sky-100",    group: "leitos"    },
 ];
 
 // ── debounce ──────────────────────────────────────────────────────────────────
@@ -147,12 +147,12 @@ const PatientRow = memo(function PatientRow({
     <div className={cn(
       "group relative flex items-stretch border-l-4 border-b border-border/30 last:border-b-0 transition-colors",
       isCritical
-        ? "border-l-red-500 bg-red-500/10"
+        ? "border-l-red-500 bg-red-50"
         : cn(cfg.border, "hover:bg-muted/20"),
     )}>
       {/* Blinking overlay for critical patients */}
       {isCritical && (
-        <div className="absolute inset-0 bg-red-500/8 animate-pulse pointer-events-none" />
+        <div className="absolute inset-0 bg-red-100/60 animate-pulse pointer-events-none" />
       )}
 
       <Link href={`/patients/${patient.id}`} className="flex-1 flex items-center gap-3 px-3 py-2.5 min-w-0 cursor-pointer">
@@ -171,7 +171,7 @@ const PatientRow = memo(function PatientRow({
         {/* Triage badge */}
         <div className={cn(
           "shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded leading-tight hidden md:block",
-          isCritical ? "bg-red-500/20 text-red-400" : cn(cfg.bg, cfg.text),
+          isCritical ? "bg-red-100 text-red-700" : cn(cfg.bg, cfg.text),
         )}>
           {isCritical ? "⚠ CRÍTICO" : cfg.label}
         </div>
@@ -184,7 +184,7 @@ const PatientRow = memo(function PatientRow({
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className={cn(
               "font-semibold text-sm leading-tight truncate",
-              isCritical ? "text-red-300" : "text-foreground",
+              isCritical ? "text-red-700" : "text-foreground",
             )}>
               {patient.full_name}
             </span>
@@ -202,7 +202,7 @@ const PatientRow = memo(function PatientRow({
             {hasTimeAlert && (
               <span className={cn(
                 "flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0 rounded border leading-5 shrink-0",
-                triageAlert ? "bg-orange-500/15 text-orange-400 border-orange-500/30" : "bg-purple-500/15 text-purple-400 border-purple-500/30",
+                triageAlert ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-purple-100 text-purple-700 border-purple-300",
               )}>
                 <Clock className="h-2.5 w-2.5" />
                 {triageAlert
@@ -213,7 +213,7 @@ const PatientRow = memo(function PatientRow({
           </div>
           {/* Critical detail shows the offending vital (SpO₂, FC, PAS) */}
           {isCritical && criticalDetail ? (
-            <p className="text-xs font-semibold text-red-400 leading-tight mt-0.5">{criticalDetail}</p>
+            <p className="text-xs font-semibold text-red-600 leading-tight mt-0.5">{criticalDetail}</p>
           ) : patient.diagnosis ? (
             <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{patient.diagnosis}</p>
           ) : null}
@@ -224,8 +224,8 @@ const PatientRow = memo(function PatientRow({
                 const names = [...ex.laboratoriais, ...ex.imagem];
                 const label = names.length > 0 ? names.slice(0, 2).join(", ") : (ex.laboratoriais.length > 0 ? "Lab" : "Imagem");
                 const urgentCls = ex.prioridade === "urgente"
-                  ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                  : "bg-cyan-500/15 text-cyan-400 border-cyan-500/30";
+                  ? "bg-amber-100 text-amber-700 border-amber-300"
+                  : "bg-cyan-100 text-cyan-700 border-cyan-300";
                 return (
                   <span key={ex.id} className={cn(
                     "inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0 rounded border leading-5",
@@ -238,7 +238,7 @@ const PatientRow = memo(function PatientRow({
                 );
               })}
               {pendingExams.length > 3 && (
-                <span className="text-[10px] text-cyan-400/70 leading-5">+{pendingExams.length - 3}</span>
+                <span className="text-[10px] text-cyan-600 leading-5">+{pendingExams.length - 3}</span>
               )}
             </div>
           )}
@@ -246,7 +246,7 @@ const PatientRow = memo(function PatientRow({
 
         {/* PACIENTE CRÍTICO badge (desktop) */}
         {isCritical && (
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-500/20 text-red-400 border-red-500/40 uppercase tracking-wider shrink-0 hidden sm:inline-flex items-center gap-1">
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-100 text-red-700 border-red-300 uppercase tracking-wider shrink-0 hidden sm:inline-flex items-center gap-1">
             PACIENTE CRÍTICO
           </span>
         )}
@@ -374,12 +374,12 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
               ))}
             </select>
             {(careStatus === "Em Triagem" || careStatus === "Aguardando Atendimento") && (
-              <p className="text-[11px] text-yellow-400">
+              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
                 ⚠ Pacientes neste status são exibidos na área de Recepção/Triagem.
               </p>
             )}
             {(careStatus === "Em Medicação" || careStatus === "Aguardando Exames" || careStatus === "Aguardando Reavaliação") && (
-              <p className="text-[11px] text-cyan-400">
+              <p className="text-[11px] text-cyan-700 bg-cyan-50 border border-cyan-200 rounded px-2 py-1">
                 ℹ Status de acompanhamento pós-consulta — paciente permanece no setor atual.
               </p>
             )}
@@ -677,77 +677,94 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* ── header ─────────────────────────────────────────────────────── */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 h-12 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary shrink-0" />
-            <h1 className="text-base font-bold tracking-tight truncate hidden sm:block">UPA Breves — Gestão de Pacientes</h1>
-            <h1 className="text-base font-bold tracking-tight sm:hidden">UPA Breves</h1>
-            {/* Live critical count badge — nurses and technicians only */}
+      <header className="border-b border-border bg-card sticky top-0 z-10 shadow-sm">
+        <div className="px-4 h-16 flex items-center justify-between gap-3">
+          {/* Logo + Branding */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="bg-primary text-primary-foreground rounded-lg px-2.5 py-1.5 leading-none shrink-0">
+              <div className="font-black text-sm tracking-tight">UPA</div>
+              <div className="font-bold text-[9px] tracking-[0.2em] text-center opacity-90">24h</div>
+            </div>
+            <div className="hidden sm:block">
+              <div className="font-black text-sm text-foreground tracking-wide leading-tight">UPA BREVES</div>
+              <div className="text-[10px] text-muted-foreground leading-tight">SEMSA — Prefeitura Municipal de Breves</div>
+              <div className="text-[9px] text-muted-foreground/60 leading-tight">Gestão de Pacientes</div>
+            </div>
             {isNurseOrTech && criticals.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse ml-1">
                 <Siren className="h-3 w-3" />
                 {criticals.length}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+
+          {/* Nav links (desktop) */}
+          <nav className="hidden lg:flex items-center gap-0.5 flex-1 justify-center">
             {activeUser?.role === "administrador" && (
               <Link href="/admin/dashboard">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                  <Settings2 className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Admin</span>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                  <Settings2 className="h-3.5 w-3.5" />Admin
                 </Button>
               </Link>
             )}
             {pode("gerenciar_usuarios") && (
               <Link href="/funcionarios">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                  <Users className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Funcionários</span>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                  <Users className="h-3.5 w-3.5" />Funcionários
                 </Button>
               </Link>
             )}
             <Link href="/fila-medico">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                <Stethoscope className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">Fila Médica</span>
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                <Stethoscope className="h-3.5 w-3.5" />Fila Médica
               </Button>
             </Link>
             <Link href="/laboratorio">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                <FlaskConical className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">Laboratório</span>
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                <FlaskConical className="h-3.5 w-3.5" />Laboratório
               </Button>
             </Link>
             <Link href="/historico">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                <Bookmark className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">Histórico</span>
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                <Bookmark className="h-3.5 w-3.5" />Histórico
               </Button>
             </Link>
             {pode("registrar_exames") && (
               <Link href="/exames">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                  <Microscope className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Pendências</span>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                  <Microscope className="h-3.5 w-3.5" />Pendências
                 </Button>
               </Link>
             )}
             <Link href="/leitos">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                <BedDouble className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">Leitos</span>
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                <BedDouble className="h-3.5 w-3.5" />Leitos
               </Button>
             </Link>
             {pode("registrar_evolucao") && (
               <Link href="/passagem-plantao">
-                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs">
-                  <ClipboardList className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Passagem de Plantão</span>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+                  <ClipboardList className="h-3.5 w-3.5" />Plantão
                 </Button>
               </Link>
             )}
+          </nav>
+
+          {/* Right: actions + user */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Mobile nav (icon-only) */}
+            <div className="flex lg:hidden items-center gap-0.5">
+              <Link href="/fila-medico">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground">
+                  <Stethoscope className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+              <Link href="/leitos">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground">
+                  <BedDouble className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </div>
             <Button
               onClick={() => pode("criar_paciente") && setLookupOpen(true)}
               data-testid="button-new-patient"
@@ -757,8 +774,20 @@ export default function Dashboard() {
             >
               <UserPlus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Nova Admissão</span>
-              <span className="sm:hidden">+ Admissão</span>
+              <span className="sm:hidden">+</span>
             </Button>
+            {/* User info + logout */}
+            <div className="hidden md:flex items-center gap-2 pl-2 border-l border-border">
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-primary">
+                  {activeUser?.name?.charAt(0).toUpperCase() ?? "?"}
+                </span>
+              </div>
+              <div className="leading-tight">
+                <div className="text-xs font-semibold text-foreground max-w-28 truncate">{activeUser?.name}</div>
+                <div className="text-[10px] text-muted-foreground capitalize">{activeUser?.role?.replace(/_/g, " ")}</div>
+              </div>
+            </div>
             <Button
               variant="ghost"
               size="sm"
@@ -775,7 +804,7 @@ export default function Dashboard() {
 
       {/* ── offline banner ───────────────────────────────────────────── */}
       {isOffline && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 border-b border-amber-500/40 text-amber-300 text-xs font-semibold">
+        <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-700 text-xs font-semibold">
           <WifiOff className="h-4 w-4 shrink-0" />
           <span>Sem conexão com a internet — dados podem estar desatualizados. Reconectará automaticamente.</span>
         </div>
@@ -785,23 +814,23 @@ export default function Dashboard() {
 
         {/* ── CRITICAL PATIENTS ALERT PANEL — enfermeiro/tecnico_enfermagem only ── */}
         {isNurseOrTech && criticals.length > 0 && (
-          <div className="mb-4 rounded-lg overflow-hidden border border-red-500/50 shadow-[0_0_16px_rgba(239,68,68,0.12)]">
+          <div className="mb-4 rounded-lg overflow-hidden border border-red-200 shadow-sm">
             {/* Header bar */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-red-500/20 border-b border-red-500/30">
-              <Siren className="h-4 w-4 text-red-400 shrink-0 animate-pulse" />
-              <span className="text-xs font-bold text-red-300 uppercase tracking-wider flex-1">
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border-b border-red-200">
+              <Siren className="h-4 w-4 text-red-600 shrink-0 animate-pulse" />
+              <span className="text-xs font-bold text-red-700 uppercase tracking-wider flex-1">
                 ⚠ ATENÇÃO — {criticals.length} PACIENTE{criticals.length !== 1 ? "S" : ""} CRÍTICO{criticals.length !== 1 ? "S" : ""}
               </span>
-              <span className="text-[10px] text-red-400/70 shrink-0 hidden sm:block">
+              <span className="text-[10px] text-red-500 shrink-0 hidden sm:block">
                 Atualiza a cada 30s
               </span>
             </div>
 
             {/* Critical patient rows */}
-            <div className="bg-red-950/20 divide-y divide-red-500/20">
+            <div className="bg-white divide-y divide-red-100">
               {criticals.map(alert => (
                 <Link key={alert.patientId} href={`/patients/${alert.patientId}`}>
-                  <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-red-500/10 transition-colors cursor-pointer group">
+                  <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-red-50 transition-colors cursor-pointer group">
                     {/* Pulsing indicator */}
                     <span className="relative flex h-3 w-3 shrink-0">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
@@ -811,18 +840,18 @@ export default function Dashboard() {
                     {/* Patient info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-red-200 truncate">{alert.full_name}</span>
+                        <span className="text-sm font-bold text-red-700 truncate">{alert.full_name}</span>
                         {alert.bed && (
-                          <span className="text-[10px] text-red-400/70 shrink-0">Leito {alert.bed}</span>
+                          <span className="text-[10px] text-red-500 shrink-0">Leito {alert.bed}</span>
                         )}
                       </div>
-                      <p className="text-xs font-semibold text-red-400 leading-tight">
+                      <p className="text-xs font-semibold text-red-600 leading-tight">
                         {alert.alertDetail}
                       </p>
                     </div>
 
                     {/* Reason badge */}
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-red-500/25 text-red-300 border-red-500/40 uppercase tracking-wider shrink-0 hidden sm:block">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-red-100 text-red-700 border-red-300 uppercase tracking-wider shrink-0 hidden sm:block">
                       {alert.alertReason === "triage_red"   ? "TRIAGEM VERM."
                         : alert.alertReason === "spo2_baixo"  ? "SpO₂ BAIXO"
                         : alert.alertReason === "fc_alta"     ? "FC ELEVADA"
@@ -840,11 +869,11 @@ export default function Dashboard() {
         <div className="flex items-center gap-1 mb-4 flex-wrap">
           {[
             { key: "all",    label: "Total",    value: summary?.total,  cls: "text-foreground",   dot: "" },
-            { key: "red",    label: "Verm.",    value: summary?.red,    cls: "text-red-400",      dot: "bg-red-500" },
-            { key: "orange", label: "Lar.",     value: summary?.orange, cls: "text-orange-400",   dot: "bg-orange-500" },
-            { key: "yellow", label: "Amar.",    value: summary?.yellow, cls: "text-yellow-400",   dot: "bg-yellow-400" },
-            { key: "green",  label: "Verde",    value: summary?.green,  cls: "text-green-400",    dot: "bg-green-500" },
-            { key: "blue",   label: "Azul",     value: summary?.blue,   cls: "text-blue-400",     dot: "bg-blue-500" },
+            { key: "red",    label: "Verm.",    value: summary?.red,    cls: "text-red-700",      dot: "bg-red-500" },
+            { key: "orange", label: "Lar.",     value: summary?.orange, cls: "text-orange-700",   dot: "bg-orange-500" },
+            { key: "yellow", label: "Amar.",    value: summary?.yellow, cls: "text-amber-700",    dot: "bg-yellow-500" },
+            { key: "green",  label: "Verde",    value: summary?.green,  cls: "text-green-700",    dot: "bg-green-500" },
+            { key: "blue",   label: "Azul",     value: summary?.blue,   cls: "text-blue-700",     dot: "bg-blue-500" },
           ].map(card => (
             <button
               key={card.key}
@@ -869,10 +898,10 @@ export default function Dashboard() {
 
           {/* Critical count pill — nurses and technicians only */}
           {isNurseOrTech && criticals.length > 0 && (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold border-red-500/40 bg-red-500/10 text-red-400">
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold border-red-300 bg-red-100 text-red-700">
               <AlertTriangle className="h-3 w-3" />
               <span>{criticals.length}</span>
-              <span className="text-red-400/70 font-normal">Críticos</span>
+              <span className="text-red-600/80 font-normal">Críticos</span>
             </span>
           )}
         </div>
@@ -887,7 +916,7 @@ export default function Dashboard() {
             {bookmarks.map((bk, idx) => (
               <span
                 key={bk.id}
-                className="group inline-flex items-center gap-0.5 pl-2.5 pr-1 py-0.5 rounded-full border border-cyan-500/35 bg-cyan-500/8 text-cyan-400 text-[11px] font-medium"
+                className="group inline-flex items-center gap-0.5 pl-2.5 pr-1 py-0.5 rounded-full border border-cyan-300 bg-cyan-50 text-cyan-700 text-[11px] font-medium"
               >
                 {renamingId === bk.id ? (
                   <form
@@ -904,14 +933,14 @@ export default function Dashboard() {
                       value={renameInput}
                       onChange={e => setRenameInput(e.target.value)}
                       maxLength={40}
-                      className="bg-transparent text-[11px] text-foreground focus:outline-none w-28 border-b border-cyan-500/50"
+                      className="bg-transparent text-[11px] text-foreground focus:outline-none w-28 border-b border-cyan-300"
                       onBlur={() => {
                         if (renameInput.trim()) renameBookmark(bk.id, renameInput);
                         setRenamingId(null);
                       }}
                       onKeyDown={e => e.key === "Escape" && setRenamingId(null)}
                     />
-                    <button type="submit" className="text-cyan-400 hover:text-cyan-300 flex items-center">
+                    <button type="submit" className="text-cyan-600 hover:text-cyan-700 flex items-center">
                       <Check className="h-3 w-3" />
                     </button>
                   </form>
@@ -927,7 +956,7 @@ export default function Dashboard() {
                       setShowExamFilters(true);
                       setShowSaveBookmark(false);
                     }}
-                    className="hover:text-cyan-300 transition-colors"
+                    className="hover:text-cyan-700 transition-colors"
                   >
                     {bk.label}
                   </button>
@@ -939,7 +968,7 @@ export default function Dashboard() {
                       title="Mover para cima"
                       onClick={() => reorderBookmarks(bk.id, "up")}
                       disabled={idx === 0}
-                      className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-50 hover:!opacity-100 disabled:!opacity-0 hover:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 transition-all focus:outline-none"
+                      className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-50 hover:!opacity-100 disabled:!opacity-0 hover:bg-cyan-100 text-cyan-600 hover:text-cyan-700 transition-all focus:outline-none"
                     >
                       <ChevronUp className="h-2.5 w-2.5" />
                     </button>
@@ -948,7 +977,7 @@ export default function Dashboard() {
                       title="Mover para baixo"
                       onClick={() => reorderBookmarks(bk.id, "down")}
                       disabled={idx === bookmarks.length - 1}
-                      className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-50 hover:!opacity-100 disabled:!opacity-0 hover:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 transition-all focus:outline-none"
+                      className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-50 hover:!opacity-100 disabled:!opacity-0 hover:bg-cyan-100 text-cyan-600 hover:text-cyan-700 transition-all focus:outline-none"
                     >
                       <ChevronDown className="h-2.5 w-2.5" />
                     </button>
@@ -956,7 +985,7 @@ export default function Dashboard() {
                       type="button"
                       title="Renomear favorito"
                       onClick={() => { setRenamingId(bk.id); setRenameInput(bk.label); }}
-                      className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-50 hover:!opacity-100 hover:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 transition-all focus:outline-none"
+                      className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-50 hover:!opacity-100 hover:bg-cyan-100 text-cyan-600 hover:text-cyan-700 transition-all focus:outline-none"
                     >
                       <Pencil className="h-2.5 w-2.5" />
                     </button>
@@ -964,7 +993,7 @@ export default function Dashboard() {
                       type="button"
                       title="Remover favorito"
                       onClick={() => deleteBookmark(bk.id)}
-                      className="ml-0.5 h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-70 hover:!opacity-100 focus:opacity-100 hover:bg-cyan-500/20 focus:bg-cyan-500/20 text-cyan-400/70 hover:text-cyan-300 focus:text-cyan-300 transition-all focus:outline-none"
+                      className="ml-0.5 h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-70 hover:!opacity-100 focus:opacity-100 hover:bg-cyan-100 focus:bg-cyan-100 text-cyan-600 hover:text-cyan-700 focus:text-cyan-700 transition-all focus:outline-none"
                     >
                       <X className="h-2.5 w-2.5" />
                     </button>
@@ -1045,9 +1074,9 @@ export default function Dashboard() {
 
         {/* ── exam filter panel ──────────────────────────────────────── */}
         {showExamFilters && (
-          <div className="mb-3 rounded-md border border-cyan-500/30 bg-cyan-500/5 p-3 space-y-2.5">
+          <div className="mb-3 rounded-md border border-cyan-200 bg-cyan-50 p-3 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-cyan-700 uppercase tracking-wider flex items-center gap-1.5">
                 <FlaskConical className="h-3.5 w-3.5" />
                 Filtrar por Exame Pendente
               </span>
@@ -1059,7 +1088,7 @@ export default function Dashboard() {
                       setBookmarkLabel(examFilterLabel !== "Exame" ? examFilterLabel : "");
                       setShowSaveBookmark(true);
                     }}
-                    className="text-[11px] text-cyan-400/70 hover:text-cyan-400 flex items-center gap-0.5 transition-colors"
+                    className="text-[11px] text-cyan-600 hover:text-cyan-700 flex items-center gap-0.5 transition-colors"
                   >
                     <Bookmark className="h-3 w-3" />
                     Salvar filtro
@@ -1076,7 +1105,7 @@ export default function Dashboard() {
                       setShowSaveBookmark(false);
                       setViewMode(v => v === "exames" ? "setor" : v);
                     }}
-                    className="text-[11px] text-cyan-400/70 hover:text-cyan-400 flex items-center gap-0.5 transition-colors"
+                    className="text-[11px] text-cyan-600 hover:text-cyan-700 flex items-center gap-0.5 transition-colors"
                   >
                     <X className="h-3 w-3" />
                     Limpar filtros
@@ -1088,7 +1117,7 @@ export default function Dashboard() {
             {/* Save bookmark inline form */}
             {showSaveBookmark && (
               <form
-                className="flex items-center gap-2 rounded-md border border-cyan-500/25 bg-background px-2.5 py-1.5"
+                className="flex items-center gap-2 rounded-md border border-cyan-200 bg-background px-2.5 py-1.5"
                 onSubmit={e => {
                   e.preventDefault();
                   if (!bookmarkLabel.trim() || !hasExamFilter) return;
@@ -1097,7 +1126,7 @@ export default function Dashboard() {
                   setBookmarkLabel("");
                 }}
               >
-                <BookmarkCheck className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+                <BookmarkCheck className="h-3.5 w-3.5 text-cyan-600 shrink-0" />
                 <input
                   autoFocus
                   type="text"
@@ -1110,7 +1139,7 @@ export default function Dashboard() {
                 <button
                   type="submit"
                   disabled={!bookmarkLabel.trim()}
-                  className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="text-[11px] font-semibold text-cyan-600 hover:text-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Salvar
                 </button>
@@ -1328,14 +1357,14 @@ export default function Dashboard() {
                 const cfg = TRIAGE_CONFIG[patient.triage_level as TriageKey] ?? TRIAGE_CONFIG.blue;
                 const isCritical = isNurseOrTech && criticalPatientIds.has(patient.id);
                 const EXAM_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-                  solicitado: { label: "Solicitado", cls: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
-                  coletado:   { label: "Coletado",   cls: "bg-blue-500/15 text-blue-400 border-blue-500/30"   },
-                  laudado:    { label: "Laudado",     cls: "bg-green-500/15 text-green-400 border-green-500/30" },
+                  solicitado: { label: "Solicitado", cls: "bg-amber-50 text-amber-700 border-amber-300" },
+                  coletado:   { label: "Coletado",   cls: "bg-blue-50 text-blue-700 border-blue-300"   },
+                  laudado:    { label: "Laudado",     cls: "bg-green-50 text-green-700 border-green-300" },
                 };
                 const EXAM_PRIO_LABEL: Record<string, { label: string; cls: string }> = {
-                  urgente: { label: "Urgente ⚡", cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-                  rotina:  { label: "Rotina",     cls: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30"   },
-                  eletivo: { label: "Eletivo",    cls: "bg-slate-500/15 text-slate-400 border-slate-500/30" },
+                  urgente: { label: "Urgente ⚡", cls: "bg-red-50 text-red-700 border-red-300" },
+                  rotina:  { label: "Rotina",     cls: "bg-cyan-50 text-cyan-700 border-cyan-300"   },
+                  eletivo: { label: "Eletivo",    cls: "bg-slate-50 text-slate-600 border-slate-300" },
                 };
                 const statusCfg = EXAM_STATUS_LABEL[exam.status] ?? { label: exam.status, cls: "bg-muted/20 text-muted-foreground border-border/40" };
                 const prioCfg   = EXAM_PRIO_LABEL[exam.prioridade] ?? { label: exam.prioridade, cls: "bg-muted/20 text-muted-foreground border-border/40" };
@@ -1347,7 +1376,7 @@ export default function Dashboard() {
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 border-b border-border/25 last:border-b-0 transition-colors cursor-pointer border-l-4",
                       isCritical
-                        ? "border-l-red-500 bg-red-500/10 hover:bg-red-500/15"
+                        ? "border-l-red-500 bg-red-50 hover:bg-red-100"
                         : cn(cfg.border, "hover:bg-muted/20"),
                     )}
                   >
@@ -1365,7 +1394,7 @@ export default function Dashboard() {
                     {/* Triage badge */}
                     <div className={cn(
                       "shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded leading-tight hidden sm:block",
-                      isCritical ? "bg-red-500/20 text-red-400" : cn(cfg.bg, cfg.text),
+                      isCritical ? "bg-red-100 text-red-700" : cn(cfg.bg, cfg.text),
                     )}>
                       {isCritical ? "⚠ CRÍTICO" : cfg.label}
                     </div>
@@ -1378,14 +1407,14 @@ export default function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <span className={cn(
                         "font-semibold text-sm leading-tight truncate block",
-                        isCritical ? "text-red-300" : "text-foreground",
+                        isCritical ? "text-red-700" : "text-foreground",
                       )}>
                         {patient.full_name}
                         <span className="ml-1.5 text-xs font-normal text-muted-foreground">{patient.age}a</span>
                       </span>
                       {/* Exam names */}
                       <div className="flex flex-wrap gap-0.5 mt-0.5">
-                        <FlaskConical className={cn("h-3 w-3 shrink-0 mt-0.5", examType === "imagem" ? "text-violet-400" : "text-cyan-400")} />
+                        <FlaskConical className={cn("h-3 w-3 shrink-0 mt-0.5", examType === "imagem" ? "text-violet-600" : "text-cyan-600")} />
                         <span className="text-xs text-muted-foreground truncate">
                           {examNames.length > 0 ? examNames.join(", ") : (examType === "imagem" ? "Imagem" : "Laboratorial")}
                         </span>
@@ -1568,14 +1597,14 @@ export default function Dashboard() {
             onClick={() => setPopupDismissed(true)}
           />
           {/* panel */}
-          <div className="relative w-full max-w-md rounded-lg border border-red-500/60 bg-[#120808] shadow-2xl p-6 space-y-4">
+          <div className="relative w-full max-w-md rounded-xl border border-red-200 bg-white shadow-xl p-6 space-y-4">
             {/* title */}
             <div className="flex items-center gap-3">
               <span className="relative flex h-4 w-4 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500" />
               </span>
-              <h2 id="critical-popup-title" className="text-red-300 text-base font-semibold">
+              <h2 id="critical-popup-title" className="text-red-700 text-base font-semibold">
                 ⚠ Alerta de Paciente Crítico
               </h2>
             </div>
@@ -1584,11 +1613,11 @@ export default function Dashboard() {
               <p className="text-sm font-semibold text-foreground">
                 Paciente crítico necessita avaliação imediata
               </p>
-              <div className="rounded-md border border-red-500/30 bg-red-500/10 divide-y divide-red-500/20">
+              <div className="rounded-md border border-red-200 bg-red-50 divide-y divide-red-100">
                 {criticals.map(a => (
                   <div key={a.patientId} className="px-3 py-2.5">
-                    <p className="text-sm font-bold text-red-200">{a.full_name}</p>
-                    <p className="text-xs text-red-400 mt-0.5">{a.alertDetail}</p>
+                    <p className="text-sm font-bold text-red-700">{a.full_name}</p>
+                    <p className="text-xs text-red-600 mt-0.5">{a.alertDetail}</p>
                     {a.bed && (
                       <p className="text-[11px] text-muted-foreground mt-0.5">Leito: {a.bed}</p>
                     )}
