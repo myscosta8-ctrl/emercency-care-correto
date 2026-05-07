@@ -156,7 +156,7 @@ export function PrintHeader({ baseUrl = "/", title, patient, emittedAt }: PrintH
             {/* Row A */}
             <tr>
               <Cell label="Prontuário" value={patient.prontuarioNumber} style={{ width: "13%" }} />
-              <Cell label="Atendimento" value={patient.atendimentoNumber} style={{ width: "13%" }} />
+              <Cell label="Nº Registro" value={patient.atendimentoNumber} style={{ width: "13%" }} />
               <Cell label="Paciente" value={patient.full_name} style={{ width: "42%", fontWeight: 700 }} />
               <Cell label="Nome da Mãe" value={patient.motherName} style={{ width: "32%" }} />
             </tr>

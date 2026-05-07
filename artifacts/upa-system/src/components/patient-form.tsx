@@ -207,7 +207,7 @@ export function PatientForm({ patient, onSuccess, onCancel, restrictToPersonal =
       addressCep,
     } as unknown as CreatePatientBody;
 
-    if (patient) {
+    if (patient?.id) {
       updatePatient.mutate({ id: patient.id, data: payload }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
@@ -677,7 +677,7 @@ export function PatientForm({ patient, onSuccess, onCancel, restrictToPersonal =
             Cancelar
           </Button>
           <Button type="submit" disabled={isPending} data-testid="button-submit">
-            {isPending ? "Salvando..." : patient ? "Salvar Alterações" : "Registrar Admissão"}
+            {isPending ? "Salvando..." : patient?.id ? "Salvar Alterações" : "Registrar Admissão"}
           </Button>
         </div>
       </form>

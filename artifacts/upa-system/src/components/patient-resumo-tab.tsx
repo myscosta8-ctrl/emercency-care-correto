@@ -137,7 +137,7 @@ export function PatientResumoTab({
               <span className="font-mono text-xs font-semibold">{patient.prontuarioNumber ?? "—"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-xs text-muted-foreground">Atendimento</span>
+              <span className="text-xs text-muted-foreground">Nº Registro</span>
               <span className="font-mono text-xs font-semibold">{patient.atendimentoNumber ?? "—"}</span>
             </div>
             {patient.bed && (

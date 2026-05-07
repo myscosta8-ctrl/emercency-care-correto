@@ -399,13 +399,22 @@ router.get("/lookup", async (req, res) => {
     conditions.push(eq(patientsTable.birthDate, q));
   }
 
-  const results = await db.select()
+  const rows = await db.select()
     .from(patientsTable)
     .where(or(...conditions))
     .orderBy(desc(patientsTable.createdAt))
-    .limit(20);
+    .limit(50);
 
-  res.json(results.map(serialize));
+  // Deduplicate: show each person only once (most recent record per CPF, or per name)
+  const seen = new Set<string>();
+  const results = rows.filter(p => {
+    const key = p.cpf?.replace(/\D/g, "") || `name:${p.fullName.toLowerCase().trim()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  res.json(results.slice(0, 20).map(serialize));
 });
 
 // GET /patients/previous-visits?cpf=xxx&excludeId=yyy
@@ -468,7 +477,7 @@ router.post("/", requirePermissao("criar_paciente"), async (req, res) => {
   await db.insert(patientEvolutionsTable).values({
     patientId: patient.id,
     userId:    0,
-    soapText:  `Admissão inicial — Prontuário: ${prontuarioNumber} | Atendimento: ${atendimentoNumber}`,
+    soapText:  `Admissão inicial — Prontuário: ${prontuarioNumber} | Nº Registro: ${atendimentoNumber}`,
   });
 
   res.status(201).json(serialize(patient));
@@ -1872,44 +1881,49 @@ router.get("/:id/pdf/apac", async (req, res) => {
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
-  // Load official APAC template and overlay patient data (template already has its own header)
-  const tplBytes = fs.readFileSync(templatePath("apac-laudo.pdf"));
-  const doc  = await PDFDocument.load(tplBytes);
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const page = doc.getPage(0);
+  try {
+    // Load official APAC template and overlay patient data (template already has its own header)
+    const tplBytes = fs.readFileSync(templatePath("apac-laudo.pdf"));
+    const doc  = await PDFDocument.load(tplBytes, { ignoreEncryption: true });
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+    const page = doc.getPage(0);
 
-  const BLACK = rgb(0, 0, 0);
-  const BLUE  = rgb(0.06, 0.09, 0.35);
-  const fmtDate = (d: string | null | undefined) => {
-    if (!d) return "";
-    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
-  };
-  const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLUE }); };
-  const ovBold = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font: bold, size, color: BLACK }); };
+    const BLACK = rgb(0, 0, 0);
+    const BLUE  = rgb(0.06, 0.09, 0.35);
+    const fmtDate = (d: string | null | undefined) => {
+      if (!d) return "";
+      const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
+    };
+    const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLUE }); };
+    const ovBold = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font: bold, size, color: BLACK }); };
 
-  ovBold("UPA 24H — Unidade de Pronto Atendimento — Breves / PA", 57, 740);
-  ovBold(patient.fullName, 57, 703);
-  if (patient.sex === "M") ov("X", 395, 704, 9);
-  if (patient.sex === "F") ov("X", 422, 704, 9);
-  ov(patient.prontuarioNumber, 478, 703);
-  ov(patient.cns, 57, 681);
-  ov(fmtDate(patient.birthDate), 285, 681);
-  ov("—", 402, 681, 7);
-  ov(patient.motherName, 57, 659);
-  ov(patient.phone ?? "", 395, 659);
-  ov(patient.fullName, 57, 637);
-  ov(patient.address, 57, 613);
-  ov("Breves", 57, 591);
-  ov("PA", 380, 591);
-  ov(patient.diagnosis ?? "", 57, 395);
-  ov(new Date().toLocaleDateString("pt-BR"), 285, 272);
+    ovBold("UPA 24H — Unidade de Pronto Atendimento — Breves / PA", 57, 740);
+    ovBold(patient.fullName, 57, 703);
+    if (patient.sex === "M") ov("X", 395, 704, 9);
+    if (patient.sex === "F") ov("X", 422, 704, 9);
+    ov(patient.prontuarioNumber, 478, 703);
+    ov(patient.cns, 57, 681);
+    ov(fmtDate(patient.birthDate), 285, 681);
+    ov("—", 402, 681, 7);
+    ov(patient.motherName, 57, 659);
+    ov(patient.phone ?? "", 395, 659);
+    ov(patient.fullName, 57, 637);
+    ov(patient.address, 57, 613);
+    ov("Breves", 57, 591);
+    ov("PA", 380, 591);
+    ov(patient.diagnosis ?? "", 57, 395);
+    ov(new Date().toLocaleDateString("pt-BR"), 285, 272);
 
-  const pdfBytes = await doc.save();
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename="apac-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
-  res.send(Buffer.from(pdfBytes));
+    const pdfBytes = await doc.save();
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="apac-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
+    res.send(Buffer.from(pdfBytes));
+  } catch (err) {
+    req.log.error(err, "Erro ao gerar APAC");
+    res.status(500).json({ error: "Erro ao gerar APAC" });
+  }
 });
 
 // ── Ficha de Referência PDF ───────────────────────────────────────────────────
@@ -1919,40 +1933,45 @@ router.get("/:id/pdf/ficha-referencia", async (req, res) => {
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
-  // Load official Ficha template and overlay patient data (template already has its own header)
-  const tplBytes = fs.readFileSync(templatePath("ficha-referencia.pdf"));
-  const doc  = await PDFDocument.load(tplBytes);
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const page = doc.getPage(0);
+  try {
+    // Load official Ficha template and overlay patient data (template already has its own header)
+    const tplBytes = fs.readFileSync(templatePath("ficha-referencia.pdf"));
+    const doc  = await PDFDocument.load(tplBytes, { ignoreEncryption: true });
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+    const page = doc.getPage(0);
 
-  const BLACK = rgb(0, 0, 0);
-  const BLUE  = rgb(0.06, 0.09, 0.35);
-  const fmtDate = (d: string | null | undefined) => {
-    if (!d) return "";
-    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
-  };
-  const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLUE }); };
-  const ovBold = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font: bold, size, color: BLACK }); };
+    const BLACK = rgb(0, 0, 0);
+    const BLUE  = rgb(0.06, 0.09, 0.35);
+    const fmtDate = (d: string | null | undefined) => {
+      if (!d) return "";
+      const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
+    };
+    const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLUE }); };
+    const ovBold = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font: bold, size, color: BLACK }); };
 
-  ov("UPA 24H — Breves / PA", 57, 723);
-  ovBold(patient.fullName, 57, 653);
-  ov(patient.cns, 430, 653);
-  ov(fmtDate(patient.birthDate), 57, 637);
-  ov(patient.age ? String(patient.age) : "", 165, 637);
-  if (patient.sex === "M") ov("X", 237, 637, 9);
-  if (patient.sex === "F") ov("X", 270, 637, 9);
-  ov(patient.address, 57, 620);
-  ov("Breves — PA", 430, 620);
-  ov(patient.motherName, 57, 600);
-  ov(patient.cpf ?? "", 57, 584);
-  ov(patient.diagnosis ?? "", 57, 258);
+    ov("UPA 24H — Breves / PA", 57, 723);
+    ovBold(patient.fullName, 57, 653);
+    ov(patient.cns, 430, 653);
+    ov(fmtDate(patient.birthDate), 57, 637);
+    ov(patient.age ? String(patient.age) : "", 165, 637);
+    if (patient.sex === "M") ov("X", 237, 637, 9);
+    if (patient.sex === "F") ov("X", 270, 637, 9);
+    ov(patient.address, 57, 620);
+    ov("Breves — PA", 430, 620);
+    ov(patient.motherName, 57, 600);
+    ov(patient.cpf ?? "", 57, 584);
+    ov(patient.diagnosis ?? "", 57, 258);
 
-  const pdfBytes = await doc.save();
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename="ficha-referencia-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
-  res.send(Buffer.from(pdfBytes));
+    const pdfBytes = await doc.save();
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="ficha-referencia-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
+    res.send(Buffer.from(pdfBytes));
+  } catch (err) {
+    req.log.error(err, "Erro ao gerar Ficha de Referência");
+    res.status(500).json({ error: "Erro ao gerar Ficha de Referência" });
+  }
 });
 
 // ── AIH (Autorização de Internação Hospitalar) PDF ────────────────────────────
