@@ -499,29 +499,26 @@ router.post("/", requirePermissao("criar_paciente"), async (req, res) => {
     }
   }
 
-  // ── Resolve prontuário number for re-admissions ─────────────────────────
-  // If a sourceProntuario was provided (re-admission of a known person), keep it.
-  // Also compute sequential atendimento number for this person.
+  // ── Resolve prontuário / registro numbers for re-admissions ────────────
+  // Both prontuario_number and atendimento_number are permanent per person —
+  // they never change across visits for the same patient.
   let resolvedProntuario: string | null = sourceProntuario && sourceProntuario.length > 0 ? sourceProntuario : null;
-  let visitCount = 1;
 
-  if (cpfDigits.length > 0) {
-    const prevRecords = await db.select({ id: patientsTable.id, pn: patientsTable.prontuarioNumber })
-      .from(patientsTable)
-      .where(sql`replace(${patientsTable.cpf}, '.', '') LIKE ${'%' + cpfDigits + '%'}`)
-      .orderBy(patientsTable.id);
-    visitCount = prevRecords.length + 1;
-    if (!resolvedProntuario && prevRecords.length > 0) {
-      resolvedProntuario = prevRecords[0].pn ?? null;
-    }
-  } else if (cnsDigits.length > 0) {
-    const prevRecords = await db.select({ id: patientsTable.id, pn: patientsTable.prontuarioNumber })
-      .from(patientsTable)
-      .where(sql`${patientsTable.cns} LIKE ${'%' + cnsDigits + '%'}`)
-      .orderBy(patientsTable.id);
-    visitCount = prevRecords.length + 1;
-    if (!resolvedProntuario && prevRecords.length > 0) {
-      resolvedProntuario = prevRecords[0].pn ?? null;
+  if (!resolvedProntuario) {
+    if (cpfDigits.length > 0) {
+      const [first] = await db.select({ pn: patientsTable.prontuarioNumber })
+        .from(patientsTable)
+        .where(sql`replace(${patientsTable.cpf}, '.', '') LIKE ${'%' + cpfDigits + '%'}`)
+        .orderBy(patientsTable.id)
+        .limit(1);
+      if (first?.pn) resolvedProntuario = first.pn;
+    } else if (cnsDigits.length > 0) {
+      const [first] = await db.select({ pn: patientsTable.prontuarioNumber })
+        .from(patientsTable)
+        .where(sql`${patientsTable.cns} LIKE ${'%' + cnsDigits + '%'}`)
+        .orderBy(patientsTable.id)
+        .limit(1);
+      if (first?.pn) resolvedProntuario = first.pn;
     }
   }
 
@@ -535,9 +532,9 @@ router.post("/", requirePermissao("criar_paciente"), async (req, res) => {
     updatedAt: new Date(),
   }).returning();
 
-  // prontuario_number = permanent per person; atendimento_number = sequential visit
+  // Both numbers are permanent per person — same value, set once on first admission
   const prontuarioNumber  = resolvedProntuario ?? generateProntuarioNumber(patientRaw.id);
-  const atendimentoNumber = String(visitCount).padStart(6, "0");
+  const atendimentoNumber = prontuarioNumber;
   const [patient] = await db.update(patientsTable)
     .set({ prontuarioNumber, atendimentoNumber })
     .where(eq(patientsTable.id, patientRaw.id))
