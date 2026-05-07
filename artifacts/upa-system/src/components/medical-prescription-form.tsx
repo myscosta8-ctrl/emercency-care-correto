@@ -17,7 +17,7 @@ import type { ViaAdministracao } from "@/lib/medicamentos-brasil";
 /* ── types ─────────────────────────────────────────────────────────── */
 export interface ItemMedicamento {
   id: string; nome: string; dose: string; unidade: string;
-  via: ViaAdministracao | string; frequencia: string; obs: string;
+  via: ViaAdministracao | string; frequencia: string; horario: string; obs: string;
 }
 export interface ItemCurativo {
   id: string; local: string; tecnica: string;
@@ -85,7 +85,7 @@ const FREQ_RAPIDAS = ["SN", "SOS", "ACM"] as const;
 
 /* ── Seção Medicamentos ────────────────────────────────────────────── */
 function SecaoMedicamentos({ items, onChange }: { items: ItemMedicamento[]; onChange: (items: ItemMedicamento[]) => void }) {
-  function add() { onChange([...items, { id: uid(), nome: "", dose: "", unidade: "mg", via: "EV", frequencia: "1x/dia", obs: "" }]); }
+  function add() { onChange([...items, { id: uid(), nome: "", dose: "", unidade: "mg", via: "EV", frequencia: "1x/dia", horario: "", obs: "" }]); }
   function remove(id: string) { onChange(items.filter(i => i.id !== id)); }
   function update(id: string, patch: Partial<ItemMedicamento>) { onChange(items.map(i => i.id === id ? { ...i, ...patch } : i)); }
   const getVias = (nome: string) => { const m = MEDICAMENTOS.find(m => m.nome === nome); return m ? m.vias : [...VIAS_ADMINISTRACAO]; };
@@ -169,9 +169,16 @@ function SecaoMedicamentos({ items, onChange }: { items: ItemMedicamento[]; onCh
             </div>
           </div>
 
+          {/* Horário de aplicação */}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Horário de aplicação</Label>
+            <Input value={item.horario} onChange={e => update(item.id, { horario: e.target.value })}
+              placeholder="Ex: 06h / 14h / 22h" className="h-7 text-xs" />
+          </div>
+
           {/* Observação */}
           <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Observação</Label>
+            <Label className="text-[10px] text-muted-foreground">Observação / Diluição</Label>
             <Input value={item.obs} onChange={e => update(item.id, { obs: e.target.value })}
               placeholder="Ex: diluir em 100 mL SF 0,9%, infundir em 30 min…" className="h-7 text-xs" />
           </div>
@@ -449,7 +456,9 @@ export function MedicalPrescriptionForm({ patientName, onSerialize, onCancel, is
     if (medicamentos.length > 0) {
       lines.push("MEDICAMENTOS:");
       medicamentos.forEach((m, i) => {
-        const base = `${i + 1}. ${m.nome} ${m.dose}${m.unidade} — ${m.via} — ${m.frequencia}`;
+        // Format: nome dose+unidade — via — freq — horario (obs)
+        let base = `${i + 1}. ${m.nome} ${m.dose}${m.unidade} — ${m.via} — ${m.frequencia}`;
+        if (m.horario) base += ` — ${m.horario}`;
         lines.push(m.obs ? `${base} (${m.obs})` : base);
       });
       lines.push("");

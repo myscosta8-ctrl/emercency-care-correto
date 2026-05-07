@@ -1260,6 +1260,8 @@ async function buildUpaHeaderPortraitDoc(patient: {
   triageLevel: string | null;
   diagnosis: string | null;
   phone?: string | null;
+  bed?: string | null;
+  sector?: string | null;
 }, docTitle: string): Promise<PDFDocument> {
   const doc  = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -1414,7 +1416,7 @@ async function buildUpaHeaderPortraitDoc(patient: {
   const r7 = PI_TOP - 6 * PI_ROW_H;
   piField("RECEPÇÃO:", "________________________", ML + 2, r7);
   const r7v1 = ML + 145; piVline(r7v1, r7);
-  piField("LEITO:", "_________", r7v1 + 2, r7);
+  piField("LEITO:", patient.bed ?? "_________", r7v1 + 2, r7);
   const r7v2 = r7v1 + 65; piVline(r7v2, r7);
   piField("CARÁTER:", "_________________________", r7v2 + 2, r7);
   const r7v3 = r7v2 + 145; piVline(r7v3, r7);
@@ -2333,6 +2335,8 @@ interface PrescricaoPaciente {
   prontuarioNumber: string | null;
   atendimentoNumber: string | null;
   triageLevel: string | null;
+  bed: string | null;
+  sector: string | null;
 }
 
 async function buildPrescricaoPdf(
@@ -2555,141 +2559,162 @@ async function buildPrescricaoPdf(
   const r7 = PI_TOP - 6 * PI_ROW_H;
   piField("RECEPÇÃO:", "________________________", ML + 2, r7);
   const r7v1 = ML + 174; piVline(r7v1, r7);
-  piField("LEITO:", "_________", r7v1 + 2, r7);
-  const r7v2 = r7v1 + 74; piVline(r7v2, r7);
+  piField("LEITO:", patient.bed ?? "_________", r7v1 + 2, r7);
+  const r7v2 = r7v1 + 120; piVline(r7v2, r7);
   piField("CARÁTER:", "_________________________", r7v2 + 2, r7);
   const r7v3 = r7v2 + 170; piVline(r7v3, r7);
   piField("PESO:", "__________ kg", r7v3 + 2, r7);
   const r7v4 = r7v3 + 104; piVline(r7v4, r7);
   piField("DT FICHA:", createdAt.toLocaleDateString("pt-BR") + "  ___:___", r7v4 + 2, r7);
 
-  // Row 8: MÉDICO ASSISTENTE | UNIDADE | QUARTO
+  // Row 8: MÉDICO ASSISTENTE | UNIDADE | SETOR
   const r8 = PI_TOP - 7 * PI_ROW_H;
   piField("MÉDICO ASSISTENTE:", authorName || "_____________________________", ML + 2, r8);
-  const r8v1 = ML + Math.floor(CW * 0.60); piVline(r8v1, r8);
+  const r8v1 = ML + Math.floor(CW * 0.55); piVline(r8v1, r8);
   piField("UNIDADE:", "UPA 24H — Breves", r8v1 + 2, r8);
-  const r8v2 = ML + Math.floor(CW * 0.85); piVline(r8v2, r8);
-  piField("QUARTO:", "____________", r8v2 + 2, r8);
+  const r8v2 = ML + Math.floor(CW * 0.76); piVline(r8v2, r8);
+  piField("SETOR/LOCAL:", patient.sector ?? "____________", r8v2 + 2, r8);
 
   // ════════════════════════════════════════════════════════════════════════════
-  // TABLE AREA — 3 columns
+  // TABLE AREA — 5 columns: MEDICAMENTOS | QTD/UND | VIA | FREQUÊNCIA | HORÁRIO
   // ════════════════════════════════════════════════════════════════════════════
   const FOOTER_H = 36;
   const TBL_TOP  = PI_BOT;            // 407
   const TBL_BOT  = MB + FOOTER_H;     // 48
-  const TBL_H    = TBL_TOP - TBL_BOT; // 359
 
-  const MED_W = Math.round(CW * 0.44); // ~355 — medicações
-  const APR_W = Math.round(CW * 0.30); // ~242 — aprazamento
-  const OBS_W = CW - MED_W - APR_W;   // ~209 — observações
+  // Column widths (total CW = 806)
+  const C1_W = 300; // MEDICAMENTOS
+  const C2_W = 90;  // QTD/UND
+  const C3_W = 108; // VIA DE APLICAÇÃO
+  const C4_W = 138; // FREQUÊNCIA
+  const C5_W = CW - C1_W - C2_W - C3_W - C4_W; // HORÁRIO DE APLICAÇÃO
 
-  const MED_X = ML;
-  const APR_X = MED_X + MED_W;
-  const OBS_X = APR_X + APR_W;
+  const C1_X = ML;
+  const C2_X = C1_X + C1_W;
+  const C3_X = C2_X + C2_W;
+  const C4_X = C3_X + C3_W;
+  const C5_X = C4_X + C4_W;
 
-  page.drawLine({ start: { x: APR_X, y: TBL_BOT }, end: { x: APR_X, y: TBL_TOP }, thickness: 0.8, color: BLACK });
-  page.drawLine({ start: { x: OBS_X, y: TBL_BOT }, end: { x: OBS_X, y: TBL_TOP }, thickness: 0.8, color: BLACK });
+  // Vertical column dividers
+  [C2_X, C3_X, C4_X, C5_X].forEach(x => {
+    page.drawLine({ start: { x, y: TBL_BOT }, end: { x, y: TBL_TOP }, thickness: 0.8, color: BLACK });
+  });
 
-  // Column headers (dark green)
-  const COL_HDR_H = 14;
-  const COL_SUB_H = 10;
-
-  const colHeaders: [number, number, string][] = [
-    [MED_X, MED_W, "MEDICAÇÕES PRESCRITAS"],
-    [APR_X, APR_W, "APRAZAMENTO"],
-    [OBS_X, OBS_W, "OBSERVAÇÕES"],
+  // Column headers (dark green background)
+  const COL_HDR_H = 16;
+  const colDefs: [number, number, string][] = [
+    [C1_X, C1_W, "MEDICAMENTOS"],
+    [C2_X, C2_W, "QTD/UND"],
+    [C3_X, C3_W, "VIA DE APLICAÇÃO"],
+    [C4_X, C4_W, "FREQUÊNCIA"],
+    [C5_X, C5_W, "HORÁRIO DE APLICAÇÃO"],
   ];
-  for (const [x, w, txt] of colHeaders) {
+  for (const [x, w, txt] of colDefs) {
     page.drawRectangle({ x, y: TBL_TOP - COL_HDR_H, width: w, height: COL_HDR_H, color: DK_GREEN });
+    const tw = bold.widthOfTextAtSize(txt, 7);
     page.drawText(txt, {
-      x: x + (w - bold.widthOfTextAtSize(txt, 7)) / 2,
-      y: TBL_TOP - COL_HDR_H + 4, font: bold, size: 7, color: WHITE,
+      x: x + (w - tw) / 2,
+      y: TBL_TOP - COL_HDR_H + 5, font: bold, size: 7, color: WHITE,
     });
   }
 
-  // Sub-headers (light green)
-  const SUB_Y = TBL_TOP - COL_HDR_H - COL_SUB_H;
-  for (const [x, w] of colHeaders) {
-    page.drawRectangle({ x, y: SUB_Y, width: w, height: COL_SUB_H, color: LT_GREEN });
-  }
-
-  // Medication sub-columns: ITEM | RX | DOSE | VIA
-  const ITEM_W = 28;
-  const DOSE_W = 45;
-  const VIA_W  = 35;
-  const RX_W   = MED_W - ITEM_W - DOSE_W - VIA_W;
-
-  const ITEM_X = MED_X;
-  const RX_X   = ITEM_X + ITEM_W;
-  const DOSE_X = RX_X + RX_W;
-  const VIA_X  = DOSE_X + DOSE_W;
-
-  [RX_X, DOSE_X, VIA_X].forEach(x => {
-    page.drawLine({ start: { x, y: TBL_BOT }, end: { x, y: TBL_TOP }, thickness: 0.3, color: BLACK });
-  });
-
-  page.drawText("ITEM",  { x: ITEM_X + 2, y: SUB_Y + 3, font: bold, size: 5,   color: BLACK });
-  page.drawText("MEDICAÇÃO / APRESENTAÇÃO / CONCENTRAÇÃO / VIA", { x: RX_X + 2, y: SUB_Y + 3, font: bold, size: 4.5, color: BLACK });
-  page.drawText("DOSE",  { x: DOSE_X + 2, y: SUB_Y + 3, font: bold, size: 5,   color: BLACK });
-  page.drawText("VIA",   { x: VIA_X  + 2, y: SUB_Y + 3, font: bold, size: 5,   color: BLACK });
-  page.drawText("HORÁRIOS (PREENCHER MANUALMENTE)", { x: APR_X + 4, y: SUB_Y + 3, font: bold, size: 4.8, color: BLACK });
-
-  // ── Parse medication items from content ──────────────────────────────────────
+  // ── Parse medication rows from content ───────────────────────────────────────
+  // Format: "N. NOME DOSE_UND — VIA — FREQ — HORÁRIO (obs)"
   const SKIP_HDR = ["PRESCRIÇÃO MÉDICA —", "PACIENTE:", "MEDICAMENTOS:", "CURATIVOS:", "MONITORIZAÇÃO:", "DIETA:", "EXAMES SOLICITADOS", "OUTROS:"];
-  const medItems: string[] = [];
+
+  interface MedRow { nome: string; qtdUnd: string; via: string; freq: string; horario: string; }
+  const medRows: MedRow[] = [];
+
   for (const rawLine of content.split("\n")) {
     const t = rawLine.trim();
     if (!t) continue;
     if (SKIP_HDR.some(h => t.toUpperCase().startsWith(h.toUpperCase()))) continue;
     const nm = t.match(/^(\d+)[.)]\s+(.+)/);
-    if (nm) {
-      medItems.push(nm[2]);
-    } else if (!t.startsWith("PRESCRIÇÃO") && !t.startsWith("Paciente:")) {
-      medItems.push(t);
-    }
+    const body = nm ? nm[2] : (t.startsWith("PRESCRIÇÃO") || t.startsWith("Paciente:") ? null : t);
+    if (!body) continue;
+
+    // Strip trailing obs in parentheses
+    const obsMatch = body.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+    const clean = obsMatch ? obsMatch[1].trim() : body.trim();
+
+    // Split by " — " separator: [nome+qtd, via, freq, horario]
+    const parts = clean.split(" — ");
+    const nomeQtd = parts[0] ?? clean;
+    const via     = parts[1] ?? "";
+    const freq    = parts[2] ?? "";
+    const horario = parts[3] ?? "";
+
+    // Extract quantity/unit from nome+qtd: e.g. "Dipirona 500mg" → nome="Dipirona", qtd="500mg"
+    const qMatch = nomeQtd.match(/^(.+?)\s+(\d[\d.,]*\s*(?:mg|g|mL|ml|mcg|UI|U|cp|comp|amp|mEq|gts?|FA|AMP|BLS|FR|cáps?)(?:\([^)]*\))?)\s*$/i);
+    const nome   = qMatch ? qMatch[1].trim() : nomeQtd.trim();
+    const qtdUnd = qMatch ? qMatch[2].trim() : "";
+
+    medRows.push({ nome, qtdUnd, via: via.trim(), freq: freq.trim(), horario: horario.trim() });
   }
 
   // ── 10 medication rows ───────────────────────────────────────────────────────
   const NUM_ROWS = 10;
-  const DATA_TOP = SUB_Y;
+  const DATA_TOP = TBL_TOP - COL_HDR_H;
   const ROW_H    = Math.floor((DATA_TOP - TBL_BOT) / NUM_ROWS);
 
   for (let i = 0; i < NUM_ROWS; i++) {
     const rowTop = DATA_TOP - i * ROW_H;
     const rowBot = rowTop - ROW_H;
+
+    // Row separator
     page.drawLine({ start: { x: ML, y: rowBot }, end: { x: ML + CW, y: rowBot }, thickness: 0.3, color: BLACK });
 
-    // Item number
-    const numLbl = `${i + 1}.`;
-    page.drawText(numLbl, {
-      x: ITEM_X + (ITEM_W - font.widthOfTextAtSize(numLbl, 7)) / 2,
-      y: rowTop - 9, font: bold, size: 7, color: BLACK,
-    });
-
-    // Medication text
-    const med = medItems[i] ?? "";
-    if (med) {
-      const viaMatch  = med.match(/\b(VO|EV|IV|SC|IM|SL|ORAL|INALATÓRIO|NASAL|RETAL|SUBLINGUAL|TÓPICO)\b/i);
-      const doseMatch = med.match(/\b(\d+[\.,]?\d*\s*(?:mg|g|ml|mcg|UI|comp?|cáps?|gts?|amp|mEq|U))\b/i);
-      const viaStr  = viaMatch  ? viaMatch[1].toUpperCase()  : "";
-      const doseStr = doseMatch ? doseMatch[1] : "";
-
-      wrapTextPdf(med, font, 6.5, RX_W - 4).slice(0, 2).forEach((wl, li) => {
-        page.drawText(wl, { x: RX_X + 2, y: rowTop - 8 - li * 8, font, size: 6.5, color: BLACK });
-      });
-      if (doseStr) page.drawText(doseStr, { x: DOSE_X + 2, y: rowTop - 8, font, size: 6.5, color: BLACK });
-      if (viaStr)  page.drawText(viaStr,  { x: VIA_X  + 2, y: rowTop - 8, font, size: 6.5, color: BLACK });
+    // Alternating very-light tint on even rows
+    if (i % 2 === 1) {
+      page.drawRectangle({ x: ML, y: rowBot, width: CW, height: ROW_H, color: rgb(0.97, 0.97, 0.97) });
     }
 
-    // APRAZAMENTO number
-    page.drawText(`${i + 1}.`, { x: APR_X + 4, y: rowTop - 9, font, size: 7, color: BLACK });
+    const row = medRows[i];
+    const textY = rowTop - 9;
+    const fs    = 6.5;
 
-    // OBSERVAÇÕES subtle line
-    page.drawLine({
-      start: { x: OBS_X + 4, y: rowTop - 8 },
-      end:   { x: ML + CW - 4, y: rowTop - 8 },
-      thickness: 0.15, color: rgb(0.75, 0.75, 0.75),
-    });
+    // Col 1 — item number + drug name
+    const numLbl = `${i + 1}.`;
+    page.drawText(numLbl, { x: C1_X + 3, y: textY, font: bold, size: fs, color: BLACK });
+    if (row?.nome) {
+      wrapTextPdf(row.nome, font, fs, C1_W - 22).slice(0, 2).forEach((line, li) => {
+        page.drawText(line, { x: C1_X + 16, y: textY - li * 8, font, size: fs, color: BLACK });
+      });
+    }
+
+    // Col 2 — QTD/UND
+    if (row?.qtdUnd) {
+      page.drawText(row.qtdUnd, { x: C2_X + 3, y: textY, font, size: fs, color: BLACK });
+    }
+
+    // Col 3 — VIA DE APLICAÇÃO
+    if (row?.via) {
+      wrapTextPdf(row.via, font, fs, C3_W - 6).slice(0, 2).forEach((line, li) => {
+        page.drawText(line, { x: C3_X + 3, y: textY - li * 8, font, size: fs, color: BLACK });
+      });
+    }
+
+    // Col 4 — FREQUÊNCIA
+    if (row?.freq) {
+      wrapTextPdf(row.freq, font, fs, C4_W - 6).slice(0, 2).forEach((line, li) => {
+        page.drawText(line, { x: C4_X + 3, y: textY - li * 8, font, size: fs, color: BLACK });
+      });
+    }
+
+    // Col 5 — HORÁRIO DE APLICAÇÃO (pre-fill if provided, else draw blank lines)
+    if (row?.horario) {
+      page.drawText(row.horario, { x: C5_X + 3, y: textY, font, size: fs, color: BLACK });
+    } else {
+      // Draw 3 blank lines for manual fill
+      [0.25, 0.5, 0.75].forEach(frac => {
+        const lx = C5_X + C5_W * frac;
+        page.drawLine({
+          start: { x: C5_X + 4, y: rowTop - ROW_H * frac },
+          end:   { x: C5_X + C5_W - 4, y: rowTop - ROW_H * frac },
+          thickness: 0.2, color: rgb(0.80, 0.80, 0.80),
+        });
+      });
+    }
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -2764,6 +2789,8 @@ router.get("/:id/prescriptions/:prescriptionId/pdf", requirePermissao("gerar_pdf
       prontuarioNumber: patient.prontuarioNumber ?? null,
       atendimentoNumber:patient.atendimentoNumber?? null,
       triageLevel:      patient.triageLevel       ?? null,
+      bed:              patient.bed              ?? null,
+      sector:           patient.sector           ?? null,
     },
     prescription.content,
     prescription.createdAt,
