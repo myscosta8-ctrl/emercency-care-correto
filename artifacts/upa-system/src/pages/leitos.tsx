@@ -269,6 +269,8 @@ interface BedModalProps {
   onSaved:  () => void;
 }
 
+interface FreePatient { id: number; fullName: string; careStatus: string; triageLevel: string; }
+
 function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
   const { toast } = useToast();
   const [isolationActive, setIsolationActive] = useState(false);
@@ -277,18 +279,44 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
   const [deleting,        setDeleting]        = useState(false);
   const [saving,          setSaving]          = useState(false);
   const [tick,            setTick]            = useState(0);
+  const [freePatients,    setFreePatients]    = useState<FreePatient[]>([]);
+  const [assignPatientId, setAssignPatientId] = useState<number | "">("");
 
   useEffect(() => {
     if (!bed) return;
     setIsolationActive(bed.isolationActive);
     setIsolationType((bed.isolationType as IsolationType) ?? "");
     setIsolationReason(bed.isolationReason ?? "");
+    setAssignPatientId("");
   }, [bed]);
 
   useEffect(() => {
     const t = setInterval(() => setTick(v => v + 1), 60_000);
     return () => clearInterval(t);
   }, []);
+
+  // Carrega pacientes em obs/internados sem leito quando o leito está livre
+  useEffect(() => {
+    if (!bed || bed.isOccupied || !canEdit) return;
+    fetch("/api/patients", { headers: authId ? { "x-staff-id": String(authId) } : {} })
+      .then(r => r.json())
+      .then((data: { patients?: unknown[] }) => {
+        const list = (data.patients ?? data) as Record<string, unknown>[];
+        const eligible = list
+          .filter(p =>
+            (p.careStatus === "Em Observação" || p.careStatus === "Internado") &&
+            !p.bedId
+          )
+          .map(p => ({
+            id:          p.id as number,
+            fullName:    p.fullName as string,
+            careStatus:  p.careStatus as string,
+            triageLevel: p.triageLevel as string,
+          }));
+        setFreePatients(eligible);
+      })
+      .catch(() => {});
+  }, [bed, canEdit, authId]);
 
   if (!bed) return null;
 
@@ -309,6 +337,17 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
     }
     setSaving(true);
     try {
+      // Se um paciente foi selecionado para atribuição, primeiro atualiza o status dele via /api/patients/:id/status
+      if (!bed.isOccupied && assignPatientId) {
+        const patRes = await fetch(`/api/patients/${assignPatientId}/status`, {
+          method: "PUT", headers: headers(),
+          body: JSON.stringify({ bed_id: bed.id }),
+        });
+        if (!patRes.ok) {
+          const err = await patRes.json().catch(() => ({})) as { error?: string };
+          throw new Error(err.error ?? "Erro ao atribuir paciente");
+        }
+      }
       const res = await fetch(`/api/beds/${bed.id}`, {
         method: "PUT", headers: headers(),
         body: JSON.stringify({
@@ -321,7 +360,7 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
         const err = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(err.error ?? "Erro ao salvar");
       }
-      toast({ title: "Leito atualizado com sucesso" });
+      toast({ title: assignPatientId ? "Paciente atribuído ao leito com sucesso" : "Leito atualizado com sucesso" });
       onSaved(); onClose();
     } catch (e) { toast({ title: String((e as Error).message), variant: "destructive" }); }
     finally     { setSaving(false); }
@@ -411,7 +450,37 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
                 )}
               </>
             ) : (
-              <p className="text-sm text-muted-foreground italic">Leito livre</p>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground italic">Leito livre</p>
+                {canEdit && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Atribuir paciente</Label>
+                    {freePatients.length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground/60 italic">
+                        Nenhum paciente em Observação/Internado sem leito no momento
+                      </p>
+                    ) : (
+                      <Select
+                        value={assignPatientId === "" ? "" : String(assignPatientId)}
+                        onValueChange={v => setAssignPatientId(v === "" ? "" : Number(v))}
+                      >
+                        <SelectTrigger className="h-8 bg-white/5 border-white/10 text-sm">
+                          <SelectValue placeholder="Selecionar paciente..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#0d1117] border-white/10 text-white">
+                          <SelectItem value="">— Nenhum —</SelectItem>
+                          {freePatients.map(p => (
+                            <SelectItem key={p.id} value={String(p.id)}>
+                              {p.fullName}
+                              <span className="ml-2 text-[10px] text-muted-foreground">({p.careStatus})</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 

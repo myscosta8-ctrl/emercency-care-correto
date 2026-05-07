@@ -7,7 +7,6 @@ import {
 } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
 import { Stethoscope, Clock, User, ArrowLeft, CheckCircle2, Eye, BedDouble, LogOut } from "lucide-react";
-import { BedPickerInline } from "@/components/bed-picker-inline";
 import { RoleHeader } from "@/components/role-header";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -59,20 +58,13 @@ interface DesfechoModalProps {
 
 function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalProps) {
   const { toast } = useToast();
-  const { activeUser } = useAuth();
   const update = useUpdatePatientStatus();
-  const [status,        setStatus]        = useState<CareStatus>("Em Observação");
-  const [sector,        setSector]        = useState("");
-  const [selectedBedId, setSelectedBedId] = useState<number | null>(null);
-
-  const BED_SECTORS = new Set(["sala_vermelha", "observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto"]);
-  const needsBedPick = (status === "Em Observação" || status === "Internado") && BED_SECTORS.has(sector);
+  const [status, setStatus] = useState<CareStatus>("Em Observação");
+  const [sector, setSector] = useState("");
 
   useEffect(() => {
-    if (patient) { setStatus("Em Observação"); setSector(patient.sector ?? ""); setSelectedBedId(null); }
+    if (patient) { setStatus("Em Observação"); setSector(patient.sector ?? ""); }
   }, [patient]);
-
-  useEffect(() => { setSelectedBedId(null); }, [sector, status]);
 
   const OPCOES: { value: CareStatus; label: string; desc: string; color: string }[] = [
     { value: "Alta",                   label: "Alta",                    desc: "Paciente recebe alta médica",                    color: "text-green-400"  },
@@ -95,10 +87,6 @@ function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalPro
 
   const handleConfirm = () => {
     if (!patient) return;
-    if (needsBedPick && !selectedBedId) {
-      toast({ title: "Selecione um leito para continuar", variant: "destructive" });
-      return;
-    }
     update.mutate(
       {
         id: patient.id,
@@ -106,7 +94,6 @@ function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalPro
           care_status: status as "Em Triagem" | "Aguardando Atendimento" | "Em Medicação" | "Aguardando Exames" | "Aguardando Reavaliação" | "Em Observação" | "Internado" | "Em Transferência" | "Alta",
           triage_level: patient.triage_level as "red" | "orange" | "yellow" | "green" | "blue",
           user_id: userId,
-          ...(selectedBedId ? { bed_id: selectedBedId } : {}),
         },
       },
       {
@@ -153,26 +140,19 @@ function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalPro
           ))}
 
           {(status === "Em Observação" || status === "Internado") && (
-            <div className="space-y-3 pt-1">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Setor de destino</label>
-                <select
-                  value={sector}
-                  onChange={e => setSector(e.target.value)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  {SETORES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-              </div>
-
-              {needsBedPick && (
-                <BedPickerInline
-                  sector={sector}
-                  authId={activeUser?.id}
-                  selectedBedId={selectedBedId}
-                  onSelect={id => setSelectedBedId(id)}
-                />
-              )}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Setor de destino</label>
+              <select
+                value={sector}
+                onChange={e => setSector(e.target.value)}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                {SETORES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1 pt-0.5">
+                <BedDouble className="h-3 w-3 flex-shrink-0" />
+                Leito definido pela enfermagem/recepção na Gestão de Leitos
+              </p>
             </div>
           )}
 
@@ -182,7 +162,7 @@ function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalPro
               size="sm"
               className="flex-1"
               onClick={handleConfirm}
-              disabled={update.isPending || (needsBedPick && !selectedBedId)}
+              disabled={update.isPending}
             >
               {update.isPending ? "Salvando..." : "Confirmar"}
             </Button>
