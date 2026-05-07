@@ -16,6 +16,7 @@ import devicesRouter from "./devices";
 import backupRouter from "./backup";
 import examRequestsRouter from "./exam-requests";
 import patientAlertsRouter from "./patient-alerts";
+import callsRouter from "./calls";
 import { requireAuth } from "../middleware/require-auth";
 import { auditWrite } from "../middleware/audit-write";
 
@@ -23,6 +24,7 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use("/auth", authRouter);
+router.use("/calls", callsRouter);  // public GET /recent + auth POST /
 
 router.use(requireAuth);
 router.use(auditWrite);

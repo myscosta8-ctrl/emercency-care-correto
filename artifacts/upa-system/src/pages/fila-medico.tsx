@@ -30,10 +30,15 @@ import { useCriticalAlerts } from "@/hooks/use-critical-alerts";
 // ── tipos ────────────────────────────────────────────────────────────────────
 
 type CareStatus =
-  | "Em Triagem" | "Aguardando Atendimento"
+  | "Aguardando Triagem" | "Em Triagem" | "Aguardando Atendimento"
   | "Em Atendimento (Cons. 1)" | "Em Atendimento (Cons. 2)"
   | "Em Medicação" | "Aguardando Exames" | "Aguardando Reavaliação"
   | "Em Observação" | "Internado" | "Em Transferência" | "Alta";
+
+// Manchester triage recommended max wait times (minutes)
+const TRIAGE_MAX_WAIT: Record<string, number> = {
+  red: 0, orange: 10, yellow: 30, green: 60, blue: 120,
+};
 
 const TRIAGE_CONFIG = {
   red:    { label: "Vermelho",  dot: "bg-red-500",    text: "text-red-400",    bg: "bg-red-500/15",    border: "border-l-red-500"    },
@@ -190,12 +195,27 @@ interface ChamarModalProps {
 
 function ChamarModal({ patient, consultorio, onClose, onSuccess, userId }: ChamarModalProps) {
   const { toast } = useToast();
+  const { activeUser } = useAuth();
   const update = useUpdatePatientStatus();
   const p = patient as (Patient & { alertaEnfermeiro?: string }) | null;
 
   const handleConfirm = () => {
     if (!patient) return;
     const careStatus = (`Em Atendimento (Cons. ${consultorio})`) as CareStatus;
+
+    // Record call for the TV panel (non-blocking)
+    fetch("/api/calls", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        patientId: patient.id,
+        patientName: patient.full_name,
+        staffName: activeUser?.name ?? "",
+        sector: `consultorio_${consultorio}`,
+        localDisplay: `Consultório ${consultorio}`,
+      }),
+    }).catch(() => {});
+
     update.mutate(
       {
         id: patient.id,
@@ -424,6 +444,9 @@ export default function FilaMedicoPage() {
                 const pt = p as Patient & { alertaEnfermeiro?: string };
                 const tc = TRIAGE_CONFIG[p.triage_level as keyof typeof TRIAGE_CONFIG] ?? TRIAGE_CONFIG.blue;
                 const elapsed = formatElapsed(p.careStatusChangedAt as string);
+                const maxWait = TRIAGE_MAX_WAIT[p.triage_level] ?? 60;
+                const waitMins = minutesSince(p.careStatusChangedAt as string);
+                const isOverdue = waitMins > maxWait;
                 const isCritical = criticalPatientIds.has(p.id);
                 const vitalDetail = criticalDetailMap.get(p.id) ?? "";
                 const hasNurseAlert = !!pt.alertaEnfermeiro;
@@ -452,7 +475,21 @@ export default function FilaMedicoPage() {
                       <div className={cn("shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded", tc.bg, tc.text)}>{tc.label}</div>
                       <div className="flex-1 min-w-0">
                         <Link href={`/patients/${p.id}`} className="text-sm font-semibold hover:underline truncate block">{p.full_name}</Link>
-                        <p className="text-xs text-muted-foreground">{p.age}a · Aguardando {elapsed}</p>
+                        <p className={cn(
+                          "text-xs",
+                          isOverdue
+                            ? p.triage_level === "red" || p.triage_level === "orange"
+                              ? "text-red-400 font-bold"
+                              : "text-amber-400 font-semibold"
+                            : "text-muted-foreground",
+                        )}>
+                          {p.age}a · Aguardando {elapsed}
+                          {isOverdue && (
+                            <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wide">
+                              {p.triage_level === "red" ? "⚠ EMERGÊNCIA" : p.triage_level === "orange" ? "⚠ ACIMA DO PRAZO" : "⚠ Prazo excedido"}
+                            </span>
+                          )}
+                        </p>
                       </div>
                       {p.prontuarioNumber && (
                         <span className="text-[10px] font-mono text-muted-foreground/60 hidden md:block shrink-0">{p.prontuarioNumber}</span>

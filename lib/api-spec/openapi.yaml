@@ -1369,7 +1369,7 @@ components:
           type: string
         careStatus:
           type: string
-          enum: ["Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação", "Em Observação", "Internado", "Em Transferência", "Alta"]
+          enum: ["Aguardando Triagem", "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação", "Em Observação", "Internado", "Em Transferência", "Alta"]
         careStatusChangedAt:
           type: string
           format: date-time
@@ -1572,7 +1572,7 @@ components:
           type: string
         care_status:
           type: string
-          enum: ["Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação", "Em Observação", "Internado", "Em Transferência", "Alta"]
+          enum: ["Aguardando Triagem", "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação", "Em Observação", "Internado", "Em Transferência", "Alta"]
         nurse:
           type: string
         responsibleProfessional:
@@ -1659,7 +1659,7 @@ components:
           type: string
         care_status:
           type: string
-          enum: ["Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação", "Em Observação", "Internado", "Em Transferência", "Alta"]
+          enum: ["Aguardando Triagem", "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação", "Em Observação", "Internado", "Em Transferência", "Alta"]
         nurse:
           type: string
         responsibleProfessional:
@@ -1696,7 +1696,7 @@ components:
           enum: [red, orange, yellow, green, blue]
         care_status:
           type: string
-          enum: ["Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação", "Em Observação", "Internado", "Em Transferência", "Alta"]
+          enum: ["Aguardando Triagem", "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)", "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação", "Em Observação", "Internado", "Em Transferência", "Alta"]
         user_id:
           type: integer
         bed_id:

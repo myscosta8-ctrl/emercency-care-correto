@@ -82,6 +82,17 @@ CREATE TABLE IF NOT EXISTS public.patients (
   hora_transferencia timestamp without time zone
 );
 
+CREATE TABLE IF NOT EXISTS public.patient_calls (
+  id serial PRIMARY KEY,
+  patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  patient_name text NOT NULL,
+  staff_id integer REFERENCES public.staff(id) ON DELETE SET NULL,
+  staff_name text NOT NULL DEFAULT '',
+  sector text NOT NULL,
+  local_display text NOT NULL,
+  called_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS public.patient_alerts (
   id serial PRIMARY KEY,
   patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,

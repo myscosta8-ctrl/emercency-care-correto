@@ -38,6 +38,7 @@ export type PatientCareStatus =
   (typeof PatientCareStatus)[keyof typeof PatientCareStatus];
 
 export const PatientCareStatus = {
+  Aguardando_Triagem: "Aguardando Triagem",
   Em_Triagem: "Em Triagem",
   Aguardando_Atendimento: "Aguardando Atendimento",
   "Em_Atendimento_(Cons_1)": "Em Atendimento (Cons. 1)",
@@ -147,6 +148,7 @@ export type CreatePatientBodyCareStatus =
   (typeof CreatePatientBodyCareStatus)[keyof typeof CreatePatientBodyCareStatus];
 
 export const CreatePatientBodyCareStatus = {
+  Aguardando_Triagem: "Aguardando Triagem",
   Em_Triagem: "Em Triagem",
   Aguardando_Atendimento: "Aguardando Atendimento",
   "Em_Atendimento_(Cons_1)": "Em Atendimento (Cons. 1)",
@@ -207,6 +209,7 @@ export type UpdatePatientBodyCareStatus =
   (typeof UpdatePatientBodyCareStatus)[keyof typeof UpdatePatientBodyCareStatus];
 
 export const UpdatePatientBodyCareStatus = {
+  Aguardando_Triagem: "Aguardando Triagem",
   Em_Triagem: "Em Triagem",
   Aguardando_Atendimento: "Aguardando Atendimento",
   "Em_Atendimento_(Cons_1)": "Em Atendimento (Cons. 1)",
@@ -278,6 +281,7 @@ export type UpdatePatientStatusBodyCareStatus =
   (typeof UpdatePatientStatusBodyCareStatus)[keyof typeof UpdatePatientStatusBodyCareStatus];
 
 export const UpdatePatientStatusBodyCareStatus = {
+  Aguardando_Triagem: "Aguardando Triagem",
   Em_Triagem: "Em Triagem",
   Aguardando_Atendimento: "Aguardando Atendimento",
   "Em_Atendimento_(Cons_1)": "Em Atendimento (Cons. 1)",

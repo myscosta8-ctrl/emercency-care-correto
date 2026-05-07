@@ -111,6 +111,7 @@ export default function RecepcaoPage() {
           full_name: name.trim(),
           sector: "triagem",
           triage_level: "green",
+          care_status: "Aguardando Triagem",
           birthDate:   birthDate || undefined,
           age:         age ? Number(age) : undefined,
           sex:         sex as "M" | "F" | "O",

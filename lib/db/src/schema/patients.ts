@@ -45,6 +45,7 @@ export const patientsTable = pgTable("patients", {
   internmentStatus: text("internment_status", { enum: ["internado", "nao_internado"] }).notNull().default("nao_internado"),
   careStatus:       text("care_status", {
     enum: [
+      "Aguardando Triagem",
       "Em Triagem",
       "Aguardando Atendimento",
       "Em Atendimento (Cons. 1)",

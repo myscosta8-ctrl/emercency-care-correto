@@ -36,6 +36,7 @@ const FilaMedicoPage  = lazy(() => import("@/pages/fila-medico"));
 const LaboratorioPage = lazy(() => import("@/pages/laboratorio"));
 const ExamesPage      = lazy(() => import("@/pages/exames"));
 const HistoricoPage   = lazy(() => import("@/pages/historico"));
+const PainelTvPage    = lazy(() => import("@/pages/painel-tv"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -125,6 +126,7 @@ function Router() {
       <Switch>
         <Route path="/login" component={LoginPage} />
         <Route path="/reset-password" component={ResetPasswordPage} />
+        <Route path="/painel-tv" component={PainelTvPage} />
         <Route path="/change-password">
           <AuthGuardChangePassword>
             <ChangePasswordPage />

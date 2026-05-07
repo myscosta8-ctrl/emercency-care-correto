@@ -65,6 +65,7 @@ export const ListPatientsResponseItem = zod.object({
   prontuarioNumber: zod.string().optional(),
   atendimentoNumber: zod.string().optional(),
   careStatus: zod.enum([
+    "Aguardando Triagem",
     "Em Triagem",
     "Aguardando Atendimento",
     "Em Atendimento (Cons. 1)",
@@ -159,6 +160,7 @@ export const CreatePatientBody = zod.object({
   internmentStatus: zod.string().optional(),
   care_status: zod
     .enum([
+      "Aguardando Triagem",
       "Em Triagem",
       "Aguardando Atendimento",
       "Em Atendimento (Cons. 1)",
@@ -232,6 +234,7 @@ export const LookupPatientsResponseItem = zod.object({
   prontuarioNumber: zod.string().optional(),
   atendimentoNumber: zod.string().optional(),
   careStatus: zod.enum([
+    "Aguardando Triagem",
     "Em Triagem",
     "Aguardando Atendimento",
     "Em Atendimento (Cons. 1)",
@@ -344,6 +347,7 @@ export const GetPatientResponse = zod.object({
   prontuarioNumber: zod.string().optional(),
   atendimentoNumber: zod.string().optional(),
   careStatus: zod.enum([
+    "Aguardando Triagem",
     "Em Triagem",
     "Aguardando Atendimento",
     "Em Atendimento (Cons. 1)",
@@ -441,6 +445,7 @@ export const UpdatePatientBody = zod.object({
   internmentStatus: zod.string().optional(),
   care_status: zod
     .enum([
+      "Aguardando Triagem",
       "Em Triagem",
       "Aguardando Atendimento",
       "Em Atendimento (Cons. 1)",
@@ -504,6 +509,7 @@ export const UpdatePatientResponse = zod.object({
   prontuarioNumber: zod.string().optional(),
   atendimentoNumber: zod.string().optional(),
   careStatus: zod.enum([
+    "Aguardando Triagem",
     "Em Triagem",
     "Aguardando Atendimento",
     "Em Atendimento (Cons. 1)",
@@ -586,6 +592,7 @@ export const UpdatePatientStatusBody = zod.object({
     .optional(),
   care_status: zod
     .enum([
+      "Aguardando Triagem",
       "Em Triagem",
       "Aguardando Atendimento",
       "Em Atendimento (Cons. 1)",
@@ -644,6 +651,7 @@ export const UpdatePatientStatusResponse = zod.object({
   prontuarioNumber: zod.string().optional(),
   atendimentoNumber: zod.string().optional(),
   careStatus: zod.enum([
+    "Aguardando Triagem",
     "Em Triagem",
     "Aguardando Atendimento",
     "Em Atendimento (Cons. 1)",

@@ -11,7 +11,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient, ListPatientsParams, PatientPendingExamsItem } from "@workspace/api-client-react";
-import { UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List, ChevronUp, ChevronDown, Check } from "lucide-react";
+import { UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List, ChevronUp, ChevronDown, Check, PhoneCall } from "lucide-react";
 import { BedPickerInline } from "@/components/bed-picker-inline";
 import { useExamFilterBookmarks } from "@/lib/use-exam-filter-bookmarks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,6 +41,7 @@ const ALERT_ROLES = new Set(["enfermeiro", "tecnico_enfermagem"]);
 // ── care status config ─────────────────────────────────────────────────────────
 
 const CARE_STATUS_CONFIG = {
+  "Aguardando Triagem":        { label: "Ag. Triagem",         color: "text-slate-700",   bg: "bg-slate-100",   border: "border-slate-300",   dot: "bg-slate-400"   },
   "Em Triagem":                { label: "Em Triagem",          color: "text-blue-700",    bg: "bg-blue-100",    border: "border-blue-300",    dot: "bg-blue-500"    },
   "Aguardando Atendimento":    { label: "Aguardando",          color: "text-amber-700",   bg: "bg-amber-100",   border: "border-amber-300",   dot: "bg-amber-500"   },
   "Em Atendimento (Cons. 1)":  { label: "Cons. 1",             color: "text-sky-700",     bg: "bg-sky-100",     border: "border-sky-300",     dot: "bg-sky-500"     },
@@ -57,13 +58,13 @@ const CARE_STATUS_CONFIG = {
 type CareStatusKey = keyof typeof CARE_STATUS_CONFIG;
 
 const CARE_STATUS_KEYS: CareStatusKey[] = [
-  "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)",
+  "Aguardando Triagem", "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)",
   "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação",
   "Em Observação", "Internado", "Em Transferência", "Alta",
 ];
 
 const CARE_STATUS_SECTION_KEYS: CareStatusKey[] = [
-  "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)",
+  "Aguardando Triagem", "Em Triagem", "Aguardando Atendimento", "Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)",
   "Em Medicação", "Aguardando Exames", "Aguardando Reavaliação",
   "Em Observação", "Internado", "Em Transferência",
 ];
@@ -126,6 +127,7 @@ interface PatientRowProps {
   onEdit: (p: Patient) => void;
   onAlta: (p: Patient) => void;
   onReclassify: (p: Patient) => void;
+  onChamarTriagem?: (p: Patient) => void;
   isCritical?: boolean;
   criticalDetail?: string;
   pendingExams?: PatientPendingExamsItem[];
@@ -135,7 +137,7 @@ const RECLASSIFY_ROLES = new Set(["enfermeiro", "administrador", "diretoria_gera
 const RECLASSIFY_STATUSES = new Set(["Em Triagem", "Aguardando Atendimento"]);
 
 const PatientRow = memo(function PatientRow({
-  patient, onEdit, onAlta, onReclassify, isCritical = false, criticalDetail, pendingExams,
+  patient, onEdit, onAlta, onReclassify, onChamarTriagem, isCritical = false, criticalDetail, pendingExams,
 }: PatientRowProps) {
   const { pode, activeUser } = useAuth();
   const cfg = TRIAGE_CONFIG[patient.triage_level as TriageKey] ?? TRIAGE_CONFIG.blue;
@@ -143,9 +145,10 @@ const PatientRow = memo(function PatientRow({
 
   // Time-based alerts
   const careStatus = patient.careStatus as CareStatusKey;
-  const triageAlert  = careStatus === "Em Triagem"   && minutesSince(patient.createdAt) > 30;
-  const obsAlert     = careStatus === "Em Observação" && hoursSince(patient.careStatusChangedAt as string) > 6;
-  const hasTimeAlert = triageAlert || obsAlert;
+  const agTriagemAlert = careStatus === "Aguardando Triagem" && minutesSince(patient.createdAt) > 15;
+  const triageAlert    = careStatus === "Em Triagem"         && minutesSince(patient.createdAt) > 30;
+  const obsAlert       = careStatus === "Em Observação"      && hoursSince(patient.careStatusChangedAt as string) > 6;
+  const hasTimeAlert   = agTriagemAlert || triageAlert || obsAlert;
 
   return (
     <div className={cn(
@@ -206,10 +209,14 @@ const PatientRow = memo(function PatientRow({
             {hasTimeAlert && (
               <span className={cn(
                 "flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0 rounded border leading-5 shrink-0",
-                triageAlert ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-purple-100 text-purple-700 border-purple-300",
+                agTriagemAlert ? "bg-amber-100 text-amber-700 border-amber-300"
+                  : triageAlert ? "bg-orange-100 text-orange-700 border-orange-300"
+                  : "bg-purple-100 text-purple-700 border-purple-300",
               )}>
                 <Clock className="h-2.5 w-2.5" />
-                {triageAlert
+                {agTriagemAlert
+                  ? `Ag. ${formatElapsed(patient.createdAt)}`
+                  : triageAlert
                   ? `Triagem ${formatElapsed(patient.createdAt)}`
                   : `Obs. ${formatElapsed(patient.careStatusChangedAt as string)}`}
               </span>
@@ -257,6 +264,20 @@ const PatientRow = memo(function PatientRow({
       </Link>
 
       <div className="flex items-center gap-0.5 px-1.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
+        {patient.careStatus === "Aguardando Triagem" &&
+         RECLASSIFY_ROLES.has(activeUser?.role ?? "") &&
+         pode("mudar_setor") &&
+         onChamarTriagem && (
+          <button
+            type="button"
+            title="Chamar paciente para triagem"
+            onClick={e => { e.preventDefault(); onChamarTriagem(patient); }}
+            className="h-8 px-2 flex items-center justify-center gap-1 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 hover:text-blue-700 text-[10px] font-bold transition-colors whitespace-nowrap"
+          >
+            <PhoneCall className="h-3 w-3" />
+            Chamar
+          </button>
+        )}
         {pode("mudar_setor") &&
          RECLASSIFY_ROLES.has(activeUser?.role ?? "") &&
          (RECLASSIFY_STATUSES.has(patient.careStatus ?? "") || patient.sector === "sala_vermelha") && (
@@ -484,6 +505,7 @@ export default function Dashboard() {
   const [editingPatient, setEditingPatient]         = useState<Patient | null>(null);
   const [altaPatient, setAltaPatient]               = useState<Patient | null>(null);
   const [reclassifyPatient, setReclassifyPatient]   = useState<Patient | null>(null);
+  const [chamarTriagemPatient, setChamarTriagemPatient] = useState<Patient | null>(null);
   const [search, setSearch]                         = useState("");
   const [filtro, setFiltro]                         = useState("Todos");
   const [triageFilter, setTriageFilter]             = useState("all");
@@ -624,7 +646,7 @@ export default function Dashboard() {
   const { grouped, groupedByStatus } = useMemo(() => {
     if (!patients) return { grouped: null, groupedByStatus: null };
     const q = debouncedSearch.toLowerCase();
-    const TRIAGEM_STATUS      = new Set(["Em Triagem"]);
+    const TRIAGEM_STATUS      = new Set(["Aguardando Triagem", "Em Triagem"]);
     const RECEPCAO_STATUS     = new Set(["Aguardando Atendimento"]);
     const CONSULTORIOS_STATUS = new Set(["Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)"]);
     const MEDICACAO_STATUS    = new Set(["Em Medicação", "Aguardando Exames", "Aguardando Reavaliação"]);
@@ -720,9 +742,46 @@ export default function Dashboard() {
     ? (groupedByStatus ? groupedByStatus.reduce((n, g) => n + g.patients.length, 0) : 0)
     : examFlatList.length;
 
-  const handleEdit        = useCallback((p: Patient) => setEditingPatient(p), []);
-  const handleAlta        = useCallback((p: Patient) => setAltaPatient(p), []);
-  const handleReclassify  = useCallback((p: Patient) => setReclassifyPatient(p), []);
+  const handleEdit          = useCallback((p: Patient) => setEditingPatient(p), []);
+  const handleAlta          = useCallback((p: Patient) => setAltaPatient(p), []);
+  const handleReclassify    = useCallback((p: Patient) => setReclassifyPatient(p), []);
+  const handleChamarTriagem = useCallback((p: Patient) => setChamarTriagemPatient(p), []);
+
+  const confirmChamarTriagem = async () => {
+    if (!chamarTriagemPatient) return;
+    try {
+      await fetch("/api/calls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId: chamarTriagemPatient.id,
+          patientName: chamarTriagemPatient.full_name,
+          staffName: activeUser?.name ?? "",
+          sector: "triagem",
+          localDisplay: "Triagem",
+        }),
+      });
+    } catch { /* TV panel recording non-critical */ }
+    updatePatientStatus.mutate(
+      {
+        id: chamarTriagemPatient.id,
+        data: {
+          care_status: "Em Triagem",
+          triage_level: chamarTriagemPatient.triage_level as "red" | "orange" | "yellow" | "green" | "blue",
+          user_id: activeUser?.id ?? 0,
+        },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
+          toast({ title: "Paciente chamado para triagem", description: chamarTriagemPatient.full_name });
+          setChamarTriagemPatient(null);
+        },
+        onError: () => toast({ title: "Erro ao chamar paciente", variant: "destructive" }),
+      }
+    );
+  };
 
   const confirmAlta = () => {
     if (!altaPatient) return;
@@ -1281,7 +1340,7 @@ export default function Dashboard() {
             {(
               [
                 { key: "todos",        label: "🏥 Todos",        title: "Todos os pacientes ativos",                              count: grouped?.reduce((n, g) => n + g.patients.length, 0) ?? 0 },
-                { key: "triagem",      label: "🩺 Triagem",      title: "Em Triagem (aguardando classificação)",                  count: grouped?.reduce((n, g) => n + g.patients.filter(p => p.careStatus === "Em Triagem").length, 0) ?? 0 },
+                { key: "triagem",      label: "🩺 Triagem",      title: "Aguardando Triagem + Em Triagem",                        count: grouped?.reduce((n, g) => n + g.patients.filter(p => p.careStatus === "Aguardando Triagem" || p.careStatus === "Em Triagem").length, 0) ?? 0 },
                 { key: "recepcao",     label: "📋 Recepção",     title: "Aguardando Atendimento médico",                          count: grouped?.reduce((n, g) => n + g.patients.filter(p => p.careStatus === "Aguardando Atendimento").length, 0) ?? 0 },
                 { key: "consultorios", label: "🩺 Consultórios", title: "Em Atendimento (Cons. 1 e 2)",                           count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Atendimento (Cons. 1)","Em Atendimento (Cons. 2)"].includes(p.careStatus as string)).length, 0) ?? 0 },
                 { key: "medicacao",    label: "💊 Medicação",    title: "Em Medicação, Aguardando Exames ou Reavaliação",         count: grouped?.reduce((n, g) => n + g.patients.filter(p => ["Em Medicação","Aguardando Exames","Aguardando Reavaliação"].includes(p.careStatus as string)).length, 0) ?? 0 },
@@ -1527,6 +1586,12 @@ export default function Dashboard() {
                     </span>
                   )}
                   {/* Time alert count */}
+                  {section.key === "Aguardando Triagem" && section.patients.filter(p => minutesSince(p.createdAt) > 15).length > 0 && (
+                    <span className="text-[10px] font-bold text-amber-400 flex items-center gap-0.5">
+                      <Clock className="h-2.5 w-2.5" />
+                      {section.patients.filter(p => minutesSince(p.createdAt) > 15).length} &gt;15min
+                    </span>
+                  )}
                   {section.key === "Em Triagem" && section.patients.filter(p => minutesSince(p.createdAt) > 30).length > 0 && (
                     <span className="text-[10px] font-bold text-orange-400 flex items-center gap-0.5">
                       <Clock className="h-2.5 w-2.5" />
@@ -1553,6 +1618,7 @@ export default function Dashboard() {
                         onEdit={handleEdit}
                         onAlta={handleAlta}
                         onReclassify={handleReclassify}
+                        onChamarTriagem={handleChamarTriagem}
                         isCritical={isNurseOrTech && criticalPatientIds.has(patient.id)}
                         criticalDetail={isNurseOrTech ? criticalDetailMap.get(patient.id) : undefined}
                         pendingExams={patient.pendingExams}
@@ -1631,6 +1697,28 @@ export default function Dashboard() {
         }}
         userId={activeUser?.id ?? 0}
       />
+
+      {/* ── chamar para triagem confirmation ───────────────────────────── */}
+      <AlertDialog open={!!chamarTriagemPatient} onOpenChange={open => !open && setChamarTriagemPatient(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <PhoneCall className="h-4 w-4 text-blue-500" />
+              Chamar para Triagem
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Chamar <strong>{chamarTriagemPatient?.full_name}</strong> para a triagem de enfermagem?
+              O nome será exibido no painel público da sala de espera.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmChamarTriagem}>
+              Chamar Paciente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── alta confirmation ──────────────────────────────────────────── */}
       <AlertDialog open={!!altaPatient} onOpenChange={open => !open && setAltaPatient(null)}>
