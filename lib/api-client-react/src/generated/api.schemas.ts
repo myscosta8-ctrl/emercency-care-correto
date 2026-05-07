@@ -85,6 +85,8 @@ export interface Patient {
   age: number;
   sex: string;
   motherName: string;
+  estadoCivil: string;
+  corRaca: string;
   cns: string;
   cpf: string;
   rg: string;
@@ -162,6 +164,8 @@ export interface CreatePatientBody {
   age?: number;
   sex?: string;
   motherName?: string;
+  estadoCivil?: string;
+  corRaca?: string;
   cns?: string;
   cpf?: string;
   rg?: string;
@@ -218,6 +222,8 @@ export interface UpdatePatientBody {
   age?: number;
   sex?: string;
   motherName?: string;
+  estadoCivil?: string;
+  corRaca?: string;
   cns?: string;
   cpf?: string;
   rg?: string;

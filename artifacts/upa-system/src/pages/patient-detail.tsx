@@ -2321,7 +2321,12 @@ export default function PatientDetail() {
             <DialogTitle>Editar Prontuário</DialogTitle>
             <DialogDescription>Atualize os dados clínicos do paciente.</DialogDescription>
           </DialogHeader>
-          <PatientForm patient={patient} onSuccess={() => setIsEditOpen(false)} onCancel={() => setIsEditOpen(false)} />
+          <PatientForm
+            patient={patient}
+            onSuccess={() => setIsEditOpen(false)}
+            onCancel={() => setIsEditOpen(false)}
+            restrictToPersonal={["recepcionista", "auxiliar_administrativo"].includes(activeUser?.role ?? "")}
+          />
         </DialogContent>
       </Dialog>
 

@@ -442,6 +442,8 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS nurse text NOT NULL DEFAULT '';
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS archived_at timestamp without time zone;
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS archive_reason text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS estado_civil text NOT NULL DEFAULT '';
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS cor_raca text NOT NULL DEFAULT '';
 
         -- staff: extra columns
         ALTER TABLE public.staff ADD COLUMN IF NOT EXISTS setores_atuacao text NOT NULL DEFAULT 'todos';

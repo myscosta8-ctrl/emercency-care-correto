@@ -15,6 +15,8 @@ export const patientsTable = pgTable("patients", {
   age:          integer("age").notNull().default(0),
   sex:          text("sex", { enum: ["M", "F", "O"] }).notNull().default("O"),
   motherName:   text("mother_name").notNull().default(""),
+  estadoCivil:  text("estado_civil").notNull().default(""),
+  corRaca:      text("cor_raca").notNull().default(""),
 
   // ── documentos ─────────────────────────────────────────────────────────────
   cns:          text("cns").notNull().default(""),

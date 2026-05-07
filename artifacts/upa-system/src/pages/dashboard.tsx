@@ -1576,6 +1576,7 @@ export default function Dashboard() {
             patient={prefillPatient as Patient | undefined}
             onSuccess={() => { setIsNewPatientOpen(false); setPrefillPatient(undefined); }}
             onCancel={() => { setIsNewPatientOpen(false); setPrefillPatient(undefined); }}
+            restrictToPersonal={["recepcionista", "auxiliar_administrativo"].includes(activeUser?.role ?? "")}
           />
         </DialogContent>
       </Dialog>
@@ -1592,6 +1593,7 @@ export default function Dashboard() {
               patient={editingPatient}
               onSuccess={() => setEditingPatient(null)}
               onCancel={() => setEditingPatient(null)}
+              restrictToPersonal={["recepcionista", "auxiliar_administrativo"].includes(activeUser?.role ?? "")}
             />
           )}
         </DialogContent>

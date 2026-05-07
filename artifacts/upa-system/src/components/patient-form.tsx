@@ -67,12 +67,23 @@ function computeAge(birthDate: string): number {
 
 // ── form schema ───────────────────────────────────────────────────────────────
 
+const ESTADO_CIVIL_OPTIONS = [
+  "Solteiro(a)", "Casado(a)", "Divorciado(a)", "Separado(a)",
+  "Viúvo(a)", "União estável", "Não informado",
+];
+
+const COR_RACA_OPTIONS = [
+  "Branca", "Preta", "Parda", "Amarela", "Indígena", "Não informado",
+];
+
 const formSchema = z.object({
   full_name:  z.string().min(1, "Informe o nome completo do paciente"),
   birthDate:  z.string().default(""),
   age:        z.coerce.number().min(0).default(0),
   sex:        z.enum(["M", "F", "O"]).default("O"),
-  motherName: z.string().default(""),
+  motherName:  z.string().default(""),
+  estadoCivil: z.string().default(""),
+  corRaca:     z.string().default(""),
 
   cns:    z.string().default(""),
   cpf:    z.string().default(""),
@@ -86,13 +97,9 @@ const formSchema = z.object({
   phone:   z.string().default(""),
   email:   z.string().default(""),
 
-  triage_level:     z.enum(["red", "orange", "yellow", "green", "blue"], {
-    errorMap: () => ({ message: "Selecione a classificação de triagem" }),
-  }),
-  sector:           z.string().min(1, "Selecione o setor de atendimento"),
-  internmentStatus: z.enum(["internado", "nao_internado"], {
-    errorMap: () => ({ message: "Selecione o status de internação" }),
-  }),
+  triage_level:     z.enum(["red", "orange", "yellow", "green", "blue"]).default("yellow"),
+  sector:           z.string().default("triagem"),
+  internmentStatus: z.enum(["internado", "nao_internado"]).default("nao_internado"),
   nurse:     z.string().default(""),
   bed:       z.string().default(""),
   diagnosis: z.string().default(""),
@@ -120,9 +127,10 @@ interface PatientFormProps {
   patient?: Patient;
   onSuccess: () => void;
   onCancel:  () => void;
+  restrictToPersonal?: boolean;
 }
 
-export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) {
+export function PatientForm({ patient, onSuccess, onCancel, restrictToPersonal = false }: PatientFormProps) {
   const { toast }        = useToast();
   const queryClient      = useQueryClient();
   const { featureAtiva } = useFeatures();
@@ -134,7 +142,9 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
       birthDate:  patient?.birthDate  ?? "",
       age:        patient?.age        ?? 0,
       sex:        (patient?.sex as FormValues["sex"]) ?? "O",
-      motherName: patient?.motherName ?? "",
+      motherName:  patient?.motherName  ?? "",
+      estadoCivil: patient?.estadoCivil ?? "",
+      corRaca:     patient?.corRaca     ?? "",
 
       cns: patient?.cns ?? "",
       cpf: patient?.cpf ?? "",
@@ -301,6 +311,36 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
             </FormItem>
           )} />
 
+          <FormField control={form.control} name="estadoCivil" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Estado Civil <Opt /></FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {ESTADO_CIVIL_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="corRaca" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cor / Raça <Opt /></FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {COR_RACA_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )} />
+
           {/* ── DOCUMENTOS ────────────────────────────────────────────── */}
           <SectionTitle>Documentos</SectionTitle>
 
@@ -396,6 +436,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
               <FormMessage />
             </FormItem>
           )} />
+
+          {!restrictToPersonal && (<>
 
           {/* ── DADOS CLÍNICOS ────────────────────────────────────────── */}
           <SectionTitle>Classificação e Setor</SectionTitle>
@@ -624,6 +666,8 @@ export function PatientForm({ patient, onSuccess, onCancel }: PatientFormProps) 
               <FormMessage />
             </FormItem>
           )} />
+          </>)}
+
           </>)}
 
         </div>

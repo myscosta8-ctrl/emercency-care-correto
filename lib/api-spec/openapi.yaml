@@ -1332,6 +1332,10 @@ components:
           type: string
         motherName:
           type: string
+        estadoCivil:
+          type: string
+        corRaca:
+          type: string
         cns:
           type: string
         cpf:
@@ -1478,6 +1482,8 @@ components:
         - age
         - sex
         - motherName
+        - estadoCivil
+        - corRaca
         - cns
         - cpf
         - rg
@@ -1519,6 +1525,10 @@ components:
         sex:
           type: string
         motherName:
+          type: string
+        estadoCivil:
+          type: string
+        corRaca:
           type: string
         cns:
           type: string
@@ -1599,6 +1609,10 @@ components:
         sex:
           type: string
         motherName:
+          type: string
+        estadoCivil:
+          type: string
+        corRaca:
           type: string
         cns:
           type: string
