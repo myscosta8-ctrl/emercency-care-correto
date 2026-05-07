@@ -1220,21 +1220,12 @@ router.get("/:id/pdf/apac", async (req, res) => {
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
-  // Build standard UPA header page
-  const headerDoc = await buildUpaHeaderPortraitDoc({
-    fullName: patient.fullName, prontuarioNumber: patient.prontuarioNumber,
-    atendimentoNumber: patient.atendimentoNumber, birthDate: patient.birthDate,
-    age: patient.age, sex: patient.sex, cpf: patient.cpf, rg: patient.rg,
-    motherName: patient.motherName, address: patient.address, cns: patient.cns,
-    triageLevel: patient.triageLevel, diagnosis: patient.diagnosis, phone: patient.phone,
-  }, "LAUDO APAC");
-
-  // Load official APAC template and overlay patient data
+  // Load official APAC template and overlay patient data (template already has its own header)
   const tplBytes = fs.readFileSync(templatePath("apac-laudo.pdf"));
-  const tplDoc   = await PDFDocument.load(tplBytes);
-  const font     = await tplDoc.embedFont(StandardFonts.Helvetica);
-  const bold     = await tplDoc.embedFont(StandardFonts.HelveticaBold);
-  const page     = tplDoc.getPage(0);
+  const doc  = await PDFDocument.load(tplBytes);
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const page = doc.getPage(0);
 
   const BLACK = rgb(0, 0, 0);
   const BLUE  = rgb(0.06, 0.09, 0.35);
@@ -1263,14 +1254,7 @@ router.get("/:id/pdf/apac", async (req, res) => {
   ov(patient.diagnosis ?? "", 57, 395);
   ov(new Date().toLocaleDateString("pt-BR"), 285, 272);
 
-  // Merge: header page + template pages
-  const finalDoc = await PDFDocument.create();
-  const [hPage] = await finalDoc.copyPages(headerDoc, [0]);
-  finalDoc.addPage(hPage);
-  const tplPages = await finalDoc.copyPages(tplDoc, tplDoc.getPageIndices());
-  for (const p of tplPages) finalDoc.addPage(p);
-
-  const pdfBytes = await finalDoc.save();
+  const pdfBytes = await doc.save();
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="apac-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
   res.send(Buffer.from(pdfBytes));
@@ -1283,21 +1267,12 @@ router.get("/:id/pdf/ficha-referencia", async (req, res) => {
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
-  // Build standard UPA header page
-  const headerDoc = await buildUpaHeaderPortraitDoc({
-    fullName: patient.fullName, prontuarioNumber: patient.prontuarioNumber,
-    atendimentoNumber: patient.atendimentoNumber, birthDate: patient.birthDate,
-    age: patient.age, sex: patient.sex, cpf: patient.cpf, rg: patient.rg,
-    motherName: patient.motherName, address: patient.address, cns: patient.cns,
-    triageLevel: patient.triageLevel, diagnosis: patient.diagnosis, phone: patient.phone,
-  }, "FICHA DE REFERÊNCIA");
-
-  // Load official Ficha template and overlay patient data
+  // Load official Ficha template and overlay patient data (template already has its own header)
   const tplBytes = fs.readFileSync(templatePath("ficha-referencia.pdf"));
-  const tplDoc   = await PDFDocument.load(tplBytes);
-  const font     = await tplDoc.embedFont(StandardFonts.Helvetica);
-  const bold     = await tplDoc.embedFont(StandardFonts.HelveticaBold);
-  const page     = tplDoc.getPage(0);
+  const doc  = await PDFDocument.load(tplBytes);
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const page = doc.getPage(0);
 
   const BLACK = rgb(0, 0, 0);
   const BLUE  = rgb(0.06, 0.09, 0.35);
@@ -1322,14 +1297,7 @@ router.get("/:id/pdf/ficha-referencia", async (req, res) => {
   ov(patient.cpf ?? "", 57, 584);
   ov(patient.diagnosis ?? "", 57, 258);
 
-  // Merge: header page + template pages
-  const finalDoc = await PDFDocument.create();
-  const [hPage] = await finalDoc.copyPages(headerDoc, [0]);
-  finalDoc.addPage(hPage);
-  const tplPages = await finalDoc.copyPages(tplDoc, tplDoc.getPageIndices());
-  for (const p of tplPages) finalDoc.addPage(p);
-
-  const pdfBytes = await finalDoc.save();
+  const pdfBytes = await doc.save();
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="ficha-referencia-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
   res.send(Buffer.from(pdfBytes));
