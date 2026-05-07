@@ -448,12 +448,64 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", requirePermissao("criar_paciente"), async (req, res) => {
+  // Extract source_prontuario_number before schema parse (not in schema, passed raw)
+  const sourceProntuario = (req.body as Record<string, unknown>)["source_prontuario_number"] as string | undefined;
+
   const body = CreatePatientBody.parse(req.body);
 
   if (body.cpf && body.cpf.replace(/\D/g, "").length > 0) {
     if (!validateCPF(body.cpf)) {
       res.status(422).json({ error: "CPF inválido. Verifique o número informado." });
       return;
+    }
+  }
+
+  // ── Block duplicate active admissions ────────────────────────────────────
+  const cpfDigits = (body.cpf ?? "").replace(/\D/g, "");
+  const cnsDigits = (body.cns ?? "").replace(/\D/g, "");
+  if (cpfDigits.length > 0 || cnsDigits.length > 0) {
+    const conditions = [];
+    if (cpfDigits.length > 0) conditions.push(sql`replace(${patientsTable.cpf}, '.', '') LIKE ${'%' + cpfDigits + '%'}`);
+    if (cnsDigits.length > 0) conditions.push(sql`${patientsTable.cns} LIKE ${'%' + cnsDigits + '%'}`);
+    const [existing] = await db.select()
+      .from(patientsTable)
+      .where(and(
+        or(...conditions.map(c => c)),
+        sql`${patientsTable.careStatus} != 'Alta'`,
+      ))
+      .limit(1);
+    if (existing) {
+      res.status(409).json({
+        error: `Paciente já possui atendimento ativo (Prontuário ${existing.prontuarioNumber ?? existing.id}). Localize-o no sistema.`,
+        existingId: existing.id,
+      });
+      return;
+    }
+  }
+
+  // ── Resolve prontuário number for re-admissions ─────────────────────────
+  // If a sourceProntuario was provided (re-admission of a known person), keep it.
+  // Also compute sequential atendimento number for this person.
+  let resolvedProntuario: string | null = sourceProntuario && sourceProntuario.length > 0 ? sourceProntuario : null;
+  let visitCount = 1;
+
+  if (cpfDigits.length > 0) {
+    const prevRecords = await db.select({ id: patientsTable.id, pn: patientsTable.prontuarioNumber })
+      .from(patientsTable)
+      .where(sql`replace(${patientsTable.cpf}, '.', '') LIKE ${'%' + cpfDigits + '%'}`)
+      .orderBy(patientsTable.id);
+    visitCount = prevRecords.length + 1;
+    if (!resolvedProntuario && prevRecords.length > 0) {
+      resolvedProntuario = prevRecords[0].pn ?? null;
+    }
+  } else if (cnsDigits.length > 0) {
+    const prevRecords = await db.select({ id: patientsTable.id, pn: patientsTable.prontuarioNumber })
+      .from(patientsTable)
+      .where(sql`${patientsTable.cns} LIKE ${'%' + cnsDigits + '%'}`)
+      .orderBy(patientsTable.id);
+    visitCount = prevRecords.length + 1;
+    if (!resolvedProntuario && prevRecords.length > 0) {
+      resolvedProntuario = prevRecords[0].pn ?? null;
     }
   }
 
@@ -467,8 +519,9 @@ router.post("/", requirePermissao("criar_paciente"), async (req, res) => {
     updatedAt: new Date(),
   }).returning();
 
-  const prontuarioNumber  = generateProntuarioNumber(patientRaw.id);
-  const atendimentoNumber = generateAtendimentoNumber(patientRaw.id);
+  // prontuario_number = permanent per person; atendimento_number = sequential visit
+  const prontuarioNumber  = resolvedProntuario ?? generateProntuarioNumber(patientRaw.id);
+  const atendimentoNumber = String(visitCount).padStart(6, "0");
   const [patient] = await db.update(patientsTable)
     .set({ prontuarioNumber, atendimentoNumber })
     .where(eq(patientsTable.id, patientRaw.id))

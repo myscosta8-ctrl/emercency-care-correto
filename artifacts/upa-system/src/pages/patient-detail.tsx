@@ -278,6 +278,14 @@ export default function PatientDetail() {
   const pode = usePode();
   const podeGerarPDF = pode("gerar_pdf", "sinan_pdf");
 
+  // ── Contexto de setor: ambulatorial (consultório) vs internação ──────────
+  const OBS_SECTORS_DETAIL = new Set([
+    "sala_vermelha", "observacao_adulto", "observacao_pediatrica", "observacao_pre_adulto",
+  ]);
+  const INPATIENT_STATUSES = new Set(["Em Observação", "Internado", "Em Transferência"]);
+  const isInpatient = OBS_SECTORS_DETAIL.has(patient?.sector ?? "")
+    || INPATIENT_STATUSES.has(patient?.careStatus ?? "");
+
   // Helpers de cargo para separar prescrições
   const isMedico      = ["medico", "administrador", "diretoria_geral"].includes(activeUser?.role ?? "");
   const isEnfermeiro  = ["enfermeiro", "tecnico_enfermagem", "administrador", "diretoria_geral"].includes(activeUser?.role ?? "");
@@ -944,15 +952,15 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 <FlaskConical className="h-3 w-3" /> Sol. Exames
               </TabsTrigger>
             )}
-            {/* ── Enfermagem ── */}
+            {/* ── Enfermagem (ambulatorial e internação) ── */}
             <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
-            <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>
+            {isInpatient && <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>}
             <TabsTrigger value="tecnico" className="text-xs">Técnico Enf.</TabsTrigger>
-            {/* ── Outros profissionais ── */}
-            {pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
-            {pode("registrar_avaliacao_nutricional") && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
-            {pode("registrar_farmacia") && <TabsTrigger value="farmacia" className="text-xs">Farmácia</TabsTrigger>}
-            {/* ── Exames ── */}
+            {/* ── Outros profissionais — somente internação ── */}
+            {isInpatient && pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
+            {isInpatient && pode("registrar_avaliacao_nutricional") && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
+            {isInpatient && pode("registrar_farmacia") && <TabsTrigger value="farmacia" className="text-xs">Farmácia</TabsTrigger>}
+            {/* ── Exames (ambulatorial e internação) ── */}
             {pode("registrar_prescricao") && (
               <TabsTrigger value="exames" className="text-xs flex items-center gap-1">
                 Exames
@@ -966,27 +974,29 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             <TabsTrigger value="laboratorio" className="text-xs flex items-center gap-1">
               <FlaskConical className="h-3 w-3" /> Laboratório
             </TabsTrigger>
-            {/* ── Gestão ── */}
-            <TabsTrigger value="regulacao" className="text-xs">Regulação/NIR</TabsTrigger>
+            {/* ── Gestão — Regulação/NIR e Dispositivos: somente internação ── */}
+            {isInpatient && <TabsTrigger value="regulacao" className="text-xs">Regulação/NIR</TabsTrigger>}
             {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
             {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">SINAN</TabsTrigger>}
-            <TabsTrigger value="dispositivos" className="text-xs flex items-center gap-1">
-              <Plug className="h-3 w-3" /> Dispositivos
-              {devices && devices.filter(d => !d.removedAt).length > 0 && (
-                <span className="text-[10px] font-bold px-1 rounded-full bg-cyan-500/20 text-cyan-400 min-w-[16px] text-center">
-                  {devices.filter(d => !d.removedAt).length}
-                </span>
-              )}
-            </TabsTrigger>
-            {/* ── Clínico Avançado ── */}
-            <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>
-            {pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
-            {pode("registrar_procedimento") && <TabsTrigger value="procedimentos" className="text-xs">Procedimentos</TabsTrigger>}
-            {pode("registrar_interconsulta") && <TabsTrigger value="interconsulta" className="text-xs">Interconsulta</TabsTrigger>}
-            {pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano Cuidados</TabsTrigger>}
-            {pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Med. Controlados</TabsTrigger>}
-            {pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação Farm.</TabsTrigger>}
-            {pode("registrar_obito") && <TabsTrigger value="obito" className="text-xs text-red-400">Óbito</TabsTrigger>}
+            {isInpatient && (
+              <TabsTrigger value="dispositivos" className="text-xs flex items-center gap-1">
+                <Plug className="h-3 w-3" /> Dispositivos
+                {devices && devices.filter(d => !d.removedAt).length > 0 && (
+                  <span className="text-[10px] font-bold px-1 rounded-full bg-cyan-500/20 text-cyan-400 min-w-[16px] text-center">
+                    {devices.filter(d => !d.removedAt).length}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
+            {/* ── Clínico Avançado — somente internação ── */}
+            {isInpatient && <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>}
+            {isInpatient && pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
+            {isInpatient && pode("registrar_procedimento") && <TabsTrigger value="procedimentos" className="text-xs">Procedimentos</TabsTrigger>}
+            {isInpatient && pode("registrar_interconsulta") && <TabsTrigger value="interconsulta" className="text-xs">Interconsulta</TabsTrigger>}
+            {isInpatient && pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano Cuidados</TabsTrigger>}
+            {isInpatient && pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Med. Controlados</TabsTrigger>}
+            {isInpatient && pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação Farm.</TabsTrigger>}
+            {isInpatient && pode("registrar_obito") && <TabsTrigger value="obito" className="text-xs text-red-400">Óbito</TabsTrigger>}
           </TabsList>
 
           {/* ── TAB: RESUMO CLÍNICO ───────────────────────────────────────── */}
