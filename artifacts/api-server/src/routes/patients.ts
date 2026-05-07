@@ -13,6 +13,12 @@ function templatePath(filename: string): string {
   const srcPath  = path.join(process.cwd(), "src",  "templates", filename);
   return fs.existsSync(distPath) ? distPath : srcPath;
 }
+
+function assetPath(filename: string): string {
+  const distPath = path.join(process.cwd(), "dist", "assets", filename);
+  const srcPath  = path.join(process.cwd(), "src",  "assets", filename);
+  return fs.existsSync(distPath) ? distPath : srcPath;
+}
 import {
   CreatePatientBody,
   UpdatePatientBody,
@@ -113,15 +119,11 @@ const CARE_STATUSES: CareStatus[] = [
 ];
 
 function generateProntuarioNumber(id: number): string {
-  const year = new Date().getFullYear();
-  return `PRN-${year}-${String(id).padStart(5, "0")}`;
+  return String(id).padStart(6, "0");
 }
 
 function generateAtendimentoNumber(id: number): string {
-  const year = new Date().getFullYear();
-  const seq = Date.now() % 100000;
-  const seqStr = String(seq).padStart(5, "0");
-  return `ATD-${year}-${String(id).padStart(4, "0")}${seqStr.slice(-1)}`;
+  return String(id).padStart(6, "0");
 }
 
 /** Full insert payload for patient creation */
@@ -1035,6 +1037,182 @@ router.patch("/:id/exam-requests/:examId/invalidar", requirePermissao("registrar
   res.json({ ok: true });
 });
 
+// ── Standard UPA Portrait Header Page ─────────────────────────────────────────
+async function buildUpaHeaderPortraitDoc(patient: {
+  fullName: string;
+  prontuarioNumber: string | null;
+  atendimentoNumber: string | null;
+  birthDate: string | null;
+  age: number | null;
+  sex: string | null;
+  cpf: string | null;
+  rg: string | null;
+  motherName: string | null;
+  address: string | null;
+  cns: string | null;
+  triageLevel: string | null;
+  diagnosis: string | null;
+  phone?: string | null;
+}, docTitle: string): Promise<PDFDocument> {
+  const doc  = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  let prefeituraLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
+  let upaLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
+  try {
+    prefeituraLogo = await doc.embedJpg(fs.readFileSync(assetPath("prefeitura-breves.jpeg")));
+    upaLogo        = await doc.embedJpg(fs.readFileSync(assetPath("upa24h.jpg")));
+  } catch { /* use text fallback */ }
+
+  const PAGE_W = 595; const PAGE_H = 842;
+  const ML = 18; const MR = 18; const MT = 12; const MB = 12;
+  const CW = PAGE_W - ML - MR;
+
+  const BLACK    = rgb(0,    0,    0);
+  const WHITE    = rgb(1,    1,    1);
+  const DK_GREEN = rgb(0.02, 0.36, 0.15);
+  const BLUE     = rgb(0.07, 0.36, 0.65);
+  const MED_GRAY = rgb(0.45, 0.45, 0.45);
+
+  const page = doc.addPage([PAGE_W, PAGE_H]);
+  const FORM_H = PAGE_H - MT - MB;
+  page.drawRectangle({ x: ML, y: MB, width: CW, height: FORM_H, borderColor: BLACK, borderWidth: 1.5, color: WHITE });
+
+  const HDR_H   = 80;
+  const HDR_TOP = MB + FORM_H;
+  const HDR_BOT = HDR_TOP - HDR_H;
+
+  page.drawLine({ start: { x: ML, y: HDR_BOT }, end: { x: ML + CW, y: HDR_BOT }, thickness: 1.2, color: BLACK });
+
+  const LEFT_W = 160; const CTR_W = 180;
+  const DIV1_X = ML + LEFT_W;
+  const DIV2_X = ML + LEFT_W + CTR_W;
+  page.drawLine({ start: { x: DIV1_X, y: HDR_BOT }, end: { x: DIV1_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
+  page.drawLine({ start: { x: DIV2_X, y: HDR_BOT }, end: { x: DIV2_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
+
+  // LEFT — Prefeitura logo
+  if (prefeituraLogo) {
+    const pH = HDR_H - 16;
+    const pW = (prefeituraLogo.width / prefeituraLogo.height) * pH;
+    page.drawImage(prefeituraLogo, { x: ML + (LEFT_W - pW) / 2, y: HDR_BOT + 8, width: pW, height: pH });
+  } else {
+    page.drawText("PREFEITURA DE", { x: ML + 8, y: HDR_TOP - 18, font: bold, size: 7, color: BLACK });
+    page.drawText("Breves",        { x: ML + 8, y: HDR_TOP - 45, font: bold, size: 24, color: BLUE });
+    page.drawText("De volta ao trabalho", { x: ML + 8, y: HDR_TOP - 57, font, size: 6, color: MED_GRAY });
+  }
+
+  // CENTER — UPA logo
+  if (upaLogo) {
+    const uH = HDR_H - 16;
+    const uW = (upaLogo.width / upaLogo.height) * uH;
+    page.drawImage(upaLogo, { x: DIV1_X + (CTR_W - uW) / 2, y: HDR_BOT + 8, width: uW, height: uH });
+  } else {
+    const cx = DIV1_X + 8;
+    page.drawText("UPA",   { x: cx, y: HDR_TOP - 45, font: bold, size: 28, color: DK_GREEN });
+    const uW2 = bold.widthOfTextAtSize("UPA", 28);
+    page.drawText("24h",   { x: cx + uW2 + 2, y: HDR_TOP - 45, font: bold, size: 22, color: rgb(0.75, 0.1, 0.1) });
+    page.drawText("UNIDADE DE PRONTO ATENDIMENTO", { x: cx, y: HDR_TOP - 58, font: bold, size: 5.5, color: BLACK });
+  }
+
+  // RIGHT — Document title box
+  const rx = DIV2_X + 8;
+  const rBoxW = CW - (DIV2_X - ML) - 16;
+  const rBoxH = 52;
+  const rBoxY = HDR_BOT + (HDR_H - rBoxH) / 2;
+  page.drawRectangle({ x: rx, y: rBoxY, width: rBoxW, height: rBoxH, borderColor: BLACK, borderWidth: 1.8, color: WHITE });
+  page.drawText(docTitle, {
+    x: rx + (rBoxW - bold.widthOfTextAtSize(docTitle, 9)) / 2,
+    y: rBoxY + rBoxH - 20, font: bold, size: 9, color: BLACK,
+  });
+
+  // PATIENT INFO — 8 rows
+  const PI_ROW_H = 14;
+  const PI_ROWS  = 8;
+  const PI_TOP   = HDR_BOT;
+  for (let i = 1; i <= PI_ROWS; i++) {
+    page.drawLine({ start: { x: ML, y: PI_TOP - i * PI_ROW_H }, end: { x: ML + CW, y: PI_TOP - i * PI_ROW_H }, thickness: 0.3, color: BLACK });
+  }
+
+  const fmtDt = (d: string | null | undefined) => {
+    if (!d) return "___/___/______";
+    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
+  };
+  const piField = (label: string, value: string, x: number, rowTop: number) => {
+    page.drawText(label, { x: x + 2, y: rowTop - 4,  font: bold, size: 4.8, color: BLACK });
+    page.drawText(value, { x: x + 2, y: rowTop - 11, font,       size: 7,   color: BLACK });
+  };
+  const piVline = (x: number, rowTop: number, h = PI_ROW_H) =>
+    page.drawLine({ start: { x, y: rowTop - h }, end: { x, y: rowTop }, thickness: 0.3, color: BLACK });
+
+  const triageLbl: Record<string, string> = { red:"VERMELHO", orange:"LARANJA", yellow:"AMARELO", green:"VERDE", blue:"AZUL" };
+
+  const r1 = PI_TOP;
+  piField("PRONTUÁRIO:", patient.prontuarioNumber || "______", ML + 2, r1);
+  const r1v1 = ML + 120; piVline(r1v1, r1);
+  piField("REGISTRO:", patient.atendimentoNumber || "______", r1v1 + 2, r1);
+  const r1v2 = r1v1 + 120; piVline(r1v2, r1);
+  piField("DATA INTERNAÇÃO:", "___/___/______   ___:___", r1v2 + 2, r1);
+  const r1v3 = ML + CW - 120; piVline(r1v3, r1);
+  piField("DATA ALTA:", "___/___/______", r1v3 + 2, r1);
+
+  const r2 = PI_TOP - PI_ROW_H;
+  piField("PACIENTE:", patient.fullName.toUpperCase(), ML + 2, r2);
+  const r2v1 = ML + Math.min(4 + bold.widthOfTextAtSize("PACIENTE:", 4.8) + font.widthOfTextAtSize(patient.fullName, 7) + 8, Math.floor(CW * 0.55));
+  piVline(r2v1, r2);
+  piField("NACIONALIDADE:", "Brasileira", r2v1 + 2, r2);
+  const r2v2 = ML + Math.floor(CW * 0.76); piVline(r2v2, r2);
+  piField("CLASSIFICAÇÃO:", triageLbl[patient.triageLevel ?? ""] ?? "____________", r2v2 + 2, r2);
+
+  const r3 = PI_TOP - 2 * PI_ROW_H;
+  piField("MÃE:", patient.motherName || "__________________________________________________", ML + 2, r3);
+  const r3v1 = ML + Math.floor(CW * 0.76); piVline(r3v1, r3);
+  piField("CONVÊNIO:", "SUS", r3v1 + 2, r3);
+
+  const r4 = PI_TOP - 3 * PI_ROW_H;
+  const sexTxt = patient.sex === "F" ? "SEXO:  (X) FEMININO    ( ) MASCULINO" : patient.sex === "M" ? "SEXO:  ( ) FEMININO    (X) MASCULINO" : "SEXO:  ( ) FEMININO    ( ) MASCULINO";
+  page.drawText(sexTxt, { x: ML + 2, y: r4 - 7, font: bold, size: 5.5, color: BLACK });
+  const r4v1 = ML + 170; piVline(r4v1, r4);
+  piField("DATA NASC.:", fmtDt(patient.birthDate), r4v1 + 2, r4);
+  const r4v2 = r4v1 + 90; piVline(r4v2, r4);
+  piField("IDADE:", patient.age ? `${patient.age} A` : "___ A", r4v2 + 2, r4);
+  const r4v3 = r4v2 + 100; piVline(r4v3, r4);
+  piField("C.N.S.:", patient.cns || "__________________", r4v3 + 2, r4);
+  const r4v4 = ML + CW - 80; piVline(r4v4, r4);
+  piField("RAÇA:", "_____________", r4v4 + 2, r4);
+
+  const r5 = PI_TOP - 4 * PI_ROW_H;
+  piField("RG:", patient.rg || "__________________", ML + 2, r5);
+  const r5v1 = ML + 170; piVline(r5v1, r5);
+  piField("CPF:", patient.cpf || "__________________", r5v1 + 2, r5);
+  const r5v2 = ML + CW - 130; piVline(r5v2, r5);
+  piField("TELEFONE:", patient.phone || "(____) __________", r5v2 + 2, r5);
+
+  const r6 = PI_TOP - 5 * PI_ROW_H;
+  piField("ENDEREÇO:", patient.address || "____________________________________________________________________", ML + 2, r6);
+
+  const r7 = PI_TOP - 6 * PI_ROW_H;
+  piField("RECEPÇÃO:", "________________________", ML + 2, r7);
+  const r7v1 = ML + 145; piVline(r7v1, r7);
+  piField("LEITO:", "_________", r7v1 + 2, r7);
+  const r7v2 = r7v1 + 65; piVline(r7v2, r7);
+  piField("CARÁTER:", "_________________________", r7v2 + 2, r7);
+  const r7v3 = r7v2 + 145; piVline(r7v3, r7);
+  piField("PESO:", "__________ kg", r7v3 + 2, r7);
+  const r7v4 = r7v3 + 90; piVline(r7v4, r7);
+  piField("DT FICHA:", new Date().toLocaleDateString("pt-BR") + "  ___:___", r7v4 + 2, r7);
+
+  const r8 = PI_TOP - 7 * PI_ROW_H;
+  piField("MÉDICO ASSISTENTE:", "_____________________________", ML + 2, r8);
+  const r8v1 = ML + Math.floor(CW * 0.60); piVline(r8v1, r8);
+  piField("UNIDADE:", "UPA 24H — Breves/PA", r8v1 + 2, r8);
+  const r8v2 = ML + Math.floor(CW * 0.85); piVline(r8v2, r8);
+  piField("DIAGNÓSTICO:", patient.diagnosis || "____________", r8v2 + 2, r8);
+
+  return doc;
+}
+
 // ── APAC Laudo PDF ────────────────────────────────────────────────────────────
 
 router.get("/:id/pdf/apac", async (req, res) => {
@@ -1042,74 +1220,57 @@ router.get("/:id/pdf/apac", async (req, res) => {
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
+  // Build standard UPA header page
+  const headerDoc = await buildUpaHeaderPortraitDoc({
+    fullName: patient.fullName, prontuarioNumber: patient.prontuarioNumber,
+    atendimentoNumber: patient.atendimentoNumber, birthDate: patient.birthDate,
+    age: patient.age, sex: patient.sex, cpf: patient.cpf, rg: patient.rg,
+    motherName: patient.motherName, address: patient.address, cns: patient.cns,
+    triageLevel: patient.triageLevel, diagnosis: patient.diagnosis, phone: patient.phone,
+  }, "LAUDO APAC");
+
   // Load official APAC template and overlay patient data
   const tplBytes = fs.readFileSync(templatePath("apac-laudo.pdf"));
-  const doc  = await PDFDocument.load(tplBytes);
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const page = doc.getPage(0);
+  const tplDoc   = await PDFDocument.load(tplBytes);
+  const font     = await tplDoc.embedFont(StandardFonts.Helvetica);
+  const bold     = await tplDoc.embedFont(StandardFonts.HelveticaBold);
+  const page     = tplDoc.getPage(0);
 
   const BLACK = rgb(0, 0, 0);
   const BLUE  = rgb(0.06, 0.09, 0.35);
-
   const fmtDate = (d: string | null | undefined) => {
     if (!d) return "";
     const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
     return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
   };
+  const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLUE }); };
+  const ovBold = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font: bold, size, color: BLACK }); };
 
-  // Helper: overlay text value at position
-  function ov(text: string | null | undefined, x: number, y: number, size = 8) {
-    if (!text) return;
-    page.drawText(String(text), { x, y, font, size, color: BLUE });
-  }
-  function ovBold(text: string | null | undefined, x: number, y: number, size = 8) {
-    if (!text) return;
-    page.drawText(String(text), { x, y, font: bold, size, color: BLACK });
-  }
-
-  // ── Identificação do Estabelecimento (campo 1) ──────────────────────────────
   ovBold("UPA 24H — Unidade de Pronto Atendimento — Breves / PA", 57, 740);
-
-  // ── Identificação do Paciente ───────────────────────────────────────────────
-  // Campo 3 — Nome do Paciente
   ovBold(patient.fullName, 57, 703);
-  // Campo 4 — Sexo (Mas./Fem. checkboxes)
   if (patient.sex === "M") ov("X", 395, 704, 9);
   if (patient.sex === "F") ov("X", 422, 704, 9);
-  // Campo 5 — Nº do Prontuário
   ov(patient.prontuarioNumber, 478, 703);
-
-  // Campo 6 — CNS
   ov(patient.cns, 57, 681);
-  // Campo 7 — Data de Nascimento
   ov(fmtDate(patient.birthDate), 285, 681);
-  // Campo 8 — Raça/Cor
   ov("—", 402, 681, 7);
-
-  // Campo 9 — Nome da Mãe
   ov(patient.motherName, 57, 659);
-  // Campo 10 — Telefone
   ov(patient.phone ?? "", 395, 659);
-
-  // Campo 11 — Nome do Responsável (mesma pessoa se adulto)
   ov(patient.fullName, 57, 637);
-
-  // Campo 13 — Endereço
   ov(patient.address, 57, 613);
-
-  // Campo 14 — Município de Residência
   ov("Breves", 57, 591);
-  // Campo 16 — UF
   ov("PA", 380, 591);
-
-  // Campo 36 — Diagnóstico
   ov(patient.diagnosis ?? "", 57, 395);
-
-  // Campo 41 — Profissional Solicitante + Data
   ov(new Date().toLocaleDateString("pt-BR"), 285, 272);
 
-  const pdfBytes = await doc.save();
+  // Merge: header page + template pages
+  const finalDoc = await PDFDocument.create();
+  const [hPage] = await finalDoc.copyPages(headerDoc, [0]);
+  finalDoc.addPage(hPage);
+  const tplPages = await finalDoc.copyPages(tplDoc, tplDoc.getPageIndices());
+  for (const p of tplPages) finalDoc.addPage(p);
+
+  const pdfBytes = await finalDoc.save();
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="apac-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
   res.send(Buffer.from(pdfBytes));
@@ -1122,61 +1283,53 @@ router.get("/:id/pdf/ficha-referencia", async (req, res) => {
   const [patient] = await db.select().from(patientsTable).where(eq(patientsTable.id, patientId)).limit(1);
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
-  // Load official Ficha de Referência template and overlay patient data
+  // Build standard UPA header page
+  const headerDoc = await buildUpaHeaderPortraitDoc({
+    fullName: patient.fullName, prontuarioNumber: patient.prontuarioNumber,
+    atendimentoNumber: patient.atendimentoNumber, birthDate: patient.birthDate,
+    age: patient.age, sex: patient.sex, cpf: patient.cpf, rg: patient.rg,
+    motherName: patient.motherName, address: patient.address, cns: patient.cns,
+    triageLevel: patient.triageLevel, diagnosis: patient.diagnosis, phone: patient.phone,
+  }, "FICHA DE REFERÊNCIA");
+
+  // Load official Ficha template and overlay patient data
   const tplBytes = fs.readFileSync(templatePath("ficha-referencia.pdf"));
-  const doc  = await PDFDocument.load(tplBytes);
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const page = doc.getPage(0);
+  const tplDoc   = await PDFDocument.load(tplBytes);
+  const font     = await tplDoc.embedFont(StandardFonts.Helvetica);
+  const bold     = await tplDoc.embedFont(StandardFonts.HelveticaBold);
+  const page     = tplDoc.getPage(0);
 
-  const BLACK = rgb(0,    0,    0);
+  const BLACK = rgb(0, 0, 0);
   const BLUE  = rgb(0.06, 0.09, 0.35);
-
   const fmtDate = (d: string | null | undefined) => {
     if (!d) return "";
     const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
     return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
   };
+  const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLUE }); };
+  const ovBold = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font: bold, size, color: BLACK }); };
 
-  function ov(text: string | null | undefined, x: number, y: number, size = 8) {
-    if (!text) return;
-    page.drawText(String(text), { x, y, font, size, color: BLUE });
-  }
-  function ovBold(text: string | null | undefined, x: number, y: number, size = 8) {
-    if (!text) return;
-    page.drawText(String(text), { x, y, font: bold, size, color: BLACK });
-  }
-
-  // ── Seção 1 — DO (Unidade de Origem) ───────────────────────────────────────
   ov("UPA 24H — Breves / PA", 57, 723);
-
-  // ── Dados Pessoais ──────────────────────────────────────────────────────────
-  // NOME
   ovBold(patient.fullName, 57, 653);
-  // CNS
   ov(patient.cns, 430, 653);
-
-  // DN (data de nascimento) / ID (idade) / SEXO
   ov(fmtDate(patient.birthDate), 57, 637);
   ov(patient.age ? String(patient.age) : "", 165, 637);
   if (patient.sex === "M") ov("X", 237, 637, 9);
   if (patient.sex === "F") ov("X", 270, 637, 9);
-
-  // ENDEREÇO / MUNICÍPIO
   ov(patient.address, 57, 620);
   ov("Breves — PA", 430, 620);
-
-  // NOME DA MÃE
   ov(patient.motherName, 57, 600);
-
-  // ── Hipótese Diagnóstica (campo 8) ──────────────────────────────────────────
+  ov(patient.cpf ?? "", 57, 584);
   ov(patient.diagnosis ?? "", 57, 258);
 
-  // ── Dados do CPF (extra, seção dados pessoais) ─────────────────────────────
-  // Alguns formulários têm campo extra; colocamos junto ao RG/CPF
-  ov(patient.cpf ?? "", 57, 584);
+  // Merge: header page + template pages
+  const finalDoc = await PDFDocument.create();
+  const [hPage] = await finalDoc.copyPages(headerDoc, [0]);
+  finalDoc.addPage(hPage);
+  const tplPages = await finalDoc.copyPages(tplDoc, tplDoc.getPageIndices());
+  for (const p of tplPages) finalDoc.addPage(p);
 
-  const pdfBytes = await doc.save();
+  const pdfBytes = await finalDoc.save();
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="ficha-referencia-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
   res.send(Buffer.from(pdfBytes));
@@ -1232,6 +1385,13 @@ async function buildPrescricaoPdf(
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 
+  let prefeituraLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
+  let upaLogo: Awaited<ReturnType<typeof doc.embedJpg>> | null = null;
+  try {
+    prefeituraLogo = await doc.embedJpg(fs.readFileSync(assetPath("prefeitura-breves.jpeg")));
+    upaLogo        = await doc.embedJpg(fs.readFileSync(assetPath("upa24h.jpg")));
+  } catch { /* use text fallback */ }
+
   // ── Layout constants ─────────────────────────────────────────────────────────
   const PAGE_W = 842; // A4 landscape
   const PAGE_H = 595;
@@ -1275,20 +1435,31 @@ async function buildPrescricaoPdf(
   page.drawLine({ start: { x: DIV1_X, y: HDR_BOT }, end: { x: DIV1_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
   page.drawLine({ start: { x: DIV2_X, y: HDR_BOT }, end: { x: DIV2_X, y: HDR_TOP }, thickness: 0.8, color: BLACK });
 
-  // LEFT — Prefeitura de Breves
-  const lx = ML + 8;
-  page.drawText("PREFEITURA DE",   { x: lx, y: HDR_TOP - 16, font: bold, size: 7.5, color: BLACK });
-  page.drawText("Breves",          { x: lx, y: HDR_TOP - 44, font: bold, size: 28,  color: BLUE });
-  page.drawText("De volta ao trabalho", { x: lx, y: HDR_TOP - 56, font, size: 6.5, color: MED_GRAY });
-  // Simplified crest circle
-  page.drawEllipse({ x: DIV1_X - 28, y: HDR_BOT + 35, xScale: 22, yScale: 22, borderColor: BLUE, borderWidth: 1.2, color: rgb(0.92, 0.95, 1) });
+  // LEFT — Prefeitura de Breves logo
+  if (prefeituraLogo) {
+    const pH = HDR_H - 16;
+    const pW = (prefeituraLogo.width / prefeituraLogo.height) * pH;
+    page.drawImage(prefeituraLogo, { x: ML + (LEFT_W - pW) / 2, y: HDR_BOT + 8, width: pW, height: pH });
+  } else {
+    const lx = ML + 8;
+    page.drawText("PREFEITURA DE",   { x: lx, y: HDR_TOP - 16, font: bold, size: 7.5, color: BLACK });
+    page.drawText("Breves",          { x: lx, y: HDR_TOP - 44, font: bold, size: 28,  color: BLUE });
+    page.drawText("De volta ao trabalho", { x: lx, y: HDR_TOP - 56, font, size: 6.5, color: MED_GRAY });
+    page.drawEllipse({ x: DIV1_X - 28, y: HDR_BOT + 35, xScale: 22, yScale: 22, borderColor: BLUE, borderWidth: 1.2, color: rgb(0.92, 0.95, 1) });
+  }
 
-  // CENTER — UPA 24h
-  const cx = DIV1_X + 10;
-  page.drawText("UPA",   { x: cx,      y: HDR_TOP - 44, font: bold, size: 34, color: DK_GREEN });
-  const upaW = bold.widthOfTextAtSize("UPA", 34);
-  page.drawText("24h",   { x: cx + upaW + 3, y: HDR_TOP - 44, font: bold, size: 28, color: rgb(0.75, 0.1, 0.1) });
-  page.drawText("UNIDADE DE PRONTO ATENDIMENTO", { x: cx, y: HDR_TOP - 58, font: bold, size: 6.5, color: BLACK });
+  // CENTER — UPA 24h logo
+  if (upaLogo) {
+    const uH = HDR_H - 16;
+    const uW = (upaLogo.width / upaLogo.height) * uH;
+    page.drawImage(upaLogo, { x: DIV1_X + (CTR_W - uW) / 2, y: HDR_BOT + 8, width: uW, height: uH });
+  } else {
+    const cx = DIV1_X + 10;
+    page.drawText("UPA",   { x: cx, y: HDR_TOP - 44, font: bold, size: 34, color: DK_GREEN });
+    const upaW = bold.widthOfTextAtSize("UPA", 34);
+    page.drawText("24h",   { x: cx + upaW + 3, y: HDR_TOP - 44, font: bold, size: 28, color: rgb(0.75, 0.1, 0.1) });
+    page.drawText("UNIDADE DE PRONTO ATENDIMENTO", { x: cx, y: HDR_TOP - 58, font: bold, size: 6.5, color: BLACK });
+  }
 
   // RIGHT — PRESCRIÇÃO MÉDICA box
   const rx   = DIV2_X + 10;

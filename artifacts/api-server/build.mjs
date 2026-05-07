@@ -128,8 +128,16 @@ async function copyTemplates() {
   await cp(src, dst, { recursive: true });
 }
 
+async function copyAssets() {
+  const src = path.resolve(artifactDir, "src/assets");
+  const dst = path.resolve(artifactDir, "dist/assets");
+  await mkdir(dst, { recursive: true });
+  await cp(src, dst, { recursive: true });
+}
+
 buildAll()
   .then(() => copyTemplates())
+  .then(() => copyAssets())
   .catch((err) => {
     console.error(err);
     process.exit(1);
