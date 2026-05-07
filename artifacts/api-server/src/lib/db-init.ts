@@ -509,9 +509,14 @@ export async function initializeDatabase(): Promise<void> {
           prioridade text NOT NULL DEFAULT 'eletivo',
           destino text NOT NULL DEFAULT '',
           staff_id integer,
+          invalidado boolean NOT NULL DEFAULT false,
+          motivo_invalidacao text NOT NULL DEFAULT '',
           created_at timestamp without time zone NOT NULL DEFAULT now(),
           updated_at timestamp without time zone NOT NULL DEFAULT now()
         );
+        -- idempotent backfill for existing rows missing the invalidado columns
+        ALTER TABLE public.patient_nir_entries ADD COLUMN IF NOT EXISTS invalidado boolean NOT NULL DEFAULT false;
+        ALTER TABLE public.patient_nir_entries ADD COLUMN IF NOT EXISTS motivo_invalidacao text NOT NULL DEFAULT '';
 
         -- tabela de alertas clínicos por paciente
         CREATE TABLE IF NOT EXISTS public.patient_alerts (

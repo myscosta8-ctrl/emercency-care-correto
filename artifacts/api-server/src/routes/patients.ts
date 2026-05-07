@@ -1812,10 +1812,11 @@ router.get("/:id/nir", async (req, res) => {
     id: number; patient_id: number; tipo: string; conteudo: string;
     status_vaga: string; prioridade: string; destino: string;
     staff_id: number | null; staff_name: string | null;
-    created_at: Date;
+    created_at: Date; invalidado: boolean; motivo_invalidacao: string;
   }>(
     `SELECT n.id, n.patient_id, n.tipo, n.conteudo, n.status_vaga, n.prioridade,
-            n.destino, n.staff_id, s.name AS staff_name, n.created_at
+            n.destino, n.staff_id, s.name AS staff_name, n.created_at,
+            n.invalidado, n.motivo_invalidacao
      FROM patient_nir_entries n
      LEFT JOIN staff s ON s.id = n.staff_id
      WHERE n.patient_id = $1
@@ -1823,20 +1824,22 @@ router.get("/:id/nir", async (req, res) => {
     [patientId]
   );
   res.json(result.rows.map(r => ({
-    id:          r.id,
-    patientId:   r.patient_id,
-    tipo:        r.tipo,
-    conteudo:    r.conteudo,
-    statusVaga:  r.status_vaga,
-    prioridade:  r.prioridade,
-    destino:     r.destino,
-    staffId:     r.staff_id,
-    staffName:   r.staff_name,
-    createdAt:   r.created_at.toISOString(),
+    id:                 r.id,
+    patientId:          r.patient_id,
+    tipo:               r.tipo,
+    conteudo:           r.conteudo,
+    statusVaga:         r.status_vaga,
+    prioridade:         r.prioridade,
+    destino:            r.destino,
+    staffId:            r.staff_id,
+    staffName:          r.staff_name,
+    createdAt:          r.created_at.toISOString(),
+    invalidado:         r.invalidado,
+    motivoInvalidacao:  r.motivo_invalidacao,
   })));
 });
 
-router.post("/:id/nir", async (req, res) => {
+router.post("/:id/nir", requirePermissao("mudar_setor"), async (req, res) => {
   const patientId = Number(req.params.id);
   const staffId   = req.staff?.id ?? null;
   const { tipo, conteudo, statusVaga, prioridade, destino } = req.body as {
@@ -1850,6 +1853,29 @@ router.post("/:id/nir", async (req, res) => {
     [patientId, tipo ?? "atualizacao", conteudo.trim(), statusVaga ?? "aguardando", prioridade ?? "eletivo", destino ?? "", staffId]
   );
   res.status(201).json({ id: result.rows[0].id, createdAt: result.rows[0].created_at.toISOString() });
+});
+
+router.patch("/:id/nir/:nirId/invalidar", requirePermissao("mudar_setor"), async (req, res) => {
+  const patientId = Number(req.params.id);
+  const nirId     = Number(req.params.nirId);
+  const { motivo } = req.body as { motivo?: string };
+
+  const existing = await pool.query<{ staff_id: number | null }>(
+    `SELECT staff_id FROM patient_nir_entries WHERE id = $1 AND patient_id = $2`,
+    [nirId, patientId]
+  );
+  if (!existing.rows[0]) { res.status(404).json({ error: "Registro NIR não encontrado" }); return; }
+
+  if (!podeInvalidar(req.staff!.id, req.staff!.role, existing.rows[0].staff_id ?? -1)) {
+    res.status(403).json({ error: "Somente o autor ou um administrador pode invalidar este registro" });
+    return;
+  }
+
+  await pool.query(
+    `UPDATE patient_nir_entries SET invalidado = true, motivo_invalidacao = $1, updated_at = now() WHERE id = $2`,
+    [motivo ?? "", nirId]
+  );
+  res.json({ ok: true });
 });
 
 // ── Timeline ─────────────────────────────────────────────────────────────────

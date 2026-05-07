@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ArrowRightLeft, Plus, Send, RefreshCw } from "lucide-react";
+import { ArrowRightLeft, Plus, Send, RefreshCw, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NirEntry {
@@ -23,6 +23,8 @@ interface NirEntry {
   staffId: number | null;
   staffName?: string;
   createdAt: string;
+  invalidado?: boolean;
+  motivoInvalidacao?: string;
 }
 
 const TIPO_CFG: Record<string, { label: string; color: string }> = {
@@ -53,6 +55,7 @@ export function PatientNirTab({ patientId }: { patientId: number }) {
   const [entries, setEntries] = useState<NirEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [invalidandoId, setInvalidandoId] = useState<number | null>(null);
 
   const [tipo, setTipo]           = useState("atualizacao");
   const [conteudo, setConteudo]   = useState("");
@@ -73,6 +76,41 @@ export function PatientNirTab({ patientId }: { patientId: number }) {
   }, [patientId, activeUser]);
 
   useEffect(() => { load(); }, [load]);
+
+  function podeInvalidarEntry(entry: NirEntry): boolean {
+    if (!activeUser) return false;
+    if (entry.invalidado) return false;
+    const isAdmin = activeUser.role === "administrador" || activeUser.role === "diretoria_geral";
+    return isAdmin || entry.staffId === activeUser.id;
+  }
+
+  async function handleInvalidar(entry: NirEntry) {
+    if (!activeUser) return;
+    const motivo = window.prompt("Motivo da invalidação (opcional):");
+    if (motivo === null) return; // cancelled
+    setInvalidandoId(entry.id);
+    try {
+      const resp = await fetch(`/api/patients/${patientId}/nir/${entry.id}/invalidar`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-staff-id": String(activeUser.id),
+        },
+        body: JSON.stringify({ motivo }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Erro ao invalidar");
+      }
+      toast({ title: "Registro NIR invalidado" });
+      load();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erro ao invalidar registro";
+      toast({ title: msg, variant: "destructive" });
+    } finally {
+      setInvalidandoId(null);
+    }
+  }
 
   async function handleSubmit() {
     if (!conteudo.trim() || !activeUser) return;
@@ -217,9 +255,21 @@ export function PatientNirTab({ patientId }: { patientId: number }) {
             const tipoCfg   = TIPO_CFG[entry.tipo]   ?? { label: entry.tipo,       color: "bg-muted/20 text-muted-foreground border-border/30" };
             const statusCfg = STATUS_CFG[entry.statusVaga] ?? { label: entry.statusVaga, color: "bg-muted/20 text-muted-foreground border-border/30" };
             const prioCfg   = PRIO_CFG[entry.prioridade]  ?? { label: entry.prioridade, color: "bg-muted/20 text-muted-foreground border-border/30" };
+            const isInvalid = !!entry.invalidado;
             return (
-              <div key={entry.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
+              <div
+                key={entry.id}
+                className={cn(
+                  "bg-card rounded-lg border overflow-hidden",
+                  isInvalid ? "border-red-900/40 opacity-60" : "border-border/50"
+                )}
+              >
                 <div className="flex items-center flex-wrap gap-2 px-4 py-2 bg-muted/20 border-b border-border/40">
+                  {isInvalid && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-500/15 text-red-400 border-red-500/30 flex items-center gap-1">
+                      <Ban className="h-2.5 w-2.5" /> Invalidado
+                    </span>
+                  )}
                   <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded border", tipoCfg.color)}>
                     {tipoCfg.label}
                   </span>
@@ -232,8 +282,19 @@ export function PatientNirTab({ patientId }: { patientId: number }) {
                   <span className="ml-auto text-xs text-muted-foreground shrink-0">
                     {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </span>
+                  {podeInvalidarEntry(entry) && (
+                    <button
+                      type="button"
+                      title="Invalidar registro"
+                      disabled={invalidandoId === entry.id}
+                      onClick={() => handleInvalidar(entry)}
+                      className="text-muted-foreground/50 hover:text-red-400 transition-colors disabled:opacity-40"
+                    >
+                      <Ban className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
-                <div className="px-4 py-3 space-y-1.5">
+                <div className={cn("px-4 py-3 space-y-1.5", isInvalid && "line-through decoration-red-500/40")}>
                   {entry.destino && (
                     <p className="text-xs text-muted-foreground">
                       <span className="font-medium text-foreground/70">Destino:</span> {entry.destino}
@@ -244,6 +305,13 @@ export function PatientNirTab({ patientId }: { patientId: number }) {
                     <p className="text-xs text-muted-foreground/60">{entry.staffName}</p>
                   )}
                 </div>
+                {isInvalid && entry.motivoInvalidacao && (
+                  <div className="px-4 pb-3">
+                    <p className="text-xs text-red-400/80 italic">
+                      Motivo: {entry.motivoInvalidacao}
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}
