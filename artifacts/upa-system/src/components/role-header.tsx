@@ -1,4 +1,4 @@
-import { Activity, LayoutDashboard } from "lucide-react";
+import { Activity, LayoutDashboard, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,10 @@ const ROLE_COLORS: Record<string, string> = {
 interface Props {
   title: string;
   icon?: React.ReactNode;
+  backHref?: string;
 }
 
-export function RoleHeader({ title, icon }: Props) {
+export function RoleHeader({ title, icon, backHref }: Props) {
   const { activeUser, logout } = useAuth();
   const [, setLocation] = useLocation();
   const role = activeUser?.role ?? "";
@@ -35,6 +36,14 @@ export function RoleHeader({ title, icon }: Props) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card shadow-sm">
       <div className="flex items-center gap-3 px-4 h-14">
+        {backHref && (
+          <Link href={backHref}>
+            <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-muted-foreground hover:text-foreground shrink-0">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-xs">Voltar</span>
+            </Button>
+          </Link>
+        )}
         {/* Logo + branding */}
         <Link href={home}>
           <button className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0">

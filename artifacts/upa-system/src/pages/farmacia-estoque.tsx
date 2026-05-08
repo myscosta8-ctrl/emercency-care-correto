@@ -6,8 +6,9 @@ import {
   Package, Plus, Search, ArrowDownToLine, ArrowUpFromLine,
   AlertTriangle, Calendar, BarChart3, ScanLine, RefreshCw,
   Camera, CameraOff, Edit2, Check, X, Printer, FileDown,
-  ChevronDown, ChevronUp, TrendingDown, Pill,
+  ChevronDown, ChevronUp, TrendingDown, Pill, ArrowLeft,
 } from "lucide-react";
+import { Link } from "wouter";
 import { RoleHeader } from "@/components/role-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1243,6 +1244,7 @@ export default function FarmaciaEstoquePage() {
       <RoleHeader
         title="Estoque de Farmácia"
         icon={<Package className="h-5 w-5" />}
+        backHref="/"
       />
       <div className="p-4 space-y-4">
         {/* Tabs */}

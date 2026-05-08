@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Users, Activity, Calendar, Download, ArrowRightLeft, FlaskConical, TrendingUp } from "lucide-react";
+import { BarChart3, Users, Activity, Calendar, Download, ArrowRightLeft, FlaskConical, TrendingUp, ArrowLeft } from "lucide-react";
 
 function getStaffId() {
   try { return String((JSON.parse(localStorage.getItem("upa_auth_user") ?? "null") as { id?: number })?.id ?? 0); }
@@ -152,7 +153,13 @@ export default function RelatoriosPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-2 mb-2">
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span className="text-xs">Voltar</span>
+          </Button>
+        </Link>
         <BarChart3 className="h-6 w-6 text-indigo-400" />
         <div>
           <h1 className="text-xl font-bold">Relatórios Gerenciais</h1>

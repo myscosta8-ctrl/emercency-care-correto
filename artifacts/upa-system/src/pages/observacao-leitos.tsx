@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import {
   useListPatients,
   useUpdatePatientStatus,
@@ -10,7 +10,7 @@ import type { Patient } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   UserPlus, AlertTriangle, Siren, Search,
-  BedDouble, Clock,
+  BedDouble, Clock, ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,6 +167,12 @@ export default function ObservacaoLeitos() {
         <header className="border-b border-border bg-card sticky top-0 z-10 shadow-sm">
           <div className="px-4 h-16 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 shrink-0">
+              <Link href="/">
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline text-xs">Voltar</span>
+                </Button>
+              </Link>
               <div className="bg-primary text-primary-foreground rounded-lg px-2.5 py-1.5 leading-none shrink-0">
                 <div className="font-black text-sm tracking-tight">UPA</div>
                 <div className="font-bold text-[9px] tracking-[0.2em] text-center opacity-90">24h</div>

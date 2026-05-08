@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Target, TrendingUp, Users2, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
+import { Clock, Target, TrendingUp, Users2, RefreshCw, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 
 function getStaffId() {
   try { return String((JSON.parse(localStorage.getItem("upa_auth_user") ?? "null") as { id?: number })?.id ?? 0); }
@@ -70,7 +71,13 @@ export default function TemposMetasPage() {
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="text-xs">Voltar</span>
+            </Button>
+          </Link>
           <Target className="h-6 w-6 text-emerald-400" />
           <div>
             <h1 className="text-xl font-bold">Painel de Tempos e Metas</h1>
