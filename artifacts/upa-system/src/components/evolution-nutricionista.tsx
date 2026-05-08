@@ -24,6 +24,7 @@ interface Props {
   patientName: string;
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
+  mode?: "admissao" | "evolucao";
 }
 
 interface NutricionistaData {
@@ -77,7 +78,7 @@ function buildContent(d: NutricionistaData, imc: string): string {
   return parts.join("\n\n");
 }
 
-export function EvolutionNutricionista({ patientId, userId, patientName, patient, staffMap }: Props) {
+export function EvolutionNutricionista({ patientId, userId, patientName, patient, staffMap, mode = "evolucao" }: Props) {
   const [form, setForm] = useState<NutricionistaData>(EMPTY);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const { toast } = useToast();
@@ -91,12 +92,19 @@ export function EvolutionNutricionista({ patientId, userId, patientName, patient
 
   const addAssessment = useAddPatientNutritionalAssessment();
 
+  const sorted = useMemo(
+    () => [...(assessments ?? [])].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+    [assessments],
+  );
+  const admissaoId = sorted[0]?.id;
+  const isFirst = !admissaoId;
+
   const set = (k: keyof NutricionistaData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
   const setSelect = (k: keyof NutricionistaData) => (v: string) =>
     setForm(f => ({ ...f, [k]: v }));
 
-  const isValid = form.diagnosticoNutricional.trim() || form.planoAlimentar.trim();
+  const isValid = !!(form.diagnosticoNutricional.trim() || form.planoAlimentar.trim());
 
   const handleSubmit = () => {
     const content = buildContent(form, imc);
@@ -114,7 +122,7 @@ export function EvolutionNutricionista({ patientId, userId, patientName, patient
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPatientNutritionalAssessmentsQueryKey(patientId) });
           setForm(EMPTY);
-          toast({ title: "Avaliação nutricional registrada" });
+          toast({ title: isFirst ? "Avaliação nutricional de admissão registrada" : "Evolução diária nutricional registrada" });
         },
         onError: () => toast({ title: "Erro ao registrar avaliação", variant: "destructive" }),
       }
@@ -153,114 +161,115 @@ ${d?.planoAlimentar ? `<div class="section"><div class="section-label">Plano Ali
     win.document.close();
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Form */}
-      <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-          <UtensilsCrossed className="h-3.5 w-3.5" /> Nova Avaliação Nutricional
-        </h4>
+  const formBlock = (
+    <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
+      <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+        <UtensilsCrossed className="h-3.5 w-3.5" />
+        {isFirst ? "Admissão Inicial — Nutrição" : "Evolução Diária — Nutrição"}
+      </h4>
 
-        {/* Antropometria */}
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Peso atual (kg)</label>
-            <Input
-              placeholder="Ex: 68.5"
-              value={form.peso}
-              onChange={set("peso")}
-              className="text-sm"
-              type="text"
-              inputMode="decimal"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Altura (cm)</label>
-            <Input
-              placeholder="Ex: 165"
-              value={form.altura}
-              onChange={set("altura")}
-              className="text-sm"
-              type="text"
-              inputMode="decimal"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">IMC (calculado)</label>
-            <div className={`flex items-center h-10 px-3 rounded-md border text-sm font-mono ${imc ? "border-emerald-500/40 bg-emerald-500/5 text-emerald-300" : "border-border/40 text-muted-foreground"}`}>
-              {imc ? `${imc} kg/m²` : "—"}
-            </div>
-            {imc && (
-              <p className="text-[10px] text-emerald-400/80 mt-0.5">{imcCategory(imc)}</p>
-            )}
-          </div>
-        </div>
-
+      <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Via de Alimentação</label>
-          <Select value={form.viaAlimentacao} onValueChange={setSelect("viaAlimentacao")}>
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Selecione…" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Oral">Oral</SelectItem>
-              <SelectItem value="Sonda nasogástrica (SNG)">Sonda nasogástrica (SNG)</SelectItem>
-              <SelectItem value="Sonda nasoenteral (SNE)">Sonda nasoenteral (SNE)</SelectItem>
-              <SelectItem value="Gastrostomia">Gastrostomia</SelectItem>
-              <SelectItem value="Parenteral total (NPT)">Parenteral total (NPT)</SelectItem>
-              <SelectItem value="Parenteral periférica (NPP)">Parenteral periférica (NPP)</SelectItem>
-              <SelectItem value="Misto (oral + enteral)">Misto (oral + enteral)</SelectItem>
-              <SelectItem value="Misto (enteral + parenteral)">Misto (enteral + parenteral)</SelectItem>
-              <SelectItem value="Jejum">Jejum</SelectItem>
-            </SelectContent>
-          </Select>
+          <label className="text-xs text-muted-foreground mb-1 block">Peso atual (kg)</label>
+          <Input placeholder="Ex: 68.5" value={form.peso} onChange={set("peso")} className="text-sm" type="text" inputMode="decimal" />
         </div>
-
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Diagnóstico Nutricional *</label>
-          <Textarea
-            placeholder="Ex: Desnutrição proteico-calórica moderada secundária a…"
-            value={form.diagnosticoNutricional}
-            onChange={set("diagnosticoNutricional")}
-            rows={2}
-            className="resize-none text-sm"
-          />
+          <label className="text-xs text-muted-foreground mb-1 block">Altura (cm)</label>
+          <Input placeholder="Ex: 165" value={form.altura} onChange={set("altura")} className="text-sm" type="text" inputMode="decimal" />
         </div>
-
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Plano Alimentar *</label>
-          <Textarea
-            placeholder="Ex: Dieta hipercalórica e hiperproteica, fracionada em 6 refeições…"
-            value={form.planoAlimentar}
-            onChange={set("planoAlimentar")}
-            rows={3}
-            className="resize-none text-sm"
-          />
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1 max-w-xs">
-            <label className="text-xs text-muted-foreground mb-1 block">CRN</label>
-            <Input
-              placeholder="Número do CRN"
-              value={form.crn}
-              onChange={set("crn")}
-              className="text-sm"
-            />
+          <label className="text-xs text-muted-foreground mb-1 block">IMC (calculado)</label>
+          <div className={`flex items-center h-10 px-3 rounded-md border text-sm font-mono ${imc ? "border-emerald-500/40 bg-emerald-500/5 text-emerald-300" : "border-border/40 text-muted-foreground"}`}>
+            {imc ? `${imc} kg/m²` : "—"}
           </div>
-          <Button
-            size="sm"
-            disabled={!isValid || addAssessment.isPending}
-            onClick={handleSubmit}
-            className="gap-1.5 self-end"
-          >
-            <Send className="h-3.5 w-3.5" />
-            {addAssessment.isPending ? "Salvando…" : "Registrar Avaliação"}
-          </Button>
+          {imc && <p className="text-[10px] text-emerald-400/80 mt-0.5">{imcCategory(imc)}</p>}
         </div>
       </div>
 
-      {/* History */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Via de Alimentação</label>
+        <Select value={form.viaAlimentacao} onValueChange={setSelect("viaAlimentacao")}>
+          <SelectTrigger className="text-sm"><SelectValue placeholder="Selecione…" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Oral">Oral</SelectItem>
+            <SelectItem value="Sonda nasogástrica (SNG)">Sonda nasogástrica (SNG)</SelectItem>
+            <SelectItem value="Sonda nasoenteral (SNE)">Sonda nasoenteral (SNE)</SelectItem>
+            <SelectItem value="Gastrostomia">Gastrostomia</SelectItem>
+            <SelectItem value="Parenteral total (NPT)">Parenteral total (NPT)</SelectItem>
+            <SelectItem value="Parenteral periférica (NPP)">Parenteral periférica (NPP)</SelectItem>
+            <SelectItem value="Misto (oral + enteral)">Misto (oral + enteral)</SelectItem>
+            <SelectItem value="Misto (enteral + parenteral)">Misto (enteral + parenteral)</SelectItem>
+            <SelectItem value="Jejum">Jejum</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Diagnóstico Nutricional *</label>
+        <Textarea placeholder="Ex: Desnutrição proteico-calórica moderada secundária a…" value={form.diagnosticoNutricional} onChange={set("diagnosticoNutricional")} rows={2} className="resize-none text-sm" />
+      </div>
+
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Plano Alimentar *</label>
+        <Textarea placeholder="Ex: Dieta hipercalórica e hiperproteica, fracionada em 6 refeições…" value={form.planoAlimentar} onChange={set("planoAlimentar")} rows={3} className="resize-none text-sm" />
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 max-w-xs">
+          <label className="text-xs text-muted-foreground mb-1 block">CRN</label>
+          <Input placeholder="Número do CRN" value={form.crn} onChange={set("crn")} className="text-sm" />
+        </div>
+        <Button size="sm" disabled={!isValid || addAssessment.isPending} onClick={handleSubmit} className="gap-1.5 self-end">
+          <Send className="h-3.5 w-3.5" />
+          {addAssessment.isPending ? "Salvando…" : isFirst ? "Registrar Admissão" : "Registrar Evolução Diária"}
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (mode === "admissao") {
+    if (isLoading) return <Skeleton className="h-20 w-full" />;
+    if (!assessments || assessments.length === 0) return formBlock;
+    const first = sorted[0];
+    const d = first.structuredData as (NutricionistaData & { imc?: string }) | null;
+    const imcVal = d?.imc ?? "";
+    return (
+      <div className="bg-card rounded-lg border border-emerald-500/20 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2 bg-emerald-500/5 border-b border-emerald-500/10">
+          <div className="flex items-center gap-2">
+            <UtensilsCrossed className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+            <span className="text-xs font-semibold">{staffMap[first.userId]?.name ?? `Nutricionista ID ${first.userId}`}</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 uppercase tracking-wider">Admissão Inicial</span>
+            {d?.viaAlimentacao && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">{d.viaAlimentacao}</span>
+            )}
+            {imcVal && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/20 text-emerald-400 font-mono">IMC {imcVal}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{format(new Date(first.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => handlePrint(first)}>
+              <Printer className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+        <div className="px-4 py-3 space-y-1">
+          {d?.diagnosticoNutricional && <p className="text-xs text-foreground/90 line-clamp-2">{d.diagnosticoNutricional}</p>}
+          {(d?.peso || d?.altura) && (
+            <p className="text-xs text-muted-foreground/70">
+              {d.peso && `Peso: ${d.peso} kg`}{d.peso && d.altura && " · "}{d.altura && `Altura: ${d.altura} cm`}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {formBlock}
+
       {isLoading ? (
         <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
       ) : !assessments || assessments.length === 0 ? (
@@ -273,50 +282,36 @@ ${d?.planoAlimentar ? `<div class="section"><div class="section-label">Plano Ali
             const d = item.structuredData as (NutricionistaData & { imc?: string }) | null;
             const imcVal = d?.imc ?? "";
             const isOpen = expandedId === item.id;
+            const isAdmissao = item.id === admissaoId;
             return (
               <div key={item.id} className="bg-card rounded-lg border border-emerald-500/20 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2 bg-emerald-500/5 border-b border-emerald-500/10">
                   <div className="flex items-center gap-2">
                     <UtensilsCrossed className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                    <span className="text-xs font-semibold">
-                      {staffMap[item.userId]?.name ?? `Nutricionista ID ${item.userId}`}
+                    <span className="text-xs font-semibold">{staffMap[item.userId]?.name ?? `Nutricionista ID ${item.userId}`}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${isAdmissao ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-border/40 bg-muted/10 text-muted-foreground/60"}`}>
+                      {isAdmissao ? "Admissão Inicial" : "Evolução Diária"}
                     </span>
                     {d?.viaAlimentacao && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
-                        {d.viaAlimentacao}
-                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">{d.viaAlimentacao}</span>
                     )}
                     {imcVal && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/20 text-emerald-400 font-mono">
-                        IMC {imcVal}
-                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/20 text-emerald-400 font-mono">IMC {imcVal}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </span>
-                    <Button
-                      size="sm" variant="ghost"
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                      onClick={() => handlePrint(item)}
-                    >
+                    <span className="text-xs text-muted-foreground">{format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => handlePrint(item)}>
                       <Printer className="h-3.5 w-3.5" />
                     </Button>
-                    <Button
-                      size="sm" variant="ghost"
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                      onClick={() => setExpandedId(isOpen ? null : item.id)}
-                    >
+                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => setExpandedId(isOpen ? null : item.id)}>
                       {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                     </Button>
                   </div>
                 </div>
                 <div className="px-4 py-3 space-y-2">
                   {d?.diagnosticoNutricional && (
-                    <p className={`text-xs text-foreground/90 ${isOpen ? "whitespace-pre-wrap" : "line-clamp-2"}`}>
-                      {d.diagnosticoNutricional}
-                    </p>
+                    <p className={`text-xs text-foreground/90 ${isOpen ? "whitespace-pre-wrap" : "line-clamp-2"}`}>{d.diagnosticoNutricional}</p>
                   )}
                   {isOpen && d && (
                     <div className="space-y-3 pt-2 border-t border-border/30">

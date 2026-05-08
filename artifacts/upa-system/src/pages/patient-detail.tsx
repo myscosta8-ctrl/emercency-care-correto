@@ -941,7 +941,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           <TabsList className="flex flex-wrap h-auto gap-1 mb-4 bg-muted/30 p-1 rounded-lg">
             {/* ── Geral ── */}
             <TabsTrigger value="resumo" className="text-xs">📋 Resumo</TabsTrigger>
-            <TabsTrigger value="identificacao" className="text-xs">Atendimento</TabsTrigger>
+            <TabsTrigger value="identificacao" className="text-xs">Admissão Inicial</TabsTrigger>
             <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
             <TabsTrigger value="timeline" className="text-xs">Linha do Tempo</TabsTrigger>
             {/* ── Médico ── */}
@@ -1011,7 +1011,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             />
           </TabsContent>
 
-          {/* ── TAB: ATENDIMENTO ATUAL ─────────────────────────────────── */}
+          {/* ── TAB: ADMISSÃO INICIAL ──────────────────────────────────── */}
           <TabsContent value="identificacao">
             <div className="flex justify-end gap-2 mb-3">
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handlePrintAdmissaoMedica}>
@@ -1196,6 +1196,104 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 )}
               </div>
             </div>
+
+            {/* ── Avaliações Multiprofissionais na Admissão ── */}
+            {(pode("registrar_nota_social") || pode("registrar_avaliacao_nutricional") || pode("registrar_farmacia")) && (
+              <div className="mt-6 space-y-5">
+                <div className="flex items-center gap-2 border-b border-border/40 pb-2">
+                  <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Avaliações Multiprofissionais na Admissão</h3>
+                </div>
+                {pode("registrar_nota_social") && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5 mb-2">
+                      <MessageSquare className="h-3.5 w-3.5" /> Serviço Social
+                    </p>
+                    <EvolutionSocial
+                      patientId={id}
+                      userId={activeUser?.id ?? 0}
+                      patientName={patient.full_name}
+                      patient={patient}
+                      staffMap={staffMap}
+                      mode="admissao"
+                    />
+                  </div>
+                )}
+                {pode("registrar_avaliacao_nutricional") && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-2">
+                      <UtensilsCrossed className="h-3.5 w-3.5" /> Nutrição
+                    </p>
+                    <EvolutionNutricionista
+                      patientId={id}
+                      userId={activeUser?.id ?? 0}
+                      patientName={patient.full_name}
+                      patient={patient}
+                      staffMap={staffMap}
+                      mode="admissao"
+                    />
+                  </div>
+                )}
+                {pode("registrar_farmacia") && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-1.5 mb-2">
+                      <Pill className="h-3.5 w-3.5" /> Farmácia
+                    </p>
+                    {isLoadingPharmacy ? (
+                      <div className="h-14 bg-card rounded-lg border border-border/50 animate-pulse" />
+                    ) : !pharmacyEntries || pharmacyEntries.length === 0 ? (
+                      <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">Medicamento *</label>
+                            <Input placeholder="Nome do medicamento…" value={pharmacyMed} onChange={e => setPharmacyMed(e.target.value)} />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">Status</label>
+                            <Select value={pharmacyStatus} onValueChange={v => setPharmacyStatus(v as typeof pharmacyStatus)}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pendente">Pendente</SelectItem>
+                                <SelectItem value="dispensado">Dispensado</SelectItem>
+                                <SelectItem value="devolvido">Devolvido</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <Textarea placeholder="Observações (opcional)…" value={pharmacyNotes} onChange={e => setPharmacyNotes(e.target.value)} rows={2} className="resize-none" />
+                        <div className="flex justify-end">
+                          <Button size="sm" disabled={!pharmacyMed.trim() || addPharmacyEntry.isPending} onClick={handleAddPharmacy} className="gap-1.5">
+                            <Send className="h-3.5 w-3.5" /> {addPharmacyEntry.isPending ? "Salvando…" : "Registrar Admissão"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (() => {
+                      const fp = [...pharmacyEntries].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
+                      if (!fp) return null;
+                      const cfg = ({
+                        pendente:   { label: "Pendente",   color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                        dispensado: { label: "Dispensado", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+                        devolvido:  { label: "Devolvido",  color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
+                      } as const)[fp.status as "pendente" | "dispensado" | "devolvido"] ?? { label: fp.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
+                      return (
+                        <div className="bg-card rounded-lg border border-sky-500/20 overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-2 bg-sky-500/5 border-b border-sky-500/10">
+                            <div className="flex items-center gap-2">
+                              <Pill className="h-3.5 w-3.5 text-sky-400 shrink-0" />
+                              <span className="text-sm font-semibold">{fp.medication}</span>
+                              <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider", cfg.color)}>{cfg.label}</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-sky-500/40 bg-sky-500/10 text-sky-300 uppercase tracking-wider">Admissão Inicial</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground shrink-0">{format(new Date(fp.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                          </div>
+                          {fp.notes && <div className="px-4 py-2.5"><p className="text-xs text-muted-foreground">{fp.notes}</p></div>}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
 
           {/* ── TAB: SINAIS VITAIS ────────────────────────────────────── */}
@@ -1862,7 +1960,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   <Textarea placeholder="Observações (opcional)…" value={pharmacyNotes} onChange={e => setPharmacyNotes(e.target.value)} rows={2} className="resize-none" />
                   <div className="flex justify-end">
                     <Button size="sm" disabled={!pharmacyMed.trim() || addPharmacyEntry.isPending} onClick={handleAddPharmacy} className="gap-1.5">
-                      <Send className="h-3.5 w-3.5" /> {addPharmacyEntry.isPending ? "Salvando…" : "Registrar Dispensação"}
+                      <Send className="h-3.5 w-3.5" /> {addPharmacyEntry.isPending ? "Salvando…" : !pharmacyEntries || pharmacyEntries.length === 0 ? "Registrar Admissão" : "Registrar Evolução Diária"}
                     </Button>
                   </div>
                 </div>
@@ -1873,7 +1971,9 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 <div className="text-center py-6 text-sm text-muted-foreground">Nenhuma dispensação registrada ainda.</div>
               ) : (
                 <div className="space-y-3">
-                  {pharmacyEntries.map(entry => {
+                  {pharmacyEntries.map((entry, _idx, arr) => {
+                    const firstPharmacyId = arr.slice().sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]?.id;
+                    const isAdmissaoFarm = entry.id === firstPharmacyId;
                     const statusCfg = ({
                       pendente:    { label: "Pendente",    color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
                       dispensado:  { label: "Dispensado",  color: "bg-green-500/20 text-green-400 border-green-500/30" },
@@ -1886,6 +1986,9 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                             <Pill className="h-3.5 w-3.5 text-sky-400 shrink-0" />
                             <span className="text-sm font-semibold">{entry.medication}</span>
                             <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider", statusCfg.color)}>{statusCfg.label}</span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${isAdmissaoFarm ? "border-sky-500/40 bg-sky-500/10 text-sky-300" : "border-border/40 bg-muted/10 text-muted-foreground/60"}`}>
+                              {isAdmissaoFarm ? "Admissão Inicial" : "Evolução Diária"}
+                            </span>
                           </div>
                           <span className="text-xs text-muted-foreground shrink-0">{format(new Date(entry.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
                         </div>
