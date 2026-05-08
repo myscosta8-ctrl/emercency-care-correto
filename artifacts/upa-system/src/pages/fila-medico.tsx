@@ -411,6 +411,13 @@ export default function FilaMedicoPage() {
 
       <main className="flex-1 container mx-auto px-4 py-4 max-w-5xl space-y-6">
 
+        <button
+          onClick={() => window.history.back()}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+        </button>
+
         {/* ── Consultórios ── */}
         <div className={cn("grid gap-4", mostrarCons1 && mostrarCons2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 max-w-lg")}>
           {mostrarCons1 && (

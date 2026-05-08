@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useListPatients, getListPatientsQueryKey } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
 import {
-  FlaskConical, Upload, CheckCircle2, Clock, Bell, X, FileText, ChevronDown, ChevronRight, Loader2,
+  FlaskConical, Upload, CheckCircle2, Clock, Bell, X, FileText, ChevronDown, ChevronRight, Loader2, ArrowLeft,
 } from "lucide-react";
 import { RoleHeader } from "@/components/role-header";
 import { Button } from "@/components/ui/button";
@@ -451,6 +451,13 @@ export default function LaboratorioPage() {
       <RoleHeader title="Laboratório" icon={<FlaskConical className="h-5 w-5 text-primary" />} />
 
       <main className="flex-1 container mx-auto px-4 py-4 max-w-4xl space-y-4">
+
+        <button
+          onClick={() => window.history.back()}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+        </button>
 
         {/* ── notificação de novos resultados ── */}
         {newlyReleased.length > 0 && (

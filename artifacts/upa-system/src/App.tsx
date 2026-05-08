@@ -161,7 +161,7 @@ function MobileGuard({ children }: { children: React.ReactNode }) {
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { activeUser } = useAuth();
   const [, setLocation] = useLocation();
-  const isAdmin = activeUser?.role === "administrador";
+  const isAdmin = activeUser?.role === "administrador" || activeUser?.role === "diretoria_geral";
 
   useEffect(() => {
     if (!isAdmin && activeUser) {

@@ -9,7 +9,7 @@ import {
 import type { Patient } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  UserPlus, Power, AlertTriangle, Siren, Search,
+  UserPlus, AlertTriangle, Siren, Search,
   BedDouble, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -211,10 +211,10 @@ export default function ObservacaoLeitos() {
                 variant="ghost" size="sm"
                 title={`Sair (${activeUser?.name ?? ""})`}
                 aria-label="Sair"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                className="h-8 px-2 text-xs font-semibold text-muted-foreground hover:text-destructive"
                 onClick={() => { logout(); setLocation("/login"); }}
               >
-                <Power className="h-3.5 w-3.5" />
+                Sair
               </Button>
             </div>
           </div>

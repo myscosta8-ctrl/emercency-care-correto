@@ -11,7 +11,7 @@ import {
   getGetPatientsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import type { Patient, ListPatientsParams, PatientPendingExamsItem } from "@workspace/api-client-react";
-import { UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, Power, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List, ChevronUp, ChevronDown, Check, PhoneCall, BarChart3, Target } from "lucide-react";
+import { UserPlus, Users, Search, Pencil, LogOut, ClipboardList, BedDouble, Settings2, AlertTriangle, Siren, RefreshCw, Clock, Stethoscope, FlaskConical, X, Filter, Microscope, Bookmark, BookmarkCheck, List, ChevronUp, ChevronDown, Check, PhoneCall, BarChart3, Target } from "lucide-react";
 import { BedPickerInline } from "@/components/bed-picker-inline";
 import { useExamFilterBookmarks } from "@/lib/use-exam-filter-bookmarks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -862,10 +862,10 @@ export default function Dashboard() {
               size="sm"
               title={`Sair (${activeUser?.name ?? ""})`}
               aria-label="Sair"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+              className="h-8 px-2 text-xs font-semibold text-muted-foreground hover:text-destructive"
               onClick={() => { logout(); setLocation("/login"); }}
             >
-              <Power className="h-3.5 w-3.5" />
+              Sair
             </Button>
           </div>
         </div>

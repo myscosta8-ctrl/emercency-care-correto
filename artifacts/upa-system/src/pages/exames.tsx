@@ -4,7 +4,7 @@ import { useListExamRequests } from "@workspace/api-client-react";
 import type { GlobalExamRequest } from "@workspace/api-client-react";
 import {
   FlaskConical, Microscope, ImageIcon, Clock, CheckCircle2, Loader2,
-  ArrowUpRight, Filter, SortAsc,
+  ArrowUpRight, Filter, SortAsc, ArrowLeft,
 } from "lucide-react";
 import { RoleHeader } from "@/components/role-header";
 import { Button } from "@/components/ui/button";
@@ -213,6 +213,13 @@ export default function ExamesPage() {
       />
 
       <main className="flex-1 container mx-auto px-4 py-4 max-w-5xl space-y-4">
+
+        <button
+          onClick={() => window.history.back()}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+        </button>
 
         {/* ── stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

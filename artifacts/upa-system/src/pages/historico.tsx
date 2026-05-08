@@ -4,7 +4,7 @@ import { useListPatients } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
 import {
   Archive, Search, User, Calendar, FileText, ChevronRight,
-  Activity, Clock, Download,
+  Activity, Clock, Download, ArrowLeft,
 } from "lucide-react";
 import { RoleHeader } from "@/components/role-header";
 import { Input } from "@/components/ui/input";
@@ -175,6 +175,13 @@ export default function HistoricoPage() {
       <RoleHeader title="Histórico de Pacientes" icon={<Archive className="h-5 w-5 text-primary" />} />
 
       <main className="flex-1 container mx-auto px-4 py-4 max-w-4xl space-y-4">
+
+        <button
+          onClick={() => window.history.back()}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+        </button>
 
         {/* cabeçalho */}
         <div className="flex items-center justify-between gap-3 flex-wrap">

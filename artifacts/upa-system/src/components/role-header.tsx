@@ -1,4 +1,4 @@
-import { Activity, Power, LayoutDashboard } from "lucide-react";
+import { Activity, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
@@ -79,10 +79,10 @@ export function RoleHeader({ title, icon }: Props) {
             size="sm"
             title={`Sair (${activeUser?.name ?? ""})`}
             aria-label="Sair"
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+            className="h-7 px-2 text-xs font-semibold text-muted-foreground hover:text-destructive"
             onClick={() => { logout(); setLocation("/login"); }}
           >
-            <Power className="h-3.5 w-3.5" />
+            Sair
           </Button>
         </div>
       </div>

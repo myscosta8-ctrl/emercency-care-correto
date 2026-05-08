@@ -647,10 +647,10 @@ router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
           await db.update(bedsTable)
             .set({ isOccupied: true, patientId: id, admissionTime: new Date(), updatedAt: new Date() })
             .where(eq(bedsTable.id, bed_id));
-          // Atualiza o setor do paciente para o setor do leito escolhido
+          // Atualiza o setor E o leito (coluna texto) do paciente
           type PatientSector = "triagem" | "sala_vermelha" | "observacao_adulto" | "observacao_pediatrica" | "observacao_pre_adulto";
           await db.update(patientsTable)
-            .set({ sector: chosenBed.sector as PatientSector, updatedAt: new Date() })
+            .set({ sector: chosenBed.sector as PatientSector, bed: chosenBed.bedId, updatedAt: new Date() })
             .where(eq(patientsTable.id, id));
           req.log.info({ action: "bed_explicit_allocated", bedId: chosenBed.bedId, patientId: id, sector: chosenBed.sector }, "Leito alocado por escolha do usuário");
         }
@@ -672,6 +672,10 @@ router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
               await db.update(bedsTable)
                 .set({ isOccupied: true, patientId: id, admissionTime: new Date(), updatedAt: new Date() })
                 .where(eq(bedsTable.id, freeBed.id));
+              // Atualiza também a coluna texto bed no paciente
+              await db.update(patientsTable)
+                .set({ bed: freeBed.bedId, updatedAt: new Date() })
+                .where(eq(patientsTable.id, id));
               req.log.info({ action: "bed_auto_allocated", bedId: freeBed.bedId, patientId: id, sector: targetSector }, "Leito alocado automaticamente");
             } else {
               req.log.warn({ action: "bed_no_vacancy", patientId: id, sector: targetSector }, "Nenhum leito livre no setor");

@@ -8,7 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { UserPlus, Clock, ChevronRight } from "lucide-react";
+import { UserPlus, Clock, ChevronRight, ArrowLeft } from "lucide-react";
 import { RoleHeader } from "@/components/role-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -149,6 +149,13 @@ export default function RecepcaoPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* ── FORM ─────────────────────────────────────────────────── */}
         <div className="flex-1 overflow-auto p-4 md:max-w-xl border-r border-border">
+          <button
+            type="button"
+            onClick={() => window.history.back()}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+          </button>
           <form onSubmit={handleSubmit} className="space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Nova Admissão — Dados do Paciente
