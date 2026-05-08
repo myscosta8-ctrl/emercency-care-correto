@@ -240,6 +240,21 @@ export default function PatientDetail() {
 
   const latestVitals = vitals?.[0];
 
+  const [activeGroup, setActiveGroup] = useState<"clinico" | "evolucao" | "tratamento" | "internacao">("clinico");
+  const [activeTab, setActiveTab] = useState("resumo");
+
+  const GROUP_DEFAULTS: Record<string, string> = {
+    clinico:    "resumo",
+    evolucao:   "evol-medico",
+    tratamento: "laboratorio",
+    internacao: "transferencia",
+  };
+
+  function switchGroup(g: "clinico" | "evolucao" | "tratamento" | "internacao") {
+    setActiveGroup(g);
+    setActiveTab(GROUP_DEFAULTS[g]);
+  }
+
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isVitalsOpen, setIsVitalsOpen] = useState(false);
@@ -938,66 +953,139 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="resumo">
-          <TabsList className="flex flex-wrap h-auto gap-1 mb-4 bg-muted/30 p-1 rounded-lg">
-            {/* ── Geral ── */}
-            <TabsTrigger value="resumo" className="text-xs">📋 Resumo</TabsTrigger>
-            <TabsTrigger value="identificacao" className="text-xs">Admissão Inicial</TabsTrigger>
-            <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
-            <TabsTrigger value="timeline" className="text-xs">Linha do Tempo</TabsTrigger>
-            {/* ── Médico ── */}
-            <TabsTrigger value="evol-medico" className="text-xs">Evol. Médica</TabsTrigger>
-            {pode("registrar_prescricao") && <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>}
-            {pode("registrar_prescricao") && (
-              <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
-                <FlaskConical className="h-3 w-3" /> Sol. Exames
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          {/* ── Group selector ─────────────────────────────────────────── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            {/* Clínico */}
+            <button
+              onClick={() => switchGroup("clinico")}
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                activeGroup === "clinico"
+                  ? "bg-blue-50 text-blue-700 border-blue-300 shadow-sm"
+                  : "bg-muted/30 text-muted-foreground border-border hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50/40",
+              )}
+            >
+              <span className="text-base leading-none">📋</span>
+              <span className="mt-0.5">Clínico</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "clinico" ? "text-blue-400" : "text-muted-foreground/60")}>
+                Resumo · Vitais
+              </span>
+            </button>
+            {/* Evolução */}
+            <button
+              onClick={() => switchGroup("evolucao")}
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                activeGroup === "evolucao"
+                  ? "bg-purple-50 text-purple-700 border-purple-300 shadow-sm"
+                  : "bg-muted/30 text-muted-foreground border-border hover:border-purple-200 hover:text-purple-600 hover:bg-purple-50/40",
+              )}
+            >
+              <span className="text-base leading-none">🩺</span>
+              <span className="mt-0.5">Evolução</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "evolucao" ? "text-purple-400" : "text-muted-foreground/60")}>
+                Médica · Enferm.
+              </span>
+            </button>
+            {/* Tratamento */}
+            <button
+              onClick={() => switchGroup("tratamento")}
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                activeGroup === "tratamento"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-300 shadow-sm"
+                  : "bg-muted/30 text-muted-foreground border-border hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50/40",
+              )}
+            >
+              <span className="text-base leading-none">💊</span>
+              <span className="mt-0.5">Tratamento</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "tratamento" ? "text-emerald-500" : "text-muted-foreground/60")}>
+                Prescrição · Lab.
+              </span>
+            </button>
+            {/* Internação */}
+            <button
+              onClick={() => switchGroup("internacao")}
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                activeGroup === "internacao"
+                  ? "bg-amber-50 text-amber-700 border-amber-300 shadow-sm"
+                  : "bg-muted/30 text-muted-foreground border-border hover:border-amber-200 hover:text-amber-600 hover:bg-amber-50/40",
+              )}
+            >
+              <span className="text-base leading-none">🏥</span>
+              <span className="mt-0.5">Internação</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "internacao" ? "text-amber-500" : "text-muted-foreground/60")}>
+                Fluxo · Docs.
+              </span>
+            </button>
+          </div>
+
+          {/* ── Sub-tabs for active group ──────────────────────────────── */}
+          <TabsList className="flex flex-wrap h-auto gap-1 mb-4 bg-muted/20 p-1 rounded-lg border border-border/50">
+            {activeGroup === "clinico" && <>
+              <TabsTrigger value="resumo" className="text-xs">📋 Resumo</TabsTrigger>
+              <TabsTrigger value="identificacao" className="text-xs">Admissão</TabsTrigger>
+              <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
+              <TabsTrigger value="timeline" className="text-xs">Linha do Tempo</TabsTrigger>
+            </>}
+
+            {activeGroup === "evolucao" && <>
+              <TabsTrigger value="evol-medico" className="text-xs">Evol. Médica</TabsTrigger>
+              <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
+              {isInpatient && <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>}
+              <TabsTrigger value="tecnico" className="text-xs">Anotação Enf.</TabsTrigger>
+              {isInpatient && pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
+              {isInpatient && pode("registrar_avaliacao_nutricional") && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
+            </>}
+
+            {activeGroup === "tratamento" && <>
+              {pode("registrar_prescricao") && <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>}
+              {pode("registrar_prescricao") && (
+                <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
+                  <FlaskConical className="h-3 w-3" /> Sol. Exames
+                </TabsTrigger>
+              )}
+              {pode("registrar_prescricao") && (
+                <TabsTrigger value="exames" className="text-xs flex items-center gap-1">
+                  Exames
+                  {examRequests && examRequests.filter(e => e.status !== "laudado").length > 0 && (
+                    <span className="text-[10px] font-bold px-1 rounded-full bg-orange-500/20 text-orange-400 min-w-[16px] text-center">
+                      {examRequests.filter(e => e.status !== "laudado").length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="laboratorio" className="text-xs flex items-center gap-1">
+                <FlaskConical className="h-3 w-3" /> Laboratório
               </TabsTrigger>
-            )}
-            {/* ── Enfermagem (ambulatorial e internação) ── */}
-            <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
-            {isInpatient && <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>}
-            <TabsTrigger value="tecnico" className="text-xs">Anotação Enf.</TabsTrigger>
-            {/* ── Outros profissionais — somente internação ── */}
-            {isInpatient && pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
-            {isInpatient && pode("registrar_avaliacao_nutricional") && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
-            {isInpatient && pode("registrar_farmacia") && <TabsTrigger value="farmacia" className="text-xs">Farmácia</TabsTrigger>}
-            {/* ── Exames (ambulatorial e internação) ── */}
-            {pode("registrar_prescricao") && (
-              <TabsTrigger value="exames" className="text-xs flex items-center gap-1">
-                Exames
-                {examRequests && examRequests.filter(e => e.status !== "laudado").length > 0 && (
-                  <span className="text-[10px] font-bold px-1 rounded-full bg-orange-500/20 text-orange-400 min-w-[16px] text-center">
-                    {examRequests.filter(e => e.status !== "laudado").length}
-                  </span>
-                )}
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="laboratorio" className="text-xs flex items-center gap-1">
-              <FlaskConical className="h-3 w-3" /> Laboratório
-            </TabsTrigger>
-            {/* ── Gestão — Regulação/NIR e Dispositivos: somente internação ── */}
-            {isInpatient && <TabsTrigger value="regulacao" className="text-xs">Regulação/NIR</TabsTrigger>}
-            {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
-            {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">SINAN</TabsTrigger>}
-            {isInpatient && (
-              <TabsTrigger value="dispositivos" className="text-xs flex items-center gap-1">
-                <Plug className="h-3 w-3" /> Dispositivos
-                {devices && devices.filter(d => !d.removedAt).length > 0 && (
-                  <span className="text-[10px] font-bold px-1 rounded-full bg-cyan-500/20 text-cyan-400 min-w-[16px] text-center">
-                    {devices.filter(d => !d.removedAt).length}
-                  </span>
-                )}
-              </TabsTrigger>
-            )}
-            {/* ── Clínico Avançado — somente internação ── */}
-            {isInpatient && <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>}
-            {isInpatient && pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
-            {isInpatient && pode("registrar_procedimento") && <TabsTrigger value="procedimentos" className="text-xs">Procedimentos</TabsTrigger>}
-            {isInpatient && pode("registrar_interconsulta") && <TabsTrigger value="interconsulta" className="text-xs">Interconsulta</TabsTrigger>}
-            {isInpatient && pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano Cuidados</TabsTrigger>}
-            {isInpatient && pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Med. Controlados</TabsTrigger>}
-            {isInpatient && pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação Farm.</TabsTrigger>}
-            {isInpatient && pode("registrar_obito") && <TabsTrigger value="obito" className="text-xs text-red-400">Óbito</TabsTrigger>}
+              {isInpatient && pode("registrar_farmacia") && <TabsTrigger value="farmacia" className="text-xs">Farmácia</TabsTrigger>}
+              {isInpatient && (
+                <TabsTrigger value="dispositivos" className="text-xs flex items-center gap-1">
+                  <Plug className="h-3 w-3" /> Dispositivos
+                  {devices && devices.filter(d => !d.removedAt).length > 0 && (
+                    <span className="text-[10px] font-bold px-1 rounded-full bg-cyan-500/20 text-cyan-400 min-w-[16px] text-center">
+                      {devices.filter(d => !d.removedAt).length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              )}
+            </>}
+
+            {activeGroup === "internacao" && <>
+              {isInpatient && <TabsTrigger value="regulacao" className="text-xs">Regulação/NIR</TabsTrigger>}
+              {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
+              {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">SINAN</TabsTrigger>}
+              {isInpatient && <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>}
+              {isInpatient && pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
+              {isInpatient && pode("registrar_procedimento") && <TabsTrigger value="procedimentos" className="text-xs">Procedimentos</TabsTrigger>}
+              {isInpatient && pode("registrar_interconsulta") && <TabsTrigger value="interconsulta" className="text-xs">Interconsulta</TabsTrigger>}
+              {isInpatient && pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano Cuidados</TabsTrigger>}
+              {isInpatient && pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Med. Controlados</TabsTrigger>}
+              {isInpatient && pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação Farm.</TabsTrigger>}
+              {isInpatient && pode("registrar_obito") && <TabsTrigger value="obito" className="text-xs text-red-500">⚠ Óbito</TabsTrigger>}
+            </>}
           </TabsList>
 
           {/* ── TAB: RESUMO CLÍNICO ───────────────────────────────────────── */}
