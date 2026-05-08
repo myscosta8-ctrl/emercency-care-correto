@@ -5,7 +5,7 @@ const PERMISSOES: Record<string, string[]> = {
   medico:                  ["*"],
   assistente_social:       ["visualizar_setores", "visualizar_relatorios", "editar_paciente", "registrar_nota_social"],
   nutricionista:           ["visualizar_setores", "visualizar_relatorios", "registrar_avaliacao_nutricional"],
-  farmaceutico:            ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao", "registrar_farmacia", "registrar_medicamento_controlado", "registrar_dispensacao"],
+  farmaceutico:            ["visualizar_setores", "visualizar_relatorios", "registrar_prescricao", "registrar_farmacia", "registrar_exames", "registrar_medicamento_controlado", "registrar_dispensacao"],
   laboratorio:             ["visualizar_setores", "registrar_exames"],
   administrador:           ["*"],
   auxiliar_administrativo: ["editar_paciente", "visualizar_setores", "visualizar_relatorios"],

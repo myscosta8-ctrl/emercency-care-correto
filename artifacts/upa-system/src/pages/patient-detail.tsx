@@ -1047,7 +1047,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   <FlaskConical className="h-3 w-3" /> Sol. Exames
                 </TabsTrigger>
               )}
-              {pode("registrar_prescricao") && (
+              {(pode("registrar_prescricao") || pode("registrar_exames") || pode("visualizar_setores")) && (
                 <TabsTrigger value="exames" className="text-xs flex items-center gap-1">
                   Exames
                   {examRequests && examRequests.filter(e => e.status !== "laudado").length > 0 && (
@@ -2197,7 +2197,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             </TabsContent>
           )}
           {/* ── TAB: EXAMES ───────────────────────────────────────────── */}
-          {pode("registrar_prescricao") && (
+          {(pode("registrar_prescricao") || pode("registrar_exames") || pode("visualizar_setores")) && (
             <TabsContent value="exames">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

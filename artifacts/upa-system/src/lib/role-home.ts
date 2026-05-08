@@ -4,7 +4,7 @@ export function getRoleHome(role: string): string {
     case "tecnico_enfermagem": return "/vitais";
     case "assistente_social":  return "/social";
     case "nutricionista":      return "/nutricao";
-    case "farmaceutico":       return "/laboratorio";
+    case "farmaceutico":       return "/farmacia/estoque";
     case "laboratorio":        return "/laboratorio";
     case "medico":             return "/fila-medico";
     default:                   return "/";
