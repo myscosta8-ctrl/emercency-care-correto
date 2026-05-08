@@ -725,6 +725,58 @@ export async function initializeDatabase(): Promise<void> {
           must_change_password = false,
           role              = 'administrador';
       `);
+      // ── estoque de farmácia (idempotent) ──────────────────────────────────
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS public.inventory_items (
+          id serial PRIMARY KEY,
+          code text NOT NULL DEFAULT '',
+          name text NOT NULL,
+          unit text NOT NULL DEFAULT 'Unidades',
+          category text NOT NULL DEFAULT 'material',
+          standard_qty integer NOT NULL DEFAULT 0,
+          min_qty integer NOT NULL DEFAULT 0,
+          barcode text NOT NULL DEFAULT '',
+          location text NOT NULL DEFAULT '',
+          active boolean NOT NULL DEFAULT true,
+          notes text NOT NULL DEFAULT '',
+          created_at timestamp NOT NULL DEFAULT now(),
+          updated_at timestamp NOT NULL DEFAULT now()
+        );
+        CREATE TABLE IF NOT EXISTS public.inventory_stock (
+          id serial PRIMARY KEY,
+          item_id integer NOT NULL REFERENCES public.inventory_items(id) ON DELETE CASCADE,
+          quantity integer NOT NULL DEFAULT 0,
+          updated_at timestamp NOT NULL DEFAULT now(),
+          updated_by_id integer NOT NULL DEFAULT 0,
+          updated_by_name text NOT NULL DEFAULT ''
+        );
+        DO $$ BEGIN
+          ALTER TABLE public.inventory_stock ADD CONSTRAINT inventory_stock_item_id_key UNIQUE (item_id);
+        EXCEPTION WHEN duplicate_table OR duplicate_object THEN NULL; END $$;
+        CREATE TABLE IF NOT EXISTS public.inventory_batches (
+          id serial PRIMARY KEY,
+          item_id integer NOT NULL REFERENCES public.inventory_items(id) ON DELETE CASCADE,
+          lot_number text NOT NULL DEFAULT '',
+          quantity integer NOT NULL DEFAULT 0,
+          expiry_date date,
+          received_at timestamp NOT NULL DEFAULT now(),
+          notes text NOT NULL DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS public.inventory_transactions (
+          id serial PRIMARY KEY,
+          item_id integer NOT NULL REFERENCES public.inventory_items(id) ON DELETE CASCADE,
+          type text NOT NULL,
+          quantity integer NOT NULL,
+          batch_id integer REFERENCES public.inventory_batches(id),
+          patient_id integer,
+          patient_name text NOT NULL DEFAULT '',
+          staff_id integer NOT NULL DEFAULT 0,
+          staff_name text NOT NULL DEFAULT '',
+          notes text NOT NULL DEFAULT '',
+          created_at timestamp NOT NULL DEFAULT now()
+        );
+      `);
+
       logger.info("Database initialization complete");
       return;
     }

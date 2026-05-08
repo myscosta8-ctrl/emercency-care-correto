@@ -28,6 +28,7 @@ import dispensationsRouter from "./dispensations";
 import internalNotificationsRouter from "./internal-notifications";
 import reportsRouter from "./reports";
 import temposMetas from "./tempos-metas";
+import inventoryRouter from "./inventory";
 import { requireAuth } from "../middleware/require-auth";
 import { auditWrite } from "../middleware/audit-write";
 
@@ -66,5 +67,6 @@ router.use("/notifications", sinanNotificationsRouter);
 router.use("/internal-notifications", internalNotificationsRouter);
 router.use("/reports", reportsRouter);
 router.use("/tempos-metas", temposMetas);
+router.use("/inventory", inventoryRouter);
 
 export default router;

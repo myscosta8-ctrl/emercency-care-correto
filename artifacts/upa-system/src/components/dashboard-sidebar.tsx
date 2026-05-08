@@ -7,7 +7,7 @@ import type { Perfil } from "@/lib/permissions";
 import {
   Zap, BedDouble, Stethoscope, FlaskConical, Microscope,
   ClipboardList, BarChart3, Target, Settings2,
-  Users, History, AlertTriangle,
+  Users, History, AlertTriangle, Package,
 } from "lucide-react";
 
 interface NavItem {
@@ -128,6 +128,12 @@ export function DashboardSidebar() {
       icon: <History className="h-3.5 w-3.5" />,
       label: "Histórico de Altas",
       show: true,
+    },
+    {
+      href: "/farmacia/estoque",
+      icon: <Package className="h-3.5 w-3.5" />,
+      label: "Estoque Farmácia",
+      show: pode("registrar_farmacia"),
     },
     {
       href: "/passagem-plantao",

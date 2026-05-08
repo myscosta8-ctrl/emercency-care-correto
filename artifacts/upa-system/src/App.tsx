@@ -32,7 +32,8 @@ const RecepcaoPage    = lazy(() => import("@/pages/recepcao"));
 const VitaisPage      = lazy(() => import("@/pages/vitais"));
 const SocialPage      = lazy(() => import("@/pages/social"));
 const NutricaoPage    = lazy(() => import("@/pages/nutricao"));
-const FarmaciaPage    = lazy(() => import("@/pages/farmacia"));
+const FarmaciaPage        = lazy(() => import("@/pages/farmacia"));
+const FarmaciaEstoquePage = lazy(() => import("@/pages/farmacia-estoque"));
 const FilaMedicoPage  = lazy(() => import("@/pages/fila-medico"));
 const LaboratorioPage = lazy(() => import("@/pages/laboratorio"));
 const ExamesPage      = lazy(() => import("@/pages/exames"));
@@ -205,6 +206,9 @@ function Router() {
               </Route>
               <Route path="/farmacia">
                 <RoleGuard acao="registrar_farmacia"><FarmaciaPage /></RoleGuard>
+              </Route>
+              <Route path="/farmacia/estoque">
+                <RoleGuard acao="registrar_farmacia"><FarmaciaEstoquePage /></RoleGuard>
               </Route>
 
               <Route path="/patients/:id/notifications/:notificationId/print" component={NotificationPrint} />
