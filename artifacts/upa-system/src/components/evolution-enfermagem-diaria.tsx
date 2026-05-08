@@ -24,6 +24,7 @@ interface Props {
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string; role?: string }>;
   staffCorenCrm?: string;
+  onAfterSave?: () => void;
 }
 
 interface DiariaData {
@@ -98,7 +99,7 @@ function fmtDeviceDate(iso: string): string {
   return y && m && d ? `${d}/${m}` : "";
 }
 
-export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, patient, staffMap, staffCorenCrm = "" }: Props) {
+export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, patient, staffMap, staffCorenCrm = "", onAfterSave }: Props) {
   const emptyForm = (): DiariaData => ({ ...EMPTY, coren: staffCorenCrm });
   const [form, setForm]                 = useState<DiariaData>(emptyForm);
   const [editingId, setEditingId]       = useState<number | null>(null);
@@ -180,6 +181,7 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
           queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
           setForm(emptyForm());
           toast({ title: "Evolução salva como rascunho. Publique quando estiver pronto." });
+          onAfterSave?.();
         },
         onError: () => toast({ title: "Erro ao registrar evolução", variant: "destructive" }),
       }

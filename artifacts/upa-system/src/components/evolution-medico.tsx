@@ -32,6 +32,7 @@ interface Props {
   staffMap: Record<number, { name: string }>;
   latestVitals?: LatestVitals | null;
   staffCorenCrm?: string;
+  onAfterSave?: () => void;
 }
 
 interface MedicoData {
@@ -86,7 +87,7 @@ interface AugEntry {
   finalizado?: boolean;
 }
 
-export function EvolutionMedico({ patientId, userId, patientName, patient, staffMap, latestVitals, staffCorenCrm = "" }: Props) {
+export function EvolutionMedico({ patientId, userId, patientName, patient, staffMap, latestVitals, staffCorenCrm = "", onAfterSave }: Props) {
   const emptyForm = (): MedicoData => ({ ...EMPTY, crm: staffCorenCrm });
   const [form, setForm]                     = useState<MedicoData>(emptyForm);
   const [editingId, setEditingId]           = useState<number | null>(null);
@@ -165,6 +166,7 @@ export function EvolutionMedico({ patientId, userId, patientName, patient, staff
           queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
           setForm(emptyForm());
           toast({ title: "Evolução médica salva como rascunho. Publique quando estiver pronto." });
+          onAfterSave?.();
         },
         onError: () => toast({ title: "Erro ao registrar evolução", variant: "destructive" }),
       }

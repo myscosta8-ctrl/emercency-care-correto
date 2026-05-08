@@ -258,6 +258,7 @@ export default function PatientDetail() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isVitalsOpen, setIsVitalsOpen] = useState(false);
+  const [showPrintBanner, setShowPrintBanner] = useState(false);
   const [isVitalsRecordOpen, setIsVitalsRecordOpen] = useState(false);
   const [isPrescricaoMedicaOpen, setIsPrescricaoMedicaOpen] = useState(false);
   const [isPrescricaoEnfermagemOpen, setIsPrescricaoEnfermagemOpen] = useState(false);
@@ -694,9 +695,6 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 <Pencil className="h-3 w-3 opacity-50 shrink-0" />
               </button>
             )}
-            <Button variant="outline" size="sm" onClick={() => window.print()} className="print-hide hidden sm:flex">
-              <Printer className="h-4 w-4 mr-1.5" /> Imprimir Evolução
-            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -743,86 +741,6 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             >
               <FileDown className="h-4 w-4 mr-1.5" />
               {downloadingFicha ? "Gerando…" : "Ficha ID"}
-            </Button>
-            {isMedico && (<Button
-              variant="outline" size="sm"
-              className="print-hide hidden sm:flex"
-              disabled={downloadingApac || !pode("gerar_pdf")}
-              onClick={async () => {
-                setDownloadingApac(true);
-                try {
-                  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-                  const resp = await fetch(`${base}/api/patients/${id}/pdf/apac`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
-                  if (!resp.ok) throw new Error();
-                  const blob = await resp.blob();
-                  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `APAC_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
-                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                } catch { toast({ title: "Erro ao gerar APAC", variant: "destructive" }); }
-                finally { setDownloadingApac(false); }
-              }}
-            >
-              <FileDown className="h-4 w-4 mr-1.5" />
-              {downloadingApac ? "Gerando…" : "APAC"}
-            </Button>)}
-            {isMedico && (<Button
-              variant="outline" size="sm"
-              className="print-hide hidden sm:flex"
-              disabled={downloadingFichaRef || !pode("gerar_pdf")}
-              onClick={async () => {
-                setDownloadingFichaRef(true);
-                try {
-                  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-                  const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-referencia`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
-                  if (!resp.ok) throw new Error();
-                  const blob = await resp.blob();
-                  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaReferencia_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
-                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                } catch { toast({ title: "Erro ao gerar Ficha", variant: "destructive" }); }
-                finally { setDownloadingFichaRef(false); }
-              }}
-            >
-              <FileDown className="h-4 w-4 mr-1.5" />
-              {downloadingFichaRef ? "Gerando…" : "Ficha Ref."}
-            </Button>)}
-            {isMedico && (<Button
-              variant="outline" size="sm"
-              className="print-hide hidden sm:flex"
-              disabled={downloadingAih || !pode("gerar_pdf")}
-              onClick={async () => {
-                setDownloadingAih(true);
-                try {
-                  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-                  const resp = await fetch(`${base}/api/patients/${id}/pdf/aih`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
-                  if (!resp.ok) throw new Error();
-                  const blob = await resp.blob();
-                  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `AIH_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
-                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                } catch { toast({ title: "Erro ao gerar AIH", variant: "destructive" }); }
-                finally { setDownloadingAih(false); }
-              }}
-            >
-              <FileDown className="h-4 w-4 mr-1.5" />
-              {downloadingAih ? "Gerando…" : "AIH"}
-            </Button>)}
-            <Button
-              variant="outline" size="sm"
-              className="print-hide hidden sm:flex"
-              disabled={downloadingFichaTriagem || !pode("gerar_pdf")}
-              onClick={async () => {
-                setDownloadingFichaTriagem(true);
-                try {
-                  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-                  const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-triagem`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
-                  if (!resp.ok) throw new Error();
-                  const blob = await resp.blob();
-                  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaTriagem_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
-                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                } catch { toast({ title: "Erro ao gerar Ficha de Triagem", variant: "destructive" }); }
-                finally { setDownloadingFichaTriagem(false); }
-              }}
-            >
-              <FileDown className="h-4 w-4 mr-1.5" />
-              {downloadingFichaTriagem ? "Gerando…" : "Triagem"}
             </Button>
             {pode("editar_paciente") && (
               <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
@@ -1057,9 +975,11 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   )}
                 </TabsTrigger>
               )}
-              <TabsTrigger value="laboratorio" className="text-xs flex items-center gap-1">
-                <FlaskConical className="h-3 w-3" /> Laboratório
-              </TabsTrigger>
+              {(["laboratorio", "administrador", "diretoria_geral"].includes(activeUser?.role ?? "")) && (
+                <TabsTrigger value="laboratorio" className="text-xs flex items-center gap-1">
+                  <FlaskConical className="h-3 w-3" /> Laboratório
+                </TabsTrigger>
+              )}
               {isInpatient && pode("registrar_farmacia") && <TabsTrigger value="farmacia" className="text-xs">Farmácia</TabsTrigger>}
               {isInpatient && (
                 <TabsTrigger value="dispositivos" className="text-xs flex items-center gap-1">
@@ -1537,7 +1457,31 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               staffMap={staffMap}
               latestVitals={latestVitals}
               staffCorenCrm={activeUser?.corenCrm ?? ""}
+              onAfterSave={() => setShowPrintBanner(true)}
             />
+            {isMedico && pode("gerar_pdf") && (
+              <div className="flex justify-end mt-4 pt-3 border-t border-border/30">
+                <Button
+                  size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                  disabled={downloadingFichaRef}
+                  onClick={async () => {
+                    setDownloadingFichaRef(true);
+                    try {
+                      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                      const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-referencia`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                      if (!resp.ok) throw new Error();
+                      const blob = await resp.blob();
+                      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaReferencia_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    } catch { toast({ title: "Erro ao gerar Ficha", variant: "destructive" }); }
+                    finally { setDownloadingFichaRef(false); }
+                  }}
+                >
+                  <FileDown className="h-3.5 w-3.5" />
+                  {downloadingFichaRef ? "Gerando…" : "Ficha de Referência"}
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           {/* ── TAB: ENFERMAGEM ────────────────────────────────────────────── */}
@@ -1554,7 +1498,31 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               patient={patient}
               staffMap={staffMap}
               staffCorenCrm={activeUser?.corenCrm ?? ""}
+              onAfterSave={() => setShowPrintBanner(true)}
             />
+            {isEnfermeiro && pode("gerar_pdf") && (
+              <div className="flex justify-end mt-4 pt-3 border-t border-border/30">
+                <Button
+                  size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                  disabled={downloadingFichaTriagem}
+                  onClick={async () => {
+                    setDownloadingFichaTriagem(true);
+                    try {
+                      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                      const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-triagem`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                      if (!resp.ok) throw new Error();
+                      const blob = await resp.blob();
+                      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaTriagem_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    } catch { toast({ title: "Erro ao gerar Ficha de Triagem", variant: "destructive" }); }
+                    finally { setDownloadingFichaTriagem(false); }
+                  }}
+                >
+                  <FileDown className="h-3.5 w-3.5" />
+                  {downloadingFichaTriagem ? "Gerando…" : "Ficha de Triagem"}
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           {/* ── TAB: SAE ─────────────────────────────────────────────────── */}
@@ -2003,17 +1971,39 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
 
           {/* ── TAB: TRANSFERÊNCIA ────────────────────────────────────── */}
           <TabsContent value="transferencia">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <Truck className="h-4 w-4 text-orange-400" /> Encaminhamento / Transferência
                 {transfers && transfers.length > 0 && (
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">{transfers.length}</span>
                 )}
               </h3>
-              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
-                onClick={() => setIsTransferOpen(true)}>
-                <Plus className="h-3.5 w-3.5" /> Novo Encaminhamento
-              </Button>
+              <div className="flex items-center gap-2">
+                {isMedico && pode("gerar_pdf") && (
+                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                    disabled={downloadingAih}
+                    onClick={async () => {
+                      setDownloadingAih(true);
+                      try {
+                        const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                        const resp = await fetch(`${base}/api/patients/${id}/pdf/aih`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                        if (!resp.ok) throw new Error();
+                        const blob = await resp.blob();
+                        const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `AIH_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                      } catch { toast({ title: "Erro ao gerar AIH", variant: "destructive" }); }
+                      finally { setDownloadingAih(false); }
+                    }}
+                  >
+                    <FileDown className="h-3.5 w-3.5" />
+                    {downloadingAih ? "Gerando…" : "AIH"}
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                  onClick={() => setIsTransferOpen(true)}>
+                  <Plus className="h-3.5 w-3.5" /> Novo Encaminhamento
+                </Button>
+              </div>
             </div>
             {isLoadingTransfers ? (
               <Skeleton className="h-24 w-full" />
@@ -2199,131 +2189,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           {/* ── TAB: EXAMES ───────────────────────────────────────────── */}
           {(pode("registrar_prescricao") || pode("registrar_exames") || pode("visualizar_setores")) && (
             <TabsContent value="exames">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <FlaskConical className="h-4 w-4 text-orange-400" /> Pendências de Exame
-                    {examRequests && examRequests.filter(e => e.status !== "laudado").length > 0 && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                        {examRequests.filter(e => e.status !== "laudado").length}
-                      </span>
-                    )}
-                  </h3>
-                </div>
-                {isLoadingExamRequests ? (
-                  <Skeleton className="h-24 w-full" />
-                ) : !examRequests || examRequests.length === 0 ? (
-                  <div className="text-center py-8 bg-card rounded-lg border border-border/50">
-                    <FlaskConical className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Nenhuma solicitação de exame registrada.</p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">Os exames são criados ao salvar uma prescrição médica com exames selecionados.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {examRequests.map(exam => {
-                      const prioConfig = ({
-                        urgente: { label: "Urgente", color: "bg-red-500/20 text-red-400 border-red-500/30" },
-                        rotina:  { label: "Rotina",  color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-                        eletivo: { label: "Eletivo", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
-                      } as const)[exam.prioridade as "urgente" | "rotina" | "eletivo"] ?? { label: exam.prioridade, color: "bg-muted/20 text-muted-foreground border-border/30" };
-                      const statusConfig = ({
-                        solicitado: { label: "Solicitado", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
-                        coletado:   { label: "Coletado",   color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-                        laudado:    { label: "Laudado",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
-                      } as const)[exam.status as "solicitado" | "coletado" | "laudado"] ?? { label: exam.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
-                      const allExams = [
-                        ...(exam.laboratoriais as string[]).map(e => ({ nome: e, tipo: "Lab" })),
-                        ...(exam.imagem as string[]).map(e => ({ nome: e, tipo: "Img" })),
-                      ];
-                      return (
-                        <div key={exam.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
-                          <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", prioConfig.color)}>{prioConfig.label}</span>
-                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", statusConfig.color)}>{statusConfig.label}</span>
-                              <span className="text-[10px] text-muted-foreground">{allExams.length} exame{allExams.length !== 1 ? "s" : ""}</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground">{format(new Date(exam.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
-                          </div>
-                          <div className="px-4 py-3 space-y-3">
-                            <div className="flex flex-wrap gap-1.5">
-                              {allExams.map((e, idx) => (
-                                <span key={idx} className={cn(
-                                  "text-[10px] px-2 py-0.5 rounded border",
-                                  e.tipo === "Lab"
-                                    ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
-                                    : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300",
-                                  exam.status === "laudado" && "opacity-50 line-through"
-                                )}>
-                                  <span className="font-bold mr-1">[{e.tipo}]</span>{e.nome}
-                                </span>
-                              ))}
-                            </div>
-                            {exam.justificativa && (
-                              <p className="text-xs text-muted-foreground italic">Justificativa: {exam.justificativa}</p>
-                            )}
-                            {exam.status === "laudado" && (exam.resultText || exam.resultFileName) && (
-                              <div className="mt-2 p-3 rounded-md bg-green-500/5 border border-green-500/20 space-y-2">
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-green-400">Laudo / Resultado</p>
-                                {exam.resultText && (
-                                  <p className="text-xs text-foreground/80 whitespace-pre-wrap">{exam.resultText}</p>
-                                )}
-                                {exam.resultFileName && exam.resultFileData && (
-                                  <a
-                                    href={`data:${exam.resultFileMime || "application/octet-stream"};base64,${exam.resultFileData}`}
-                                    download={exam.resultFileName}
-                                    className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded border border-green-500/30 bg-green-500/10 text-green-300 hover:bg-green-500/20 transition-colors"
-                                  >
-                                    <Download className="h-3 w-3" />
-                                    {exam.resultFileName}
-                                  </a>
-                                )}
-                              </div>
-                            )}
-                            <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/40 flex-wrap">
-                              {exam.status !== "laudado" && !(exam as unknown as { invalidado: boolean }).invalidado && (
-                                <>
-                                  {exam.status === "solicitado" && (
-                                    <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                                      onClick={() => updateExamStatus.mutate(
-                                        { id, examRequestId: exam.id, data: { status: "coletado" } },
-                                        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) }),
-                                          onError: () => toast({ title: "Erro ao atualizar exame", variant: "destructive" }) }
-                                      )}>Marcar Coletado</Button>
-                                  )}
-                                  <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
-                                    onClick={() => {
-                                      setLaudarExamId(exam.id);
-                                      setLaudarResultText("");
-                                      setLaudarFileName("");
-                                      setLaudarFileData("");
-                                      setLaudarFileMime("");
-                                      setIsLaudarOpen(true);
-                                    }}>Marcar Laudado</Button>
-                                </>
-                              )}
-                              {!(exam as unknown as { invalidado: boolean }).invalidado && (exam as unknown as { userId?: number }).userId === activeUser?.id && (
-                                <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                  onClick={() => { setInvalidarTarget({ type: "exame", id: exam.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}>
-                                  <Ban className="h-3 w-3 mr-0.5" /> Invalidar
-                                </Button>
-                              )}
-                              {(exam as unknown as { invalidado: boolean }).invalidado && (
-                                <span className="text-xs text-red-400 font-semibold flex items-center gap-1">
-                                  <Ban className="h-3 w-3" /> Invalidado
-                                  {(exam as unknown as { motivoInvalidacao: string }).motivoInvalidacao && (
-                                    <span className="text-muted-foreground font-normal">— {(exam as unknown as { motivoInvalidacao: string }).motivoInvalidacao}</span>
-                                  )}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <PatientLabTab patientId={id} active={activeTab === "exames"} readOnly={true} />
             </TabsContent>
           )}
 
@@ -2448,28 +2314,151 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   </div>
                 </div>
 
-                {/* Recent exam requests */}
-                {examRequests && examRequests.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Solicitações Recentes</h4>
-                    <div className="space-y-2">
-                      {examRequests.slice(0, 5).map(er => {
-                        const allNames = [...(er.laboratoriais as string[]), ...(er.imagem as string[])];
-                        const isInvalid = (er as unknown as { invalidado: boolean }).invalidado;
+                {/* Full exam requests list with action buttons */}
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <FlaskConical className="h-3.5 w-3.5 text-orange-400" /> Histórico de Solicitações
+                    {examRequests && examRequests.filter(e => e.status !== "laudado").length > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                        {examRequests.filter(e => e.status !== "laudado").length}
+                      </span>
+                    )}
+                  </h4>
+                  {isLoadingExamRequests ? (
+                    <Skeleton className="h-24 w-full" />
+                  ) : !examRequests || examRequests.length === 0 ? (
+                    <div className="text-center py-6 bg-card rounded-lg border border-border/50">
+                      <FlaskConical className="h-7 w-7 text-muted-foreground/30 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Nenhuma solicitação de exame registrada.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {examRequests.map(exam => {
+                        const prioConfig = ({
+                          urgente: { label: "Urgente", color: "bg-red-500/20 text-red-400 border-red-500/30" },
+                          rotina:  { label: "Rotina",  color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+                          eletivo: { label: "Eletivo", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
+                        } as const)[exam.prioridade as "urgente" | "rotina" | "eletivo"] ?? { label: exam.prioridade, color: "bg-muted/20 text-muted-foreground border-border/30" };
+                        const statusConfig = ({
+                          solicitado: { label: "Solicitado", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                          coletado:   { label: "Coletado",   color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+                          laudado:    { label: "Laudado",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
+                        } as const)[exam.status as "solicitado" | "coletado" | "laudado"] ?? { label: exam.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
+                        const allExams = [
+                          ...(exam.laboratoriais as string[]).map(e => ({ nome: e, tipo: "Lab" })),
+                          ...(exam.imagem as string[]).map(e => ({ nome: e, tipo: "Img" })),
+                        ];
                         return (
-                          <div key={er.id} className={cn("bg-card rounded border border-border/40 px-3 py-2 flex items-center justify-between gap-2", isInvalid && "opacity-50")}>
-                            <span className="text-xs truncate text-muted-foreground">{allNames.join(", ") || "—"}</span>
-                            <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0", {
-                              "solicitado": "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-                              "coletado":   "bg-blue-500/20 text-blue-400 border-blue-500/30",
-                              "laudado":    "bg-green-500/20 text-green-400 border-green-500/30",
-                            }[er.status as string] ?? "bg-muted/20 text-muted-foreground border-border/30")}>
-                              {isInvalid ? "Invalidado" : er.status}
-                            </span>
+                          <div key={exam.id} className="bg-card rounded-lg border border-border/50 overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-2 bg-muted/20 border-b border-border/40">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", prioConfig.color)}>{prioConfig.label}</span>
+                                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", statusConfig.color)}>{statusConfig.label}</span>
+                                <span className="text-[10px] text-muted-foreground">{allExams.length} exame{allExams.length !== 1 ? "s" : ""}</span>
+                              </div>
+                              <span className="text-xs text-muted-foreground">{format(new Date(exam.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                            </div>
+                            <div className="px-4 py-3 space-y-3">
+                              <div className="flex flex-wrap gap-1.5">
+                                {allExams.map((e, idx) => (
+                                  <span key={idx} className={cn(
+                                    "text-[10px] px-2 py-0.5 rounded border",
+                                    e.tipo === "Lab"
+                                      ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
+                                      : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300",
+                                    exam.status === "laudado" && "opacity-50 line-through"
+                                  )}>
+                                    <span className="font-bold mr-1">[{e.tipo}]</span>{e.nome}
+                                  </span>
+                                ))}
+                              </div>
+                              {exam.justificativa && (
+                                <p className="text-xs text-muted-foreground italic">Justificativa: {exam.justificativa}</p>
+                              )}
+                              {exam.status === "laudado" && (exam.resultText || exam.resultFileName) && (
+                                <div className="mt-2 p-3 rounded-md bg-green-500/5 border border-green-500/20 space-y-2">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-green-400">Laudo / Resultado</p>
+                                  {exam.resultText && (
+                                    <p className="text-xs text-foreground/80 whitespace-pre-wrap">{exam.resultText}</p>
+                                  )}
+                                  {exam.resultFileName && exam.resultFileData && (
+                                    <a
+                                      href={`data:${exam.resultFileMime || "application/octet-stream"};base64,${exam.resultFileData}`}
+                                      download={exam.resultFileName}
+                                      className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded border border-green-500/30 bg-green-500/10 text-green-300 hover:bg-green-500/20 transition-colors"
+                                    >
+                                      <Download className="h-3 w-3" />
+                                      {exam.resultFileName}
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+                              <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/40 flex-wrap">
+                                {exam.status !== "laudado" && !(exam as unknown as { invalidado: boolean }).invalidado && (
+                                  <>
+                                    {exam.status === "solicitado" && (
+                                      <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                        onClick={() => updateExamStatus.mutate(
+                                          { id, examRequestId: exam.id, data: { status: "coletado" } },
+                                          { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPatientExamRequestsQueryKey(id) }),
+                                            onError: () => toast({ title: "Erro ao atualizar exame", variant: "destructive" }) }
+                                        )}>Marcar Coletado</Button>
+                                    )}
+                                    <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                                      onClick={() => {
+                                        setLaudarExamId(exam.id);
+                                        setLaudarResultText("");
+                                        setLaudarFileName("");
+                                        setLaudarFileData("");
+                                        setLaudarFileMime("");
+                                        setIsLaudarOpen(true);
+                                      }}>Marcar Laudado</Button>
+                                  </>
+                                )}
+                                {!(exam as unknown as { invalidado: boolean }).invalidado && (exam as unknown as { userId?: number }).userId === activeUser?.id && (
+                                  <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                    onClick={() => { setInvalidarTarget({ type: "exame", id: exam.id }); setInvalidarMotivo(""); setIsInvalidarOpen(true); }}>
+                                    <Ban className="h-3 w-3 mr-0.5" /> Invalidar
+                                  </Button>
+                                )}
+                                {(exam as unknown as { invalidado: boolean }).invalidado && (
+                                  <span className="text-xs text-red-400 font-semibold flex items-center gap-1">
+                                    <Ban className="h-3 w-3" /> Invalidado
+                                    {(exam as unknown as { motivoInvalidacao: string }).motivoInvalidacao && (
+                                      <span className="text-muted-foreground font-normal">— {(exam as unknown as { motivoInvalidacao: string }).motivoInvalidacao}</span>
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
+                  )}
+                </div>
+                {/* APAC — médico */}
+                {isMedico && pode("gerar_pdf") && (
+                  <div className="flex justify-end pt-2 border-t border-border/30">
+                    <Button
+                      size="sm" variant="outline" className="h-8 text-xs gap-1.5"
+                      disabled={downloadingApac}
+                      onClick={async () => {
+                        setDownloadingApac(true);
+                        try {
+                          const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                          const resp = await fetch(`${base}/api/patients/${id}/pdf/apac`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                          if (!resp.ok) throw new Error();
+                          const blob = await resp.blob();
+                          const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `APAC_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        } catch { toast({ title: "Erro ao gerar APAC", variant: "destructive" }); }
+                        finally { setDownloadingApac(false); }
+                      }}
+                    >
+                      <FileDown className="h-3.5 w-3.5" />
+                      {downloadingApac ? "Gerando…" : "Gerar APAC"}
+                    </Button>
                   </div>
                 )}
               </div>
@@ -2958,6 +2947,16 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             onCancel={() => setIsTransferOpen(false)} />
         </DialogContent>
       </Dialog>
+
+      {/* Print banner — shown after saving evolution draft */}
+      {showPrintBanner && (
+        <div className="no-print fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-border shadow-xl rounded-lg px-5 py-3 flex items-center gap-3 min-w-[300px] max-w-sm">
+          <Printer className="h-4 w-4 text-primary shrink-0" />
+          <span className="text-sm flex-1">Evolução salva! Deseja imprimir?</span>
+          <Button size="sm" className="h-7 text-xs" onClick={() => { window.print(); setShowPrintBanner(false); }}>Imprimir</Button>
+          <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => setShowPrintBanner(false)}>Não</Button>
+        </div>
+      )}
 
       {/* Mobile sticky bottom action bar */}
       <div className="no-print fixed bottom-0 left-0 right-0 md:hidden bg-card/95 backdrop-blur-sm border-t border-border z-30">

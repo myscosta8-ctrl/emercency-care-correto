@@ -257,9 +257,10 @@ function NovoExameForm({ patientId, onSuccess, onCancel, staffId }: NovoExameFor
 interface PatientLabTabProps {
   patientId: number;
   active: boolean;
+  readOnly?: boolean;
 }
 
-export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
+export function PatientLabTab({ patientId, active, readOnly = false }: PatientLabTabProps) {
   const { toast } = useToast();
   const { activeUser } = useAuth();
   const staffId = activeUser?.id ?? 0;
@@ -324,15 +325,17 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
           >
             <Loader2 className={cn("h-3.5 w-3.5", (loading || refreshing) && "animate-spin")} />
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 text-xs gap-1.5"
-            onClick={() => setNovoExame(v => !v)}
-          >
-            {novoExame ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-            {novoExame ? "Cancelar" : "Solicitar Exame"}
-          </Button>
+          {!readOnly && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              onClick={() => setNovoExame(v => !v)}
+            >
+              {novoExame ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+              {novoExame ? "Cancelar" : "Anexar Exame"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -360,9 +363,11 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
         <div className="text-center py-10 bg-card rounded-lg border border-border/50">
           <FlaskConical className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Nenhum exame registrado para este paciente.</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">
-            Clique em "Solicitar Exame" para adicionar.
-          </p>
+          {!readOnly && (
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              Clique em "Anexar Exame" para adicionar.
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
@@ -404,7 +409,7 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
                         <Clock className="h-3 w-3" />Pendente
                       </span>
                     )}
-                    {canInvalidar && !isInvalidando && (
+                    {canInvalidar && !isInvalidando && !readOnly && (
                       <Button
                         size="sm" variant="ghost"
                         className="h-6 w-6 p-0 text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
@@ -439,7 +444,7 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
                     </a>
                   )}
 
-                  {!exam.invalidado && exam.status === "pendente" && !isLiberando && !isInvalidando && (
+                  {!readOnly && !exam.invalidado && exam.status === "pendente" && !isLiberando && !isInvalidando && (
                     <Button
                       size="sm" variant="outline" className="h-7 text-xs gap-1"
                       onClick={() => setLiberandoId(exam.id)}
@@ -448,7 +453,7 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
                     </Button>
                   )}
 
-                  {!exam.invalidado && exam.status === "pendente" && isLiberando && (
+                  {!readOnly && !exam.invalidado && exam.status === "pendente" && isLiberando && (
                     <LiberarForm
                       patientId={patientId} exam={exam} staffId={staffId}
                       onSuccess={() => { setLiberandoId(null); loadExams(); }}
