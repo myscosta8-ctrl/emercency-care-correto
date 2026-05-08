@@ -137,10 +137,10 @@ export function DashboardSidebar() {
           ))}
       </div>
 
-      {/* Ferramentas */}
+      {/* Menu */}
       <div className="p-2 border-t border-border/60 mt-1">
         <p className="text-[10px] uppercase font-bold text-muted-foreground/50 tracking-widest mb-1.5 px-3">
-          Ferramentas
+          Menu
         </p>
         {featureItems
           .filter(i => i.show)
