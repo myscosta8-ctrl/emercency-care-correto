@@ -31,6 +31,7 @@ const PERFIL_COLOR: Record<Perfil, string> = {
   assistente_social:       "text-purple-400 bg-purple-500/10 border-purple-500/30",
   nutricionista:           "text-lime-400   bg-lime-500/10   border-lime-500/30",
   farmaceutico:            "text-amber-400  bg-amber-500/10  border-amber-500/30",
+  laboratorio:             "text-teal-400   bg-teal-500/10   border-teal-500/30",
   administrador:           "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
   auxiliar_administrativo: "text-slate-400  bg-slate-500/10  border-slate-500/30",
   diretoria_geral:         "text-rose-400   bg-rose-500/10   border-rose-500/30",

@@ -17,6 +17,7 @@ const PERFIL_HEADER_COLOR: Record<Perfil, string> = {
   assistente_social:       "text-purple-400",
   nutricionista:           "text-lime-400",
   farmaceutico:            "text-amber-400",
+  laboratorio:             "text-teal-400",
   administrador:           "text-yellow-400",
   auxiliar_administrativo: "text-slate-400",
   diretoria_geral:         "text-rose-400",

@@ -2177,7 +2177,7 @@ components:
           type: string
         role:
           type: string
-          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador, auxiliar_administrativo, diretoria_geral]
+          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, laboratorio, administrador, auxiliar_administrativo, diretoria_geral]
         email:
           type: string
         active:
@@ -2233,7 +2233,7 @@ components:
           type: string
         role:
           type: string
-          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador, auxiliar_administrativo, diretoria_geral]
+          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, laboratorio, administrador, auxiliar_administrativo, diretoria_geral]
         email:
           type: string
         active:
@@ -2272,7 +2272,7 @@ components:
           type: string
         role:
           type: string
-          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, administrador, auxiliar_administrativo, diretoria_geral]
+          enum: [recepcionista, enfermeiro, tecnico_enfermagem, medico, assistente_social, nutricionista, farmaceutico, laboratorio, administrador, auxiliar_administrativo, diretoria_geral]
         email:
           type: string
         active:
