@@ -243,13 +243,6 @@ export default function PatientDetail() {
   const [activeGroup, setActiveGroup] = useState<"clinico" | "evolucao" | "tratamento" | "internacao">("clinico");
   const [activeTab, setActiveTab] = useState("resumo");
 
-  const GROUP_DEFAULTS: Record<string, string> = {
-    clinico:    "resumo",
-    evolucao:   "evol-medico",
-    tratamento: "laboratorio",
-    internacao: "transferencia",
-  };
-
   function switchGroup(g: "clinico" | "evolucao" | "tratamento" | "internacao") {
     setActiveGroup(g);
     setActiveTab(GROUP_DEFAULTS[g]);
@@ -312,6 +305,13 @@ export default function PatientDetail() {
   const canEditTecnico      = ["tecnico_enfermagem", "administrador", "diretoria_geral"].includes(role);
   const canEditSocial       = ["assistente_social", "administrador", "diretoria_geral"].includes(role);
   const canEditNutricionista = ["nutricionista", "administrador", "diretoria_geral"].includes(role);
+
+  const GROUP_DEFAULTS: Record<string, string> = {
+    clinico:    "resumo",
+    evolucao:   "evol-medico",
+    tratamento: "prescricao",
+    internacao: canEditMedico ? "evol-medico" : "vitais",
+  };
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
@@ -893,7 +893,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <span className="text-base leading-none">📋</span>
               <span className="mt-0.5">Clínico</span>
               <span className={cn("text-[9px] font-normal", activeGroup === "clinico" ? "text-blue-400" : "text-muted-foreground/60")}>
-                Resumo · Vitais
+                Resumo · Saída
               </span>
             </button>
             {/* Evolução */}
@@ -941,29 +941,36 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <span className="text-base leading-none">🏥</span>
               <span className="mt-0.5">Internação</span>
               <span className={cn("text-[9px] font-normal", activeGroup === "internacao" ? "text-amber-500" : "text-muted-foreground/60")}>
-                Fluxo · Docs.
+                Admissão · Entrada
               </span>
             </button>
           </div>
 
           {/* ── Sub-tabs for active group ──────────────────────────────── */}
           <TabsList className="flex flex-wrap h-auto gap-1 mb-4 bg-muted/20 p-1 rounded-lg border border-border/50">
+            {/* ── CLÍNICO: dados gerais + documentos de saída ── */}
             {activeGroup === "clinico" && <>
               <TabsTrigger value="resumo" className="text-xs">📋 Resumo</TabsTrigger>
               <TabsTrigger value="identificacao" className="text-xs">Admissão</TabsTrigger>
-              <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
               <TabsTrigger value="timeline" className="text-xs">Linha do Tempo</TabsTrigger>
+              {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
+              {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">SINAN</TabsTrigger>}
+              {isInpatient && <TabsTrigger value="regulacao" className="text-xs">Regulação/NIR</TabsTrigger>}
+              {isInpatient && pode("registrar_procedimento") && <TabsTrigger value="procedimentos" className="text-xs">Procedimentos</TabsTrigger>}
+              {isInpatient && pode("registrar_interconsulta") && <TabsTrigger value="interconsulta" className="text-xs">Interconsulta</TabsTrigger>}
             </>}
 
+            {/* ── EVOLUÇÃO: todos profissionais, todos visualizam ── */}
             {activeGroup === "evolucao" && <>
               <TabsTrigger value="evol-medico" className="text-xs">Evol. Médica</TabsTrigger>
               <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
-              {isInpatient && <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>}
+              <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>
               <TabsTrigger value="tecnico" className="text-xs">Anotação Enf.</TabsTrigger>
-              {isInpatient && pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
-              {isInpatient && pode("registrar_avaliacao_nutricional") && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
+              {isInpatient && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
+              {isInpatient && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
             </>}
 
+            {/* ── TRATAMENTO: prescrições e exames ── */}
             {activeGroup === "tratamento" && <>
               {pode("registrar_prescricao") && <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>}
               {pode("registrar_prescricao") && (
@@ -997,22 +1004,61 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   )}
                 </TabsTrigger>
               )}
-            </>}
-
-            {activeGroup === "internacao" && <>
-              {isInpatient && <TabsTrigger value="regulacao" className="text-xs">Regulação/NIR</TabsTrigger>}
-              {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
-              {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">SINAN</TabsTrigger>}
-              {isInpatient && <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>}
-              {isInpatient && pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
-              {isInpatient && pode("registrar_procedimento") && <TabsTrigger value="procedimentos" className="text-xs">Procedimentos</TabsTrigger>}
-              {isInpatient && pode("registrar_interconsulta") && <TabsTrigger value="interconsulta" className="text-xs">Interconsulta</TabsTrigger>}
-              {isInpatient && pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano Cuidados</TabsTrigger>}
               {isInpatient && pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Med. Controlados</TabsTrigger>}
               {isInpatient && pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação Farm.</TabsTrigger>}
+            </>}
+
+            {/* ── INTERNAÇÃO: documentos de entrada ── */}
+            {activeGroup === "internacao" && <>
+              {/* Médico: admissão clínica + plano terapêutico + AIH */}
+              {canEditMedico && <>
+                <TabsTrigger value="evol-medico" className="text-xs">Admissão Médica</TabsTrigger>
+                <TabsTrigger value="prescricao" className="text-xs">Plano Terapêutico</TabsTrigger>
+              </>}
+              {/* Não-médico lê a admissão médica somente */}
+              {!canEditMedico && <TabsTrigger value="evol-medico" className="text-xs">Admissão Médica</TabsTrigger>}
+              {/* Enfermeiro: admissão de enfermagem + sinais vitais + plano de cuidados */}
+              {canEditEnfermeiro && <>
+                <TabsTrigger value="sae" className="text-xs">Admissão de Enfermagem</TabsTrigger>
+                <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
+                {pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano de Cuidados</TabsTrigger>}
+              </>}
+              {/* Não-enfermeiro lê vitais somente */}
+              {!canEditEnfermeiro && <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>}
+              {/* Docs gerais de internação */}
+              {isInpatient && pode("registrar_alergia") && <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>}
+              {isInpatient && pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
               {isInpatient && pode("registrar_obito") && <TabsTrigger value="obito" className="text-xs text-red-500">⚠ Óbito</TabsTrigger>}
             </>}
           </TabsList>
+
+          {/* ── AIH: ação rápida na aba Internação (médicos) ─────────────── */}
+          {activeGroup === "internacao" && isMedico && pode("gerar_pdf") && (
+            <div className="flex items-center gap-2 mb-3 -mt-1 px-1">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Documentos PDF:</span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1.5 border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                disabled={downloadingAih}
+                onClick={async () => {
+                  setDownloadingAih(true);
+                  try {
+                    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                    const resp = await fetch(`${base}/api/patients/${id}/pdf/aih`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                    if (!resp.ok) throw new Error();
+                    const blob = await resp.blob();
+                    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `AIH_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                  } catch { toast({ title: "Erro ao gerar AIH", variant: "destructive" }); }
+                  finally { setDownloadingAih(false); }
+                }}
+              >
+                <FileDown className="h-3 w-3" />
+                {downloadingAih ? "Gerando…" : "↓ AIH"}
+              </Button>
+            </div>
+          )}
 
           {/* ── TAB: RESUMO CLÍNICO ───────────────────────────────────────── */}
           <TabsContent value="resumo">
@@ -1991,26 +2037,6 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 )}
               </h3>
               <div className="flex items-center gap-2">
-                {isMedico && pode("gerar_pdf") && (
-                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5"
-                    disabled={downloadingAih}
-                    onClick={async () => {
-                      setDownloadingAih(true);
-                      try {
-                        const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-                        const resp = await fetch(`${base}/api/patients/${id}/pdf/aih`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
-                        if (!resp.ok) throw new Error();
-                        const blob = await resp.blob();
-                        const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `AIH_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
-                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                      } catch { toast({ title: "Erro ao gerar AIH", variant: "destructive" }); }
-                      finally { setDownloadingAih(false); }
-                    }}
-                  >
-                    <FileDown className="h-3.5 w-3.5" />
-                    {downloadingAih ? "Gerando…" : "AIH"}
-                  </Button>
-                )}
                 <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
                   onClick={() => setIsTransferOpen(true)}>
                   <Plus className="h-3.5 w-3.5" /> Novo Encaminhamento
