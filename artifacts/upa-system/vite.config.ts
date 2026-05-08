@@ -60,8 +60,8 @@ export default defineConfig({
         orientation: "portrait",
         start_url: "/",
         icons: [
-          { src: "/logos/upa24h.jpg", sizes: "192x192", type: "image/jpeg", purpose: "any" },
-          { src: "/logos/upa24h.jpg", sizes: "512x512", type: "image/jpeg", purpose: "maskable" },
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
         ],
       },
       devOptions: { enabled: false },
