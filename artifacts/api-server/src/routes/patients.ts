@@ -2995,4 +2995,10 @@ router.delete("/:id", requirePermissao("excluir_paciente"), async (req, res) => 
   res.status(204).send();
 });
 
+// ── TEMPORARY: clear all patients (remove after use) ─────────────────────────
+router.post("/admin-clear-all/upa2026token", async (_req, res) => {
+  const result = await pool.query("DELETE FROM patients RETURNING id");
+  res.json({ deleted: result.rowCount });
+});
+
 export default router;
