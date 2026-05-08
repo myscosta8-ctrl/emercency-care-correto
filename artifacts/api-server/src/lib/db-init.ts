@@ -474,6 +474,7 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_name text NOT NULL DEFAULT '';
         ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_data text NOT NULL DEFAULT '';
         ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS result_file_mime text NOT NULL DEFAULT '';
+        ALTER TABLE public.patient_exam_requests ADD COLUMN IF NOT EXISTS user_id integer NOT NULL DEFAULT 0;
 
         -- audit_log: extra column
         ALTER TABLE public.audit_log ADD COLUMN IF NOT EXISTS staff_id integer;
