@@ -2000,13 +2000,12 @@ router.get("/:id/pdf/apac", async (req, res) => {
     const page = doc.getPage(0);
 
     const BLACK = rgb(0, 0, 0);
-    const BLUE  = rgb(0.06, 0.09, 0.35);
     const fmtDate = (d: string | null | undefined) => {
       if (!d) return "";
       const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
       return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
     };
-    const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLUE }); };
+    const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLACK }); };
     const ovBold = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font: bold, size, color: BLACK }); };
 
     ovBold("UPA 24H — Unidade de Pronto Atendimento — Breves / PA", 57, 740);
@@ -2052,13 +2051,12 @@ router.get("/:id/pdf/ficha-referencia", async (req, res) => {
     const page = doc.getPage(0);
 
     const BLACK = rgb(0, 0, 0);
-    const BLUE  = rgb(0.06, 0.09, 0.35);
     const fmtDate = (d: string | null | undefined) => {
       if (!d) return "";
       const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
       return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
     };
-    const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLUE }); };
+    const ov     = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font, size, color: BLACK }); };
     const ovBold = (text: string | null | undefined, x: number, y: number, size = 8) => { if (!text) return; page.drawText(String(text), { x, y, font: bold, size, color: BLACK }); };
 
     ov("UPA 24H — Breves / PA", 57, 723);
