@@ -181,14 +181,16 @@ router.get("/critical", async (req: Request, res) => {
  * Called by the frontend when new critical patients are first detected.
  */
 router.post("/log", async (req: Request, res) => {
-  const { usuario, detalhes } = req.body as { usuario?: string; detalhes?: string };
+  const { detalhes } = req.body as { detalhes?: string };
 
-  if (!usuario || !detalhes) {
-    res.status(400).json({ error: "usuario e detalhes são obrigatórios" });
+  if (!detalhes) {
+    res.status(400).json({ error: "detalhes são obrigatórios" });
     return;
   }
 
   const staffId = req.staff?.id ?? null;
+  // Use the server-side authenticated name — never trust client-supplied usuario
+  const usuario = req.staff?.name ?? "Sistema";
   const ip =
     (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() ??
     req.socket.remoteAddress ??

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { PrintHeader } from "@/components/print-header";
 import { format } from "date-fns";
@@ -10,9 +10,19 @@ import {
 import { useListPatients } from "@workspace/api-client-react";
 import type { Patient } from "@workspace/api-client-react";
 import { useNurse } from "@/hooks/use-nurse";
+import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+
+interface LatestVitals {
+  bp?: string | null;
+  hr?: number | null;
+  rr?: number | null;
+  spo2?: number | null;
+  temp?: number | null;
+  glucose?: number | null;
+}
 
 // ── sector config ──────────────────────────────────────────────────────────────
 
@@ -215,21 +225,43 @@ interface PatientCardProps {
   accentCls: string;
   state: RowState;
   onChange: (patch: Partial<RowState>) => void;
+  staffId: number;
 }
 
-function PatientCard({ patient: p, accentCls, state, onChange }: PatientCardProps) {
+function PatientCard({ patient: p, accentCls, state, onChange, staffId }: PatientCardProps) {
   const triage = TRIAGE_COLOR_SCREEN[p.triage_level] ?? TRIAGE_COLOR_SCREEN.blue;
+  const [vitals, setVitals] = useState<LatestVitals | null>(null);
 
-  const pa   = "—";
-  const fc   = "—";
-  const fr   = "—";
-  const spo2 = "—";
-  const temp = "—";
-  const hgt  = "—";
+  useEffect(() => {
+    if (!staffId || !p.id) return;
+    fetch(`/api/patients/${p.id}/vitals`, {
+      headers: { "x-staff-id": String(staffId) },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: LatestVitals[]) => { if (data.length > 0) setVitals(data[0]); })
+      .catch(() => {});
+  }, [p.id, staffId]);
 
-  const fcAlert   = false;
-  const spo2Alert = false;
-  const tempAlert = false;
+  function fmtVital(v: number | null | undefined): string {
+    if (v === null || v === undefined || v === 0) return "—";
+    return String(v);
+  }
+
+  const pa   = vitals?.bp   || "—";
+  const fc   = fmtVital(vitals?.hr);
+  const fr   = fmtVital(vitals?.rr);
+  const spo2 = fmtVital(vitals?.spo2);
+  const temp = vitals?.temp ? String(vitals.temp) : "—";
+  const hgt  = fmtVital(vitals?.glucose);
+
+  const hrVal   = vitals?.hr   ?? 0;
+  const rrVal   = vitals?.rr   ?? 0;
+  const spo2Val = vitals?.spo2 ?? 100;
+  const tempVal = vitals?.temp ?? 0;
+  const fcAlert   = hrVal   > 0 && (hrVal > 100 || hrVal < 50);
+  const spo2Alert = spo2Val > 0 && spo2Val < 95;
+  const tempAlert = tempVal > 0 && (tempVal > 37.8 || tempVal < 35);
+  const _rrAlert  = rrVal   > 0 && rrVal > 25;
 
   const dataHora    = [p.attendanceDate ? fmtDate(p.attendanceDate) : "", p.attendanceTime || ""].filter(Boolean).join(" ") || "—";
   const profissional = val(p.responsibleProfessional);
@@ -428,6 +460,8 @@ function F({ label, value, mono, className }: { label: string; value: string; mo
 
 export default function ShiftHandover() {
   const { nurseName: nurse } = useNurse();
+  const { activeUser } = useAuth();
+  const staffId = activeUser?.id ?? 0;
   const today = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
 
   const [date,        setDate]      = useState(today);
@@ -578,6 +612,7 @@ export default function ShiftHandover() {
                           accentCls={sector.accentCls}
                           state={getRow(p.id, p.triage_level)}
                           onChange={patch => updateRow(p.id, p.triage_level, patch)}
+                          staffId={staffId}
                         />
                       ))}
                     </div>

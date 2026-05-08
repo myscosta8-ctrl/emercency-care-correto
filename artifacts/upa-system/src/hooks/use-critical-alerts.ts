@@ -105,10 +105,7 @@ export function useCriticalAlerts(options: UseCriticalAlertsOptions = {}) {
             "Content-Type": "application/json",
             "x-staff-id":   String(activeUser.id),
           },
-          body: JSON.stringify({
-            usuario:  activeUser.name ?? "sistema",
-            detalhes,
-          }),
+          body: JSON.stringify({ detalhes }),
         }).catch(() => {});
       }
     }

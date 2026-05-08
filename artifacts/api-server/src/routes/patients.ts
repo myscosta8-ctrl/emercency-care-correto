@@ -2894,16 +2894,16 @@ router.get("/:id/timeline", async (req, res) => {
        ORDER BY e.created_at DESC LIMIT 50`,
       [patientId]
     ),
-    pool.query<{ id: number; medications: string; user_id: number; staff_name: string | null; created_at: Date }>(
-      `SELECT p.id, p.medications, p.user_id, s.name AS staff_name, p.created_at
+    pool.query<{ id: number; content: string; type: string; user_id: number; staff_name: string | null; created_at: Date }>(
+      `SELECT p.id, p.content, p.type, p.user_id, s.name AS staff_name, p.created_at
        FROM patient_prescriptions p LEFT JOIN staff s ON s.id = p.user_id
        WHERE p.patient_id = $1 AND (p.invalidado IS NULL OR p.invalidado = false)
        ORDER BY p.created_at DESC LIMIT 30`,
       [patientId]
     ),
-    pool.query<{ id: number; bp: string | null; heart_rate: number | null; staff_name: string | null; created_at: Date }>(
-      `SELECT v.id, v.bp, v.heart_rate, s.name AS staff_name, v.created_at
-       FROM vitals v LEFT JOIN staff s ON s.id = v.staff_id
+    pool.query<{ id: number; bp: string | null; hr: number | null; staff_name: string | null; created_at: Date }>(
+      `SELECT v.id, v.bp, v.hr, s.name AS staff_name, v.created_at
+       FROM vitals v LEFT JOIN staff s ON s.id = v.user_id
        WHERE v.patient_id = $1
        ORDER BY v.created_at DESC LIMIT 20`,
       [patientId]
@@ -2915,16 +2915,16 @@ router.get("/:id/timeline", async (req, res) => {
        ORDER BY e.created_at DESC LIMIT 30`,
       [patientId]
     ),
-    pool.query<{ id: number; hospital_name: string | null; transfer_status: string; staff_name: string | null; created_at: Date }>(
-      `SELECT t.id, t.hospital_name, t.transfer_status, s.name AS staff_name, t.created_at
-       FROM patient_transfers t LEFT JOIN staff s ON s.id = t.staff_id
+    pool.query<{ id: number; destination_hospital: string | null; transfer_status: string; staff_name: string | null; created_at: Date }>(
+      `SELECT t.id, t.destination_hospital, t.transfer_status, s.name AS staff_name, t.created_at
+       FROM transfers t LEFT JOIN staff s ON s.id = t.user_id
        WHERE t.patient_id = $1
        ORDER BY t.created_at DESC LIMIT 10`,
       [patientId]
     ),
     pool.query<{ id: number; medication: string; status: string; staff_name: string | null; created_at: Date }>(
       `SELECT p.id, p.medication, p.status, s.name AS staff_name, p.created_at
-       FROM patient_pharmacy_entries p LEFT JOIN staff s ON s.id = p.user_id
+       FROM pharmacy_entries p LEFT JOIN staff s ON s.id = p.user_id
        WHERE p.patient_id = $1
        ORDER BY p.created_at DESC LIMIT 20`,
       [patientId]
@@ -2961,10 +2961,11 @@ router.get("/:id/timeline", async (req, res) => {
     });
   }
   for (const r of rxs.rows) {
-    events.push({ id: `rx-${r.id}`, type: "prescricao", label: "Prescrição Médica", detail: r.medications.slice(0, 80), authorName: r.staff_name ?? undefined, timestamp: r.created_at.toISOString() });
+    const rxLabel = r.type === "medical" ? "Prescrição Médica" : "Prescrição de Enfermagem";
+    events.push({ id: `rx-${r.id}`, type: "prescricao", label: rxLabel, detail: r.content.slice(0, 80), authorName: r.staff_name ?? undefined, timestamp: r.created_at.toISOString() });
   }
   for (const v of vits.rows) {
-    const detail = [v.bp && `PA: ${v.bp}`, v.heart_rate && `FC: ${v.heart_rate}bpm`].filter(Boolean).join(" · ");
+    const detail = [v.bp && `PA: ${v.bp}`, v.hr && `FC: ${v.hr}bpm`].filter(Boolean).join(" · ");
     events.push({ id: `vit-${v.id}`, type: "vitais", label: "Sinais Vitais Registrados", detail, authorName: v.staff_name ?? undefined, timestamp: v.created_at.toISOString() });
   }
   for (const e of exams.rows) {
@@ -2974,7 +2975,7 @@ router.get("/:id/timeline", async (req, res) => {
     events.push({ id: `exam-${e.id}`, type: "exame", label: "Solicitação de Exame", detail: `[${e.prioridade}] ${detail}`, authorName: e.staff_name ?? undefined, timestamp: e.created_at.toISOString() });
   }
   for (const t of transfers.rows) {
-    events.push({ id: `transf-${t.id}`, type: "transferencia", label: "Transferência", detail: t.hospital_name ?? undefined, authorName: t.staff_name ?? undefined, timestamp: t.created_at.toISOString() });
+    events.push({ id: `transf-${t.id}`, type: "transferencia", label: "Transferência", detail: t.destination_hospital ?? undefined, authorName: t.staff_name ?? undefined, timestamp: t.created_at.toISOString() });
   }
   for (const p of pharma.rows) {
     events.push({ id: `pharma-${p.id}`, type: "farmacia", label: `Farmácia — ${p.status}`, detail: p.medication, authorName: p.staff_name ?? undefined, timestamp: p.created_at.toISOString() });
@@ -2993,12 +2994,6 @@ router.delete("/:id", requirePermissao("excluir_paciente"), async (req, res) => 
   const { id } = DeletePatientParams.parse({ id: Number(req.params.id) });
   await db.delete(patientsTable).where(eq(patientsTable.id, id));
   res.status(204).send();
-});
-
-// ── TEMPORARY: clear all patients (remove after use) ─────────────────────────
-router.post("/admin-clear-all/upa2026token", async (_req, res) => {
-  const result = await pool.query("DELETE FROM patients RETURNING id");
-  res.json({ deleted: result.rowCount });
 });
 
 export default router;

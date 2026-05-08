@@ -42,17 +42,27 @@ router.post("/login", async (req, res) => {
   if (isBcrypt) {
     valid = await bcrypt.compare(password, user.passwordHash);
   } else {
+    // Legacy path: SHA-256 hashes from old versions — never plaintext.
     const { createHash } = await import("crypto");
     const sha256plain  = createHash("sha256").update(password).digest("hex");
     const sha256salted = createHash("sha256").update(password + "upa_salt_2026").digest("hex");
     valid = sha256plain  === user.passwordHash
-         || sha256salted === user.passwordHash
-         || user.passwordHash === password;
+         || sha256salted === user.passwordHash;
   }
 
   if (!valid) {
     res.status(401).json({ error: "Credenciais inválidas" });
     return;
+  }
+
+  // Auto-upgrade legacy SHA-256 hash to bcrypt on successful login
+  if (!isBcrypt) {
+    const newHash = await bcrypt.hash(password, 12);
+    await db
+      .update(staffTable)
+      .set({ passwordHash: newHash, updatedAt: new Date() })
+      .where(eq(staffTable.id, user.id))
+      .catch((err: unknown) => req.log.warn({ err }, "Failed to upgrade password hash"));
   }
 
   res.json({

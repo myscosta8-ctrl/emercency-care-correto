@@ -116,7 +116,11 @@ router.put("/:id", requirePermissao("gerenciar_usuarios"), async (req, res) => {
   };
 
   // Hash and persist new password if provided by admin
-  if (newPassword && newPassword.length >= 8) {
+  if (newPassword !== undefined && newPassword !== "") {
+    if (newPassword.length < 8) {
+      res.status(400).json({ error: "A senha deve ter pelo menos 8 caracteres" });
+      return;
+    }
     patch.passwordHash = await bcrypt.hash(newPassword, 12);
     patch.mustChangePassword = false;
   }

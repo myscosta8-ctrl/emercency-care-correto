@@ -29,10 +29,10 @@ interface Patient {
 
 interface VitalRecord {
   bp?: string | null;
-  heartRate?: number | null;
-  respRate?: number | null;
+  hr?: number | null;
+  rr?: number | null;
   temp?: number | null;
-  spO2?: number | null;
+  spo2?: number | null;
   glucose?: number | null;
   pain?: number | null;
   createdAt: string;
@@ -180,13 +180,13 @@ export function PatientResumoTab({
             ) : (
               <div className="space-y-1.5">
                 {[
-                  { label: "PA",   value: latestVitals.bp,        unit: "mmHg", warn: false },
-                  { label: "FC",   value: latestVitals.heartRate,  unit: "bpm",  warn: (latestVitals.heartRate ?? 0) > 100 || (latestVitals.heartRate ?? 999) < 50 },
-                  { label: "FR",   value: latestVitals.respRate,   unit: "/min", warn: (latestVitals.respRate ?? 0) > 25 },
-                  { label: "Temp", value: latestVitals.temp,       unit: "°C",   warn: (latestVitals.temp ?? 0) > 37.8 },
-                  { label: "SpO₂", value: latestVitals.spO2,       unit: "%",    warn: (latestVitals.spO2 ?? 100) < 95 },
-                  { label: "HGT",  value: latestVitals.glucose,    unit: "mg/dL",warn: (latestVitals.glucose ?? 0) > 200 || (latestVitals.glucose ?? 999) < 60 },
-                ].filter(x => x.value != null && x.value !== "").map(x => (
+                  { label: "PA",   value: latestVitals.bp,      unit: "mmHg", warn: false },
+                  { label: "FC",   value: latestVitals.hr,      unit: "bpm",  warn: (latestVitals.hr ?? 0) > 100 || (latestVitals.hr ?? 999) < 50 },
+                  { label: "FR",   value: latestVitals.rr,      unit: "/min", warn: (latestVitals.rr ?? 0) > 25 },
+                  { label: "Temp", value: latestVitals.temp,    unit: "°C",   warn: (latestVitals.temp ?? 0) > 37.8 },
+                  { label: "SpO₂", value: latestVitals.spo2,   unit: "%",    warn: (latestVitals.spo2 ?? 100) < 95 },
+                  { label: "HGT",  value: latestVitals.glucose, unit: "mg/dL",warn: (latestVitals.glucose ?? 0) > 200 || (latestVitals.glucose ?? 999) < 60 },
+                ].filter(x => x.value != null && x.value !== "" && x.value !== 0).map(x => (
                   <div key={x.label} className="flex justify-between items-baseline">
                     <span className="text-xs text-muted-foreground">{x.label}</span>
                     <span className={cn("text-xs font-semibold font-mono", x.warn && "text-orange-400")}>

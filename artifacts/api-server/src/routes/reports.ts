@@ -63,23 +63,41 @@ router.get("/ocupacao", guard, async (_req, res) => {
 
 // GET /api/reports/atendimentos — resumo mensal
 router.get("/atendimentos", guard, async (req, res) => {
-  const mes = String(req.query["mes"] ?? "");
-  const filter = mes ? `AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', '${mes}'::date)` : "";
-  const { rows } = await pool.query(`
-    SELECT
-      DATE(created_at) AS dia,
-      COUNT(*) AS total,
-      COUNT(CASE WHEN triage_level = 'red' THEN 1 END) AS vermelho,
-      COUNT(CASE WHEN triage_level = 'orange' THEN 1 END) AS laranja,
-      COUNT(CASE WHEN triage_level = 'yellow' THEN 1 END) AS amarelo,
-      COUNT(CASE WHEN triage_level = 'green' THEN 1 END) AS verde,
-      COUNT(CASE WHEN triage_level = 'blue' THEN 1 END) AS azul,
-      COUNT(CASE WHEN care_status = 'Alta' THEN 1 END) AS altas
-    FROM patients
-    WHERE 1=1 ${filter}
-    GROUP BY dia ORDER BY dia DESC LIMIT 31
-  `);
-  res.json(rows);
+  const mesRaw = String(req.query["mes"] ?? "");
+  // Validate format YYYY-MM to prevent injection
+  const mes = /^\d{4}-\d{2}$/.test(mesRaw) ? mesRaw : "";
+  if (mes) {
+    const { rows } = await pool.query(`
+      SELECT
+        DATE(created_at) AS dia,
+        COUNT(*) AS total,
+        COUNT(CASE WHEN triage_level = 'red' THEN 1 END) AS vermelho,
+        COUNT(CASE WHEN triage_level = 'orange' THEN 1 END) AS laranja,
+        COUNT(CASE WHEN triage_level = 'yellow' THEN 1 END) AS amarelo,
+        COUNT(CASE WHEN triage_level = 'green' THEN 1 END) AS verde,
+        COUNT(CASE WHEN triage_level = 'blue' THEN 1 END) AS azul,
+        COUNT(CASE WHEN care_status = 'Alta' THEN 1 END) AS altas
+      FROM patients
+      WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', $1::date)
+      GROUP BY dia ORDER BY dia DESC LIMIT 31
+    `, [mes + "-01"]);
+    res.json(rows);
+  } else {
+    const { rows } = await pool.query(`
+      SELECT
+        DATE(created_at) AS dia,
+        COUNT(*) AS total,
+        COUNT(CASE WHEN triage_level = 'red' THEN 1 END) AS vermelho,
+        COUNT(CASE WHEN triage_level = 'orange' THEN 1 END) AS laranja,
+        COUNT(CASE WHEN triage_level = 'yellow' THEN 1 END) AS amarelo,
+        COUNT(CASE WHEN triage_level = 'green' THEN 1 END) AS verde,
+        COUNT(CASE WHEN triage_level = 'blue' THEN 1 END) AS azul,
+        COUNT(CASE WHEN care_status = 'Alta' THEN 1 END) AS altas
+      FROM patients
+      GROUP BY dia ORDER BY dia DESC LIMIT 31
+    `);
+    res.json(rows);
+  }
 });
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
