@@ -822,7 +822,7 @@ export default function Dashboard() {
             <div className="hidden sm:block">
               <div className="font-black text-sm text-foreground tracking-wide leading-tight">UPA BREVES</div>
               <div className="text-[10px] text-muted-foreground leading-tight">SEMSA — Prefeitura Municipal de Breves</div>
-              <div className="text-[9px] text-muted-foreground/60 leading-tight">Gestão de Pacientes</div>
+              <div className="text-[9px] text-muted-foreground/60 leading-tight">Prontuário Eletrônico</div>
             </div>
             {isNurseOrTech && criticals.length > 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse ml-1">

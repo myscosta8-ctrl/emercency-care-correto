@@ -146,7 +146,7 @@ export default function ChangePasswordPage() {
         </div>
 
         <p className="text-xs text-center text-muted-foreground">
-          UPA Breves — Sistema de Gestão de Pacientes
+          UPA Breves — Prontuário Eletrônico
         </p>
       </div>
     </div>

@@ -1147,7 +1147,7 @@ export async function downloadIdentificacaoPdf(patient: PdfPatient): Promise<voi
   // ── footer ─────────────────────────────────────────────────────────────────
   page.drawLine({ start: { x: ML, y: 38 }, end: { x: ML + CW, y: 38 }, thickness: 0.4, color: BORDER });
   page.drawText(
-    "UPA Breves — Gestão de Pacientes  |  Documento gerado automaticamente pelo sistema",
+    "UPA Breves — Prontuário Eletrônico  |  Documento gerado automaticamente pelo sistema",
     { x: ML, y: 26, font, size: 6.5, color: MUTED },
   );
 

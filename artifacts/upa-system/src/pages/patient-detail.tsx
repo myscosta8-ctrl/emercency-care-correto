@@ -656,7 +656,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             </Button>
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
-              <span className="font-semibold tracking-tight hidden sm:inline">UPA Breves — Gestão de Pacientes</span>
+              <span className="font-semibold tracking-tight hidden sm:inline">UPA Breves — Prontuário Eletrônico</span>
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -63,7 +63,7 @@ export default function LoginPage() {
                 </div>
               </div>
             </div>
-            <p className="text-blue-100 text-sm font-medium mt-3">Gestão de Pacientes</p>
+            <p className="text-blue-100 text-sm font-medium mt-3">Prontuário Eletrônico</p>
           </div>
 
           {/* Form body */}
