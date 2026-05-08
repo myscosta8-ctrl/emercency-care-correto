@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ClipboardList, Send, Printer, ChevronDown, ChevronUp, Ban, CheckCircle } from "lucide-react";
+import { ClipboardList, Send, Printer, ChevronDown, ChevronUp, Ban, CheckCircle, Pencil } from "lucide-react";
 import { buildInstitutionalHeader, buildPrintDocStyles, type PrintPatientInfo } from "@/lib/print-header-html";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,10 +62,12 @@ interface AugEntry {
 }
 
 export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, staffMap }: Props) {
-  const [form, setForm]               = useState<EnfermeiroData>(EMPTY);
-  const [expandedId, setExpandedId]   = useState<number | null>(null);
+  const [form, setForm]                     = useState<EnfermeiroData>(EMPTY);
+  const [editingId, setEditingId]           = useState<number | null>(null);
+  const [expandedId, setExpandedId]         = useState<number | null>(null);
   const [finalizingId, setFinalizingId]     = useState<number | null>(null);
   const [invalidatingId, setInvalidatingId] = useState<number | null>(null);
+  const [savingId, setSavingId]             = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -82,11 +84,36 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, s
   const set = (k: keyof EnfermeiroData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const isValid = form.avaliacaoSistemas.trim() || form.diagnosticoNanda.trim() || form.prescricaoEnfermagem.trim();
+  const isValid = !!(form.avaliacaoSistemas.trim() || form.diagnosticoNanda.trim() || form.prescricaoEnfermagem.trim());
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const soapText = buildSoapText(form);
     if (!soapText) return;
+
+    if (editingId !== null) {
+      setSavingId(editingId);
+      try {
+        const resp = await fetch(`/api/patients/${patientId}/evolutions/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", "x-staff-id": String(userId) },
+          body: JSON.stringify({ soapText, structuredData: form }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({})) as { error?: string };
+          throw new Error(err.error ?? "Erro ao salvar");
+        }
+        queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
+        setForm(EMPTY);
+        setEditingId(null);
+        toast({ title: "SAE atualizado com sucesso" });
+      } catch (e: unknown) {
+        toast({ title: e instanceof Error ? e.message : "Erro ao salvar", variant: "destructive" });
+      } finally {
+        setSavingId(null);
+      }
+      return;
+    }
+
     addHistory.mutate(
       {
         id: patientId,
@@ -101,9 +128,9 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, s
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
           setForm(EMPTY);
-          toast({ title: "SAE salva como rascunho. Publique quando estiver pronto." });
+          toast({ title: "SAE salvo como rascunho. Publique quando estiver pronto." });
         },
-        onError: () => toast({ title: "Erro ao registrar evolução", variant: "destructive" }),
+        onError: () => toast({ title: "Erro ao registrar SAE", variant: "destructive" }),
       }
     );
   };
@@ -120,7 +147,7 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, s
         throw new Error(err.error ?? "Erro ao publicar");
       }
       queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-      toast({ title: "SAE publicada com sucesso" });
+      toast({ title: "SAE publicado com sucesso" });
     } catch (e: unknown) {
       toast({ title: e instanceof Error ? e.message : "Erro ao publicar", variant: "destructive" });
     } finally {
@@ -143,7 +170,7 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, s
         throw new Error(err.error ?? "Erro ao invalidar");
       }
       queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-      toast({ title: "SAE invalidada" });
+      toast({ title: "SAE invalidado" });
     } catch (e: unknown) {
       toast({ title: e instanceof Error ? e.message : "Erro ao invalidar", variant: "destructive" });
     } finally {
@@ -151,21 +178,27 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, s
     }
   };
 
+  const handleEdit = (entry: AugEntry) => {
+    const d = entry.structuredData as EnfermeiroData | null;
+    setForm(d ? { ...EMPTY, ...d } : EMPTY);
+    setEditingId(entry.id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handlePrint = (entry: AugEntry) => {
     const d = entry.structuredData as EnfermeiroData | null;
     const authorName = staffMap[entry.userId]?.name ?? `Enfermeiro(a) ID ${entry.userId}`;
     const dateStr = format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     const baseUrl = window.location.origin + (import.meta.env.BASE_URL ?? "/");
-
     const win = window.open("", "_blank", "width=794,height=1123");
     if (!win) return;
     win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
 <meta charset="UTF-8">
 <title>SAE — ${patientName}</title>
-<style>${buildPrintDocStyles("#1d4ed8")}</style></head><body>
-${buildInstitutionalHeader(patient ?? null, "SISTEMATIZAÇÃO DA ASSISTÊNCIA DE ENFERMAGEM (SAE)", baseUrl)}
-<p class="doc-meta"><strong>Enfermeiro(a):</strong> ${authorName} &nbsp;|&nbsp; <strong>Data/Hora do Registro:</strong> ${dateStr}</p>
-${d?.avaliacaoSistemas ? `<div class="section"><div class="section-label">Avaliação de Enfermagem por Sistemas</div><div class="section-body">${d.avaliacaoSistemas}</div></div>` : ""}
+<style>${buildPrintDocStyles("#0d9488")}</style></head><body>
+${buildInstitutionalHeader(patient ?? null, "SAE — SISTEMATIZAÇÃO DA ASSISTÊNCIA DE ENFERMAGEM", baseUrl)}
+<p class="doc-meta"><strong>Enfermeiro(a):</strong> ${authorName} &nbsp;|&nbsp; <strong>Data/Hora:</strong> ${dateStr}</p>
+${d?.avaliacaoSistemas ? `<div class="section"><div class="section-label">Avaliação por Sistemas</div><div class="section-body">${d.avaliacaoSistemas}</div></div>` : ""}
 ${d?.diagnosticoNanda ? `<div class="section"><div class="section-label">Diagnóstico de Enfermagem (NANDA)</div><div class="section-body">${d.diagnosticoNanda}</div></div>` : ""}
 ${d?.prescricaoEnfermagem ? `<div class="section"><div class="section-label">Prescrição de Enfermagem</div><div class="section-body">${d.prescricaoEnfermagem}</div></div>` : ""}
 ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Evolução</div><div class="section-body">${d.resultado}</div></div>` : ""}
@@ -180,16 +213,22 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
 
   return (
     <div className="space-y-4">
-      {/* Form */}
       <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
-          <ClipboardList className="h-3.5 w-3.5" /> SAE — Sistematização da Assistência de Enfermagem
+        <h4 className="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
+          <ClipboardList className="h-3.5 w-3.5" />
+          {editingId !== null ? "Editando SAE" : "SAE — Sistematização da Assistência de Enfermagem"}
         </h4>
 
+        {editingId !== null && (
+          <div className="text-xs text-yellow-600 bg-yellow-500/10 border border-yellow-500/20 rounded p-2">
+            Editando rascunho existente — salvar irá sobrescrever o conteúdo anterior.
+          </div>
+        )}
+
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Avaliação por Sistemas *</label>
+          <label className="text-xs text-muted-foreground mb-1 block">Avaliação por Sistemas</label>
           <Textarea
-            placeholder="Ex: Neurológico: consciente e orientado… Respiratório: murmúrio vesicular presente bilateralmente…"
+            placeholder="Ex: Neurológico: consciente, orientado, GCS 15… Cardiovascular: FC 88, rítmico…"
             value={form.avaliacaoSistemas}
             onChange={set("avaliacaoSistemas")}
             rows={3}
@@ -200,7 +239,7 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">Diagnóstico de Enfermagem (NANDA) *</label>
           <Textarea
-            placeholder="Ex: Padrão respiratório ineficaz R/C broncoespasmo M/E dispneia e uso de musculatura acessória…"
+            placeholder="Ex: Dor aguda relacionada a agente lesivo físico evidenciada por relato verbal…"
             value={form.diagnosticoNanda}
             onChange={set("diagnosticoNanda")}
             rows={2}
@@ -211,7 +250,7 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">Prescrição de Enfermagem *</label>
           <Textarea
-            placeholder="Ex: 1. Monitorar saturação de O₂ de 4/4h. 2. Manter cabeceira elevada a 30°…"
+            placeholder="Ex: Monitorizar sinais vitais a cada 2h, administrar medicação conforme prescrição médica…"
             value={form.prescricaoEnfermagem}
             onChange={set("prescricaoEnfermagem")}
             rows={3}
@@ -220,9 +259,9 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
         </div>
 
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Resultado / Evolução do Cuidado</label>
+          <label className="text-xs text-muted-foreground mb-1 block">Resultado / Evolução</label>
           <Textarea
-            placeholder="Descreva a resposta do paciente às intervenções…"
+            placeholder="Descreva os resultados esperados e a evolução do paciente…"
             value={form.resultado}
             onChange={set("resultado")}
             rows={2}
@@ -240,24 +279,39 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
               className="text-sm"
             />
           </div>
-          <Button
-            size="sm"
-            disabled={!isValid || addHistory.isPending}
-            onClick={handleSubmit}
-            className="gap-1.5 self-end"
-          >
-            <Send className="h-3.5 w-3.5" />
-            {addHistory.isPending ? "Salvando…" : "Salvar Rascunho"}
-          </Button>
+          <div className="flex gap-2 self-end">
+            {editingId !== null && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => { setForm(EMPTY); setEditingId(null); }}
+                className="gap-1.5"
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button
+              size="sm"
+              disabled={!isValid || addHistory.isPending || savingId !== null}
+              onClick={handleSubmit}
+              className="gap-1.5"
+            >
+              <Send className="h-3.5 w-3.5" />
+              {addHistory.isPending || savingId !== null
+                ? "Salvando…"
+                : editingId !== null
+                ? "Atualizar Rascunho"
+                : "Salvar Rascunho"}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* History */}
       {isLoading ? (
         <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
       ) : enfermeiroHistory.length === 0 ? (
         <div className="text-center py-8 bg-card rounded-lg border border-border/50">
-          <p className="text-sm text-muted-foreground">Nenhuma SAE registrada ainda.</p>
+          <p className="text-sm text-muted-foreground">Nenhum SAE registrado ainda.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -268,12 +322,12 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
             const isFinalizado = !!entry.finalizado;
             const isAuthor     = entry.userId === userId;
             return (
-              <div key={entry.id} className={`bg-card rounded-lg border overflow-hidden ${isInvalidado ? "opacity-50 border-red-500/20" : "border-blue-500/20"}`}>
-                <div className={`flex items-center justify-between px-4 py-2 border-b ${isInvalidado ? "bg-red-500/5 border-red-500/10" : "bg-blue-500/5 border-blue-500/10"}`}>
+              <div key={entry.id} className={`bg-card rounded-lg border overflow-hidden ${isInvalidado ? "opacity-50 border-red-500/20" : "border-teal-500/20"}`}>
+                <div className={`flex items-center justify-between px-4 py-2 border-b ${isInvalidado ? "bg-red-500/5 border-red-500/10" : "bg-teal-500/5 border-teal-500/10"}`}>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <ClipboardList className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                    <ClipboardList className="h-3.5 w-3.5 text-teal-400 shrink-0" />
                     <span className="text-xs font-semibold">
-                      {staffMap[entry.userId]?.name ?? `Enfermeiro(a) ID ${entry.userId}`}
+                      {staffMap[entry.userId]?.name ?? `Profissional ID ${entry.userId}`}
                     </span>
                     {isInvalidado && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded border border-red-500/30 bg-red-500/10 text-red-400 font-semibold flex items-center gap-0.5">
@@ -291,10 +345,19 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                     <span className="text-xs text-muted-foreground">
-                      {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {format(new Date(entry.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
                     </span>
+                    {isAuthor && !isFinalizado && !isInvalidado && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 gap-0.5"
+                        onClick={() => handleEdit(entry)}
+                      >
+                        <Pencil className="h-2.5 w-2.5" /> Editar
+                      </Button>
+                    )}
                     {isAuthor && !isFinalizado && !isInvalidado && (
                       <Button
                         size="sm" variant="outline"

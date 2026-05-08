@@ -68,6 +68,7 @@ import { PatientInterconsultsTab } from "@/components/patient-interconsults-tab"
 import { PatientCarePlanTab } from "@/components/patient-care-plan-tab";
 import { PatientControlledMedsTab } from "@/components/patient-controlled-meds-tab";
 import { PatientDispensationsTab } from "@/components/patient-dispensations-tab";
+import { EvolutionEnfermagemDiaria } from "@/components/evolution-enfermagem-diaria";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -728,7 +729,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <FileDown className="h-4 w-4 mr-1.5" />
               {downloadingFicha ? "Gerando…" : "Ficha ID"}
             </Button>
-            <Button
+            {isMedico && (<Button
               variant="outline" size="sm"
               className="print-hide hidden sm:flex"
               disabled={downloadingApac || !pode("gerar_pdf")}
@@ -747,8 +748,8 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             >
               <FileDown className="h-4 w-4 mr-1.5" />
               {downloadingApac ? "Gerando…" : "APAC"}
-            </Button>
-            <Button
+            </Button>)}
+            {isMedico && (<Button
               variant="outline" size="sm"
               className="print-hide hidden sm:flex"
               disabled={downloadingFichaRef || !pode("gerar_pdf")}
@@ -767,8 +768,8 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             >
               <FileDown className="h-4 w-4 mr-1.5" />
               {downloadingFichaRef ? "Gerando…" : "Ficha Ref."}
-            </Button>
-            <Button
+            </Button>)}
+            {isMedico && (<Button
               variant="outline" size="sm"
               className="print-hide hidden sm:flex"
               disabled={downloadingAih || !pode("gerar_pdf")}
@@ -787,7 +788,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             >
               <FileDown className="h-4 w-4 mr-1.5" />
               {downloadingAih ? "Gerando…" : "AIH"}
-            </Button>
+            </Button>)}
             <Button
               variant="outline" size="sm"
               className="print-hide hidden sm:flex"
@@ -1311,11 +1312,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handlePrintVitals}>
                   <Printer className="h-3.5 w-3.5" /> Imprimir SVs
                 </Button>
-                {pode("registrar_evolucao") && (
-                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setIsVitalsOpen(true)} data-testid="button-update-vitals">
-                    <Stethoscope className="h-3.5 w-3.5" /> Registrar Evolução
-                  </Button>
-                )}
+
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1374,6 +1371,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               patientName={patient.full_name}
               patient={patient}
               staffMap={staffMap}
+              latestVitals={latestVitals}
             />
           </TabsContent>
 
@@ -1381,10 +1379,10 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           <TabsContent value="enfermagem">
             <div className="mb-4">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-teal-400" /> Evoluções de Enfermagem
+                <ClipboardList className="h-4 w-4 text-teal-400" /> Anotações de Enfermagem
               </h3>
             </div>
-            <EvolutionEnfermeiro
+            <EvolutionEnfermagemDiaria
               patientId={id}
               userId={activeUser?.id ?? 0}
               patientName={patient.full_name}
@@ -1400,8 +1398,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 <ClipboardCheck className="h-4 w-4 text-emerald-400" /> SAE — Sistematização da Assistência de Enfermagem
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Registre aqui as avaliações sistematizadas (NANDA, prescrição de enfermagem, resultados esperados).
-                O formulário SAE é o mesmo da aba Enfermagem — os registros aparecem em ambas as abas.
+                Registre aqui as avaliações sistematizadas: diagnóstico NANDA, avaliação por sistemas, prescrição de enfermagem e resultados esperados.
               </p>
             </div>
             <EvolutionEnfermeiro
@@ -2880,30 +2877,46 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           </table>
         </div>
         <div className="print-section">
-          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "6pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>Evoluções</div>
-          {history && history.map(entry => {
-            const isInitial = entry.soapText === "Admissão inicial";
-            return (
+          <div style={{ fontWeight: 700, fontSize: "10pt", marginBottom: "6pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>Evoluções Clínicas</div>
+          {(() => {
+            const PROF_LABELS: Record<string, string> = {
+              medico: "Médico(a)",
+              enfermeiro: "Enfermeiro(a) — SAE",
+              anotacao_enfermagem: "Enfermeiro(a)",
+              tecnico_enfermagem: "Técnico de Enfermagem",
+              nutricionista: "Nutricionista",
+              servico_social: "Assistente Social",
+            };
+            type PrintEntry = { id: number; userId: number; soapText: string; createdAt: string; professionalCategory?: string | null };
+            const printEntries = ((history ?? []) as PrintEntry[]).filter(
+              e => e.soapText !== "Admissão inicial" && !e.soapText.startsWith("[Reclassificação]")
+            );
+            if (printEntries.length === 0) return <p style={{ color: "#6b7280", fontStyle: "italic" }}>Nenhuma evolução clínica registrada.</p>;
+            return printEntries.map(entry => (
               <div key={entry.id} className="soap-entry">
                 <div className="soap-entry-header" style={{ display: "flex", justifyContent: "space-between" }}>
-                  <strong>{isInitial ? "📋 Admissão Inicial" : `Profissional ID ${entry.userId}`}</strong>
+                  <strong>
+                    {staffMap[entry.userId]?.name ?? `Profissional #${entry.userId}`}
+                    {" "}
+                    <span style={{ fontWeight: 400, color: "#6b7280" }}>
+                      ({PROF_LABELS[entry.professionalCategory ?? ""] ?? "Profissional"})
+                    </span>
+                  </strong>
                   <span style={{ color: "#6b7280" }}>{format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                 </div>
                 <div style={{ padding: "4pt 0 0" }}>
-                  {isInitial ? (
-                    <em style={{ color: "#6b7280" }}>Paciente admitido na unidade.</em>
-                  ) : (
-                    <pre style={{ fontFamily: "monospace", fontSize: "9pt", whiteSpace: "pre-wrap", color: "#374151", margin: 0 }}>{entry.soapText}</pre>
-                  )}
+                  <pre style={{ fontFamily: "monospace", fontSize: "9pt", whiteSpace: "pre-wrap", color: "#374151", margin: 0 }}>{entry.soapText}</pre>
                 </div>
               </div>
-            );
-          })}
-          {(!history || history.length === 0) && <p style={{ color: "#6b7280", fontStyle: "italic" }}>Nenhuma evolução registrada.</p>}
+            ));
+          })()}
         </div>
         <div className="print-sig-area">
           <div className="print-sig-box">
-            <div style={{ marginTop: "4pt", fontSize: "9pt", color: "#374151" }}>Profissional responsável</div>
+            {(nurseName || activeUser?.name) && (
+              <div style={{ fontWeight: 600, fontSize: "9pt", color: "#111827" }}>{nurseName || activeUser?.name}</div>
+            )}
+            <div style={{ marginTop: "2pt", fontSize: "9pt", color: "#374151" }}>Profissional responsável</div>
           </div>
         </div>
       </div>

@@ -1222,6 +1222,35 @@ router.patch("/:id/evolutions/:evolId/finalizar", requirePermissao("registrar_ev
   res.json({ ok: true });
 });
 
+router.patch("/:id/evolutions/:evolId", requireAuth, requirePermissao("registrar_evolucao"), async (req, res) => {
+  const patientId = Number(req.params.id);
+  const evolId    = Number(req.params.evolId);
+  const { soapText, structuredData } = req.body as { soapText?: string; structuredData?: Record<string, unknown> };
+
+  const [existing] = await db.select()
+    .from(patientEvolutionsTable)
+    .where(and(eq(patientEvolutionsTable.id, evolId), eq(patientEvolutionsTable.patientId, patientId)))
+    .limit(1);
+  if (!existing) { res.status(404).json({ error: "Evolução não encontrada" }); return; }
+  if (existing.userId !== req.staff!.id) {
+    res.status(403).json({ error: "Somente o autor pode editar este rascunho" }); return;
+  }
+  if (existing.finalizado) {
+    res.status(409).json({ error: "Não é possível editar uma evolução já publicada" }); return;
+  }
+  if (existing.invalidado) {
+    res.status(409).json({ error: "Não é possível editar uma evolução invalidada" }); return;
+  }
+  const patch: Record<string, unknown> = {};
+  if (soapText !== undefined) patch.soapText = soapText;
+  if (structuredData !== undefined) patch.structuredData = structuredData;
+  const [updated] = await db.update(patientEvolutionsTable)
+    .set(patch)
+    .where(eq(patientEvolutionsTable.id, evolId))
+    .returning();
+  res.json(serializeEvolution(updated));
+});
+
 router.patch("/:id/exam-requests/:examId/invalidar", requirePermissao("registrar_prescricao"), async (req, res) => {
   const patientId = Number(req.params.id);
   const examId    = Number(req.params.examId);

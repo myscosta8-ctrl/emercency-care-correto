@@ -655,8 +655,11 @@ export default function Dashboard() {
     const CONSULTORIOS_STATUS = new Set(["Em Atendimento (Cons. 1)", "Em Atendimento (Cons. 2)"]);
     const MEDICACAO_STATUS    = new Set(["Em Medicação", "Aguardando Exames", "Aguardando Reavaliação"]);
 
+    const INPATIENT_FLOW = new Set(["Internado", "Em Observação", "Em Transferência"]);
     const base = patients.filter(p => {
       if (p.careStatus === "Alta") return false;
+      // Internados/obs/transferência sempre ficam em Leitos & Observação
+      if (INPATIENT_FLOW.has(p.careStatus as string)) return false;
       // Pacientes nos setores de leitos/observação ficam em /observacao
       if (OBS_SECTORS.has(p.sector as string)) return false;
       const matchesSearch = !q || p.full_name.toLowerCase().includes(q) || (p.bed?.toLowerCase().includes(q) ?? false) || (p.prontuarioNumber ?? "").includes(q) || (p.atendimentoNumber ?? "").includes(q);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Stethoscope, Send, Printer, ChevronDown, ChevronUp, Ban, CheckCircle } from "lucide-react";
+import { Stethoscope, Send, Printer, ChevronDown, ChevronUp, Ban, CheckCircle, Pencil } from "lucide-react";
 import { buildInstitutionalHeader, buildPrintDocStyles, type PrintPatientInfo } from "@/lib/print-header-html";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,12 +15,22 @@ import {
   getGetPatientHistoryQueryKey,
 } from "@workspace/api-client-react";
 
+interface LatestVitals {
+  bp?: string | null;
+  hr?: number | null;
+  rr?: number | null;
+  spo2?: number | null;
+  temp?: number | null;
+  glucose?: number | null;
+}
+
 interface Props {
   patientId: number;
   userId: number;
   patientName: string;
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
+  latestVitals?: LatestVitals | null;
 }
 
 interface MedicoData {
@@ -52,6 +62,17 @@ function buildSoapText(d: MedicoData): string {
   return parts.join("\n\n");
 }
 
+function buildVitaisText(v: LatestVitals): string {
+  const parts: string[] = [];
+  if (v.bp)                         parts.push(`PA: ${v.bp} mmHg`);
+  if ((v.hr ?? 0) > 0)              parts.push(`FC: ${v.hr} bpm`);
+  if ((v.rr ?? 0) > 0)              parts.push(`FR: ${v.rr} irpm`);
+  if ((v.spo2 ?? 0) > 0)           parts.push(`SpO₂: ${v.spo2}%`);
+  if ((v.temp ?? 0) > 0)           parts.push(`Temp: ${v.temp}°C`);
+  if ((v.glucose ?? 0) > 0)        parts.push(`HGT: ${v.glucose} mg/dL`);
+  return parts.join(" | ");
+}
+
 interface AugEntry {
   id: number;
   userId: number;
@@ -64,11 +85,13 @@ interface AugEntry {
   finalizado?: boolean;
 }
 
-export function EvolutionMedico({ patientId, userId, patientName, patient, staffMap }: Props) {
-  const [form, setForm]               = useState<MedicoData>(EMPTY);
-  const [expandedId, setExpandedId]   = useState<number | null>(null);
-  const [finalizingId, setFinalizingId]   = useState<number | null>(null);
+export function EvolutionMedico({ patientId, userId, patientName, patient, staffMap, latestVitals }: Props) {
+  const [form, setForm]                     = useState<MedicoData>(EMPTY);
+  const [editingId, setEditingId]           = useState<number | null>(null);
+  const [expandedId, setExpandedId]         = useState<number | null>(null);
+  const [finalizingId, setFinalizingId]     = useState<number | null>(null);
   const [invalidatingId, setInvalidatingId] = useState<number | null>(null);
+  const [savingId, setSavingId]             = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -85,11 +108,46 @@ export function EvolutionMedico({ patientId, userId, patientName, patient, staff
   const set = (k: keyof MedicoData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const isValid = form.hda.trim() || form.conduta.trim() || form.hipoteseDiagnostica.trim();
+  const isValid = !!(form.hda.trim() || form.conduta.trim() || form.hipoteseDiagnostica.trim());
 
-  const handleSubmit = () => {
+  const handlePreencherVitais = () => {
+    if (!latestVitals) return;
+    const txt = buildVitaisText(latestVitals);
+    if (!txt) return;
+    setForm(f => ({
+      ...f,
+      exameFisico: f.exameFisico ? `${f.exameFisico}\n\nSinais Vitais: ${txt}` : `Sinais Vitais: ${txt}`,
+    }));
+  };
+
+  const handleSubmit = async () => {
     const soapText = buildSoapText(form);
     if (!soapText) return;
+
+    if (editingId !== null) {
+      setSavingId(editingId);
+      try {
+        const resp = await fetch(`/api/patients/${patientId}/evolutions/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", "x-staff-id": String(userId) },
+          body: JSON.stringify({ soapText, structuredData: form }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({})) as { error?: string };
+          throw new Error(err.error ?? "Erro ao salvar");
+        }
+        queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
+        setForm(EMPTY);
+        setEditingId(null);
+        toast({ title: "Evolução atualizada com sucesso" });
+      } catch (e: unknown) {
+        toast({ title: e instanceof Error ? e.message : "Erro ao salvar", variant: "destructive" });
+      } finally {
+        setSavingId(null);
+      }
+      return;
+    }
+
     addHistory.mutate(
       {
         id: patientId,
@@ -154,6 +212,13 @@ export function EvolutionMedico({ patientId, userId, patientName, patient, staff
     }
   };
 
+  const handleEdit = (entry: AugEntry) => {
+    const d = entry.structuredData as MedicoData | null;
+    setForm(d ? { ...EMPTY, ...d } : EMPTY);
+    setEditingId(entry.id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handlePrint = (entry: AugEntry) => {
     const d = entry.structuredData as MedicoData | null;
     const authorName = staffMap[entry.userId]?.name ?? `Médico ID ${entry.userId}`;
@@ -188,11 +253,29 @@ ${d?.conduta ? `<div class="section"><div class="section-label">Conduta</div><di
 
   return (
     <div className="space-y-4">
-      {/* Form */}
       <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
-          <Stethoscope className="h-3.5 w-3.5" /> Nova Evolução Médica
-        </h4>
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+            <Stethoscope className="h-3.5 w-3.5" />
+            {editingId !== null ? "Editando Evolução Médica" : "Nova Evolução Médica"}
+          </h4>
+          {latestVitals && editingId === null && (
+            <Button
+              size="sm" variant="outline"
+              className="h-6 text-[10px] px-2 gap-1 border-sky-500/30 text-sky-400 hover:bg-sky-500/10"
+              onClick={handlePreencherVitais}
+              title="Inserir últimos sinais vitais no campo de Exame Físico"
+            >
+              Inserir SVs recentes
+            </Button>
+          )}
+        </div>
+
+        {editingId !== null && (
+          <div className="text-xs text-yellow-600 bg-yellow-500/10 border border-yellow-500/20 rounded p-2">
+            Editando rascunho existente — salvar irá sobrescrever o conteúdo anterior.
+          </div>
+        )}
 
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">HDA — História da Doença Atual *</label>
@@ -258,19 +341,34 @@ ${d?.conduta ? `<div class="section"><div class="section-label">Conduta</div><di
               className="text-sm"
             />
           </div>
-          <Button
-            size="sm"
-            disabled={!isValid || addHistory.isPending}
-            onClick={handleSubmit}
-            className="gap-1.5 self-end"
-          >
-            <Send className="h-3.5 w-3.5" />
-            {addHistory.isPending ? "Salvando…" : "Salvar Rascunho"}
-          </Button>
+          <div className="flex gap-2 self-end">
+            {editingId !== null && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => { setForm(EMPTY); setEditingId(null); }}
+                className="gap-1.5"
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button
+              size="sm"
+              disabled={!isValid || addHistory.isPending || savingId !== null}
+              onClick={handleSubmit}
+              className="gap-1.5 self-end"
+            >
+              <Send className="h-3.5 w-3.5" />
+              {addHistory.isPending || savingId !== null
+                ? "Salvando…"
+                : editingId !== null
+                ? "Atualizar Rascunho"
+                : "Salvar Rascunho"}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* History */}
       {isLoading ? (
         <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
       ) : medicoHistory.length === 0 ? (
@@ -314,10 +412,19 @@ ${d?.conduta ? `<div class="section"><div class="section-label">Conduta</div><di
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                     <span className="text-xs text-muted-foreground">
-                      {format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {format(new Date(entry.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
                     </span>
+                    {isAuthor && !isFinalizado && !isInvalidado && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] px-2 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 gap-0.5"
+                        onClick={() => handleEdit(entry)}
+                      >
+                        <Pencil className="h-2.5 w-2.5" /> Editar
+                      </Button>
+                    )}
                     {isAuthor && !isFinalizado && !isInvalidado && (
                       <Button
                         size="sm" variant="outline"
