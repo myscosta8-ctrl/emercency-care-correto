@@ -1885,6 +1885,15 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           {/* ── TAB: SINAN ───────────────────────────────────────────── */}
           {podeGerarPDF && (
             <TabsContent value="sinan">
+              {isNotificationOpen ? (
+                <NotificationForm
+                  patient={patient}
+                  notification={editingNotification ?? undefined}
+                  onSuccess={() => { setIsNotificationOpen(false); setEditingNotification(null); }}
+                  onCancel={() => { setIsNotificationOpen(false); setEditingNotification(null); }}
+                />
+              ) : (
+              <>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                   <Bell className="h-4 w-4 text-amber-400" /> Notificações Compulsórias
@@ -1986,6 +1995,8 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                     </div>
                   ))}
                 </div>
+              )}
+              </>
               )}
             </TabsContent>
           )}
@@ -2934,20 +2945,6 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isNotificationOpen} onOpenChange={(open) => { setIsNotificationOpen(open); if (!open) setEditingNotification(null); }}>
-        <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="h-4 w-4 text-amber-400" />
-              {editingNotification ? "Editar Notificação Compulsória" : "Nova Notificação Compulsória"}
-            </DialogTitle>
-            <DialogDescription>Registre o agravo de notificação obrigatória conforme a legislação sanitária vigente.</DialogDescription>
-          </DialogHeader>
-          <NotificationForm patient={patient} notification={editingNotification ?? undefined}
-            onSuccess={() => { setIsNotificationOpen(false); setEditingNotification(null); }}
-            onCancel={() => { setIsNotificationOpen(false); setEditingNotification(null); }} />
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
         <DialogContent className="sm:max-w-[560px] max-h-[92vh] overflow-y-auto">
