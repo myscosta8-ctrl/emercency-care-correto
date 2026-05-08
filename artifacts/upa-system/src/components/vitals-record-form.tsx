@@ -19,7 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useNurse } from "@/hooks/use-nurse";
-import { Activity } from "lucide-react";
+import { Activity, Droplets } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const schema = z.object({
   systolicBp:    z.coerce.number().min(0).default(0),
@@ -29,6 +30,8 @@ const schema = z.object({
   spO2:          z.coerce.number().min(0).max(100).default(0),
   temperature:   z.coerce.number().min(0).default(0),
   glucose:       z.coerce.number().min(0).default(0),
+  entradaMl:     z.coerce.number().min(0).default(0),
+  saidaMl:       z.coerce.number().min(0).default(0),
   note:          z.string().default(""),
   responsible:   z.string().min(1, "Informe o nome do profissional"),
 });
@@ -60,10 +63,16 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
       spO2:           0,
       temperature:    0,
       glucose:        0,
+      entradaMl:      0,
+      saidaMl:        0,
       note:           "",
       responsible:    nurseName || (patient.responsibleProfessional ?? ""),
     },
   });
+
+  const entradaMl = form.watch("entradaMl") || 0;
+  const saidaMl   = form.watch("saidaMl")   || 0;
+  const balanco   = entradaMl - saidaMl;
 
   function onSubmit(data: FormValues) {
     addVitals.mutate(
@@ -73,14 +82,16 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
           bp: (data.systolicBp && data.diastolicBp)
             ? `${data.systolicBp}/${data.diastolicBp}`
             : undefined,
-          hr:   data.heartRate || undefined,
-          rr:   data.respiratoryRate || undefined,
-          spo2: data.spO2 || undefined,
-          temp: data.temperature || undefined,
-          glucose: data.glucose || undefined,
-          note:       data.note,
+          hr:        data.heartRate      || undefined,
+          rr:        data.respiratoryRate || undefined,
+          spo2:      data.spO2           || undefined,
+          temp:      data.temperature    || undefined,
+          glucose:   data.glucose        || undefined,
+          entradaMl: data.entradaMl      || undefined,
+          saidaMl:   data.saidaMl        || undefined,
+          note:      data.note,
           responsible: data.responsible,
-        },
+        } as Parameters<typeof addVitals.mutate>[0]["data"],
       },
       {
         onSuccess: () => {
@@ -188,6 +199,45 @@ export function VitalsRecordForm({ patient, onSuccess, onCancel }: Props) {
             </FormControl>
           </FormItem>
         )} />
+
+        {/* Balanço Hídrico */}
+        <div className="border border-sky-500/20 rounded-lg px-3 py-3 space-y-3 bg-sky-500/5">
+          <div className="flex items-center gap-1.5">
+            <Droplets className="h-3.5 w-3.5 text-sky-400" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-sky-400">
+              Balanço Hídrico
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField control={form.control} name="entradaMl" render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Entrada <span className="text-muted-foreground font-normal">(mL)</span></FormLabel>
+                <FormControl>
+                  <Input type="number" min={0} inputMode="numeric" placeholder="0" className="font-mono h-12 text-base" {...field} />
+                </FormControl>
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="saidaMl" render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Saída <span className="text-muted-foreground font-normal">(mL)</span></FormLabel>
+                <FormControl>
+                  <Input type="number" min={0} inputMode="numeric" placeholder="0" className="font-mono h-12 text-base" {...field} />
+                </FormControl>
+              </FormItem>
+            )} />
+          </div>
+          {(entradaMl > 0 || saidaMl > 0) && (
+            <div className="flex items-center justify-between rounded-md bg-background/60 border border-border/40 px-3 py-2">
+              <span className="text-xs text-muted-foreground">Balanço calculado:</span>
+              <span className={cn(
+                "font-mono font-bold text-sm",
+                balanco > 0 ? "text-sky-400" : balanco < 0 ? "text-red-400" : "text-muted-foreground"
+              )}>
+                {balanco > 0 ? "+" : ""}{balanco} mL
+              </span>
+            </div>
+          )}
+        </div>
 
         <div className="border-t border-border/40 pt-3 space-y-3">
           {/* Observação */}

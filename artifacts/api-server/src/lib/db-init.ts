@@ -536,6 +536,10 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.patient_nir_entries ADD COLUMN IF NOT EXISTS invalidado boolean NOT NULL DEFAULT false;
         ALTER TABLE public.patient_nir_entries ADD COLUMN IF NOT EXISTS motivo_invalidacao text NOT NULL DEFAULT '';
 
+        -- balanço hídrico nos sinais vitais
+        ALTER TABLE public.vitals ADD COLUMN IF NOT EXISTS entrada_ml integer NOT NULL DEFAULT 0;
+        ALTER TABLE public.vitals ADD COLUMN IF NOT EXISTS saida_ml integer NOT NULL DEFAULT 0;
+
         -- tabela de alertas clínicos por paciente
         CREATE TABLE IF NOT EXISTS public.patient_alerts (
           id serial PRIMARY KEY,

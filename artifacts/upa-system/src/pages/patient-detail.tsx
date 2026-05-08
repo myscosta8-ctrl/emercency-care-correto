@@ -46,7 +46,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/use-auth";
 import {
   Activity, ArrowLeft, Edit, Trash2, HeartPulse,
-  Wind, Droplet, Clock, MapPin, BedDouble, RefreshCw,
+  Wind, Droplet, Droplets, Clock, MapPin, BedDouble, RefreshCw,
   UserCheck, ClipboardList, Stethoscope, Thermometer,
   Gauge, ClipboardCheck, CheckSquare, Square, ListTodo, Pencil, UserCircle, Printer,
   Bell, Trash, Download, FileDown, Calendar, Building2,
@@ -1350,6 +1350,80 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 alertClass={(latestVitals?.temp ?? 0) >= 39 ? "text-red-400" : (latestVitals?.temp ?? 0) >= 38 ? "text-orange-400" : (latestVitals?.temp ?? 0) > 37.5 ? "text-yellow-400" : (latestVitals?.temp ?? 0) > 0 && (latestVitals?.temp ?? 0) < 36 ? "text-blue-400" : ""} />
               <VitalCard label="Glicemia" value={latestVitals?.glucose ?? 0} unit="mg/dL" icon={<Droplet className="h-4 w-4 text-triage-yellow" />}
                 alertClass={(latestVitals?.glucose ?? 0) > 400 || ((latestVitals?.glucose ?? 0) > 0 && (latestVitals?.glucose ?? 0) < 60) ? "text-red-400" : (latestVitals?.glucose ?? 0) > 250 || ((latestVitals?.glucose ?? 0) > 0 && (latestVitals?.glucose ?? 0) < 70) ? "text-orange-400" : ""} />
+            </div>
+
+            {/* Balanço Hídrico */}
+            <div className="mt-4 border border-sky-500/20 rounded-lg p-3 bg-sky-500/5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-sky-400 mb-3 flex items-center gap-1.5">
+                <Droplets className="h-3.5 w-3.5" /> Balanço Hídrico
+                {latestVitals && (
+                  <span className="text-[10px] font-normal text-muted-foreground normal-case tracking-normal ml-1">
+                    (último registro)
+                  </span>
+                )}
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1 px-1">Entrada</p>
+                  <Card className="border-sky-500/20 bg-card/50">
+                    <CardContent className="py-3 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <Droplets className="h-4 w-4 text-sky-400 shrink-0" />
+                        <span className="text-2xl font-mono font-bold">
+                          {(latestVitals as { entradaMl?: number } | undefined)?.entradaMl
+                            ? <>{(latestVitals as { entradaMl?: number }).entradaMl}<span className="text-muted-foreground text-sm font-normal ml-0.5">mL</span></>
+                            : <span className="text-muted-foreground text-lg">—</span>
+                          }
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1 px-1">Saída</p>
+                  <Card className="border-border/50 bg-card/50">
+                    <CardContent className="py-3 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <Droplet className="h-4 w-4 text-slate-400 shrink-0" />
+                        <span className="text-2xl font-mono font-bold">
+                          {(latestVitals as { saidaMl?: number } | undefined)?.saidaMl
+                            ? <>{(latestVitals as { saidaMl?: number }).saidaMl}<span className="text-muted-foreground text-sm font-normal ml-0.5">mL</span></>
+                            : <span className="text-muted-foreground text-lg">—</span>
+                          }
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1 px-1">Balanço</p>
+                  {(() => {
+                    const entrada = (latestVitals as { entradaMl?: number } | undefined)?.entradaMl ?? 0;
+                    const saida   = (latestVitals as { saidaMl?: number } | undefined)?.saidaMl   ?? 0;
+                    const bal     = entrada - saida;
+                    const hasData = entrada > 0 || saida > 0;
+                    return (
+                      <Card className={cn(
+                        "border-border/50 bg-card/50",
+                        hasData && bal > 0 ? "border-sky-500/30" : hasData && bal < 0 ? "border-red-500/30" : ""
+                      )}>
+                        <CardContent className="py-3 px-4">
+                          <span className={cn(
+                            "text-2xl font-mono font-bold",
+                            !hasData ? "text-muted-foreground" :
+                            bal > 0 ? "text-sky-400" : bal < 0 ? "text-red-400" : "text-muted-foreground"
+                          )}>
+                            {!hasData
+                              ? "—"
+                              : <>{bal > 0 ? "+" : ""}{bal}<span className="text-sm font-normal ml-0.5">mL</span></>
+                            }
+                          </span>
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
+                </div>
+              </div>
             </div>
           </TabsContent>
 

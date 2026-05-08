@@ -765,6 +765,8 @@ export const GetPatientVitalsResponseItem = zod.object({
   spo2: zod.number(),
   temp: zod.number(),
   glucose: zod.number(),
+  entradaMl: zod.number().optional(),
+  saidaMl: zod.number().optional(),
   note: zod.string(),
   createdAt: zod.coerce.date(),
 });
@@ -791,6 +793,8 @@ export const RecordPatientVitalsBody = zod.object({
   objective: zod.string().optional(),
   assessment: zod.string().optional(),
   plan: zod.string().optional(),
+  entradaMl: zod.number().optional(),
+  saidaMl: zod.number().optional(),
   responsible: zod.string(),
   note: zod.string().optional(),
 });

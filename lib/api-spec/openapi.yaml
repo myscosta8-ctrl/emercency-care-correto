@@ -1876,6 +1876,10 @@ components:
           type: string
         plan:
           type: string
+        entradaMl:
+          type: integer
+        saidaMl:
+          type: integer
         responsible:
           type: string
         note:
@@ -1904,6 +1908,10 @@ components:
           type: number
         glucose:
           type: number
+        entradaMl:
+          type: integer
+        saidaMl:
+          type: integer
         note:
           type: string
         createdAt:

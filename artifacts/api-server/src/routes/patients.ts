@@ -773,13 +773,15 @@ router.post("/:id/vitals", requirePermissao("registrar_sinais_vitais"), async (r
   await db.insert(vitalsTable).values({
     patientId: id,
     userId:    0,
-    bp:        body.bp      ?? "",
-    hr:        body.hr      ?? 0,
-    rr:        body.rr      ?? 0,
-    spo2:      body.spo2    ?? 0,
-    temp:      body.temp    ?? 0,
-    glucose:   body.glucose ?? 0,
-    note:      body.note    ?? "",
+    bp:        body.bp        ?? "",
+    hr:        body.hr        ?? 0,
+    rr:        body.rr        ?? 0,
+    spo2:      body.spo2      ?? 0,
+    temp:      body.temp      ?? 0,
+    glucose:   body.glucose   ?? 0,
+    entradaMl: (body as { entradaMl?: number }).entradaMl ?? 0,
+    saidaMl:   (body as { saidaMl?: number }).saidaMl     ?? 0,
+    note:      body.note      ?? "",
   });
 
   const bpParts   = (body.bp ?? "").split("/");

@@ -432,6 +432,8 @@ export interface RecordPatientVitalsBody {
   objective?: string;
   assessment?: string;
   plan?: string;
+  entradaMl?: number;
+  saidaMl?: number;
   responsible: string;
   note?: string;
 }
@@ -446,6 +448,8 @@ export interface Vitals {
   spo2: number;
   temp: number;
   glucose: number;
+  entradaMl?: number;
+  saidaMl?: number;
   note: string;
   createdAt: string;
 }

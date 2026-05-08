@@ -12,6 +12,8 @@ export const vitalsTable = pgTable("vitals", {
   spo2:      integer("spo2").notNull().default(0),
   temp:      real("temp").notNull().default(0),
   glucose:   real("glucose").notNull().default(0),
+  entradaMl: integer("entrada_ml").notNull().default(0),
+  saidaMl:   integer("saida_ml").notNull().default(0),
   note:      text("note").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
