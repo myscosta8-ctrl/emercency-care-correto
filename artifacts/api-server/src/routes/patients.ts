@@ -939,30 +939,58 @@ const serializeExam = (e: typeof examResultsTable.$inferSelect) => ({
 });
 
 const serializeExamList = (e: typeof examResultsTable.$inferSelect) => ({
-  id:         e.id,
-  patientId:  e.patientId,
-  uploadedBy: e.uploadedBy,
-  examName:   e.examName,
-  examType:   e.examType,
-  prioridade: e.prioridade,
-  resultText: e.resultText,
-  fileName:   e.fileName,
-  fileMime:   e.fileMime,
-  fileUrl:    e.fileUrl ?? "",
-  hasFile:    !!(e.fileData || e.fileUrl),
-  status:     e.status,
-  liberadoAt: e.liberadoAt ? e.liberadoAt.toISOString() : null,
-  notified:   e.notified,
-  createdAt:  e.createdAt.toISOString(),
-  updatedAt:  e.updatedAt.toISOString(),
+  id:                e.id,
+  patientId:         e.patientId,
+  uploadedBy:        e.uploadedBy,
+  examName:          e.examName,
+  examType:          e.examType,
+  prioridade:        e.prioridade,
+  resultText:        e.resultText,
+  fileName:          e.fileName,
+  fileMime:          e.fileMime,
+  fileUrl:           e.fileUrl ?? "",
+  hasFile:           !!(e.fileData || e.fileUrl),
+  status:            e.status,
+  liberadoAt:        e.liberadoAt ? e.liberadoAt.toISOString() : null,
+  notified:          e.notified,
+  invalidado:        e.invalidado,
+  motivoInvalidacao: e.motivoInvalidacao,
+  createdAt:         e.createdAt.toISOString(),
+  updatedAt:         e.updatedAt.toISOString(),
 });
+
+const LAB_ROLES = ["laboratorio", "administrador", "diretoria_geral", "medico"];
 
 router.get("/:id/exam-results", async (req, res) => {
   const id = Number(req.params.id);
+  const isLab = LAB_ROLES.includes(req.staff?.role ?? "");
+  const where = isLab
+    ? eq(examResultsTable.patientId, id)
+    : and(eq(examResultsTable.patientId, id), eq(examResultsTable.invalidado, false));
   const results = await db.select().from(examResultsTable)
-    .where(eq(examResultsTable.patientId, id))
+    .where(where)
     .orderBy(desc(examResultsTable.createdAt));
   res.json(results.map(serializeExamList));
+});
+
+router.patch("/:id/exam-results/:examId/invalidar", requirePermissao("registrar_exames"), async (req, res) => {
+  const examId  = Number(req.params.examId);
+  const motivo  = (req.body as { motivo?: string }).motivo ?? "";
+  const staffId = req.staff!.id;
+  const isAdmin = ["administrador", "diretoria_geral", "medico"].includes(req.staff!.role);
+
+  const [exam] = await db.select().from(examResultsTable).where(eq(examResultsTable.id, examId));
+  if (!exam) { res.status(404).json({ error: "Exame não encontrado" }); return; }
+  if (!isAdmin && exam.uploadedBy !== staffId) {
+    res.status(403).json({ error: "Somente o profissional que registrou pode invalidar este exame" });
+    return;
+  }
+
+  const [updated] = await db.update(examResultsTable)
+    .set({ invalidado: true, motivoInvalidacao: motivo, updatedAt: new Date() })
+    .where(eq(examResultsTable.id, examId))
+    .returning();
+  res.json(serializeExamList(updated));
 });
 
 router.get("/:id/exam-results/:examId/file", async (req, res) => {

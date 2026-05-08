@@ -18,6 +18,10 @@ export const examResultsTable = pgTable("exam_results", {
   fileMime:       text("file_mime").notNull().default(""),
   fileUrl:        text("file_url").notNull().default(""),
 
+  // ── invalidação ────────────────────────────────────────────────────────────
+  invalidado:         boolean("invalidado").notNull().default(false),
+  motivoInvalidacao:  text("motivo_invalidacao").notNull().default(""),
+
   // ── status e notificação ───────────────────────────────────────────────────
   status:         text("status", { enum: ["pendente", "liberado"] }).notNull().default("pendente"),
   liberadoAt:     timestamp("liberado_at"),

@@ -51,7 +51,7 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: "UPA Breves — Gestão de Pacientes",
+        name: "UPA Breves — Prontuário Eletrônico",
         short_name: "UPA Breves",
         description: "Sistema de gestão da UPA 24h de Breves — Prefeitura Municipal de Breves/PA",
         theme_color: "#0f172a",

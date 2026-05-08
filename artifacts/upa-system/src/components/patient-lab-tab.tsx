@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  FlaskConical, Upload, CheckCircle2, Clock, FileText, Loader2, Plus, X,
+  FlaskConical, Upload, CheckCircle2, Clock, FileText, Loader2, Plus, X, Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 export interface ExamResultItem {
   id: number;
   patientId: number;
+  uploadedBy: number;
   examName: string;
   examType: "laboratorial" | "imagem";
   prioridade: "urgente" | "rotina" | "eletivo";
@@ -23,6 +24,8 @@ export interface ExamResultItem {
   status: "pendente" | "liberado";
   liberadoAt: string | null;
   notified: boolean;
+  invalidado: boolean;
+  motivoInvalidacao: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +54,19 @@ async function postExamResult(patientId: number, data: Partial<ExamResultItem>, 
   });
   if (!r.ok) throw new Error("Erro ao criar exame");
   return r.json();
+}
+
+async function invalidarExam(patientId: number, examId: number, motivo: string, staffId: number): Promise<void> {
+  const r = await fetch(`/api/patients/${patientId}/exam-results/${examId}/invalidar`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "x-staff-id": String(staffId) },
+    body: JSON.stringify({ motivo }),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error ?? "Erro ao invalidar exame");
+  }
 }
 
 interface LiberarPayload { resultText?: string; fileData?: string; fileName?: string; fileMime?: string; }
@@ -251,7 +267,10 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [liberandoId, setLiberandoId] = useState<number | null>(null);
+  const [invalidandoId, setInvalidandoId] = useState<number | null>(null);
+  const [motivoText, setMotivoText] = useState("");
   const [novoExame, setNovoExame] = useState(false);
+  const isLabRole = ["laboratorio", "administrador", "diretoria_geral", "medico"].includes(activeUser?.role ?? "");
 
   const loadExams = useCallback(async (background = false) => {
     if (background) setRefreshing(true);
@@ -349,18 +368,34 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
         <div className="space-y-2">
           {exams.map(exam => {
             const pcfg = PRIORIDADE_CFG[exam.prioridade] ?? PRIORIDADE_CFG.rotina;
-            const isLiberando = liberandoId === exam.id;
+            const isLiberando   = liberandoId === exam.id;
+            const isInvalidando = invalidandoId === exam.id;
+            const canInvalidar  = !exam.invalidado && (exam.uploadedBy === staffId || isLabRole);
 
             return (
-              <div key={exam.id} className="rounded-lg border border-border/40 bg-card/60 overflow-hidden">
+              <div
+                key={exam.id}
+                className={cn(
+                  "rounded-lg border overflow-hidden",
+                  exam.invalidado
+                    ? "border-red-500/30 bg-red-500/5 opacity-70"
+                    : "border-border/40 bg-card/60",
+                )}
+              >
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/10 flex-wrap">
                   <span className={cn("text-[10px] font-bold px-1.5 py-0 rounded border leading-5", pcfg.cls)}>
                     {pcfg.label}
                   </span>
-                  <span className="text-sm font-semibold">{exam.examName}</span>
+                  <span className={cn("text-sm font-semibold", exam.invalidado && "line-through text-muted-foreground")}>
+                    {exam.examName}
+                  </span>
                   <span className="text-[10px] text-muted-foreground capitalize">{exam.examType}</span>
                   <div className="ml-auto flex items-center gap-2">
-                    {exam.status === "liberado" ? (
+                    {exam.invalidado ? (
+                      <span className="flex items-center gap-1 text-[10px] text-red-400 font-semibold">
+                        <Ban className="h-3 w-3" />Invalidado
+                      </span>
+                    ) : exam.status === "liberado" ? (
                       <span className="flex items-center gap-1 text-[10px] text-green-400 font-semibold">
                         <CheckCircle2 className="h-3 w-3" />Liberado
                       </span>
@@ -369,16 +404,31 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
                         <Clock className="h-3 w-3" />Pendente
                       </span>
                     )}
+                    {canInvalidar && !isInvalidando && (
+                      <Button
+                        size="sm" variant="ghost"
+                        className="h-6 w-6 p-0 text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
+                        title="Invalidar este exame"
+                        onClick={() => { setInvalidandoId(exam.id); setMotivoText(""); }}
+                      >
+                        <Ban className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 
                 <div className="px-4 py-2.5 space-y-2">
-                  {exam.resultText && (
+                  {exam.invalidado && exam.motivoInvalidacao && (
+                    <p className="text-[11px] text-red-400/80 italic">
+                      Motivo: {exam.motivoInvalidacao}
+                    </p>
+                  )}
+                  {!exam.invalidado && exam.resultText && (
                     <p className="text-xs text-muted-foreground bg-muted/20 rounded px-2 py-1.5 whitespace-pre-wrap">
                       {exam.resultText}
                     </p>
                   )}
-                  {(exam.fileName || exam.hasFile) && (
+                  {!exam.invalidado && (exam.fileName || exam.hasFile) && (
                     <a
                       href={exam.fileUrl || `/api/patients/${exam.patientId}/exam-results/${exam.id}/file?staff=${staffId}`}
                       target="_blank"
@@ -389,25 +439,52 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
                     </a>
                   )}
 
-                  {exam.status === "pendente" && !isLiberando && (
+                  {!exam.invalidado && exam.status === "pendente" && !isLiberando && !isInvalidando && (
                     <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
+                      size="sm" variant="outline" className="h-7 text-xs gap-1"
                       onClick={() => setLiberandoId(exam.id)}
                     >
                       <Upload className="h-3 w-3" />Inserir resultado
                     </Button>
                   )}
 
-                  {exam.status === "pendente" && isLiberando && (
+                  {!exam.invalidado && exam.status === "pendente" && isLiberando && (
                     <LiberarForm
-                      patientId={patientId}
-                      exam={exam}
-                      staffId={staffId}
+                      patientId={patientId} exam={exam} staffId={staffId}
                       onSuccess={() => { setLiberandoId(null); loadExams(); }}
                       onCancel={() => setLiberandoId(null)}
                     />
+                  )}
+
+                  {isInvalidando && (
+                    <div className="space-y-2 pt-2 border-t border-red-500/20 mt-2">
+                      <p className="text-[11px] font-semibold text-red-400 uppercase tracking-wider">
+                        Invalidar — {exam.examName}
+                      </p>
+                      <input
+                        className="w-full h-8 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                        placeholder="Motivo da invalidação (opcional)"
+                        value={motivoText}
+                        onChange={e => setMotivoText(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="flex-1 h-7 text-xs"
+                          onClick={() => setInvalidandoId(null)}>Cancelar</Button>
+                        <Button size="sm" variant="destructive" className="flex-1 h-7 text-xs gap-1"
+                          onClick={async () => {
+                            try {
+                              await invalidarExam(patientId, exam.id, motivoText, staffId);
+                              toast({ title: "Exame invalidado", description: exam.examName });
+                              setInvalidandoId(null);
+                              loadExams();
+                            } catch (e) {
+                              toast({ title: String((e as Error).message), variant: "destructive" });
+                            }
+                          }}>
+                          <Ban className="h-3 w-3" />Confirmar
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

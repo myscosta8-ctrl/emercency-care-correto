@@ -775,6 +775,18 @@ export async function initializeDatabase(): Promise<void> {
           notes text NOT NULL DEFAULT '',
           created_at timestamp NOT NULL DEFAULT now()
         );
+
+        -- exam_results: suporte a invalidação
+        ALTER TABLE public.exam_results ADD COLUMN IF NOT EXISTS invalidado boolean NOT NULL DEFAULT false;
+        ALTER TABLE public.exam_results ADD COLUMN IF NOT EXISTS motivo_invalidacao text NOT NULL DEFAULT '';
+
+        -- índices de performance (evita full scan em cada busca por paciente)
+        CREATE INDEX IF NOT EXISTS idx_exam_results_patient    ON public.exam_results(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_evolutions_patient      ON public.patient_evolutions(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_prescriptions_patient   ON public.patient_prescriptions(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_exam_requests_patient   ON public.patient_exam_requests(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_vitals_patient          ON public.vitals(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_nir_patient             ON public.patient_nir_entries(patient_id);
       `);
 
       logger.info("Database initialization complete");
