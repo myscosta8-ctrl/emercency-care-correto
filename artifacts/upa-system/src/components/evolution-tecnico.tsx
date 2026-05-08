@@ -20,6 +20,7 @@ interface Props {
   patientName: string;
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
+  canEdit?: boolean;
 }
 
 const PROCEDIMENTOS = [
@@ -83,7 +84,7 @@ interface AugEntry {
   finalizado?: boolean;
 }
 
-export function EvolutionTecnico({ patientId, userId, patientName, patient, staffMap }: Props) {
+export function EvolutionTecnico({ patientId, userId, patientName, patient, staffMap, canEdit = true }: Props) {
   const [form, setForm]               = useState<TecnicoData>(EMPTY);
   const [expandedId, setExpandedId]   = useState<number | null>(null);
   const [finalizingId, setFinalizingId]     = useState<number | null>(null);
@@ -205,7 +206,7 @@ ${d?.observacoes ? `<div class="section"><div class="section-label">Observaçõe
   return (
     <div className="space-y-4">
       {/* Form */}
-      <div className="bg-card border border-border/50 rounded-lg p-4 space-y-4">
+      {canEdit && <div className="bg-card border border-border/50 rounded-lg p-4 space-y-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
           <ClipboardCheck className="h-3.5 w-3.5" /> Anotação de Enfermagem
         </h4>
@@ -295,7 +296,7 @@ ${d?.observacoes ? `<div class="section"><div class="section-label">Observaçõe
             {addHistory.isPending ? "Salvando…" : "Salvar Rascunho"}
           </Button>
         </div>
-      </div>
+      </div>}
 
       {/* History */}
       {isLoading ? (

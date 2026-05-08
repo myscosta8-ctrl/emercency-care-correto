@@ -26,6 +26,7 @@ interface Props {
   staffMap: Record<number, { name: string }>;
   mode?: "admissao" | "evolucao";
   staffCorenCrm?: string;
+  canEdit?: boolean;
 }
 
 interface NutricionistaData {
@@ -79,7 +80,7 @@ function buildContent(d: NutricionistaData, imc: string): string {
   return parts.join("\n\n");
 }
 
-export function EvolutionNutricionista({ patientId, userId, patientName, patient, staffMap, mode = "evolucao", staffCorenCrm = "" }: Props) {
+export function EvolutionNutricionista({ patientId, userId, patientName, patient, staffMap, mode = "evolucao", staffCorenCrm = "", canEdit = true }: Props) {
   const emptyForm = (): NutricionistaData => ({ ...EMPTY, crn: staffCorenCrm });
   const [form, setForm] = useState<NutricionistaData>(emptyForm);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -231,7 +232,7 @@ ${d?.planoAlimentar ? `<div class="section"><div class="section-label">Plano Ali
 
   if (mode === "admissao") {
     if (isLoading) return <Skeleton className="h-20 w-full" />;
-    if (!assessments || assessments.length === 0) return formBlock;
+    if (!assessments || assessments.length === 0) return canEdit ? formBlock : null;
     const first = sorted[0];
     const d = first.structuredData as (NutricionistaData & { imc?: string }) | null;
     const imcVal = d?.imc ?? "";
@@ -270,7 +271,7 @@ ${d?.planoAlimentar ? `<div class="section"><div class="section-label">Plano Ali
 
   return (
     <div className="space-y-4">
-      {formBlock}
+      {canEdit && formBlock}
 
       {isLoading ? (
         <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>

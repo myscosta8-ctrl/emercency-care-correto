@@ -33,6 +33,7 @@ interface Props {
   latestVitals?: LatestVitals | null;
   staffCorenCrm?: string;
   onAfterSave?: () => void;
+  canEdit?: boolean;
 }
 
 interface MedicoData {
@@ -87,7 +88,7 @@ interface AugEntry {
   finalizado?: boolean;
 }
 
-export function EvolutionMedico({ patientId, userId, patientName, patient, staffMap, latestVitals, staffCorenCrm = "", onAfterSave }: Props) {
+export function EvolutionMedico({ patientId, userId, patientName, patient, staffMap, latestVitals, staffCorenCrm = "", onAfterSave, canEdit = true }: Props) {
   const emptyForm = (): MedicoData => ({ ...EMPTY, crm: staffCorenCrm });
   const [form, setForm]                     = useState<MedicoData>(emptyForm);
   const [editingId, setEditingId]           = useState<number | null>(null);
@@ -257,7 +258,7 @@ ${d?.conduta ? `<div class="section"><div class="section-label">Conduta</div><di
 
   return (
     <div className="space-y-4">
-      <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
+      {canEdit && <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
             <Stethoscope className="h-3.5 w-3.5" />
@@ -371,7 +372,7 @@ ${d?.conduta ? `<div class="section"><div class="section-label">Conduta</div><di
             </Button>
           </div>
         </div>
-      </div>
+      </div>}
 
       {isLoading ? (
         <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>

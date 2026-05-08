@@ -25,6 +25,7 @@ interface Props {
   staffMap: Record<number, { name: string; role?: string }>;
   staffCorenCrm?: string;
   onAfterSave?: () => void;
+  canEdit?: boolean;
 }
 
 interface DiariaData {
@@ -99,7 +100,7 @@ function fmtDeviceDate(iso: string): string {
   return y && m && d ? `${d}/${m}` : "";
 }
 
-export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, patient, staffMap, staffCorenCrm = "", onAfterSave }: Props) {
+export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, patient, staffMap, staffCorenCrm = "", onAfterSave, canEdit = true }: Props) {
   const emptyForm = (): DiariaData => ({ ...EMPTY, coren: staffCorenCrm });
   const [form, setForm]                 = useState<DiariaData>(emptyForm);
   const [editingId, setEditingId]       = useState<number | null>(null);
@@ -268,7 +269,7 @@ ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientaçõe
 
   return (
     <div className="space-y-4">
-      <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
+      {canEdit && <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
           <ClipboardList className="h-3.5 w-3.5" />
           {editingId !== null ? "Editando Evolução de Enfermagem" : "Nova Evolução de Enfermagem"}
@@ -392,7 +393,7 @@ ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientaçõe
             </Button>
           </div>
         </div>
-      </div>
+      </div>}
 
       {isLoading ? (
         <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>

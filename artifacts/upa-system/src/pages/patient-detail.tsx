@@ -306,6 +306,12 @@ export default function PatientDetail() {
   // Helpers de cargo para separar prescrições
   const isMedico      = ["medico", "administrador", "diretoria_geral"].includes(activeUser?.role ?? "");
   const isEnfermeiro  = ["enfermeiro", "tecnico_enfermagem", "administrador", "diretoria_geral"].includes(activeUser?.role ?? "");
+  const role          = activeUser?.role ?? "";
+  const canEditMedico       = ["medico", "administrador", "diretoria_geral"].includes(role);
+  const canEditEnfermeiro   = ["enfermeiro", "administrador", "diretoria_geral"].includes(role);
+  const canEditTecnico      = ["tecnico_enfermagem", "administrador", "diretoria_geral"].includes(role);
+  const canEditSocial       = ["assistente_social", "administrador", "diretoria_geral"].includes(role);
+  const canEditNutricionista = ["nutricionista", "administrador", "diretoria_geral"].includes(role);
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
   const updatePrescriptionStatus = useUpdatePrescriptionStatus();
@@ -1226,6 +1232,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                       staffMap={staffMap}
                       mode="admissao"
                       staffCorenCrm={activeUser?.corenCrm ?? ""}
+                      canEdit={canEditSocial}
                     />
                   </div>
                 )}
@@ -1242,6 +1249,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                       staffMap={staffMap}
                       mode="admissao"
                       staffCorenCrm={activeUser?.corenCrm ?? ""}
+                      canEdit={canEditNutricionista}
                     />
                   </div>
                 )}
@@ -1458,6 +1466,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               latestVitals={latestVitals}
               staffCorenCrm={activeUser?.corenCrm ?? ""}
               onAfterSave={() => setShowPrintBanner(true)}
+              canEdit={canEditMedico}
             />
             {isMedico && pode("gerar_pdf") && (
               <div className="flex justify-end mt-4 pt-3 border-t border-border/30">
@@ -1499,6 +1508,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               staffMap={staffMap}
               staffCorenCrm={activeUser?.corenCrm ?? ""}
               onAfterSave={() => setShowPrintBanner(true)}
+              canEdit={canEditEnfermeiro}
             />
             {isEnfermeiro && pode("gerar_pdf") && (
               <div className="flex justify-end mt-4 pt-3 border-t border-border/30">
@@ -1542,6 +1552,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               patient={patient}
               staffMap={staffMap}
               staffCorenCrm={activeUser?.corenCrm ?? ""}
+              canEdit={canEditEnfermeiro}
             />
           </TabsContent>
 
@@ -1558,6 +1569,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               patientName={patient.full_name}
               patient={patient}
               staffMap={staffMap}
+              canEdit={canEditTecnico}
             />
           </TabsContent>
 
@@ -2078,6 +2090,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 patient={patient}
                 staffMap={staffMap}
                 staffCorenCrm={activeUser?.corenCrm ?? ""}
+                canEdit={canEditSocial}
               />
             </TabsContent>
           )}
@@ -2092,6 +2105,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 patient={patient}
                 staffMap={staffMap}
                 staffCorenCrm={activeUser?.corenCrm ?? ""}
+                canEdit={canEditNutricionista}
               />
             </TabsContent>
           )}

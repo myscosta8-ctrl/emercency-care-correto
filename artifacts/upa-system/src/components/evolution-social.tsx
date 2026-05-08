@@ -26,6 +26,7 @@ interface Props {
   staffMap: Record<number, { name: string }>;
   mode?: "admissao" | "evolucao";
   staffCorenCrm?: string;
+  canEdit?: boolean;
 }
 
 interface SocialData {
@@ -60,7 +61,7 @@ function buildContent(d: SocialData): string {
   return parts.join("\n\n");
 }
 
-export function EvolutionSocial({ patientId, userId, patientName, patient, staffMap, mode = "evolucao", staffCorenCrm = "" }: Props) {
+export function EvolutionSocial({ patientId, userId, patientName, patient, staffMap, mode = "evolucao", staffCorenCrm = "", canEdit = true }: Props) {
   const emptyForm = (): SocialData => ({ ...EMPTY, cress: staffCorenCrm });
   const [form, setForm] = useState<SocialData>(emptyForm);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -212,7 +213,7 @@ ${d?.encaminhamentos ? `<div class="section"><div class="section-label">Encaminh
 
   if (mode === "admissao") {
     if (isLoading) return <Skeleton className="h-20 w-full" />;
-    if (!notes || notes.length === 0) return formBlock;
+    if (!notes || notes.length === 0) return canEdit ? formBlock : null;
     const first = sorted[0];
     const d = first.structuredData as SocialData | null;
     return (
@@ -245,7 +246,7 @@ ${d?.encaminhamentos ? `<div class="section"><div class="section-label">Encaminh
 
   return (
     <div className="space-y-4">
-      {formBlock}
+      {canEdit && formBlock}
 
       {isLoading ? (
         <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>

@@ -22,6 +22,7 @@ interface Props {
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
   staffCorenCrm?: string;
+  canEdit?: boolean;
 }
 
 interface EnfermeiroData {
@@ -62,7 +63,7 @@ interface AugEntry {
   finalizado?: boolean;
 }
 
-export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, staffMap, staffCorenCrm = "" }: Props) {
+export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, staffMap, staffCorenCrm = "", canEdit = true }: Props) {
   const emptyForm = (): EnfermeiroData => ({ ...EMPTY, coren: staffCorenCrm });
   const [form, setForm]                     = useState<EnfermeiroData>(emptyForm);
   const [editingId, setEditingId]           = useState<number | null>(null);
@@ -215,7 +216,7 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
 
   return (
     <div className="space-y-4">
-      <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
+      {canEdit && <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
           <ClipboardList className="h-3.5 w-3.5" />
           {editingId !== null ? "Editando SAE" : "SAE — Sistematização da Assistência de Enfermagem"}
@@ -307,7 +308,7 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
             </Button>
           </div>
         </div>
-      </div>
+      </div>}
 
       {isLoading ? (
         <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
