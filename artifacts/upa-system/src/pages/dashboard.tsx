@@ -814,10 +814,11 @@ export default function Dashboard() {
         <div className="px-4 h-16 flex items-center justify-between gap-3">
           {/* Logo + Branding */}
           <div className="flex items-center gap-3 shrink-0">
-            <div className="bg-primary text-primary-foreground rounded-lg px-2.5 py-1.5 leading-none shrink-0">
-              <div className="font-black text-sm tracking-tight">UPA</div>
-              <div className="font-bold text-[9px] tracking-[0.2em] text-center opacity-90">24h</div>
-            </div>
+            <img
+              src={`${import.meta.env.BASE_URL}logo-sistema-transp.png`}
+              alt="Emergency Care logo"
+              className="h-10 w-auto object-contain shrink-0"
+            />
             <div className="hidden sm:block">
               <div className="font-black text-sm text-foreground tracking-wide leading-tight">UPA BREVES</div>
               <div className="text-[10px] text-muted-foreground leading-tight">SEMSA — Prefeitura Municipal de Breves</div>

@@ -49,22 +49,21 @@ export default function LoginPage() {
         <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
 
           {/* Card header with branding */}
-          <div className="bg-[#1E88E5] px-8 py-8 text-center">
-            <div className="inline-flex items-center justify-center gap-4 mb-3">
-              {/* UPA 24h logo block */}
-              <div className="bg-white rounded-xl px-4 py-2 shadow-sm shrink-0">
-                <div className="text-[#1E88E5] font-black text-2xl leading-none tracking-tight">UPA</div>
-                <div className="text-[#1E88E5] font-bold text-[10px] tracking-[0.25em] text-center mt-0.5">24h</div>
-              </div>
-              {/* Name block */}
-              <div className="text-left">
-                <div className="text-white font-black text-xl tracking-wide leading-tight">UPA BREVES</div>
-                <div className="text-blue-100 text-xs font-medium leading-snug mt-0.5">
+          <div className="bg-[#1E88E5] px-8 py-6 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <img
+                src={`${import.meta.env.BASE_URL}logo-sistema-transp.png`}
+                alt="Emergency Care logo"
+                className="h-28 w-auto object-contain drop-shadow-lg"
+              />
+              <div>
+                <div className="text-white font-black text-lg tracking-wide leading-tight">UPA BREVES</div>
+                <div className="text-blue-100 text-xs font-medium leading-snug">
                   Unidade de Pronto Atendimento
                 </div>
               </div>
             </div>
-            <p className="text-blue-100 text-sm font-medium mt-2">Gestão de Pacientes</p>
+            <p className="text-blue-100 text-sm font-medium mt-3">Gestão de Pacientes</p>
           </div>
 
           {/* Form body */}

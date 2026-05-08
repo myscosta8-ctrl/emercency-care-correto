@@ -38,10 +38,11 @@ export function RoleHeader({ title, icon }: Props) {
         {/* Logo + branding */}
         <Link href={home}>
           <button className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0">
-            <div className="bg-primary text-primary-foreground rounded-md px-2 py-1 leading-none">
-              <div className="font-black text-xs tracking-tight">UPA</div>
-              <div className="font-bold text-[8px] tracking-widest text-center opacity-90">24h</div>
-            </div>
+            <img
+              src={`${import.meta.env.BASE_URL}logo-sistema-transp.png`}
+              alt="Emergency Care logo"
+              className="h-9 w-auto object-contain"
+            />
             <div className="hidden sm:block">
               <div className="font-black text-xs text-foreground tracking-wide leading-tight">UPA BREVES</div>
               <div className="text-[9px] text-muted-foreground leading-tight">SEMSA — Breves</div>
