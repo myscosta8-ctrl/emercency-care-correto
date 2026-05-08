@@ -975,7 +975,7 @@ router.get("/:id/exam-results/:examId/file", async (req, res) => {
   const buf = Buffer.from(exam.fileData, "base64");
   const mime = exam.fileMime || "application/octet-stream";
   res.setHeader("Content-Type", mime);
-  res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(exam.fileName || "exame")}"`);
+  res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(exam.fileName || "exame")}"`);
   res.setHeader("Content-Length", buf.length);
   res.send(buf);
 });
