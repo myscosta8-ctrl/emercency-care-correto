@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { NotebookPen, Send, Printer, ChevronDown, ChevronUp, Ban, CheckCircle, Pencil } from "lucide-react";
+import { ClipboardList, Send, Printer, ChevronDown, ChevronUp, Ban, CheckCircle, Pencil, Zap } from "lucide-react";
 import { buildInstitutionalHeader, buildPrintDocStyles, type PrintPatientInfo } from "@/lib/print-header-html";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useAddPatientHistory,
   useGetPatientHistory,
+  useGetPatientDevices,
   getGetPatientHistoryQueryKey,
 } from "@workspace/api-client-react";
+import type { PatientDevice } from "@workspace/api-client-react";
 
 interface Props {
   patientId: number;
@@ -27,6 +29,7 @@ interface DiariaData {
   descricao: string;
   intercorrencias: string;
   procedimentos: string;
+  dispositivos: string;
   orientacoes: string;
   coren: string;
 }
@@ -35,13 +38,30 @@ const EMPTY: DiariaData = {
   descricao: "",
   intercorrencias: "",
   procedimentos: "",
+  dispositivos: "",
   orientacoes: "",
   coren: "",
 };
 
+const DEVICE_LABELS: Record<string, string> = {
+  acesso_venoso_periferico: "AVP",
+  acesso_venoso_central:    "AVC",
+  sonda_nasoenteral:        "SNE",
+  sonda_nasogastrica:       "SNG",
+  sonda_vesical_demora:     "SVD",
+  cateter_arterial:         "Cateter Arterial",
+  dreno_torax:              "Dreno de Tórax",
+  traqueostomia:            "Traqueostomia",
+  gastrostomia:             "Gastrostomia",
+  cateter_duplo_lumen:      "Cateter Duplo Lúmen",
+  dissecao_vascular:        "Dissecção Vascular",
+  outro:                    "Outro",
+};
+
 const PROF_CAT_LABELS: Record<string, string> = {
+  evolucao_enfermagem: "Enfermeiro(a)",
+  anotacao_enfermagem: "Enfermeiro(a)",
   enfermeiro:          "Enfermeiro(a)",
-  anotacao_enfermagem: "Evolução de Enfermagem",
   tecnico_enfermagem:  "Técnico de Enfermagem",
   medico:              "Médico(a)",
   nutricionista:       "Nutricionista",
@@ -53,6 +73,7 @@ function buildText(d: DiariaData): string {
   if (d.descricao.trim())       parts.push(`[EVOLUÇÃO]\n${d.descricao.trim()}`);
   if (d.intercorrencias.trim()) parts.push(`[INTERCORRÊNCIAS]\n${d.intercorrencias.trim()}`);
   if (d.procedimentos.trim())   parts.push(`[PROCEDIMENTOS REALIZADOS]\n${d.procedimentos.trim()}`);
+  if (d.dispositivos.trim())    parts.push(`[DISPOSITIVOS DO PACIENTE]\n${d.dispositivos.trim()}`);
   if (d.orientacoes.trim())     parts.push(`[ORIENTAÇÕES]\n${d.orientacoes.trim()}`);
   if (d.coren.trim())           parts.push(`[COREN] ${d.coren.trim()}`);
   return parts.join("\n\n");
@@ -70,6 +91,12 @@ interface AugEntry {
   finalizado?: boolean;
 }
 
+function fmtDeviceDate(iso: string): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return y && m && d ? `${d}/${m}` : "";
+}
+
 export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, patient, staffMap }: Props) {
   const [form, setForm]                 = useState<DiariaData>(EMPTY);
   const [editingId, setEditingId]       = useState<number | null>(null);
@@ -84,16 +111,29 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
     query: { queryKey: getGetPatientHistoryQueryKey(patientId) },
   });
 
+  const { data: activeDevices } = useGetPatientDevices(patientId, { active: true });
+
   const addHistory = useAddPatientHistory();
 
   const diariaHistory = ((history ?? []) as AugEntry[]).filter(
-    e => e.professionalCategory === "anotacao_enfermagem"
+    e => e.professionalCategory === "evolucao_enfermagem" || e.professionalCategory === "anotacao_enfermagem"
   );
 
   const set = (k: keyof DiariaData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
   const isValid = !!(form.descricao.trim() || form.intercorrencias.trim() || form.procedimentos.trim());
+
+  const handlePreencherDispositivos = () => {
+    if (!activeDevices || activeDevices.length === 0) return;
+    const lines = (activeDevices as PatientDevice[]).map(dev => {
+      const label = DEVICE_LABELS[dev.deviceType] ?? dev.deviceType;
+      const site  = dev.insertionSite ? ` — ${dev.insertionSite}` : "";
+      const date  = dev.insertionDate ? ` (desde ${fmtDeviceDate(dev.insertionDate)})` : "";
+      return `• ${label}${site}${date}`;
+    });
+    setForm(f => ({ ...f, dispositivos: lines.join("\n") }));
+  };
 
   const handleSubmit = async () => {
     const soapText = buildText(form);
@@ -114,7 +154,7 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
         queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
         setForm(EMPTY);
         setEditingId(null);
-        toast({ title: "Anotação atualizada com sucesso" });
+        toast({ title: "Evolução atualizada com sucesso" });
       } catch (e: unknown) {
         toast({ title: e instanceof Error ? e.message : "Erro ao salvar", variant: "destructive" });
       } finally {
@@ -129,7 +169,7 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
         data: {
           userId,
           soapText,
-          professionalCategory: "anotacao_enfermagem",
+          professionalCategory: "evolucao_enfermagem",
           structuredData: form as unknown as Record<string, unknown>,
         },
       },
@@ -137,9 +177,9 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
           setForm(EMPTY);
-          toast({ title: "Anotação salva como rascunho. Publique quando estiver pronto." });
+          toast({ title: "Evolução salva como rascunho. Publique quando estiver pronto." });
         },
-        onError: () => toast({ title: "Erro ao registrar anotação", variant: "destructive" }),
+        onError: () => toast({ title: "Erro ao registrar evolução", variant: "destructive" }),
       }
     );
   };
@@ -156,7 +196,7 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
         throw new Error(err.error ?? "Erro ao publicar");
       }
       queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-      toast({ title: "Anotação publicada com sucesso" });
+      toast({ title: "Evolução publicada com sucesso" });
     } catch (e: unknown) {
       toast({ title: e instanceof Error ? e.message : "Erro ao publicar", variant: "destructive" });
     } finally {
@@ -186,7 +226,7 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
         throw new Error(err.error ?? "Erro ao invalidar");
       }
       queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-      toast({ title: "Anotação invalidada" });
+      toast({ title: "Evolução invalidada" });
     } catch (e: unknown) {
       toast({ title: e instanceof Error ? e.message : "Erro ao invalidar", variant: "destructive" });
     } finally {
@@ -197,7 +237,7 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
   const handlePrint = (entry: AugEntry) => {
     const d = entry.structuredData as DiariaData | null;
     const authorName = staffMap[entry.userId]?.name ?? `Profissional ID ${entry.userId}`;
-    const profLabel = PROF_CAT_LABELS[entry.professionalCategory ?? ""] ?? "Enfermagem";
+    const profLabel = PROF_CAT_LABELS[entry.professionalCategory ?? ""] ?? "Enfermeiro(a)";
     const dateStr = format(new Date(entry.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     const baseUrl = window.location.origin + (import.meta.env.BASE_URL ?? "/");
     const win = window.open("", "_blank", "width=794,height=1123");
@@ -206,11 +246,12 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
 <meta charset="UTF-8">
 <title>Evolução de Enfermagem — ${patientName}</title>
 <style>${buildPrintDocStyles("#0d9488")}</style></head><body>
-${buildInstitutionalHeader(patient ?? null, "EVOLUÇÃO DE ENFERMAGEM DIÁRIA", baseUrl)}
+${buildInstitutionalHeader(patient ?? null, "EVOLUÇÃO DE ENFERMAGEM", baseUrl)}
 <p class="doc-meta"><strong>${profLabel}:</strong> ${authorName} &nbsp;|&nbsp; <strong>Data/Hora:</strong> ${dateStr}</p>
 ${d?.descricao ? `<div class="section"><div class="section-label">Evolução</div><div class="section-body">${d.descricao}</div></div>` : ""}
 ${d?.intercorrencias ? `<div class="section"><div class="section-label">Intercorrências</div><div class="section-body">${d.intercorrencias}</div></div>` : ""}
 ${d?.procedimentos ? `<div class="section"><div class="section-label">Procedimentos Realizados</div><div class="section-body">${d.procedimentos}</div></div>` : ""}
+${d?.dispositivos ? `<div class="section"><div class="section-label">Dispositivos do Paciente</div><div class="section-body">${d.dispositivos}</div></div>` : ""}
 ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientações ao Paciente/Família</div><div class="section-body">${d.orientacoes}</div></div>` : ""}
 <div class="sig-area">
   <div class="sig-line">${authorName}</div>
@@ -225,8 +266,8 @@ ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientaçõe
     <div className="space-y-4">
       <div className="bg-card border border-border/50 rounded-lg p-4 space-y-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
-          <NotebookPen className="h-3.5 w-3.5" />
-          {editingId !== null ? "Editando Anotação de Enfermagem" : "Nova Anotação de Enfermagem"}
+          <ClipboardList className="h-3.5 w-3.5" />
+          {editingId !== null ? "Editando Evolução de Enfermagem" : "Nova Evolução de Enfermagem"}
         </h4>
 
         {editingId !== null && (
@@ -236,9 +277,9 @@ ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientaçõe
         )}
 
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Evolução / Descrição *</label>
+          <label className="text-xs text-muted-foreground mb-1 block">Evolução *</label>
           <Textarea
-            placeholder="Descreva o estado do paciente, observações gerais e evolução do quadro clínico…"
+            placeholder="Descreva o estado atual do paciente, avaliação geral e evolução do quadro clínico…"
             value={form.descricao}
             onChange={set("descricao")}
             rows={4}
@@ -268,6 +309,39 @@ ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientaçõe
           />
         </div>
 
+        {/* Dispositivos do Paciente */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs text-muted-foreground">Dispositivos do Paciente</label>
+            {activeDevices && activeDevices.length > 0 && (
+              <Button
+                type="button" size="sm" variant="ghost"
+                className="h-5 text-[10px] px-2 gap-0.5 text-amber-400 hover:text-amber-300"
+                onClick={handlePreencherDispositivos}
+              >
+                <Zap className="h-2.5 w-2.5" /> Inserir ativos
+              </Button>
+            )}
+          </div>
+          {activeDevices && activeDevices.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {(activeDevices as PatientDevice[]).map(dev => (
+                <span key={dev.id} className="text-[10px] px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-300">
+                  {DEVICE_LABELS[dev.deviceType] ?? dev.deviceType}
+                  {dev.insertionSite ? ` — ${dev.insertionSite}` : ""}
+                </span>
+              ))}
+            </div>
+          )}
+          <Textarea
+            placeholder="Registre dispositivos: sondas, cateteres, drenos, AVP, AVC — localização, condição, datas de troca…"
+            value={form.dispositivos}
+            onChange={set("dispositivos")}
+            rows={2}
+            className="resize-none text-sm"
+          />
+        </div>
+
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">Orientações ao Paciente/Família</label>
           <Textarea
@@ -292,8 +366,7 @@ ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientaçõe
           <div className="flex gap-2 self-end">
             {editingId !== null && (
               <Button
-                size="sm"
-                variant="outline"
+                size="sm" variant="outline"
                 onClick={() => { setForm(EMPTY); setEditingId(null); }}
                 className="gap-1.5"
               >
@@ -321,7 +394,7 @@ ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientaçõe
         <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-20 w-full" />)}</div>
       ) : diariaHistory.length === 0 ? (
         <div className="text-center py-8 bg-card rounded-lg border border-border/50">
-          <p className="text-sm text-muted-foreground">Nenhuma anotação de enfermagem registrada ainda.</p>
+          <p className="text-sm text-muted-foreground">Nenhuma evolução de enfermagem registrada ainda.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -335,7 +408,7 @@ ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientaçõe
               <div key={entry.id} className={`bg-card rounded-lg border overflow-hidden ${isInvalidado ? "opacity-50 border-red-500/20" : "border-teal-500/20"}`}>
                 <div className={`flex items-center justify-between px-4 py-2 border-b ${isInvalidado ? "bg-red-500/5 border-red-500/10" : "bg-teal-500/5 border-teal-500/10"}`}>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <NotebookPen className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+                    <ClipboardList className="h-3.5 w-3.5 text-teal-400 shrink-0" />
                     <span className="text-xs font-semibold">
                       {staffMap[entry.userId]?.name ?? `Profissional ID ${entry.userId}`}
                     </span>
@@ -431,8 +504,14 @@ ${d?.orientacoes ? `<div class="section"><div class="section-label">Orientaçõe
                       )}
                       {d.procedimentos && (
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-teal-400/80 mb-1">Procedimentos</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-teal-400/80 mb-1">Procedimentos Realizados</p>
                           <p className="text-xs text-foreground/80 whitespace-pre-wrap">{d.procedimentos}</p>
+                        </div>
+                      )}
+                      {d.dispositivos && (
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400/80 mb-1">Dispositivos do Paciente</p>
+                          <p className="text-xs text-foreground/80 whitespace-pre-wrap">{d.dispositivos}</p>
                         </div>
                       )}
                       {d.orientacoes && (

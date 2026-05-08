@@ -207,7 +207,7 @@ ${d?.observacoes ? `<div class="section"><div class="section-label">Observaçõe
       {/* Form */}
       <div className="bg-card border border-border/50 rounded-lg p-4 space-y-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
-          <ClipboardCheck className="h-3.5 w-3.5" /> Registro do Técnico de Enfermagem
+          <ClipboardCheck className="h-3.5 w-3.5" /> Anotação de Enfermagem
         </h4>
 
         {/* Turno */}
@@ -274,9 +274,9 @@ ${d?.observacoes ? `<div class="section"><div class="section-label">Observaçõe
         </div>
 
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Observações</label>
+          <label className="text-xs text-muted-foreground mb-1 block">Anotações / Registros</label>
           <Textarea
-            placeholder="Observações gerais do turno…"
+            placeholder="Registre anotações, observações do turno, estado geral do paciente…"
             value={form.observacoes}
             onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))}
             rows={2}

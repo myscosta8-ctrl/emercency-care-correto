@@ -956,7 +956,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             {/* ── Enfermagem (ambulatorial e internação) ── */}
             <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
             {isInpatient && <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>}
-            <TabsTrigger value="tecnico" className="text-xs">Técnico Enf.</TabsTrigger>
+            <TabsTrigger value="tecnico" className="text-xs">Anotação Enf.</TabsTrigger>
             {/* ── Outros profissionais — somente internação ── */}
             {isInpatient && pode("registrar_nota_social") && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
             {isInpatient && pode("registrar_avaliacao_nutricional") && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
@@ -1453,7 +1453,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           <TabsContent value="enfermagem">
             <div className="mb-4">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-teal-400" /> Anotações de Enfermagem
+                <ClipboardList className="h-4 w-4 text-teal-400" /> Evolução de Enfermagem
               </h3>
             </div>
             <EvolutionEnfermagemDiaria
@@ -1488,7 +1488,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           <TabsContent value="tecnico">
             <div className="mb-4">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-cyan-400" /> Anotações do Técnico de Enfermagem
+                <ClipboardList className="h-4 w-4 text-cyan-400" /> Anotação de Enfermagem
               </h3>
             </div>
             <EvolutionTecnico
