@@ -118,14 +118,14 @@ const COORDS_DENGUE: FormCoords = {
   email:                { x: 222, y: 343, maxWidth: 200 },
   data_inicio_sintomas: { x: 68,  y: 305, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 220, y: 305, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 68,  y: 620, maxWidth: 290 },  // [O] notification header
-  data_atendimento:        { x: 380, y: 620, maxWidth: 100 },  // [O] right of unidade_saude
-  hora_atendimento:        { x: 490, y: 620, maxWidth: 80  },  // [O] right of data_atendimento
+  unidade_saude:           { x: 68,  y: 591, maxWidth: 290 },  // [O] field 6 — pdfY≈230→fill 591
+  data_atendimento:        { x: 380, y: 581, maxWidth: 100 },  // [O] field 7 date — pdfY≈240→fill 581
+  hora_atendimento:        { x: 490, y: 581, maxWidth: 80  },  // [O] right of field 7 date
   profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 68,  y: 676, maxWidth: 290 },  // [O] header row: agravo
-  data_notificacao:        { x: 380, y: 676, maxWidth: 100 },  // [O] right of agravo
-  municipio_notificacao:   { x: 68,  y: 648, maxWidth: 280 },  // [O] header row: municipio
-  codigo_ibge:             { x: 380, y: 648, maxWidth: 90  },  // [O] right of municipio
+  agravo_notificacao:      { x: 68,  y: 651, maxWidth: 290 },  // [O] field 2 — pdfY≈170→fill 651
+  data_notificacao:        { x: 380, y: 651, maxWidth: 100 },  // [O] field 3 — same row
+  municipio_notificacao:   { x: 68,  y: 611, maxWidth: 280 },  // [O] field 5 input — pdfY≈210→fill 611
+  codigo_ibge:             { x: 380, y: 621, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈200→fill 621
   evolucao_caso:           { x: 68,  y: 270, maxWidth: 200 },  // [O] conclusion section
   classificacao_final:     { x: 68,  y: 235, maxWidth: 250 },  // [O] below evolucao
   criterio_confirmacao:    { x: 280, y: 235, maxWidth: 150 },  // [O] right of classificacao
@@ -157,14 +157,14 @@ const COORDS_TUBERCULOSE: FormCoords = {
   email:                { x: 223, y: 398, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 360, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 221, y: 360, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 67,  y: 674, maxWidth: 290 },  // [O] notification header
-  data_atendimento:        { x: 380, y: 674, maxWidth: 100 },  // [O] right of unidade_saude
-  hora_atendimento:        { x: 490, y: 674, maxWidth: 80  },  // [O] right of data_atendimento
+  unidade_saude:           { x: 67,  y: 646, maxWidth: 290 },  // [O] field 6 — pdfY≈175→fill 646
+  data_atendimento:        { x: 380, y: 636, maxWidth: 100 },  // [O] field 7 date — pdfY≈185→fill 636
+  hora_atendimento:        { x: 490, y: 636, maxWidth: 80  },  // [O] right of field 7 date
   profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 67,  y: 730, maxWidth: 290 },  // [O] header row: agravo
-  data_notificacao:        { x: 380, y: 730, maxWidth: 100 },  // [O] right of agravo
-  municipio_notificacao:   { x: 67,  y: 702, maxWidth: 280 },  // [O] header row: municipio
-  codigo_ibge:             { x: 380, y: 702, maxWidth: 90  },  // [O] right of municipio
+  agravo_notificacao:      { x: 67,  y: 701, maxWidth: 290 },  // [O] field 2 — pdfY≈120→fill 701
+  data_notificacao:        { x: 380, y: 701, maxWidth: 100 },  // [O] field 3 — same row
+  municipio_notificacao:   { x: 67,  y: 661, maxWidth: 280 },  // [O] field 5 input — pdfY≈160→fill 661
+  codigo_ibge:             { x: 380, y: 676, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈145→fill 676
   evolucao_caso:           { x: 67,  y: 325, maxWidth: 200 },  // [O] conclusion section
   classificacao_final:     { x: 67,  y: 290, maxWidth: 250 },  // [O] below evolucao
   criterio_confirmacao:    { x: 280, y: 290, maxWidth: 150 },  // [O] right of classificacao
@@ -196,14 +196,14 @@ const COORDS_FEBRE_AMARELA: FormCoords = {
   email:                { x: 220, y: 383, maxWidth: 200 },
   data_inicio_sintomas: { x: 66,  y: 345, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 218, y: 345, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 65,  y: 660, maxWidth: 290 },  // [O] notification header
-  data_atendimento:        { x: 380, y: 660, maxWidth: 100 },  // [O] right of unidade_saude
-  hora_atendimento:        { x: 490, y: 660, maxWidth: 80  },  // [O] right of data_atendimento
+  unidade_saude:           { x: 65,  y: 631, maxWidth: 290 },  // [O] field 6 — pdfY≈190→fill 631
+  data_atendimento:        { x: 380, y: 616, maxWidth: 100 },  // [O] field 7 date — pdfY≈205→fill 616
+  hora_atendimento:        { x: 490, y: 616, maxWidth: 80  },  // [O] right of field 7 date
   profissional_responsavel:{ x: 65,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 65,  y: 716, maxWidth: 290 },  // [O] header row: agravo
-  data_notificacao:        { x: 380, y: 716, maxWidth: 100 },  // [O] right of agravo
-  municipio_notificacao:   { x: 65,  y: 688, maxWidth: 280 },  // [O] header row: municipio
-  codigo_ibge:             { x: 380, y: 688, maxWidth: 90  },  // [O] right of municipio
+  agravo_notificacao:      { x: 65,  y: 691, maxWidth: 290 },  // [O] field 2 — pdfY≈130→fill 691
+  data_notificacao:        { x: 380, y: 691, maxWidth: 100 },  // [O] field 3 — same row
+  municipio_notificacao:   { x: 65,  y: 646, maxWidth: 280 },  // [O] field 5 input — pdfY≈175→fill 646
+  codigo_ibge:             { x: 380, y: 661, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈160→fill 661
   evolucao_caso:           { x: 65,  y: 310, maxWidth: 200 },  // [O] conclusion section
   classificacao_final:     { x: 65,  y: 275, maxWidth: 250 },  // [O] below evolucao
   criterio_confirmacao:    { x: 278, y: 275, maxWidth: 150 },  // [O] right of classificacao
@@ -235,14 +235,14 @@ const COORDS_MENINGITE: FormCoords = {
   email:                { x: 223, y: 379, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 341, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 221, y: 341, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 71,  y: 656, maxWidth: 290 },  // [O] notification header
-  data_atendimento:        { x: 380, y: 656, maxWidth: 100 },  // [O] right of unidade_saude
-  hora_atendimento:        { x: 490, y: 656, maxWidth: 80  },  // [O] right of data_atendimento
+  unidade_saude:           { x: 71,  y: 626, maxWidth: 290 },  // [O] field 6 — pdfY≈195→fill 626
+  data_atendimento:        { x: 380, y: 616, maxWidth: 100 },  // [O] field 7 date — pdfY≈205→fill 616
+  hora_atendimento:        { x: 490, y: 616, maxWidth: 80  },  // [O] right of field 7 date
   profissional_responsavel:{ x: 71,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 71,  y: 712, maxWidth: 290 },  // [O] header row: agravo
-  data_notificacao:        { x: 380, y: 712, maxWidth: 100 },  // [O] right of agravo
-  municipio_notificacao:   { x: 71,  y: 684, maxWidth: 280 },  // [O] header row: municipio
-  codigo_ibge:             { x: 380, y: 684, maxWidth: 90  },  // [O] right of municipio
+  agravo_notificacao:      { x: 71,  y: 686, maxWidth: 290 },  // [O] field 2 — pdfY≈135→fill 686
+  data_notificacao:        { x: 380, y: 686, maxWidth: 100 },  // [O] field 3 — same row
+  municipio_notificacao:   { x: 71,  y: 646, maxWidth: 280 },  // [O] field 5 input — pdfY≈175→fill 646
+  codigo_ibge:             { x: 380, y: 656, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈165→fill 656
   evolucao_caso:           { x: 71,  y: 306, maxWidth: 200 },  // [O] conclusion section
   classificacao_final:     { x: 71,  y: 271, maxWidth: 250 },  // [O] below evolucao
   criterio_confirmacao:    { x: 284, y: 271, maxWidth: 150 },  // [O] right of classificacao
@@ -277,14 +277,14 @@ const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
   email:                { x: 220, y: 354, maxWidth: 200 },
   data_inicio_sintomas: { x: 66,  y: 316, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 218, y: 316, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 68,  y: 697, maxWidth: 290 },  // [O] notification header
-  data_atendimento:        { x: 380, y: 697, maxWidth: 100 },  // [O] right of unidade_saude
-  hora_atendimento:        { x: 490, y: 697, maxWidth: 80  },  // [O] right of data_atendimento
-  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 68,  y: 753, maxWidth: 290 },  // [O] header row: agravo
-  data_notificacao:        { x: 380, y: 753, maxWidth: 100 },  // [O] right of agravo
-  municipio_notificacao:   { x: 68,  y: 725, maxWidth: 280 },  // [O] header row: municipio
-  codigo_ibge:             { x: 380, y: 725, maxWidth: 90  },  // [O] right of municipio
+  unidade_saude:           { x: 68,  y: 669, maxWidth: 280 },  // [O] field 6 — pdfY=151.8→fill 669
+  data_atendimento:        { x: 460, y: 662, maxWidth: 90  },  // [O] field 7 date boxes — pdfY=159.2→fill 662
+  hora_atendimento:        { x: 532, y: 662, maxWidth: 55  },  // [O] right of field 7 date
+  profissional_responsavel:{ x: 68,  y: 290, maxWidth: 460 },  // [O] notificante nome — pdfY=531.2→fill 290
+  agravo_notificacao:      { x: 68,  y: 729, maxWidth: 290 },  // [O] field 2 — pdfY=92.0→fill 729
+  data_notificacao:        { x: 383, y: 729, maxWidth: 100 },  // [O] field 3 — same row
+  municipio_notificacao:   { x: 68,  y: 685, maxWidth: 280 },  // [O] field 5 input row — pdfY=136.3→fill 685
+  codigo_ibge:             { x: 384, y: 700, maxWidth: 90  },  // [O] field 5 IBGE — pdfY=120.8→fill 700
   evolucao_caso:           { x: 68,  y: 281, maxWidth: 200 },  // [O] conclusion section
   classificacao_final:     { x: 68,  y: 246, maxWidth: 250 },  // [O] below evolucao
   criterio_confirmacao:    { x: 281, y: 246, maxWidth: 150 },  // [O] right of classificacao
@@ -316,14 +316,14 @@ const COORDS_FEBRE_TIFOIDE: FormCoords = {
   email:                { x: 223, y: 366, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 328, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 221, y: 328, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 66,  y: 645, maxWidth: 290 },  // [O] notification header
-  data_atendimento:        { x: 380, y: 645, maxWidth: 100 },  // [O] right of unidade_saude
-  hora_atendimento:        { x: 490, y: 645, maxWidth: 80  },  // [O] right of data_atendimento
+  unidade_saude:           { x: 66,  y: 616, maxWidth: 290 },  // [O] field 6 — pdfY≈205→fill 616
+  data_atendimento:        { x: 380, y: 606, maxWidth: 100 },  // [O] field 7 date — pdfY≈215→fill 606
+  hora_atendimento:        { x: 490, y: 606, maxWidth: 80  },  // [O] right of field 7 date
   profissional_responsavel:{ x: 66,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 66,  y: 701, maxWidth: 290 },  // [O] header row: agravo
-  data_notificacao:        { x: 380, y: 701, maxWidth: 100 },  // [O] right of agravo
-  municipio_notificacao:   { x: 66,  y: 673, maxWidth: 280 },  // [O] header row: municipio
-  codigo_ibge:             { x: 380, y: 673, maxWidth: 90  },  // [O] right of municipio
+  agravo_notificacao:      { x: 66,  y: 676, maxWidth: 290 },  // [O] field 2 — pdfY≈145→fill 676
+  data_notificacao:        { x: 380, y: 676, maxWidth: 100 },  // [O] field 3 — same row
+  municipio_notificacao:   { x: 66,  y: 636, maxWidth: 280 },  // [O] field 5 input — pdfY≈185→fill 636
+  codigo_ibge:             { x: 380, y: 646, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈175→fill 646
   evolucao_caso:           { x: 66,  y: 293, maxWidth: 200 },  // [O] conclusion section
   classificacao_final:     { x: 66,  y: 258, maxWidth: 250 },  // [O] below evolucao
   criterio_confirmacao:    { x: 279, y: 258, maxWidth: 150 },  // [O] right of classificacao
@@ -358,14 +358,14 @@ const COORDS_AIDS_ADULTO: FormCoords = {
   email:                { x: 223, y: 370, maxWidth: 200 },
   data_inicio_sintomas: { x: 69,  y: 332, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 221, y: 332, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 68,  y: 649, maxWidth: 290 },  // [O] notification header
-  data_atendimento:        { x: 380, y: 649, maxWidth: 100 },  // [O] right of unidade_saude
-  hora_atendimento:        { x: 490, y: 649, maxWidth: 80  },  // [O] right of data_atendimento
+  unidade_saude:           { x: 68,  y: 621, maxWidth: 290 },  // [O] field 6 — pdfY≈200→fill 621
+  data_atendimento:        { x: 380, y: 606, maxWidth: 100 },  // [O] field 7 date — pdfY≈215→fill 606
+  hora_atendimento:        { x: 490, y: 606, maxWidth: 80  },  // [O] right of field 7 date
   profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 68,  y: 705, maxWidth: 290 },  // [O] header row: agravo
-  data_notificacao:        { x: 380, y: 705, maxWidth: 100 },  // [O] right of agravo
-  municipio_notificacao:   { x: 68,  y: 677, maxWidth: 280 },  // [O] header row: municipio
-  codigo_ibge:             { x: 380, y: 677, maxWidth: 90  },  // [O] right of municipio
+  agravo_notificacao:      { x: 68,  y: 681, maxWidth: 290 },  // [O] field 2 — pdfY≈140→fill 681
+  data_notificacao:        { x: 380, y: 681, maxWidth: 100 },  // [O] field 3 — same row
+  municipio_notificacao:   { x: 68,  y: 636, maxWidth: 280 },  // [O] field 5 input — pdfY≈185→fill 636
+  codigo_ibge:             { x: 380, y: 651, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈170→fill 651
   evolucao_caso:           { x: 68,  y: 297, maxWidth: 200 },  // [O] conclusion section
   classificacao_final:     { x: 68,  y: 262, maxWidth: 250 },  // [O] below evolucao
   criterio_confirmacao:    { x: 281, y: 262, maxWidth: 150 },  // [O] right of classificacao
@@ -400,14 +400,14 @@ const COORDS_EXANTEMATICA: FormCoords = {
   email:                { x: 221, y: 328, maxWidth: 200 },
   data_inicio_sintomas: { x: 67,  y: 290, maxWidth: 130 },  // [O] clinical section row 1
   classificacao_risco:  { x: 219, y: 290, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 67,  y: 606, maxWidth: 290 },  // [O] notification header
-  data_atendimento:        { x: 380, y: 606, maxWidth: 100 },  // [O] right of unidade_saude
-  hora_atendimento:        { x: 490, y: 606, maxWidth: 80  },  // [O] right of data_atendimento
+  unidade_saude:           { x: 67,  y: 581, maxWidth: 290 },  // [O] field 6 — pdfY≈240→fill 581
+  data_atendimento:        { x: 380, y: 566, maxWidth: 100 },  // [O] field 7 date — pdfY≈255→fill 566
+  hora_atendimento:        { x: 490, y: 566, maxWidth: 80  },  // [O] right of field 7 date
   profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 67,  y: 662, maxWidth: 290 },  // [O] header row: agravo
-  data_notificacao:        { x: 380, y: 662, maxWidth: 100 },  // [O] right of agravo
-  municipio_notificacao:   { x: 67,  y: 634, maxWidth: 280 },  // [O] header row: municipio
-  codigo_ibge:             { x: 380, y: 634, maxWidth: 90  },  // [O] right of municipio
+  agravo_notificacao:      { x: 67,  y: 641, maxWidth: 290 },  // [O] field 2 — pdfY≈180→fill 641
+  data_notificacao:        { x: 380, y: 641, maxWidth: 100 },  // [O] field 3 — same row
+  municipio_notificacao:   { x: 67,  y: 596, maxWidth: 280 },  // [O] field 5 input — pdfY≈225→fill 596
+  codigo_ibge:             { x: 380, y: 611, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈210→fill 611
   evolucao_caso:           { x: 67,  y: 255, maxWidth: 200 },  // [O] conclusion section
   classificacao_final:     { x: 67,  y: 220, maxWidth: 250 },  // [O] below evolucao
   criterio_confirmacao:    { x: 280, y: 220, maxWidth: 150 },  // [O] right of classificacao
