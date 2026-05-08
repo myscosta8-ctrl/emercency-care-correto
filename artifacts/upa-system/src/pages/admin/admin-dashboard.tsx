@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AdminLayout } from "./layout";
 import { useListStaff, useListPatients, useGetPatientsSummary } from "@workspace/api-client-react";
 import { useFeatures } from "@/lib/features-context";
@@ -6,8 +7,17 @@ import type { FeatureKey } from "@/lib/features";
 import { PERFIL_LABELS, PERFIS } from "@/lib/permissions";
 import type { Perfil } from "@/lib/permissions";
 import { Link } from "wouter";
-import { Users, BedDouble, Activity, CheckCircle2, XCircle, ShieldCheck, SlidersHorizontal, ArrowRight, ClipboardList } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  Users, BedDouble, Activity, CheckCircle2, XCircle, ShieldCheck,
+  SlidersHorizontal, ArrowRight, ClipboardList, Trash2, AlertTriangle,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 const PERFIL_COLOR: Record<Perfil, string> = {
@@ -31,11 +41,122 @@ const TRIAGE_STRIP = [
   { key: "blue",   label: "Azul",      cls: "bg-blue-500"   },
 ] as const;
 
+function getStaffId(): string {
+  try {
+    const raw = localStorage.getItem("upa_auth_user");
+    if (!raw) return "0";
+    const user = JSON.parse(raw) as { id?: number };
+    return String(user.id ?? 0);
+  } catch { return "0"; }
+}
+
+function ClearPatientsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ deleted: number } | null>(null);
+  const [error, setError] = useState("");
+  const qc = useQueryClient();
+
+  function handleClose() {
+    if (loading) return;
+    setConfirm("");
+    setResult(null);
+    setError("");
+    onOpenChange(false);
+  }
+
+  async function handleDelete() {
+    if (confirm !== "CONFIRMAR") return;
+    setLoading(true);
+    setError("");
+    try {
+      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+      const resp = await fetch(`${base}/api/patients/all`, {
+        method: "DELETE",
+        headers: { "x-staff-id": getStaffId() },
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Erro ao apagar pacientes");
+      }
+      const data = await resp.json() as { deleted: number };
+      setResult(data);
+      await qc.invalidateQueries();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro desconhecido");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            Apagar Todos os Pacientes
+          </DialogTitle>
+          <DialogDescription>
+            Esta ação é <strong>irreversível</strong>. Todos os pacientes, prontuários, evoluções,
+            prescrições, sinais vitais e demais registros serão permanentemente excluídos do banco de dados.
+          </DialogDescription>
+        </DialogHeader>
+
+        {result ? (
+          <div className="space-y-4">
+            <div className="rounded-md bg-green-500/10 border border-green-500/30 px-4 py-3 text-sm text-green-400 text-center">
+              <CheckCircle2 className="h-5 w-5 mx-auto mb-1" />
+              <strong>{result.deleted}</strong> paciente(s) excluído(s) com sucesso.
+              <br />
+              <span className="text-xs text-muted-foreground">Todos os registros relacionados foram removidos.</span>
+            </div>
+            <Button className="w-full" onClick={handleClose}>Fechar</Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2.5 text-xs text-destructive">
+              <AlertTriangle className="h-3.5 w-3.5 inline mr-1" />
+              Para confirmar, digite <strong>CONFIRMAR</strong> no campo abaixo.
+            </div>
+            <Input
+              placeholder="Digite CONFIRMAR para prosseguir"
+              value={confirm}
+              onChange={e => setConfirm(e.target.value)}
+              className={cn(confirm === "CONFIRMAR" ? "border-destructive" : "")}
+            />
+            {error && (
+              <p className="text-xs text-destructive">{error}</p>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleClose} disabled={loading}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 gap-2"
+                disabled={confirm !== "CONFIRMAR" || loading}
+                onClick={handleDelete}
+              >
+                {loading
+                  ? <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  : <Trash2 className="h-3.5 w-3.5" />}
+                Apagar Tudo
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminDashboardPage() {
-  const { data: staff,   isLoading: loadingStaff   } = useListStaff();
+  const { data: staff,    isLoading: loadingStaff    } = useListStaff();
   const { data: patients, isLoading: loadingPatients } = useListPatients();
-  const { data: summary, isLoading: loadingSummary  } = useGetPatientsSummary();
+  const { data: summary,  isLoading: loadingSummary  } = useGetPatientsSummary();
   const { features } = useFeatures();
+  const [clearOpen, setClearOpen] = useState(false);
 
   const totalStaff    = staff?.length ?? 0;
   const activeStaff   = staff?.filter(s => s.active).length ?? 0;
@@ -59,7 +180,6 @@ export default function AdminDashboardPage() {
 
         {/* Top stat cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {/* Pacientes ativos */}
           <div className="rounded-lg border border-border bg-card p-4 space-y-1">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <BedDouble className="h-3.5 w-3.5" /> Pacientes ativos
@@ -69,7 +189,6 @@ export default function AdminDashboardPage() {
               : <p className="text-2xl font-bold">{totalPatients}</p>}
           </div>
 
-          {/* Funcionários */}
           <div className="rounded-lg border border-border bg-card p-4 space-y-1">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <Users className="h-3.5 w-3.5" /> Funcionários
@@ -82,7 +201,6 @@ export default function AdminDashboardPage() {
                 </>}
           </div>
 
-          {/* Triage sumário */}
           <div className="rounded-lg border border-border bg-card p-4 space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <Activity className="h-3.5 w-3.5" /> Por triagem
@@ -102,7 +220,6 @@ export default function AdminDashboardPage() {
                 </div>}
           </div>
 
-          {/* Feature flags */}
           <div className="rounded-lg border border-border bg-card p-4 space-y-1">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <SlidersHorizontal className="h-3.5 w-3.5" /> Funcionalidades
@@ -115,9 +232,9 @@ export default function AdminDashboardPage() {
         {/* Quick actions */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { href: "/admin/usuarios",        icon: Users,          label: "Gerenciar Usuários",   desc: "Criar, editar e desativar funcionários"    },
-            { href: "/admin/permissoes",       icon: ShieldCheck,    label: "Permissões por Cargo", desc: "Ver o que cada perfil pode acessar"        },
-            { href: "/admin/auditoria",        icon: ClipboardList,  label: "Log de Auditoria",     desc: "Histórico completo de ações no sistema"   },
+            { href: "/admin/usuarios",     icon: Users,         label: "Gerenciar Usuários",   desc: "Criar, editar e desativar funcionários"  },
+            { href: "/admin/permissoes",   icon: ShieldCheck,   label: "Permissões por Cargo", desc: "Ver o que cada perfil pode acessar"      },
+            { href: "/admin/auditoria",    icon: ClipboardList, label: "Log de Auditoria",     desc: "Histórico completo de ações no sistema" },
           ].map(({ href, icon: Icon, label, desc }) => (
             <Link key={href} href={href}>
               <div className="rounded-lg border border-border bg-card p-4 hover:bg-muted/20 transition-colors cursor-pointer group">
@@ -180,7 +297,35 @@ export default function AdminDashboardPage() {
             ))}
           </div>
         </div>
+
+        {/* Danger zone */}
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <h2 className="text-sm font-semibold text-destructive">Zona de Perigo</h2>
+          </div>
+          <div className="flex items-center justify-between gap-4 rounded-md border border-destructive/20 bg-card px-4 py-3">
+            <div>
+              <p className="text-sm font-medium">Apagar todos os pacientes</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Remove permanentemente todos os pacientes e seus prontuários do sistema.
+                Útil para limpar dados de teste antes de entrar em produção real.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="shrink-0 gap-1.5"
+              onClick={() => setClearOpen(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Limpar
+            </Button>
+          </div>
+        </div>
       </div>
+
+      <ClearPatientsDialog open={clearOpen} onOpenChange={setClearOpen} />
     </AdminLayout>
   );
 }

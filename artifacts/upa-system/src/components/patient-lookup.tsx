@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
@@ -65,20 +65,35 @@ interface Props {
 export function PatientLookupDialog({ open, onOpenChange, onNewPatient }: Props) {
   const [, navigate] = useLocation();
   const [query, setQuery] = useState("");
-  const debouncedQuery = useDebounce(query, 300);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 400);
   const [admitting, setAdmitting] = useState<string | null>(null);
   const [admitError, setAdmitError] = useState("");
 
+  useEffect(() => {
+    if (debouncedQuery.length >= 2) {
+      setSearchQuery(debouncedQuery);
+    } else if (debouncedQuery.length === 0) {
+      setSearchQuery("");
+    }
+  }, [debouncedQuery]);
+
+  function commitSearch() {
+    const q = query.trim();
+    if (q.length >= 2) setSearchQuery(q);
+  }
+
   const { data: results = [], isFetching } = useQuery({
-    queryKey: ["patient-lookup", debouncedQuery],
-    queryFn: () => fetchLookup(debouncedQuery),
-    enabled: debouncedQuery.length >= 2,
-    staleTime: 30_000,
+    queryKey: ["patient-lookup", searchQuery],
+    queryFn: () => fetchLookup(searchQuery),
+    enabled: searchQuery.length >= 2,
+    staleTime: 0,
   });
 
   function handleClose() {
     onOpenChange(false);
     setQuery("");
+    setSearchQuery("");
     setAdmitting(null);
     setAdmitError("");
   }
@@ -146,7 +161,7 @@ export function PatientLookupDialog({ open, onOpenChange, onNewPatient }: Props)
     handleClose();
   }
 
-  const showResults = debouncedQuery.length >= 2;
+  const showResults = searchQuery.length >= 2;
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
@@ -161,23 +176,40 @@ export function PatientLookupDialog({ open, onOpenChange, onNewPatient }: Props)
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            autoFocus
-            className="pl-9 pr-9"
-            placeholder="Nome, CPF, CNS, prontuário, nº registro ou nascimento..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-          />
-          {query && (
-            <button
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              onClick={() => setQuery("")}
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              autoFocus
+              className="pl-9 pr-9"
+              placeholder="Nome, CPF, CNS, prontuário, nº registro ou nascimento..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commitSearch();
+                }
+              }}
+            />
+            {query && (
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => { setQuery(""); setSearchQuery(""); }}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <Button
+            variant="secondary"
+            className="shrink-0"
+            onClick={commitSearch}
+            disabled={query.trim().length < 2}
+          >
+            <Search className="h-4 w-4 mr-1.5" />
+            Buscar
+          </Button>
         </div>
 
         {admitError && (
@@ -197,7 +229,7 @@ export function PatientLookupDialog({ open, onOpenChange, onNewPatient }: Props)
             ) : results.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
                 <User className="h-6 w-6 mx-auto mb-1 opacity-40" />
-                Nenhum cadastro encontrado para "<strong>{debouncedQuery}</strong>"
+                Nenhum cadastro encontrado para "<strong>{searchQuery}</strong>"
               </div>
             ) : (
               results.map(p => {
@@ -235,7 +267,6 @@ export function PatientLookupDialog({ open, onOpenChange, onNewPatient }: Props)
 
                     <div className="flex items-center gap-1 shrink-0">
                       {isActive ? (
-                        /* Patient currently in care — navigate to their active record */
                         <Link href={`/patients/${p.id}`}>
                           <Button
                             size="sm"
@@ -248,7 +279,6 @@ export function PatientLookupDialog({ open, onOpenChange, onNewPatient }: Props)
                           </Button>
                         </Link>
                       ) : (
-                        /* Patient discharged — allow new admission directly to triagem */
                         <>
                           <Button
                             size="sm"
@@ -291,7 +321,7 @@ export function PatientLookupDialog({ open, onOpenChange, onNewPatient }: Props)
               ? `${results.length} cadastro(s) encontrado(s)`
               : showResults
               ? "Nenhum cadastro existente"
-              : "Digite ao menos 2 caracteres para buscar"}
+              : "Digite ao menos 2 caracteres e pressione Buscar ou Enter"}
           </p>
           <Button onClick={handleNewBlank} size="sm" className="gap-1.5">
             <UserPlus className="h-3.5 w-3.5" />

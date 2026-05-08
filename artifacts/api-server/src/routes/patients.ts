@@ -1,7 +1,7 @@
 import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
-import { requirePermissao } from "../middleware/require-auth";
+import { requireAuth, requirePermissao } from "../middleware/require-auth";
 import { uploadToStorage, deleteFromStorage } from "../lib/supabase-storage";
 import { db, pool, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable, bedsTable } from "@workspace/db";
 import { eq, sql, desc, and, inArray, or, ilike } from "drizzle-orm";
@@ -2986,6 +2986,19 @@ router.get("/:id/timeline", async (req, res) => {
 
   events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   res.json(events);
+});
+
+// ── delete all (admin only) ────────────────────────────────────────────────────
+
+router.delete("/all", requireAuth, async (req, res) => {
+  const role = req.staff!.role as string;
+  if (role !== "administrador" && role !== "diretoria_geral") {
+    res.status(403).json({ error: "Sem permissão para apagar todos os pacientes" });
+    return;
+  }
+  const result = await db.delete(patientsTable).returning({ id: patientsTable.id });
+  req.log.info({ count: result.length }, "Todos os pacientes foram apagados pelo admin");
+  res.json({ deleted: result.length });
 });
 
 // ── delete ────────────────────────────────────────────────────────────────────
