@@ -150,17 +150,17 @@ function IsolationAlertBox({ type }: { type: IsolationType }) {
       </div>
       <p className={`text-sm font-semibold ${protocol.color}`}>Precaução por {protocol.label}</p>
       <div className="space-y-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40">Usar para</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground/40">Usar para</p>
         <ul className="space-y-0.5">
           {protocol.indications.map(ind => (
-            <li key={ind} className="text-[11px] text-white/70 flex items-start gap-1.5">
-              <span className="text-white/30 mt-0.5">•</span>{ind}
+            <li key={ind} className="text-[11px] text-foreground/70 flex items-start gap-1.5">
+              <span className="text-foreground/30 mt-0.5">•</span>{ind}
             </li>
           ))}
         </ul>
       </div>
-      <div className="space-y-1 border-t border-white/10 pt-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-white/40">Medidas obrigatórias</p>
+      <div className="space-y-1 border-t border-border pt-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground/40">Medidas obrigatórias</p>
         <ul className="space-y-1">
           {protocol.measures.map(m => (
             <li key={m.text} className="text-[11px] text-white/80 flex items-start gap-2">
@@ -170,9 +170,9 @@ function IsolationAlertBox({ type }: { type: IsolationType }) {
           ))}
         </ul>
       </div>
-      <div className="flex items-center gap-1.5 border-t border-white/10 pt-2">
-        <Info className="h-3 w-3 text-white/30 flex-shrink-0" />
-        <p className="text-[10px] text-white/40 italic">Seguir protocolo conforme ANVISA e CDC</p>
+      <div className="flex items-center gap-1.5 border-t border-border pt-2">
+        <Info className="h-3 w-3 text-foreground/30 flex-shrink-0" />
+        <p className="text-[10px] text-foreground/40 italic">Seguir protocolo conforme ANVISA e CDC</p>
       </div>
     </div>
   );
@@ -219,7 +219,7 @@ function AddExtraBedModal({ sector, authId, onClose, onCreated }: AddExtraBedMod
 
   return (
     <Dialog open onOpenChange={o => { if (!o) onClose(); }}>
-      <DialogContent className="bg-[#0d1117] border-white/10 text-white max-w-sm">
+      <DialogContent className="bg-card border-border text-foreground max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-4 w-4 text-orange-400" />
@@ -236,7 +236,7 @@ function AddExtraBedModal({ sector, authId, onClose, onCreated }: AddExtraBedMod
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Motivo / justificativa (opcional)</Label>
             <Input
-              className="bg-white/5 border-white/10 text-sm h-8 placeholder:text-muted-foreground/40"
+              className="bg-muted/50 border-border text-sm h-8 placeholder:text-muted-foreground/40"
               placeholder="Ex: superlotação, reforma de leito..."
               value={reason}
               onChange={e => setReason(e.target.value)}
@@ -248,7 +248,7 @@ function AddExtraBedModal({ sector, authId, onClose, onCreated }: AddExtraBedMod
               size="sm"
               onClick={handleCreate}
               disabled={saving}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
+              className="bg-orange-600 hover:bg-orange-700 text-foreground"
             >
               {saving ? "Criando..." : "Criar Leito Extra"}
             </Button>
@@ -382,7 +382,7 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
 
   return (
     <Dialog open onOpenChange={o => { if (!o) onClose(); }}>
-      <DialogContent className="bg-[#0d1117] border-white/10 text-white max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-border text-foreground max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 flex-wrap">
             <BedDouble className="h-4 w-4 text-sky-400" />
@@ -398,13 +398,13 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
 
         <div className="space-y-4 pt-1">
           {/* Patient + stay time */}
-          <div className="rounded-lg border border-white/8 bg-white/4 p-3 space-y-2">
+          <div className="rounded-lg border border-border/70 bg-muted/30 p-3 space-y-2">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Paciente</p>
             {bed.isOccupied && bed.patient ? (
               <>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{bed.patient.fullName}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{bed.patient.fullName}</p>
                     {bed.patient.diagnosis && (
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{bed.patient.diagnosis}</p>
                     )}
@@ -464,10 +464,10 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
                         value={assignPatientId === "" ? "" : String(assignPatientId)}
                         onValueChange={v => setAssignPatientId(v === "" ? "" : Number(v))}
                       >
-                        <SelectTrigger className="h-8 bg-white/5 border-white/10 text-sm">
+                        <SelectTrigger className="h-8 bg-muted/50 border-border text-sm">
                           <SelectValue placeholder="Selecionar paciente..." />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#0d1117] border-white/10 text-white">
+                        <SelectContent className="bg-card border-border text-foreground">
                           <SelectItem value="">— Nenhum —</SelectItem>
                           {freePatients.map(p => (
                             <SelectItem key={p.id} value={String(p.id)}>
@@ -517,12 +517,12 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
 
           {/* Isolation control */}
           <div className={`rounded-lg border p-3 space-y-3 ${
-            bed.isIsolation ? "border-purple-500/30 bg-purple-950/20" : "border-white/6 bg-white/3 opacity-60"
+            bed.isIsolation ? "border-purple-500/30 bg-purple-950/20" : "border-border/50 bg-muted/20 opacity-60"
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShieldAlert className={`h-4 w-4 ${bed.isIsolation ? "text-purple-400" : "text-muted-foreground"}`} />
-                <Label className={`text-sm font-medium ${bed.isIsolation ? "text-white" : "text-muted-foreground"}`}>
+                <Label className={`text-sm font-medium ${bed.isIsolation ? "text-foreground" : "text-muted-foreground"}`}>
                   Precaução de isolamento
                 </Label>
               </div>
@@ -560,7 +560,7 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
                   <Label className="text-xs text-muted-foreground">Diagnóstico / motivo</Label>
                   {canEdit ? (
                     <Textarea
-                      className="h-16 resize-none bg-white/5 border-white/10 text-sm placeholder:text-muted-foreground/50"
+                      className="h-16 resize-none bg-muted/50 border-border text-sm placeholder:text-muted-foreground/50"
                       placeholder="Ex: suspeita de tuberculose..."
                       value={isolationReason}
                       onChange={e => setIsolationReason(e.target.value)}
@@ -574,10 +574,10 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
                   <Label className="text-xs text-muted-foreground">Tipo de precaução</Label>
                   {canEdit ? (
                     <Select value={isolationType} onValueChange={v => setIsolationType(v as IsolationType)}>
-                      <SelectTrigger className="h-8 bg-white/5 border-white/10 text-sm">
+                      <SelectTrigger className="h-8 bg-muted/50 border-border text-sm">
                         <SelectValue placeholder="Selecionar tipo..." />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0d1117] border-white/10 text-white">
+                      <SelectContent className="bg-card border-border text-foreground">
                         <SelectItem value="contact">🧤 Contato</SelectItem>
                         <SelectItem value="droplet">😷 Gotículas</SelectItem>
                         <SelectItem value="airborne">🌬️ Aerossóis</SelectItem>
@@ -624,7 +624,7 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
               <Button variant="ghost" size="sm" onClick={onClose} disabled={saving || deleting}>Cancelar</Button>
               <Button
                 size="sm" onClick={handleSave} disabled={saving || deleting}
-                className="bg-sky-600 hover:bg-sky-700 text-white"
+                className="bg-sky-600 hover:bg-sky-700 text-foreground"
               >
                 {saving ? "Salvando..." : "Salvar"}
               </Button>
@@ -682,7 +682,7 @@ function BedCard({ bed, tick, onClick }: BedCardProps) {
 
       {bed.isOccupied && bed.patient ? (
         <div className="mt-0.5 space-y-0.5 pr-3">
-          <p className="text-[10px] font-medium text-white/90 leading-tight truncate">
+          <p className="text-[10px] font-medium text-foreground/90 leading-tight truncate">
             {bed.patient.fullName.split(" ")[0]}
           </p>
           {bed.admissionTime && (
@@ -734,8 +734,8 @@ function SectorStats({ beds, tick }: { beds: Bed[]; tick: number }) {
           ⚠️ {over24} &gt;24h
         </span>
       )}
-      <span className="text-white/30">|</span>
-      <span className="text-white/50">{occupied}/{total}</span>
+      <span className="text-foreground/30">|</span>
+      <span className="text-foreground/50">{occupied}/{total}</span>
     </div>
   );
 }
@@ -755,7 +755,7 @@ function GlobalStatsPanel({ beds, tick }: { beds: Bed[]; tick: number }) {
   const fmt = (h: number) => `${Math.floor(h)}h ${Math.floor((h % 1) * 60)}m`;
 
   return (
-    <div className="rounded-lg border border-white/6 bg-white/3 px-4 py-3 flex flex-wrap gap-4 items-center">
+    <div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3 flex flex-wrap gap-4 items-center">
       <div className="flex items-center gap-1.5">
         <TrendingUp className="h-3.5 w-3.5 text-sky-400" />
         <span className="text-[11px] text-muted-foreground">Permanência média:</span>
@@ -829,13 +829,13 @@ export default function LeitosPage() {
   const totalOver24     = beds.filter(b => b.isOccupied && stayHours(b.admissionTime) >= 24).length;
 
   return (
-    <div className="min-h-screen bg-[#080c10] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-white/6 bg-[#080c10]/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-20 border-b border-border/50 bg-background/95 backdrop-blur-sm">
         <div className="container mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/">
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-white">
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-3.5 w-3.5" />
               </Button>
             </Link>
@@ -846,7 +846,7 @@ export default function LeitosPage() {
           </div>
 
           <div className="hidden sm:flex items-center gap-4 text-[11px] text-muted-foreground">
-            <span><span className="text-white font-medium">{totalOccupied}</span>/{totalBeds} ocupados</span>
+            <span><span className="text-foreground font-medium">{totalOccupied}</span>/{totalBeds} ocupados</span>
             {totalIsolations > 0 && (
               <span className="flex items-center gap-1 text-purple-300">
                 <ShieldAlert className="h-3 w-3" />
@@ -863,7 +863,7 @@ export default function LeitosPage() {
 
           <Button
             variant="ghost" size="sm" onClick={() => fetchBeds(true)} disabled={refreshing}
-            className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-white"
+            className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline text-xs">Atualizar</span>
@@ -874,7 +874,7 @@ export default function LeitosPage() {
       <main className="container mx-auto max-w-6xl px-4 py-6 space-y-5">
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground px-1">
-          <span className="font-medium text-white/40 uppercase tracking-wide text-[10px]">Legenda:</span>
+          <span className="font-medium text-foreground/40 uppercase tracking-wide text-[10px]">Legenda:</span>
           {[
             { color: "bg-green-500",  label: "Livre" },
             { color: "bg-yellow-500", label: "Ocupado" },
@@ -912,7 +912,7 @@ export default function LeitosPage() {
             <section key={sector} className="space-y-3">
               {/* Sector header */}
               <div className="flex items-center justify-between px-1 flex-wrap gap-2">
-                <h2 className="text-sm font-semibold text-white/90 flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${SECTOR_DOT[sector]}`} />
                   {SECTOR_LABELS[sector]}
                 </h2>

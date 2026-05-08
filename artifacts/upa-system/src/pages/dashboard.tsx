@@ -1109,7 +1109,7 @@ export default function Dashboard() {
               onClick={() => setViewMode("setor")}
               className={cn(
                 "px-2.5 rounded text-xs font-medium transition-colors",
-                viewMode === "setor" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
+                viewMode === "setor" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >Por Setor</button>
             <button
@@ -1117,7 +1117,7 @@ export default function Dashboard() {
               onClick={() => setViewMode("status")}
               className={cn(
                 "px-2.5 rounded text-xs font-medium transition-colors",
-                viewMode === "status" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
+                viewMode === "status" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >Por Status</button>
             {hasExamFilter && (
@@ -1297,7 +1297,7 @@ export default function Dashboard() {
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap",
                   flowTab === key
-                    ? "bg-primary/20 border-primary/50 text-primary"
+                    ? "bg-primary border-primary text-primary-foreground"
                     : "border-border/40 text-muted-foreground hover:bg-muted/30",
                 )}
               >
@@ -1306,7 +1306,7 @@ export default function Dashboard() {
                   <span className={cn(
                     "text-[10px] font-bold px-1.5 py-0 rounded-full border",
                     flowTab === key
-                      ? "bg-primary/20 border-primary/30 text-primary"
+                      ? "bg-primary/30 border-primary/40 text-primary-foreground"
                       : "bg-muted/30 border-border/30 text-muted-foreground",
                   )}>
                     {count}
@@ -1328,7 +1328,7 @@ export default function Dashboard() {
                 className={cn(
                   "px-2.5 py-1 rounded border text-xs font-medium transition-colors whitespace-nowrap h-8",
                   filtro === s
-                    ? "bg-primary/20 border-primary/50 text-primary"
+                    ? "bg-primary border-primary text-primary-foreground"
                     : "border-border/40 text-muted-foreground hover:bg-muted/30"
                 )}
               >
