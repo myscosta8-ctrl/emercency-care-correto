@@ -25,6 +25,7 @@ interface Props {
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
   mode?: "admissao" | "evolucao";
+  staffCorenCrm?: string;
 }
 
 interface NutricionistaData {
@@ -78,8 +79,9 @@ function buildContent(d: NutricionistaData, imc: string): string {
   return parts.join("\n\n");
 }
 
-export function EvolutionNutricionista({ patientId, userId, patientName, patient, staffMap, mode = "evolucao" }: Props) {
-  const [form, setForm] = useState<NutricionistaData>(EMPTY);
+export function EvolutionNutricionista({ patientId, userId, patientName, patient, staffMap, mode = "evolucao", staffCorenCrm = "" }: Props) {
+  const emptyForm = (): NutricionistaData => ({ ...EMPTY, crn: staffCorenCrm });
+  const [form, setForm] = useState<NutricionistaData>(emptyForm);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -121,7 +123,7 @@ export function EvolutionNutricionista({ patientId, userId, patientName, patient
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPatientNutritionalAssessmentsQueryKey(patientId) });
-          setForm(EMPTY);
+          setForm(emptyForm());
           toast({ title: isFirst ? "Avaliação nutricional de admissão registrada" : "Evolução diária nutricional registrada" });
         },
         onError: () => toast({ title: "Erro ao registrar avaliação", variant: "destructive" }),

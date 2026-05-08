@@ -21,6 +21,7 @@ interface Props {
   patientName: string;
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
+  staffCorenCrm?: string;
 }
 
 interface EnfermeiroData {
@@ -61,8 +62,9 @@ interface AugEntry {
   finalizado?: boolean;
 }
 
-export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, staffMap }: Props) {
-  const [form, setForm]                     = useState<EnfermeiroData>(EMPTY);
+export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, staffMap, staffCorenCrm = "" }: Props) {
+  const emptyForm = (): EnfermeiroData => ({ ...EMPTY, coren: staffCorenCrm });
+  const [form, setForm]                     = useState<EnfermeiroData>(emptyForm);
   const [editingId, setEditingId]           = useState<number | null>(null);
   const [expandedId, setExpandedId]         = useState<number | null>(null);
   const [finalizingId, setFinalizingId]     = useState<number | null>(null);
@@ -103,7 +105,7 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, s
           throw new Error(err.error ?? "Erro ao salvar");
         }
         queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-        setForm(EMPTY);
+        setForm(emptyForm());
         setEditingId(null);
         toast({ title: "SAE atualizado com sucesso" });
       } catch (e: unknown) {
@@ -127,7 +129,7 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, s
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-          setForm(EMPTY);
+          setForm(emptyForm());
           toast({ title: "SAE salvo como rascunho. Publique quando estiver pronto." });
         },
         onError: () => toast({ title: "Erro ao registrar SAE", variant: "destructive" }),
@@ -180,7 +182,7 @@ export function EvolutionEnfermeiro({ patientId, userId, patientName, patient, s
 
   const handleEdit = (entry: AugEntry) => {
     const d = entry.structuredData as EnfermeiroData | null;
-    setForm(d ? { ...EMPTY, ...d } : EMPTY);
+    setForm(d ? { ...emptyForm(), ...d } : emptyForm());
     setEditingId(entry.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -284,7 +286,7 @@ ${d?.resultado ? `<div class="section"><div class="section-label">Resultado / Ev
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => { setForm(EMPTY); setEditingId(null); }}
+                onClick={() => { setForm(emptyForm()); setEditingId(null); }}
                 className="gap-1.5"
               >
                 Cancelar

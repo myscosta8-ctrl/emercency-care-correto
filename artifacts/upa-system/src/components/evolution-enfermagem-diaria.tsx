@@ -23,6 +23,7 @@ interface Props {
   patientName: string;
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string; role?: string }>;
+  staffCorenCrm?: string;
 }
 
 interface DiariaData {
@@ -97,8 +98,9 @@ function fmtDeviceDate(iso: string): string {
   return y && m && d ? `${d}/${m}` : "";
 }
 
-export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, patient, staffMap }: Props) {
-  const [form, setForm]                 = useState<DiariaData>(EMPTY);
+export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, patient, staffMap, staffCorenCrm = "" }: Props) {
+  const emptyForm = (): DiariaData => ({ ...EMPTY, coren: staffCorenCrm });
+  const [form, setForm]                 = useState<DiariaData>(emptyForm);
   const [editingId, setEditingId]       = useState<number | null>(null);
   const [expandedId, setExpandedId]     = useState<number | null>(null);
   const [finalizingId, setFinalizingId] = useState<number | null>(null);
@@ -152,7 +154,7 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
           throw new Error(err.error ?? "Erro ao salvar");
         }
         queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-        setForm(EMPTY);
+        setForm(emptyForm());
         setEditingId(null);
         toast({ title: "Evolução atualizada com sucesso" });
       } catch (e: unknown) {
@@ -176,7 +178,7 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-          setForm(EMPTY);
+          setForm(emptyForm());
           toast({ title: "Evolução salva como rascunho. Publique quando estiver pronto." });
         },
         onError: () => toast({ title: "Erro ao registrar evolução", variant: "destructive" }),
@@ -206,7 +208,7 @@ export function EvolutionEnfermagemDiaria({ patientId, userId, patientName, pati
 
   const handleEdit = (entry: AugEntry) => {
     const d = entry.structuredData as DiariaData | null;
-    setForm(d ? { ...EMPTY, ...d } : EMPTY);
+    setForm(d ? { ...emptyForm(), ...d } : emptyForm());
     setEditingId(entry.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

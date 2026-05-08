@@ -1305,6 +1305,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                       patient={patient}
                       staffMap={staffMap}
                       mode="admissao"
+                      staffCorenCrm={activeUser?.corenCrm ?? ""}
                     />
                   </div>
                 )}
@@ -1320,6 +1321,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                       patient={patient}
                       staffMap={staffMap}
                       mode="admissao"
+                      staffCorenCrm={activeUser?.corenCrm ?? ""}
                     />
                   </div>
                 )}
@@ -1534,6 +1536,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               patient={patient}
               staffMap={staffMap}
               latestVitals={latestVitals}
+              staffCorenCrm={activeUser?.corenCrm ?? ""}
             />
           </TabsContent>
 
@@ -1550,6 +1553,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               patientName={patient.full_name}
               patient={patient}
               staffMap={staffMap}
+              staffCorenCrm={activeUser?.corenCrm ?? ""}
             />
           </TabsContent>
 
@@ -1569,6 +1573,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               patientName={patient.full_name}
               patient={patient}
               staffMap={staffMap}
+              staffCorenCrm={activeUser?.corenCrm ?? ""}
             />
           </TabsContent>
 
@@ -2071,6 +2076,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 patientName={patient.full_name}
                 patient={patient}
                 staffMap={staffMap}
+                staffCorenCrm={activeUser?.corenCrm ?? ""}
               />
             </TabsContent>
           )}
@@ -2084,6 +2090,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                 patientName={patient.full_name}
                 patient={patient}
                 staffMap={staffMap}
+                staffCorenCrm={activeUser?.corenCrm ?? ""}
               />
             </TabsContent>
           )}

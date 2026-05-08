@@ -25,6 +25,7 @@ interface Props {
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
   mode?: "admissao" | "evolucao";
+  staffCorenCrm?: string;
 }
 
 interface SocialData {
@@ -59,8 +60,9 @@ function buildContent(d: SocialData): string {
   return parts.join("\n\n");
 }
 
-export function EvolutionSocial({ patientId, userId, patientName, patient, staffMap, mode = "evolucao" }: Props) {
-  const [form, setForm] = useState<SocialData>(EMPTY);
+export function EvolutionSocial({ patientId, userId, patientName, patient, staffMap, mode = "evolucao", staffCorenCrm = "" }: Props) {
+  const emptyForm = (): SocialData => ({ ...EMPTY, cress: staffCorenCrm });
+  const [form, setForm] = useState<SocialData>(emptyForm);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -100,7 +102,7 @@ export function EvolutionSocial({ patientId, userId, patientName, patient, staff
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPatientSocialNotesQueryKey(patientId) });
-          setForm(EMPTY);
+          setForm(emptyForm());
           toast({ title: isFirst ? "Admissão de serviço social registrada" : "Evolução diária registrada" });
         },
         onError: () => toast({ title: "Erro ao registrar nota", variant: "destructive" }),

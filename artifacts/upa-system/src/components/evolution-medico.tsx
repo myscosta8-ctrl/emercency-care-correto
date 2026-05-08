@@ -31,6 +31,7 @@ interface Props {
   patient?: PrintPatientInfo | null;
   staffMap: Record<number, { name: string }>;
   latestVitals?: LatestVitals | null;
+  staffCorenCrm?: string;
 }
 
 interface MedicoData {
@@ -85,8 +86,9 @@ interface AugEntry {
   finalizado?: boolean;
 }
 
-export function EvolutionMedico({ patientId, userId, patientName, patient, staffMap, latestVitals }: Props) {
-  const [form, setForm]                     = useState<MedicoData>(EMPTY);
+export function EvolutionMedico({ patientId, userId, patientName, patient, staffMap, latestVitals, staffCorenCrm = "" }: Props) {
+  const emptyForm = (): MedicoData => ({ ...EMPTY, crm: staffCorenCrm });
+  const [form, setForm]                     = useState<MedicoData>(emptyForm);
   const [editingId, setEditingId]           = useState<number | null>(null);
   const [expandedId, setExpandedId]         = useState<number | null>(null);
   const [finalizingId, setFinalizingId]     = useState<number | null>(null);
@@ -137,7 +139,7 @@ export function EvolutionMedico({ patientId, userId, patientName, patient, staff
           throw new Error(err.error ?? "Erro ao salvar");
         }
         queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-        setForm(EMPTY);
+        setForm(emptyForm());
         setEditingId(null);
         toast({ title: "Evolução atualizada com sucesso" });
       } catch (e: unknown) {
@@ -161,7 +163,7 @@ export function EvolutionMedico({ patientId, userId, patientName, patient, staff
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPatientHistoryQueryKey(patientId) });
-          setForm(EMPTY);
+          setForm(emptyForm());
           toast({ title: "Evolução médica salva como rascunho. Publique quando estiver pronto." });
         },
         onError: () => toast({ title: "Erro ao registrar evolução", variant: "destructive" }),
@@ -214,7 +216,7 @@ export function EvolutionMedico({ patientId, userId, patientName, patient, staff
 
   const handleEdit = (entry: AugEntry) => {
     const d = entry.structuredData as MedicoData | null;
-    setForm(d ? { ...EMPTY, ...d } : EMPTY);
+    setForm(d ? { ...emptyForm(), ...d } : emptyForm());
     setEditingId(entry.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -346,7 +348,7 @@ ${d?.conduta ? `<div class="section"><div class="section-label">Conduta</div><di
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => { setForm(EMPTY); setEditingId(null); }}
+                onClick={() => { setForm(emptyForm()); setEditingId(null); }}
                 className="gap-1.5"
               >
                 Cancelar
