@@ -2478,7 +2478,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
 
           {/* ── TAB: LABORATÓRIO ──────────────────────────────────────── */}
           <TabsContent value="laboratorio">
-            <PatientLabTab patientId={id} active={true} />
+            <PatientLabTab patientId={id} active={activeTab === "laboratorio"} />
           </TabsContent>
 
           {/* ── TAB: DISPOSITIVOS ─────────────────────────────────────── */}

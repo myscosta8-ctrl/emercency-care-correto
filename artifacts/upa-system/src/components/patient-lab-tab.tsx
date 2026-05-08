@@ -91,11 +91,12 @@ function LiberarForm({ patientId, exam, onSuccess, onCancel, staffId }: LiberarF
     try {
       let fileData = ""; let fileName = ""; let fileMime = "";
       if (file) {
-        const buf = await file.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let bin = "";
-        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-        fileData = btoa(bin);
+        fileData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "");
+          reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
+          reader.readAsDataURL(file);
+        });
         fileName = file.name;
         fileMime = file.type;
       }
@@ -246,25 +247,28 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
   const staffId = activeUser?.id ?? 0;
   const [exams, setExams] = useState<ExamResultItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [liberandoId, setLiberandoId] = useState<number | null>(null);
   const [novoExame, setNovoExame] = useState(false);
 
-  const loadExams = useCallback(async () => {
-    setLoading(true);
+  const loadExams = useCallback(async (background = false) => {
+    if (background) setRefreshing(true);
+    else setLoading(true);
     try {
       const data = await fetchExamResults(patientId, staffId);
       setExams(data);
     } catch {
-      toast({ title: "Erro ao carregar exames do laboratório", variant: "destructive" });
+      if (!background) toast({ title: "Erro ao carregar exames do laboratório", variant: "destructive" });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [patientId, staffId, toast]);
 
   useEffect(() => {
     if (!active) return;
     loadExams();
-    const interval = setInterval(loadExams, 30_000);
+    const interval = setInterval(() => loadExams(true), 30_000);
     return () => clearInterval(interval);
   }, [active, loadExams]);
 
@@ -294,10 +298,10 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
             size="sm"
             variant="ghost"
             className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-            onClick={loadExams}
+            onClick={() => loadExams(false)}
             title="Atualizar agora"
           >
-            <Loader2 className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+            <Loader2 className={cn("h-3.5 w-3.5", (loading || refreshing) && "animate-spin")} />
           </Button>
           <Button
             size="sm"
