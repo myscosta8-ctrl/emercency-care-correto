@@ -16,10 +16,10 @@ export interface ExamResultItem {
   examType: "laboratorial" | "imagem";
   prioridade: "urgente" | "rotina" | "eletivo";
   resultText: string;
-  fileData: string;
   fileName: string;
   fileMime: string;
   fileUrl?: string;
+  hasFile?: boolean;
   status: "pendente" | "liberado";
   liberadoAt: string | null;
   notified: boolean;
@@ -53,7 +53,9 @@ async function postExamResult(patientId: number, data: Partial<ExamResultItem>, 
   return r.json();
 }
 
-async function liberarExam(patientId: number, examId: number, data: Partial<ExamResultItem>, staffId: number): Promise<ExamResultItem> {
+interface LiberarPayload { resultText?: string; fileData?: string; fileName?: string; fileMime?: string; }
+
+async function liberarExam(patientId: number, examId: number, data: LiberarPayload, staffId: number): Promise<ExamResultItem> {
   const r = await fetch(`/api/patients/${patientId}/exam-results/${examId}/liberar`, {
     method: "PUT",
     credentials: "include",
@@ -376,15 +378,15 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
                       {exam.resultText}
                     </p>
                   )}
-                  {exam.fileName && (
+                  {(exam.fileName || exam.hasFile) && (
                     <a
-                      href={exam.fileUrl || `data:${exam.fileMime || "application/octet-stream"};base64,${exam.fileData}`}
-                      download={!exam.fileUrl ? exam.fileName : undefined}
-                      target={exam.fileUrl ? "_blank" : undefined}
-                      rel={exam.fileUrl ? "noopener noreferrer" : undefined}
+                      href={exam.fileUrl || `/api/patients/${exam.patientId}/exam-results/${exam.id}/file`}
+                      download={!exam.fileUrl ? (exam.fileName || "exame") : undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"
                     >
-                      <FileText className="h-3 w-3" />{exam.fileName}
+                      <FileText className="h-3 w-3" />{exam.fileName || "Ver arquivo"}
                     </a>
                   )}
 

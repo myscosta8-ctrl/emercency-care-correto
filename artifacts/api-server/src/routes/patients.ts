@@ -938,12 +938,46 @@ const serializeExam = (e: typeof examResultsTable.$inferSelect) => ({
   fileUrl:    e.fileUrl ?? "",
 });
 
+const serializeExamList = (e: typeof examResultsTable.$inferSelect) => ({
+  id:         e.id,
+  patientId:  e.patientId,
+  uploadedBy: e.uploadedBy,
+  examName:   e.examName,
+  examType:   e.examType,
+  prioridade: e.prioridade,
+  resultText: e.resultText,
+  fileName:   e.fileName,
+  fileMime:   e.fileMime,
+  fileUrl:    e.fileUrl ?? "",
+  hasFile:    !!(e.fileData || e.fileUrl),
+  status:     e.status,
+  liberadoAt: e.liberadoAt ? e.liberadoAt.toISOString() : null,
+  notified:   e.notified,
+  createdAt:  e.createdAt.toISOString(),
+  updatedAt:  e.updatedAt.toISOString(),
+});
+
 router.get("/:id/exam-results", async (req, res) => {
   const id = Number(req.params.id);
   const results = await db.select().from(examResultsTable)
     .where(eq(examResultsTable.patientId, id))
     .orderBy(desc(examResultsTable.createdAt));
-  res.json(results.map(serializeExam));
+  res.json(results.map(serializeExamList));
+});
+
+router.get("/:id/exam-results/:examId/file", async (req, res) => {
+  const examId = Number(req.params.examId);
+  const [exam] = await db.select().from(examResultsTable)
+    .where(eq(examResultsTable.id, examId));
+  if (!exam) { res.status(404).json({ error: "Exame não encontrado" }); return; }
+  if (exam.fileUrl) { res.redirect(exam.fileUrl); return; }
+  if (!exam.fileData) { res.status(404).json({ error: "Sem arquivo" }); return; }
+  const buf = Buffer.from(exam.fileData, "base64");
+  const mime = exam.fileMime || "application/octet-stream";
+  res.setHeader("Content-Type", mime);
+  res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(exam.fileName || "exame")}"`);
+  res.setHeader("Content-Length", buf.length);
+  res.send(buf);
 });
 
 router.post("/:id/exam-results", requirePermissao("registrar_evolucao"), async (req, res) => {
