@@ -1,4 +1,5 @@
 import { PDFDocument, PDFPage, PDFFont, StandardFonts, rgb } from "pdf-lib";
+import { SINAN_AGRAVOS, agravoToTemplate } from "./sinan-agravos";
 
 // ── types ─────────────────────────────────────────────────────────────────────
 
@@ -829,22 +830,11 @@ function fillClinical(
   }
 }
 
-// quick lookup map for agravo code → label (subset; full list in sinan-agravos.ts)
-const AGRAVO_LABELS: Record<string, string> = {
-  dengue: "Dengue", dengue_grave: "Dengue Grave", chikungunya: "Chikungunya",
-  covid19: "COVID-19", srag: "SRAG Hospitalizado",
-  tuberculose: "Tuberculose", meningite: "Meningite",
-  febre_amarela: "Febre Amarela", febre_tifoide: "Febre Tifóide",
-  sarampo: "Sarampo", rubeola: "Rubéola", exantematica: "Doença Exantemática",
-  aids_adulto: "AIDS – Adulto",
-  violencia: "Violência Doméstica/Sexual",
-  chagas_aguda: "Doença de Chagas Aguda", chagas_cronica: "Doença de Chagas Crônica",
-  leptospirose: "Leptospirose", hanseniase: "Hanseníase",
-  malaria: "Malária", raiva: "Raiva Humana", hepatite_a: "Hepatite A",
-  hepatite_b: "Hepatite B", hepatite_c: "Hepatite C",
-  hiv: "Infecção pelo HIV", zika: "Zika Vírus",
-  mpox: "Monkeypox / MPOX", botulismo: "Botulismo",
-};
+// Build agravo label map directly from the canonical SINAN_AGRAVOS list so it
+// is always in sync — no need to maintain a separate static copy here.
+const AGRAVO_LABELS: Record<string, string> = Object.fromEntries(
+  SINAN_AGRAVOS.map(a => [a.code, a.label]),
+);
 
 // ── core fill function ────────────────────────────────────────────────────────
 // Strategy:
@@ -964,40 +954,23 @@ async function fillTemplate(
  * Blob without triggering a browser download.
  */
 function diseaseToType(notif: PdfNotification): string {
-  // prefer the structured agravo code
+  // Prefer the structured agravo code — delegate to agravoToTemplate() which
+  // reads directly from SINAN_AGRAVOS and covers every known agravo.
   if (notif.agravoCode) {
-    const MAP: Record<string, string> = {
-      dengue: "dengue", dengue_grave: "dengue", chikungunya: "dengue", zika: "outros",
-      covid19: "covid19",
-      srag: "srag", influenza_pandemia: "srag",
-      tuberculose: "tuberculose",
-      meningite: "meningite",
-      febre_amarela: "febre_amarela",
-      febre_tifoide: "febre_tifoide",
-      sarampo: "exantematica", rubeola: "exantematica", exantematica: "exantematica",
-      aids_adulto: "aids_adulto", hiv: "aids_adulto",
-      violencia: "violencia",
-      // notificacao-individual template covers all below
-      chagas_aguda: "outros", chagas_cronica: "outros",
-      leptospirose: "outros", hanseniase: "outros",
-      malaria: "outros", raiva: "outros",
-      hepatite_a: "outros", hepatite_b: "outros", hepatite_c: "outros",
-      botulismo: "outros", mpox: "outros",
-    };
-    return MAP[notif.agravoCode] ?? "outros";
+    return agravoToTemplate(notif.agravoCode); // returns "outros" for unknown codes
   }
-  // fallback to text matching
+  // Fallback: text matching for legacy/free-text disease strings
   const d = (notif.disease ?? "").toLowerCase();
   if (d.includes("dengue") || d.includes("chikungunya")) return "dengue";
-  if (d.includes("covid") || d.includes("coronavírus")) return "covid19";
-  if (d.includes("srag")) return "srag";
-  if (d.includes("tuberc")) return "tuberculose";
-  if (d.includes("meningite")) return "meningite";
-  if (d.includes("febre amarela")) return "febre_amarela";
-  if (d.includes("febre tif")) return "febre_tifoide";
+  if (d.includes("covid") || d.includes("coronavírus"))  return "covid19";
+  if (d.includes("srag"))                                return "srag";
+  if (d.includes("tuberc"))                              return "tuberculose";
+  if (d.includes("meningite"))                           return "meningite";
+  if (d.includes("febre amarela"))                       return "febre_amarela";
+  if (d.includes("febre tif"))                           return "febre_tifoide";
   if (d.includes("sarampo") || d.includes("rubéola") || d.includes("rubeola")) return "exantematica";
-  if (d.includes("aids") || d.includes("hiv")) return "aids_adulto";
-  if (d.includes("violên") || d.includes("violenci")) return "violencia";
+  if (d.includes("aids") || d.includes("hiv"))           return "aids_adulto";
+  if (d.includes("violên") || d.includes("violenci"))    return "violencia";
   return "outros";
 }
 
