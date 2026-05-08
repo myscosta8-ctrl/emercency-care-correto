@@ -120,7 +120,7 @@ const TRIAGE_OPTIONS = [
 ] as const;
 
 const TRANSFER_STATUS_COLORS: Record<string, string> = {
-  "Solicitado":      "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  "Solicitado":      "bg-yellow-500/20 text-yellow-200 border-yellow-500/30",
   "Autorizado":      "bg-blue-500/20 text-blue-400 border-blue-500/30",
   "Em transferência":"bg-orange-500/20 text-orange-400 border-orange-500/30",
   "Transferido":     "bg-green-500/20 text-green-400 border-green-500/30",
@@ -909,7 +909,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <span className="text-base leading-none">🩺</span>
               <span className="mt-0.5">Evolução</span>
               <span className={cn("text-[9px] font-normal", activeGroup === "evolucao" ? "text-purple-400" : "text-muted-foreground/60")}>
-                Médica · Enferm.
+                Médica · Enfermagem
               </span>
             </button>
             {/* Tratamento */}
@@ -925,7 +925,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <span className="text-base leading-none">💊</span>
               <span className="mt-0.5">Tratamento</span>
               <span className={cn("text-[9px] font-normal", activeGroup === "tratamento" ? "text-emerald-500" : "text-muted-foreground/60")}>
-                Prescrição · Lab.
+                Prescrição · Laboratório
               </span>
             </button>
             {/* Internação */}
@@ -940,7 +940,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             >
               <span className="text-base leading-none">🏥</span>
               <span className="mt-0.5">Internação</span>
-              <span className={cn("text-[9px] font-normal", activeGroup === "internacao" ? "text-amber-500" : "text-muted-foreground/60")}>
+              <span className={cn("text-[9px] font-normal", activeGroup === "internacao" ? "text-amber-300" : "text-muted-foreground/60")}>
                 Admissão · Entrada
               </span>
             </button>
@@ -962,10 +962,10 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
 
             {/* ── EVOLUÇÃO: todos profissionais, todos visualizam ── */}
             {activeGroup === "evolucao" && <>
-              <TabsTrigger value="evol-medico" className="text-xs">Evol. Médica</TabsTrigger>
+              <TabsTrigger value="evol-medico" className="text-xs">Evolução Médica</TabsTrigger>
               <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
               <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>
-              <TabsTrigger value="tecnico" className="text-xs">Anotação Enf.</TabsTrigger>
+              <TabsTrigger value="tecnico" className="text-xs">Anotação de Enfermagem</TabsTrigger>
               {isInpatient && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
               {isInpatient && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
             </>}
@@ -975,7 +975,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               {pode("registrar_prescricao") && <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>}
               {pode("registrar_prescricao") && (
                 <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
-                  <FlaskConical className="h-3 w-3" /> Sol. Exames
+                  <FlaskConical className="h-3 w-3" /> Solicitação de Exames
                 </TabsTrigger>
               )}
               {(pode("registrar_prescricao") || pode("registrar_exames") || pode("visualizar_setores")) && (
@@ -1004,8 +1004,8 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   )}
                 </TabsTrigger>
               )}
-              {isInpatient && pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Med. Controlados</TabsTrigger>}
-              {isInpatient && pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação Farm.</TabsTrigger>}
+              {isInpatient && pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Medicamentos Controlados</TabsTrigger>}
+              {isInpatient && pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação Farmacêutica</TabsTrigger>}
             </>}
 
             {/* ── INTERNAÇÃO: documentos de entrada ── */}
@@ -1014,6 +1014,11 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               {canEditMedico && <>
                 <TabsTrigger value="evol-medico" className="text-xs">Admissão Médica</TabsTrigger>
                 <TabsTrigger value="prescricao" className="text-xs">Plano Terapêutico</TabsTrigger>
+                {pode("registrar_prescricao") && (
+                  <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
+                    <FlaskConical className="h-3 w-3" /> Solicitação de Exames
+                  </TabsTrigger>
+                )}
               </>}
               {/* Não-médico lê a admissão médica somente */}
               {!canEditMedico && <TabsTrigger value="evol-medico" className="text-xs">Admissão Médica</TabsTrigger>}
@@ -1336,7 +1341,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                       const fp = [...pharmacyEntries].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
                       if (!fp) return null;
                       const cfg = ({
-                        pendente:   { label: "Pendente",   color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                        pendente:   { label: "Pendente",   color: "bg-yellow-500/20 text-yellow-200 border-yellow-500/30" },
                         dispensado: { label: "Dispensado", color: "bg-green-500/20 text-green-400 border-green-500/30" },
                         devolvido:  { label: "Devolvido",  color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
                       } as const)[fp.status as "pendente" | "dispensado" | "devolvido"] ?? { label: fp.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
@@ -1652,7 +1657,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   <div className="space-y-3">
                     {prescriptions.filter(p => p.type === "medical").map(rx => {
                       const statusCfg = ({
-                        pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                        pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-200 border-yellow-500/30" },
                         em_andamento: { label: "Em andamento", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
                         concluido:    { label: "Concluído",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
                       } as const)[rx.status as "pendente" | "em_andamento" | "concluido"] ?? { label: rx.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
@@ -1775,7 +1780,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   <div className="space-y-3">
                     {prescriptions.filter(p => p.type === "nursing").map(rx => {
                       const statusCfg = ({
-                        pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                        pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-200 border-yellow-500/30" },
                         em_andamento: { label: "Em andamento", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
                         concluido:    { label: "Concluído",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
                       } as const)[rx.status as "pendente" | "em_andamento" | "concluido"] ?? { label: rx.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
@@ -1862,7 +1867,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                       type TaskItem = { text: string; time?: string };
                       const items: TaskItem[] = (() => { try { return JSON.parse(task.items); } catch { return []; } })();
                       const statusCfg = ({
-                        pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                        pendente:     { label: "Pendente",     color: "bg-yellow-500/20 text-yellow-200 border-yellow-500/30" },
                         em_andamento: { label: "Em andamento", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
                         concluido:    { label: "Concluído",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
                       } as const)[task.status as "pendente" | "em_andamento" | "concluido"] ?? { label: task.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
@@ -2182,7 +2187,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                     const firstPharmacyId = arr.slice().sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]?.id;
                     const isAdmissaoFarm = entry.id === firstPharmacyId;
                     const statusCfg = ({
-                      pendente:    { label: "Pendente",    color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                      pendente:    { label: "Pendente",    color: "bg-yellow-500/20 text-yellow-200 border-yellow-500/30" },
                       dispensado:  { label: "Dispensado",  color: "bg-green-500/20 text-green-400 border-green-500/30" },
                       devolvido:   { label: "Devolvido",   color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
                     } as const)[entry.status as "pendente" | "dispensado" | "devolvido"] ?? { label: entry.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
@@ -2237,9 +2242,34 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           {pode("registrar_prescricao") && (
             <TabsContent value="sol-exames">
               <div className="space-y-5">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <FlaskConical className="h-4 w-4 text-teal-400" /> Solicitação de Exames
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4 text-teal-400" /> Solicitação de Exames
+                  </h3>
+                  {/* APAC — acesso rápido para médicos */}
+                  {isMedico && pode("gerar_pdf") && (
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-8 text-xs gap-1.5 border-teal-500/40 text-teal-300 hover:bg-teal-500/10"
+                      disabled={downloadingApac}
+                      onClick={async () => {
+                        setDownloadingApac(true);
+                        try {
+                          const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                          const resp = await fetch(`${base}/api/patients/${id}/pdf/apac`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                          if (!resp.ok) throw new Error();
+                          const blob = await resp.blob();
+                          const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `APAC_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        } catch { toast({ title: "Erro ao gerar APAC", variant: "destructive" }); }
+                        finally { setDownloadingApac(false); }
+                      }}
+                    >
+                      <FileDown className="h-3.5 w-3.5" />
+                      {downloadingApac ? "Gerando…" : "Gerar APAC (PDF)"}
+                    </Button>
+                  )}
+                </div>
 
                 <div className="bg-card border border-border/50 rounded-lg p-4 space-y-4">
                   {/* Lab exams */}
@@ -2380,7 +2410,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                           eletivo: { label: "Eletivo", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
                         } as const)[exam.prioridade as "urgente" | "rotina" | "eletivo"] ?? { label: exam.prioridade, color: "bg-muted/20 text-muted-foreground border-border/30" };
                         const statusConfig = ({
-                          solicitado: { label: "Solicitado", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                          solicitado: { label: "Solicitado", color: "bg-yellow-500/20 text-yellow-200 border-yellow-500/30" },
                           coletado:   { label: "Coletado",   color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
                           laudado:    { label: "Laudado",    color: "bg-green-500/20 text-green-400 border-green-500/30" },
                         } as const)[exam.status as "solicitado" | "coletado" | "laudado"] ?? { label: exam.status, color: "bg-muted/20 text-muted-foreground border-border/30" };
@@ -2477,30 +2507,6 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                     </div>
                   )}
                 </div>
-                {/* APAC — médico */}
-                {isMedico && pode("gerar_pdf") && (
-                  <div className="flex justify-end pt-2 border-t border-border/30">
-                    <Button
-                      size="sm" variant="outline" className="h-8 text-xs gap-1.5"
-                      disabled={downloadingApac}
-                      onClick={async () => {
-                        setDownloadingApac(true);
-                        try {
-                          const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-                          const resp = await fetch(`${base}/api/patients/${id}/pdf/apac`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
-                          if (!resp.ok) throw new Error();
-                          const blob = await resp.blob();
-                          const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `APAC_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
-                          document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                        } catch { toast({ title: "Erro ao gerar APAC", variant: "destructive" }); }
-                        finally { setDownloadingApac(false); }
-                      }}
-                    >
-                      <FileDown className="h-3.5 w-3.5" />
-                      {downloadingApac ? "Gerando…" : "Gerar APAC"}
-                    </Button>
-                  </div>
-                )}
               </div>
             </TabsContent>
           )}
