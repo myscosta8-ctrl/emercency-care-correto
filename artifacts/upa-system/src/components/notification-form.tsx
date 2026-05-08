@@ -838,6 +838,198 @@ function GenericFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd: 
   );
 }
 
+// ── Violência Interpessoal / Autoprovocada ───────────────────────────────────
+
+const VIOLENCIA_TIPOS: CheckField[] = [
+  { key: "fisica",            label: "Física" },
+  { key: "psicologica",       label: "Psicológica / Moral" },
+  { key: "tortura",           label: "Tortura" },
+  { key: "sexual",            label: "Sexual" },
+  { key: "trafico",           label: "Tráfico de Pessoas" },
+  { key: "financeira",        label: "Financeira / Econômica" },
+  { key: "negligencia",       label: "Negligência / Abandono" },
+  { key: "trabalho_infantil", label: "Trabalho Infantil" },
+  { key: "autoprovocada",     label: "Autoprovocada / Autoinfligida" },
+  { key: "intervencao_legal", label: "Intervenção Legal" },
+  { key: "outros_tipos",      label: "Outros" },
+];
+
+const VIOLENCIA_MEIOS: CheckField[] = [
+  { key: "forca_corporal",    label: "Força corporal / espancamento" },
+  { key: "enforcamento",      label: "Enforcamento" },
+  { key: "obj_contundente",   label: "Objeto contundente" },
+  { key: "obj_perfurocort",   label: "Objeto perfurocortante" },
+  { key: "arma_fogo",         label: "Arma de fogo" },
+  { key: "queimadura",        label: "Queimadura" },
+  { key: "substancia_droga",  label: "Substância / droga" },
+  { key: "envenenamento",     label: "Envenenamento / intoxicação" },
+  { key: "outros_meios",      label: "Outros" },
+];
+
+const VIOLENCIA_ENCAMINHAMENTOS: CheckField[] = [
+  { key: "enc_delegacia_mulher",  label: "Delegacia de proteção da mulher / criança / idoso" },
+  { key: "enc_delegacia_racial",  label: "Delegacia de crimes raciais" },
+  { key: "enc_iml",               label: "Instituto Médico Legal / IML" },
+  { key: "enc_servico_saude",     label: "Serviço de saúde" },
+  { key: "enc_vara_crianca",      label: "Vara da criança e adolescente" },
+  { key: "enc_conselho_tutelar",  label: "Conselho Tutelar" },
+  { key: "enc_creas",             label: "CREAS / CRAS" },
+  { key: "enc_mp",                label: "Ministério Público" },
+  { key: "enc_albergue",          label: "Albergue / Abrigo" },
+];
+
+function ViolenciaFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd: Record<string, string>) => void }) {
+  const makeToggle = (key: string) => {
+    const cur = new Set((fd[key] ?? "").split(",").filter(Boolean));
+    return (k: string) => {
+      const next = new Set(cur);
+      next.has(k) ? next.delete(k) : next.add(k);
+      setFd({ ...fd, [key]: [...next].join(",") });
+    };
+  };
+  const tipos    = new Set((fd["tipos_violencia"]    ?? "").split(",").filter(Boolean));
+  const meios    = new Set((fd["meios_violencia"]    ?? "").split(",").filter(Boolean));
+  const encs     = new Set((fd["encaminhamentos"]    ?? "").split(",").filter(Boolean));
+  const sexTipos = new Set((fd["tipos_viol_sexual"]  ?? "").split(",").filter(Boolean));
+
+  const hasSexual = tipos.has("sexual");
+
+  return (
+    <div className="space-y-4">
+
+      <SectionTitle>Tipo de Violência (marque todas que se aplicam)</SectionTitle>
+      <CheckGroup title="" fields={VIOLENCIA_TIPOS} checked={tipos}
+        onToggle={k => { const n = new Set(tipos); n.has(k) ? n.delete(k) : n.add(k); setFd({ ...fd, tipos_violencia: [...n].join(",") }); }} />
+
+      {hasSexual && (
+        <div className="space-y-2 pl-3 border-l-2 border-rose-500/40">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-rose-400">Especificação — Violência Sexual</p>
+          <CheckGroup title="" fields={[
+            { key: "assedio",          label: "Assédio Sexual" },
+            { key: "estupro",          label: "Estupro" },
+            { key: "atentado_pudor",   label: "Atentado ao pudor" },
+            { key: "exploracao_sex",   label: "Exploração sexual" },
+            { key: "pornografia_inf",  label: "Pornografia infantil" },
+            { key: "outras_sexual",    label: "Outras" },
+          ]} checked={sexTipos}
+            onToggle={k => { const n = new Set(sexTipos); n.has(k) ? n.delete(k) : n.add(k); setFd({ ...fd, tipos_viol_sexual: [...n].join(",") }); }} />
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <SelectField label="Relação sexual consentida?" name="relacao_consentida" options={[
+              { value: "nao",      label: "Não (violência)" },
+              { value: "sim",      label: "Sim (consentida)" },
+              { value: "ignorado", label: "Ignorado" },
+            ]} value={fd["relacao_consentida"] ?? ""} onChange={v => setFd({ ...fd, relacao_consentida: v })} />
+            <SelectField label="Profilaxia DST/HIV oferecida?" name="profilaxia_dst" options={SIM_NAO_IGN}
+              value={fd["profilaxia_dst"] ?? ""} onChange={v => setFd({ ...fd, profilaxia_dst: v })} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField label="Anticoncepção de emergência?" name="anticoncepcao_emerg" options={SIM_NAO_IGN}
+              value={fd["anticoncepcao_emerg"] ?? ""} onChange={v => setFd({ ...fd, anticoncepcao_emerg: v })} />
+            <SelectField label="Coleta de material para exame?" name="coleta_material" options={SIM_NAO_IGN}
+              value={fd["coleta_material"] ?? ""} onChange={v => setFd({ ...fd, coleta_material: v })} />
+          </div>
+        </div>
+      )}
+
+      <SectionTitle>Meio / Forma de Agressão</SectionTitle>
+      <CheckGroup title="" fields={VIOLENCIA_MEIOS} checked={meios}
+        onToggle={makeToggle("meios_violencia")} />
+
+      <SectionTitle>Dados do Agressor</SectionTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Vínculo / relação com a vítima" name="vinculo_agressor" options={[
+          { value: "conjuge",          label: "Cônjuge / companheiro(a)" },
+          { value: "ex_conjuge",       label: "Ex-cônjuge / ex-companheiro(a)" },
+          { value: "namorado",         label: "Namorado(a)" },
+          { value: "ex_namorado",      label: "Ex-namorado(a)" },
+          { value: "pai",              label: "Pai" },
+          { value: "mae",              label: "Mãe" },
+          { value: "padrasto",         label: "Padrasto" },
+          { value: "madrasta",         label: "Madrasta" },
+          { value: "filho",            label: "Filho(a)" },
+          { value: "irmao",            label: "Irmão / Irmã" },
+          { value: "amigo_conhecido",  label: "Amigo / Conhecido" },
+          { value: "desconhecido",     label: "Desconhecido" },
+          { value: "cuidador",         label: "Cuidador(a)" },
+          { value: "patrao",           label: "Patrão / Chefe" },
+          { value: "institucional",    label: "Policial / Agente institucional" },
+          { value: "propria_pessoa",   label: "Própria pessoa (autoprovocada)" },
+          { value: "outros",           label: "Outros" },
+        ]} value={fd["vinculo_agressor"] ?? ""} onChange={v => setFd({ ...fd, vinculo_agressor: v })} />
+        <SelectField label="Nº de agressores" name="num_agressores" options={[
+          { value: "1",        label: "1 agressor" },
+          { value: "2",        label: "2 agressores" },
+          { value: "3_mais",   label: "3 ou mais" },
+          { value: "ignorado", label: "Ignorado" },
+        ]} value={fd["num_agressores"] ?? ""} onChange={v => setFd({ ...fd, num_agressores: v })} />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Agressor estava sob efeito de álcool?" name="agressor_alcool" options={SIM_NAO_IGN}
+          value={fd["agressor_alcool"] ?? ""} onChange={v => setFd({ ...fd, agressor_alcool: v })} />
+        <SelectField label="Agressor era do sexo" name="sexo_agressor" options={[
+          { value: "masculino",  label: "Masculino" },
+          { value: "feminino",   label: "Feminino" },
+          { value: "ambos",      label: "Ambos (vários agressores)" },
+          { value: "ignorado",   label: "Ignorado" },
+        ]} value={fd["sexo_agressor"] ?? ""} onChange={v => setFd({ ...fd, sexo_agressor: v })} />
+      </div>
+
+      <SectionTitle>Local e Recorrência</SectionTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Local de ocorrência" name="local_ocorrencia" options={[
+          { value: "residencia",          label: "Residência" },
+          { value: "habitacao_coletiva",  label: "Habitação coletiva" },
+          { value: "escola",              label: "Escola" },
+          { value: "local_esportivo",     label: "Local de prática esportiva" },
+          { value: "bar",                 label: "Bar ou similar" },
+          { value: "via_publica",         label: "Via pública" },
+          { value: "comercio_servicos",   label: "Comércio / Serviços" },
+          { value: "industria",           label: "Indústria / Construção" },
+          { value: "outro_local",         label: "Outro" },
+          { value: "ignorado",            label: "Ignorado" },
+        ]} value={fd["local_ocorrencia"] ?? ""} onChange={v => setFd({ ...fd, local_ocorrencia: v })} />
+        <SelectField label="Ocorrências anteriores similares?" name="ocorrencias_anteriores" options={[
+          { value: "1a_vez",   label: "1ª vez" },
+          { value: "repetida", label: "Repetição" },
+          { value: "ignorado", label: "Ignorado" },
+        ]} value={fd["ocorrencias_anteriores"] ?? ""} onChange={v => setFd({ ...fd, ocorrencias_anteriores: v })} />
+      </div>
+
+      <SectionTitle>Encaminhamentos após Atendimento</SectionTitle>
+      <CheckGroup title="" fields={VIOLENCIA_ENCAMINHAMENTOS} checked={encs}
+        onToggle={makeToggle("encaminhamentos")} />
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Notificado ao Conselho Tutelar?" name="notif_conselho_tutelar" options={SIM_NAO_IGN}
+          value={fd["notif_conselho_tutelar"] ?? ""} onChange={v => setFd({ ...fd, notif_conselho_tutelar: v })} />
+        <SelectField label="Notificado à Delegacia / Autoridade Policial?" name="notif_policia" options={SIM_NAO_IGN}
+          value={fd["notif_policia"] ?? ""} onChange={v => setFd({ ...fd, notif_policia: v })} />
+      </div>
+
+      <SectionTitle>Dados do Atendimento</SectionTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Tipo de Atendimento" name="tipo_atendimento" options={[
+          { value: "hospitalar",   label: "Hospitalar" },
+          { value: "ambulatorial", label: "Ambulatorial" },
+          { value: "domiciliar",   label: "Domiciliar" },
+          { value: "ignorado",     label: "Ignorado" },
+        ]} value={fd["tipo_atendimento"] ?? ""} onChange={v => setFd({ ...fd, tipo_atendimento: v })} />
+        <SelectField label="Evolução do Caso" name="evolucao" options={EVOLUCAO_OPTS}
+          value={fd["evolucao"] ?? ""} onChange={v => setFd({ ...fd, evolucao: v })} />
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-foreground">Observações / Narrativa (opcional)</label>
+        <textarea
+          value={fd["observacoes"] ?? ""}
+          onChange={e => setFd({ ...fd, observacoes: e.target.value })}
+          rows={3}
+          placeholder="Informações adicionais relevantes para o registro..."
+          className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </div>
+    </div>
+  );
+}
+
 function DiseaseSpecificFields({ agravoCode, fd, setFd }: {
   agravoCode: string;
   fd: Record<string, string>;
@@ -852,6 +1044,7 @@ function DiseaseSpecificFields({ agravoCode, fd, setFd }: {
   if (agravoCode === "meningite") return <MeningiteFields fd={fd} setFd={setFd} />;
   if (["sarampo", "rubeola"].includes(agravoCode)) return <ExantematicaFields fd={fd} setFd={setFd} />;
   if (agravoCode === "aids_adulto") return <AidsAdultoFields fd={fd} setFd={setFd} />;
+  if (agravoCode === "violencia") return <ViolenciaFields fd={fd} setFd={setFd} />;
   return <GenericFields fd={fd} setFd={setFd} />;
 }
 
