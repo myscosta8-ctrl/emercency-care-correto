@@ -380,7 +380,7 @@ export function PatientLabTab({ patientId, active }: PatientLabTabProps) {
                   )}
                   {(exam.fileName || exam.hasFile) && (
                     <a
-                      href={exam.fileUrl || `/api/patients/${exam.patientId}/exam-results/${exam.id}/file`}
+                      href={exam.fileUrl || `/api/patients/${exam.patientId}/exam-results/${exam.id}/file?staff=${staffId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"

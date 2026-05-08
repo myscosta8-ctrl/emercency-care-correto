@@ -12,7 +12,7 @@ declare global {
 }
 
 function getStaffId(req: Request): number | null {
-  const header = req.headers["x-staff-id"];
+  const header = req.headers["x-staff-id"] ?? req.query["staff"];
   if (!header) return null;
   const id = parseInt(String(header), 10);
   return isNaN(id) ? null : id;
