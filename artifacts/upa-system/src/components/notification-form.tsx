@@ -1030,6 +1030,240 @@ function ViolenciaFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd
   );
 }
 
+// ── Malária ──────────────────────────────────────────────────────────────────
+
+function MalariaFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd: Record<string, string>) => void }) {
+  const autoctone = fd["autoctone"] ?? "";
+  return (
+    <div className="space-y-4">
+      <SectionTitle>Dados da Investigação</SectionTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Espécie de Plasmodium" name="plasmodium" options={[
+          { value: "falciparum",  label: "P. falciparum" },
+          { value: "vivax",       label: "P. vivax" },
+          { value: "malariae",    label: "P. malariae" },
+          { value: "ovale",       label: "P. ovale" },
+          { value: "mista",       label: "Infecção Mista" },
+          { value: "nao_id",      label: "Não Identificada" },
+        ]} value={fd["plasmodium"] ?? ""} onChange={v => setFd({ ...fd, plasmodium: v })} />
+        <SelectField label="Caso Autóctone?" name="autoctone" options={SIM_NAO_IGN}
+          value={autoctone} onChange={v => setFd({ ...fd, autoctone: v })} />
+      </div>
+      {autoctone === "nao" && (
+        <div className="grid grid-cols-3 gap-3 pl-3 border-l-2 border-amber-500/40">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">País de infecção</label>
+            <input type="text" value={fd["pais_infeccao"] ?? ""} onChange={e => setFd({ ...fd, pais_infeccao: e.target.value })}
+              placeholder="Ex: Venezuela"
+              className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">Estado (UF)</label>
+            <input type="text" value={fd["uf_infeccao"] ?? ""} onChange={e => setFd({ ...fd, uf_infeccao: e.target.value })}
+              placeholder="Ex: AM"
+              className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">Município de infecção</label>
+            <input type="text" value={fd["municipio_infeccao"] ?? ""} onChange={e => setFd({ ...fd, municipio_infeccao: e.target.value })}
+              placeholder="Município"
+              className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Gestante" name="gestante" options={SIM_NAO_IGN}
+          value={fd["gestante"] ?? ""} onChange={v => setFd({ ...fd, gestante: v })} />
+        <SelectField label="Hospitalização" name="hospitalizacao" options={SIM_NAO_IGN}
+          value={fd["hospitalizacao"] ?? ""} onChange={v => setFd({ ...fd, hospitalizacao: v })} />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Data da investigação</label>
+          <input type="date" value={fd["data_investigacao"] ?? ""} onChange={e => setFd({ ...fd, data_investigacao: e.target.value })}
+            className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Data da coleta (exame)</label>
+          <input type="date" value={fd["data_coleta"] ?? ""} onChange={e => setFd({ ...fd, data_coleta: e.target.value })}
+            className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+      </div>
+
+      <SectionTitle>Resultados Laboratoriais</SectionTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Gota Espessa / Lâmina" name="gota_espessa" options={[
+          { value: "positiva",      label: "Positiva" },
+          { value: "negativa",      label: "Negativa" },
+          { value: "nao_realizada", label: "Não Realizada" },
+        ]} value={fd["gota_espessa"] ?? ""} onChange={v => setFd({ ...fd, gota_espessa: v })} />
+        <SelectField label="Teste Rápido (TDR)" name="tdr_malaria" options={LAB_RESULTADO}
+          value={fd["tdr_malaria"] ?? ""} onChange={v => setFd({ ...fd, tdr_malaria: v })} />
+        <SelectField label="PCR / Biologia Molecular" name="pcr_malaria" options={LAB_RESULTADO}
+          value={fd["pcr_malaria"] ?? ""} onChange={v => setFd({ ...fd, pcr_malaria: v })} />
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Parasitemia (cruzes / parasitos/μL)</label>
+          <input type="text" value={fd["parasitemia"] ?? ""} onChange={e => setFd({ ...fd, parasitemia: e.target.value })}
+            placeholder="Ex: 2+ ou 5000/μL"
+            className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+      </div>
+
+      <SectionTitle>Tratamento</SectionTitle>
+      <SelectField label="Esquema terapêutico utilizado" name="esquema_tratamento" options={[
+        { value: "cloroquina_primaquina",    label: "Cloroquina + Primaquina (P. vivax/ovale)" },
+        { value: "artesunato_mefloquina",    label: "Artesunato + Mefloquina (P. falciparum)" },
+        { value: "artemeter_lumefantrina",   label: "Artemeter + Lumefantrina" },
+        { value: "quinino_doxiciclina",      label: "Quinino + Doxiciclina" },
+        { value: "outro",                    label: "Outro esquema" },
+        { value: "nao_realizado",            label: "Não realizado" },
+      ]} value={fd["esquema_tratamento"] ?? ""} onChange={v => setFd({ ...fd, esquema_tratamento: v })} />
+
+      <SectionTitle>Desfecho</SectionTitle>
+      <SelectField label="Evolução do Caso" name="evolucao" options={EVOLUCAO_OPTS}
+        value={fd["evolucao"] ?? ""} onChange={v => setFd({ ...fd, evolucao: v })} />
+    </div>
+  );
+}
+
+// ── Acidente por Animais Peçonhentos ─────────────────────────────────────────
+
+const ACIDENTE_SINAIS_LOCAIS: CheckField[] = [
+  { key: "dor",       label: "Dor local" },
+  { key: "edema",     label: "Edema / Inchaço" },
+  { key: "equimose",  label: "Equimose / Hematoma" },
+  { key: "necrose",   label: "Necrose" },
+  { key: "eritema",   label: "Eritema / Vermelhidão" },
+  { key: "parestesia",label: "Parestesia / Dormência" },
+];
+
+const ACIDENTE_SINAIS_SISTEMICOS: CheckField[] = [
+  { key: "coagulopatia",      label: "Coagulopatia / Distúrbio de coagulação" },
+  { key: "insuf_renal",       label: "Insuficiência Renal" },
+  { key: "choque",            label: "Choque / Hipotensão" },
+  { key: "neurotoxicidade",   label: "Neurotoxicidade (ptose, diplopia, disfagia)" },
+  { key: "rabdomiólise",      label: "Rabdomiólise / Mialgia intensa" },
+  { key: "hemólise",          label: "Hemólise" },
+  { key: "vomito_nausea",     label: "Vômito / Náusea" },
+  { key: "sangramento",       label: "Sangramento (gengivorragia, hematúria…)" },
+];
+
+function AcidentePeconhentoFields({ fd, setFd }: { fd: Record<string, string>; setFd: (fd: Record<string, string>) => void }) {
+  const animal = fd["tipo_animal"] ?? "";
+  const sinaisLocais    = new Set((fd["sinais_locais"]    ?? "").split(",").filter(Boolean));
+  const sinaisSistemicos= new Set((fd["sinais_sistemicos"] ?? "").split(",").filter(Boolean));
+
+  return (
+    <div className="space-y-4">
+      <SectionTitle>Tipo de Animal</SectionTitle>
+      <SelectField label="Animal causador do acidente" name="tipo_animal" options={[
+        { value: "serpente",    label: "Serpente (cobra)" },
+        { value: "aranha",      label: "Aranha" },
+        { value: "escorpiao",   label: "Escorpião" },
+        { value: "abelha",      label: "Abelha / Marimbondo / Vespa" },
+        { value: "lagarta",     label: "Lagarta / Taturana" },
+        { value: "lagartixa",   label: "Lagartixa / Iguana" },
+        { value: "outros",      label: "Outros / Não identificado" },
+      ]} value={animal} onChange={v => setFd({ ...fd, tipo_animal: v })} />
+
+      {animal === "serpente" && (
+        <div className="pl-3 border-l-2 border-yellow-500/40 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-400">Especificação — Serpente</p>
+          <SelectField label="Gênero / Tipo de serpente" name="tipo_serpente" options={[
+            { value: "bothrops",    label: "Bothrops (jararaca, jararacuçu…)" },
+            { value: "crotalus",    label: "Crotalus (cascavel)" },
+            { value: "lachesis",    label: "Lachesis (surucucu / pico de jaca)" },
+            { value: "micrurus",    label: "Micrurus (coral verdadeira)" },
+            { value: "nao_veneno",  label: "Serpente não venenosa" },
+            { value: "nao_id",      label: "Não identificada" },
+          ]} value={fd["tipo_serpente"] ?? ""} onChange={v => setFd({ ...fd, tipo_serpente: v })} />
+        </div>
+      )}
+
+      {animal === "aranha" && (
+        <div className="pl-3 border-l-2 border-yellow-500/40 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-400">Especificação — Aranha</p>
+          <SelectField label="Gênero de aranha" name="tipo_aranha" options={[
+            { value: "loxosceles",  label: "Loxosceles (aranha-marrom)" },
+            { value: "phoneutria",  label: "Phoneutria (armadeira)" },
+            { value: "latrodectus", label: "Latrodectus (viúva-negra)" },
+            { value: "nao_id",      label: "Não identificada" },
+          ]} value={fd["tipo_aranha"] ?? ""} onChange={v => setFd({ ...fd, tipo_aranha: v })} />
+        </div>
+      )}
+
+      <SectionTitle>Dados do Acidente</SectionTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Zona de ocorrência" name="zona_ocorrencia" options={[
+          { value: "urbana",  label: "Urbana" },
+          { value: "rural",   label: "Rural" },
+          { value: "periurbana", label: "Periurbana" },
+          { value: "ignorado", label: "Ignorado" },
+        ]} value={fd["zona_ocorrencia"] ?? ""} onChange={v => setFd({ ...fd, zona_ocorrencia: v })} />
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Tempo até atendimento (horas)</label>
+          <input type="text" value={fd["tempo_atendimento_h"] ?? ""} onChange={e => setFd({ ...fd, tempo_atendimento_h: e.target.value })}
+            placeholder="Ex: 2"
+            className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Local da picada / mordida" name="local_picada" options={[
+          { value: "pe_tornozelo",  label: "Pé / Tornozelo" },
+          { value: "perna",         label: "Perna" },
+          { value: "mao_punho",     label: "Mão / Punho" },
+          { value: "braco",         label: "Braço / Antebraço" },
+          { value: "tronco",        label: "Tronco" },
+          { value: "cabeca_pescoco",label: "Cabeça / Pescoço" },
+          { value: "outro",         label: "Outro" },
+        ]} value={fd["local_picada"] ?? ""} onChange={v => setFd({ ...fd, local_picada: v })} />
+        <SelectField label="Classificação clínica" name="classificacao_clinica" options={[
+          { value: "leve",     label: "Leve" },
+          { value: "moderado", label: "Moderado" },
+          { value: "grave",    label: "Grave" },
+        ]} value={fd["classificacao_clinica"] ?? ""} onChange={v => setFd({ ...fd, classificacao_clinica: v })} />
+      </div>
+
+      <SectionTitle>Manifestações Clínicas</SectionTitle>
+      <CheckGroup title="Sinais Locais" fields={ACIDENTE_SINAIS_LOCAIS} checked={sinaisLocais}
+        onToggle={k => { const n = new Set(sinaisLocais); n.has(k) ? n.delete(k) : n.add(k); setFd({ ...fd, sinais_locais: [...n].join(",") }); }} />
+      <CheckGroup title="Sinais Sistêmicos" fields={ACIDENTE_SINAIS_SISTEMICOS} checked={sinaisSistemicos}
+        onToggle={k => { const n = new Set(sinaisSistemicos); n.has(k) ? n.delete(k) : n.add(k); setFd({ ...fd, sinais_sistemicos: [...n].join(",") }); }} />
+
+      <SectionTitle>Soroterapia</SectionTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Soroterapia realizada?" name="soroterapia" options={SIM_NAO_IGN}
+          value={fd["soroterapia"] ?? ""} onChange={v => setFd({ ...fd, soroterapia: v })} />
+        {fd["soroterapia"] === "sim" && (
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">Nº de ampolas administradas</label>
+            <input type="text" value={fd["num_ampolas"] ?? ""} onChange={e => setFd({ ...fd, num_ampolas: e.target.value })}
+              placeholder="Ex: 4"
+              className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+        )}
+      </div>
+      {fd["soroterapia"] === "sim" && (
+        <SelectField label="Tipo de soro administrado" name="tipo_soro" options={[
+          { value: "sab",    label: "SAB — Soro Antibotrópico" },
+          { value: "sacr",   label: "SACR — Soro Anticrotalico" },
+          { value: "sabl",   label: "SABL — Soro Antibotrópico-Laquético" },
+          { value: "salaaf", label: "SALAF — Soro Antilaquético" },
+          { value: "samiaf", label: "SAMi — Soro Antimicrúrico" },
+          { value: "saara",  label: "SAA — Soro Antiaracnídico" },
+          { value: "saesc",  label: "SAEsc — Soro Antiescorpiônico" },
+          { value: "saarap", label: "SAARA — Soro Anti-Apis (abelha)" },
+          { value: "outro",  label: "Outro" },
+        ]} value={fd["tipo_soro"] ?? ""} onChange={v => setFd({ ...fd, tipo_soro: v })} />
+      )}
+
+      <SectionTitle>Desfecho</SectionTitle>
+      <SelectField label="Evolução do Caso" name="evolucao" options={EVOLUCAO_OPTS}
+        value={fd["evolucao"] ?? ""} onChange={v => setFd({ ...fd, evolucao: v })} />
+    </div>
+  );
+}
+
 function DiseaseSpecificFields({ agravoCode, fd, setFd }: {
   agravoCode: string;
   fd: Record<string, string>;
@@ -1045,6 +1279,8 @@ function DiseaseSpecificFields({ agravoCode, fd, setFd }: {
   if (["sarampo", "rubeola"].includes(agravoCode)) return <ExantematicaFields fd={fd} setFd={setFd} />;
   if (agravoCode === "aids_adulto") return <AidsAdultoFields fd={fd} setFd={setFd} />;
   if (agravoCode === "violencia") return <ViolenciaFields fd={fd} setFd={setFd} />;
+  if (["malaria", "malaria_nao_endemica"].includes(agravoCode)) return <MalariaFields fd={fd} setFd={setFd} />;
+  if (agravoCode === "acidente_pecanhento") return <AcidentePeconhentoFields fd={fd} setFd={setFd} />;
   return <GenericFields fd={fd} setFd={setFd} />;
 }
 
