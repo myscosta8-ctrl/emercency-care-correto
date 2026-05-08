@@ -106,6 +106,56 @@ function RoleGuard({ acao, children }: { acao: Acao; children: React.ReactNode }
 }
 
 /**
+ * Blocks mobile/tablet access for non-admin roles.
+ * Only administrador and diretoria_geral may use the system on small devices.
+ */
+const MOBILE_ALLOWED_ROLES = ["administrador", "diretoria_geral"];
+
+function isMobileOrTablet(): boolean {
+  const smallScreen = window.innerWidth < 1024;
+  const mobileUA    = /android|iphone|ipad|ipod|blackberry|windows phone|mobile|tablet/i.test(navigator.userAgent);
+  return smallScreen || mobileUA;
+}
+
+function MobileGuard({ children }: { children: React.ReactNode }) {
+  const { activeUser } = useAuth();
+  const role    = activeUser?.role ?? "";
+  const blocked = isMobileOrTablet() && !MOBILE_ALLOWED_ROLES.includes(role);
+
+  if (blocked) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-card border border-red-500/30 rounded-2xl p-8 max-w-xs space-y-4 shadow-xl">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto">
+            <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-red-400 mb-1">Acesso Restrito</h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              O sistema UPA Breves deve ser utilizado em{" "}
+              <span className="text-foreground font-semibold">computadores autorizados</span>.
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground/60 border-t border-border/40 pt-3">
+            Acesso via celular e tablet está disponível apenas para administradores do sistema.
+          </p>
+          <button
+            onClick={() => { localStorage.clear(); window.location.href = "/login"; }}
+            className="w-full text-xs py-2 px-4 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+          >
+            Sair / Trocar conta
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+/**
  * Guards admin-only routes by role (administrador).
  */
 function AdminGuard({ children }: { children: React.ReactNode }) {
@@ -137,6 +187,7 @@ function Router() {
         </Route>
         <Route>
           <AuthGuard>
+            <MobileGuard>
             <Switch>
               <Route path="/" component={Dashboard} />
 
@@ -209,6 +260,7 @@ function Router() {
 
               <Route component={NotFound} />
             </Switch>
+            </MobileGuard>
           </AuthGuard>
         </Route>
       </Switch>
