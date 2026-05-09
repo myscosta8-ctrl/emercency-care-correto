@@ -119,12 +119,12 @@ body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #111; padding: 1
 .metric { text-align: center; }
 .metric-val { font-size: 14pt; font-weight: 700; color: ${sectionColor}; }
 .metric-label { font-size: 7pt; color: #6b7280; text-transform: uppercase; }
-.sig-area { margin-top: 40px; text-align: center; }
-.sig-line { border-top: 1.5px solid #111; width: 60%; margin: 0 auto 4px; padding-top: 4px; font-size: 9pt; }
+.sig-area { margin-top: 60px; text-align: center; }
+.sig-line { border-top: 1.5px solid #111; width: 55%; margin: 0 auto 5px; padding-top: 5px; font-size: 9pt; font-weight: 600; }
 .sig-sub { font-size: 8pt; color: #555; }
 @media print {
-  @page { size: A4; margin: 8mm; }
-  .sig-area { position: fixed; bottom: 18mm; left: 0; right: 0; margin-top: 0; }
+  @page { size: A4; margin: 10mm; }
+  .sig-area { margin-top: 30pt; padding-top: 38mm; text-align: center; }
 }
   `.trim();
 }

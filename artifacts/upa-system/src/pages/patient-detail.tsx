@@ -649,8 +649,8 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           .badge-o { background: #dcfce7; color: #166534; }
           .badge-a { background: #ffedd5; color: #9a3412; }
           .badge-p { background: #f3e8ff; color: #6b21a8; }
-          .print-sig-area { margin-top: 40pt; display: flex; justify-content: center; }
-          .print-sig-box { text-align: center; width: 75%; padding-top: 6pt; font-size: 9pt; border-top: 1.5px solid #111; }
+          .print-sig-area { margin-top: 30pt; padding-top: 38mm; display: flex; justify-content: center; }
+          .print-sig-box { text-align: center; width: 60%; padding-top: 6pt; font-size: 9pt; font-weight: 600; border-top: 1.5px solid #111; }
         }
         .print-only { display: none; }
       `}</style>
