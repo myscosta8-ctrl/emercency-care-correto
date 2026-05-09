@@ -686,6 +686,33 @@ router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
     }
   }
 
+  // ── Transferência direta de leito (sem mudança de status) ───────────────────
+  // Ocorre quando bed_id é enviado isoladamente (ex: mover paciente entre leitos
+  // dentro da Gestão de Leitos, sem alterar o careStatus).
+  if (!newCareStatus && bed_id) {
+    const [chosenBed] = await db.select().from(bedsTable).where(eq(bedsTable.id, bed_id));
+    if (!chosenBed) {
+      res.status(404).json({ error: "Leito de destino não encontrado" }); return;
+    }
+    if (chosenBed.isOccupied && chosenBed.patientId !== id) {
+      res.status(409).json({ error: `Leito ${chosenBed.bedId} já está ocupado. Escolha outro leito.` }); return;
+    }
+    // Libera leito atual do paciente (exceto o destino, se já estava lá)
+    await db.update(bedsTable)
+      .set({ isOccupied: false, patientId: null, admissionTime: null, updatedAt: new Date() })
+      .where(and(eq(bedsTable.patientId, id), sql`${bedsTable.id} != ${bed_id}`));
+    // Aloca o leito de destino
+    await db.update(bedsTable)
+      .set({ isOccupied: true, patientId: id, admissionTime: new Date(), updatedAt: new Date() })
+      .where(eq(bedsTable.id, bed_id));
+    // Atualiza setor e rótulo de leito no paciente
+    type PatientSector2 = "triagem" | "sala_vermelha" | "observacao_adulto" | "observacao_pediatrica" | "observacao_pre_adulto";
+    await db.update(patientsTable)
+      .set({ sector: chosenBed.sector as PatientSector2, bed: chosenBed.bedId, updatedAt: new Date() })
+      .where(eq(patientsTable.id, id));
+    req.log.info({ action: "bed_direct_transfer", toBedId: chosenBed.bedId, patientId: id, sector: chosenBed.sector }, "Transferência direta de leito");
+  }
+
   // Sumário de Alta automático
   if (newCareStatus === "Alta") {
     const rxRows = await db.select()
