@@ -501,14 +501,13 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
                           <p className="text-[11px] text-muted-foreground/60 italic">Nenhum leito livre disponível</p>
                         ) : (
                           <Select
-                            value={targetBedId === "" ? "" : String(targetBedId)}
-                            onValueChange={v => setTargetBedId(v === "" ? "" : Number(v))}
+                            value={targetBedId !== "" ? String(targetBedId) : undefined}
+                            onValueChange={v => setTargetBedId(Number(v))}
                           >
                             <SelectTrigger className="h-8 bg-muted/50 border-border text-sm">
                               <SelectValue placeholder="Selecionar leito destino..." />
                             </SelectTrigger>
                             <SelectContent className="bg-card border-border text-foreground">
-                              <SelectItem value="">— Selecionar —</SelectItem>
                               {allBeds
                                 .filter(b => !b.isOccupied && b.id !== bed.id)
                                 .map(b => (
@@ -556,14 +555,13 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
                       </p>
                     ) : (
                       <Select
-                        value={assignPatientId === "" ? "" : String(assignPatientId)}
-                        onValueChange={v => setAssignPatientId(v === "" ? "" : Number(v))}
+                        value={assignPatientId !== "" ? String(assignPatientId) : undefined}
+                        onValueChange={v => setAssignPatientId(Number(v))}
                       >
                         <SelectTrigger className="h-8 bg-muted/50 border-border text-sm">
                           <SelectValue placeholder="Selecionar paciente..." />
                         </SelectTrigger>
                         <SelectContent className="bg-card border-border text-foreground">
-                          <SelectItem value="">— Nenhum —</SelectItem>
                           {freePatients.map(p => (
                             <SelectItem key={p.id} value={String(p.id)}>
                               {p.fullName}
