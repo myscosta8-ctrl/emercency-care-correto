@@ -240,7 +240,7 @@ export default function PatientDetail() {
 
   const latestVitals = vitals?.[0];
 
-  const [activeGroup, setActiveGroup] = useState<"clinico" | "evolucao" | "tratamento" | "internacao">("clinico");
+  const [activeGroup, setActiveGroup] = useState<"clinico" | "evolucao" | "tratamento" | "internacao">("internacao");
   const [activeTab, setActiveTab] = useState("resumo");
 
   function switchGroup(g: "clinico" | "evolucao" | "tratamento" | "internacao") {
@@ -880,6 +880,22 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {/* ── Group selector ─────────────────────────────────────────── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            {/* Internação */}
+            <button
+              onClick={() => switchGroup("internacao")}
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                activeGroup === "internacao"
+                  ? "bg-amber-50 text-amber-700 border-amber-300 shadow-sm"
+                  : "bg-muted/30 text-muted-foreground border-border hover:border-amber-200 hover:text-amber-600 hover:bg-amber-50/40",
+              )}
+            >
+              <span className="text-base leading-none">🏥</span>
+              <span className="mt-0.5">Internação</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "internacao" ? "text-amber-300" : "text-muted-foreground/60")}>
+                Admissão · Entrada
+              </span>
+            </button>
             {/* Clínico */}
             <button
               onClick={() => switchGroup("clinico")}
@@ -926,22 +942,6 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <span className="mt-0.5">Tratamento</span>
               <span className={cn("text-[9px] font-normal", activeGroup === "tratamento" ? "text-emerald-500" : "text-muted-foreground/60")}>
                 Prescrição · Laboratório
-              </span>
-            </button>
-            {/* Internação */}
-            <button
-              onClick={() => switchGroup("internacao")}
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
-                activeGroup === "internacao"
-                  ? "bg-amber-50 text-amber-700 border-amber-300 shadow-sm"
-                  : "bg-muted/30 text-muted-foreground border-border hover:border-amber-200 hover:text-amber-600 hover:bg-amber-50/40",
-              )}
-            >
-              <span className="text-base leading-none">🏥</span>
-              <span className="mt-0.5">Internação</span>
-              <span className={cn("text-[9px] font-normal", activeGroup === "internacao" ? "text-amber-300" : "text-muted-foreground/60")}>
-                Admissão · Entrada
               </span>
             </button>
           </div>
@@ -3100,14 +3100,16 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             };
             type PrintEntry = { id: number; userId: number; soapText: string; createdAt: string; professionalCategory?: string | null };
             const printEntries = ((history ?? []) as PrintEntry[]).filter(
-              e => e.soapText !== "Admissão inicial" && !e.soapText.startsWith("[Reclassificação]")
+              e => e.soapText !== "Admissão inicial"
+                && !e.soapText.startsWith("[Reclassificação]")
+                && e.userId !== 0
             );
             if (printEntries.length === 0) return <p style={{ color: "#6b7280", fontStyle: "italic" }}>Nenhuma evolução clínica registrada.</p>;
             return printEntries.map(entry => (
               <div key={entry.id} className="soap-entry">
                 <div className="soap-entry-header" style={{ display: "flex", justifyContent: "space-between" }}>
                   <strong>
-                    {staffMap[entry.userId]?.name ?? `Profissional #${entry.userId}`}
+                    {staffMap[entry.userId]?.name ?? PROF_LABELS[entry.professionalCategory ?? ""] ?? "Profissional"}
                     {" "}
                     <span style={{ fontWeight: 400, color: "#6b7280" }}>
                       ({PROF_LABELS[entry.professionalCategory ?? ""] ?? "Profissional"})

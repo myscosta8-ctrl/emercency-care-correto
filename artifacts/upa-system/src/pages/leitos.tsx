@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link } from "wouter";
 import {
   ArrowLeft, BedDouble, AlertTriangle, ShieldAlert, RefreshCw, Biohazard,
-  Lightbulb, Info, ShieldCheck, Plus, Trash2, Clock, Timer, TrendingUp,
+  Lightbulb, Info, ShieldCheck, Plus, Trash2, Clock, Timer, TrendingUp, ArrowRightLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -281,6 +281,10 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
   const [tick,            setTick]            = useState(0);
   const [freePatients,    setFreePatients]    = useState<FreePatient[]>([]);
   const [assignPatientId, setAssignPatientId] = useState<number | "">("");
+  const [transferMode,    setTransferMode]    = useState(false);
+  const [allBeds,         setAllBeds]         = useState<Bed[]>([]);
+  const [targetBedId,     setTargetBedId]     = useState<number | "">("");
+  const [transferring,    setTransferring]    = useState(false);
 
   useEffect(() => {
     if (!bed) return;
@@ -288,6 +292,8 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
     setIsolationType((bed.isolationType as IsolationType) ?? "");
     setIsolationReason(bed.isolationReason ?? "");
     setAssignPatientId("");
+    setTransferMode(false);
+    setTargetBedId("");
   }, [bed]);
 
   useEffect(() => {
@@ -318,9 +324,19 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
       .catch(() => {});
   }, [bed, canEdit, authId]);
 
+  // Carrega todos os leitos para o modo de transferência
+  useEffect(() => {
+    if (!bed || !bed.isOccupied || !canEdit) return;
+    fetch("/api/beds", { headers: authId ? { "x-staff-id": String(authId) } : {} })
+      .then(r => r.json())
+      .then((data: unknown) => setAllBeds(Array.isArray(data) ? data as Bed[] : []))
+      .catch(() => {});
+  }, [bed, canEdit, authId]);
+
   if (!bed) return null;
 
-  const suggested = suggestIsolationType(isolationReason || bed.patient?.diagnosis || "");
+  const suggestInput = (isolationReason || bed.patient?.diagnosis || "").trim();
+  const suggested = suggestInput ? suggestIsolationType(suggestInput) : null;
   const showSuggestion = isolationActive && canEdit && !!suggested && suggested !== isolationType;
   const hours = stayHours(bed.admissionTime);
   const isoColor = isolationType ? ISOLATION_COLORS[isolationType as IsolationType] : "";
@@ -364,6 +380,24 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
       onSaved(); onClose();
     } catch (e) { toast({ title: String((e as Error).message), variant: "destructive" }); }
     finally     { setSaving(false); }
+  };
+
+  const handleTransfer = async () => {
+    if (!bed.patientId || !targetBedId) return;
+    setTransferring(true);
+    try {
+      const res = await fetch(`/api/patients/${bed.patientId}/status`, {
+        method: "PUT", headers: headers(),
+        body: JSON.stringify({ bed_id: targetBedId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Erro ao transferir paciente");
+      }
+      toast({ title: "Paciente transferido para o novo leito com sucesso" });
+      onSaved(); onClose();
+    } catch (e) { toast({ title: String((e as Error).message), variant: "destructive" }); }
+    finally     { setTransferring(false); }
   };
 
   const handleDelete = async () => {
@@ -447,6 +481,67 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
                     <AlertTriangle className="h-3 w-3 flex-shrink-0" />
                     Tempo prolongado de permanência
                   </p>
+                )}
+
+                {canEdit && (
+                  <div className="border-t border-border/50 pt-2 mt-1">
+                    {!transferMode ? (
+                      <Button
+                        size="sm" variant="ghost"
+                        onClick={() => setTransferMode(true)}
+                        className="h-7 text-xs text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 gap-1.5 w-full justify-start px-1"
+                      >
+                        <ArrowRightLeft className="h-3 w-3" />
+                        Transferir para outro leito
+                      </Button>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Leito de destino</Label>
+                        {allBeds.filter(b => !b.isOccupied && b.id !== bed.id).length === 0 ? (
+                          <p className="text-[11px] text-muted-foreground/60 italic">Nenhum leito livre disponível</p>
+                        ) : (
+                          <Select
+                            value={targetBedId === "" ? "" : String(targetBedId)}
+                            onValueChange={v => setTargetBedId(v === "" ? "" : Number(v))}
+                          >
+                            <SelectTrigger className="h-8 bg-muted/50 border-border text-sm">
+                              <SelectValue placeholder="Selecionar leito destino..." />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-border text-foreground">
+                              <SelectItem value="">— Selecionar —</SelectItem>
+                              {allBeds
+                                .filter(b => !b.isOccupied && b.id !== bed.id)
+                                .map(b => (
+                                  <SelectItem key={b.id} value={String(b.id)}>
+                                    {SECTOR_LABELS[b.sector]} — {b.bedId}{b.isIsolation ? " 🛡" : ""}
+                                  </SelectItem>
+                                ))
+                              }
+                            </SelectContent>
+                          </Select>
+                        )}
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            size="sm" variant="ghost"
+                            onClick={() => { setTransferMode(false); setTargetBedId(""); }}
+                            className="h-7 text-xs"
+                            disabled={transferring}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={handleTransfer}
+                            disabled={!targetBedId || transferring}
+                            className="h-7 text-xs bg-sky-600 hover:bg-sky-700 text-white gap-1"
+                          >
+                            <ArrowRightLeft className="h-3 w-3" />
+                            {transferring ? "Transferindo..." : "Confirmar Transferência"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </>
             ) : (

@@ -1071,12 +1071,6 @@ router.put("/:id/exam-results/:examId/liberar", requirePermissao("registrar_evol
     .returning();
   if (!exam) { res.status(404).json({ error: "Exame não encontrado" }); return; }
 
-  await db.insert(patientEvolutionsTable).values({
-    patientId,
-    userId:   body.resultText ? 0 : 0,
-    soapText: `[Resultado de Exame] ${exam.examName} liberado pelo laboratório`,
-  });
-
   res.json(serializeExam(exam));
 });
 

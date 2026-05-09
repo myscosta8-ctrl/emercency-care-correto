@@ -42,6 +42,7 @@ interface MedicoData {
   hipoteseDiagnostica: string;
   cid10: string;
   conduta: string;
+  resultadoExames: string;
   crm: string;
 }
 
@@ -51,6 +52,7 @@ const EMPTY: MedicoData = {
   hipoteseDiagnostica: "",
   cid10: "",
   conduta: "",
+  resultadoExames: "",
   crm: "",
 };
 
@@ -61,6 +63,7 @@ function buildSoapText(d: MedicoData): string {
   if (d.hipoteseDiagnostica.trim()) parts.push(`[HIPÓTESE DIAGNÓSTICA]\n${d.hipoteseDiagnostica.trim()}`);
   if (d.cid10.trim())               parts.push(`[CID-10] ${d.cid10.trim()}`);
   if (d.conduta.trim())             parts.push(`[CONDUTA]\n${d.conduta.trim()}`);
+  if (d.resultadoExames.trim())     parts.push(`[RESULTADO DE EXAMES]\n${d.resultadoExames.trim()}`);
   if (d.crm.trim())                 parts.push(`[CRM] ${d.crm.trim()}`);
   return parts.join("\n\n");
 }
@@ -246,6 +249,7 @@ ${d?.exameFisico ? `<div class="section"><div class="section-label">Exame Físic
   ${d?.cid10 ? `<div class="section" style="max-width:140px"><div class="section-label">CID-10</div><div class="section-body">${d.cid10}</div></div>` : ""}
 </div>
 ${d?.conduta ? `<div class="section"><div class="section-label">Conduta</div><div class="section-body">${d.conduta}</div></div>` : ""}
+${d?.resultadoExames ? `<div class="section"><div class="section-label">Resultado de Exames</div><div class="section-body">${d.resultadoExames}</div></div>` : ""}
 
 <div class="sig-area">
   <div class="sig-line">${authorName}</div>
@@ -331,6 +335,17 @@ ${d?.conduta ? `<div class="section"><div class="section-label">Conduta</div><di
             placeholder="Descreva a conduta médica…"
             value={form.conduta}
             onChange={set("conduta")}
+            rows={3}
+            className="resize-none text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Resultado de Exames</label>
+          <Textarea
+            placeholder="Descreva os resultados dos exames laboratoriais ou de imagem…"
+            value={form.resultadoExames}
+            onChange={set("resultadoExames")}
             rows={3}
             className="resize-none text-sm"
           />
