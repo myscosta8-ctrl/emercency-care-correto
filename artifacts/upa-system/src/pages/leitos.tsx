@@ -513,7 +513,7 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
                                 .filter(b => !b.isOccupied && b.id !== bed.id)
                                 .map(b => (
                                   <SelectItem key={b.id} value={String(b.id)}>
-                                    {SECTOR_LABELS[b.sector]} — {b.bedId}{b.isIsolation ? " 🛡" : ""}
+                                    {SECTOR_LABELS[b.sector] ?? b.sector} — {b.bedId}{b.isIsolation ? " 🛡" : ""}
                                   </SelectItem>
                                 ))
                               }
@@ -710,7 +710,7 @@ function BedModal({ bed, canEdit, authId, onClose, onSaved }: BedModalProps) {
             )}
           </div>
 
-          {isolationActive && isolationType && (
+          {isolationActive && isolationType && (isolationType in ISOLATION_PROTOCOLS) && (
             <IsolationAlertBox type={isolationType as IsolationType} />
           )}
 
@@ -785,7 +785,7 @@ function BedCard({ bed, tick, onClick }: BedCardProps) {
               {formatStay(bed.admissionTime)}
             </p>
           )}
-          {bed.isolationActive && bed.isolationType && (
+          {bed.isolationActive && bed.isolationType && (bed.isolationType in ISOLATION_COLORS) && (
             <p className={`text-[9px] font-medium leading-tight ${ISOLATION_COLORS[bed.isolationType as IsolationType]}`}>
               {ISOLATION_LABELS[bed.isolationType as IsolationType]}
             </p>

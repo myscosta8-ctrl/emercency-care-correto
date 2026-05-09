@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/use-auth";
 import { FeaturesProvider } from "@/lib/features-context";
 import { getRoleHome } from "@/lib/role-home";
 import type { Acao } from "@/lib/permissions";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const Dashboard          = lazy(() => import("@/pages/dashboard"));
 const PatientDetail      = lazy(() => import("@/pages/patient-detail"));
@@ -176,6 +177,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 
 function Router() {
   return (
+    <ErrorBoundary>
     <Suspense fallback={<PageLoader />}>
       <Switch>
         <Route path="/login" component={LoginPage} />
@@ -269,6 +271,7 @@ function Router() {
         </Route>
       </Switch>
     </Suspense>
+    </ErrorBoundary>
   );
 }
 
