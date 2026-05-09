@@ -331,25 +331,35 @@ const BED_SECTORS = new Set(["sala_vermelha", "observacao_adulto", "observacao_p
 function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModalProps) {
   const { toast } = useToast();
   const { activeUser } = useAuth();
+  const { featureAtiva } = useFeatures();
   const reclassify = useUpdatePatientStatus();
   const [triageLevel,      setTriageLevel]      = useState<string>("");
   const [careStatus,       setCareStatus]       = useState<string>("");
   const [selectedBedId,    setSelectedBedId]    = useState<number | null>(null);
+  const [selectedSector,   setSelectedSector]   = useState<string>("observacao_adulto");
   const [alertaEnfermeiro, setAlertaEnfermeiro] = useState<string>("");
 
-  const needsBedPick = (careStatus === "Em Observação" || careStatus === "Internado")
-    && BED_SECTORS.has(patient?.sector ?? "");
+  const preAdultoAtivo = featureAtiva("setor_pre_adulto");
+  const SETORES = [
+    { value: "sala_vermelha",         label: "Sala Vermelha" },
+    { value: "observacao_adulto",     label: "Observação Adulto" },
+    { value: "observacao_pediatrica", label: "Observação Pediátrica" },
+    ...(preAdultoAtivo ? [{ value: "observacao_pre_adulto", label: "Observação Pré-Adulto" }] : []),
+  ];
+
+  const needsBedPick = careStatus === "Em Observação" || careStatus === "Internado";
 
   useEffect(() => {
     if (patient) {
       setTriageLevel(patient.triage_level);
       setCareStatus(patient.careStatus as string);
       setSelectedBedId(null);
+      setSelectedSector(BED_SECTORS.has(patient.sector ?? "") ? (patient.sector ?? "observacao_adulto") : "observacao_adulto");
       setAlertaEnfermeiro((patient as unknown as Record<string, unknown>).alertaEnfermeiro as string ?? "");
     }
   }, [patient]);
 
-  useEffect(() => { setSelectedBedId(null); }, [careStatus]);
+  useEffect(() => { setSelectedBedId(null); }, [careStatus, selectedSector]);
 
   const triageLevels = [
     { value: "red",    label: "Vermelho — Emergência" },
@@ -362,10 +372,6 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!patient) return;
-    if (needsBedPick && !selectedBedId) {
-      toast({ title: "Selecione um leito para continuar", variant: "destructive" });
-      return;
-    }
     reclassify.mutate(
       {
         id: patient.id,
@@ -457,14 +463,30 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
             </p>
           </div>
 
-          {/* Bed picker — obrigatório ao mover para setor de observação/internação */}
+          {/* Seleção de setor e leito ao mover para Observação ou Internado */}
           {needsBedPick && (
-            <BedPickerInline
-              sector={patient?.sector ?? ""}
-              authId={activeUser?.id}
-              selectedBedId={selectedBedId}
-              onSelect={id => setSelectedBedId(id)}
-            />
+            <div className="space-y-3 rounded-lg border border-teal-500/30 bg-teal-950/15 p-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Setor de destino
+                </label>
+                <select
+                  value={selectedSector}
+                  onChange={e => setSelectedSector(e.target.value)}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {SETORES.map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+              <BedPickerInline
+                sector={selectedSector}
+                authId={activeUser?.id}
+                selectedBedId={selectedBedId}
+                onSelect={id => setSelectedBedId(id)}
+              />
+            </div>
           )}
 
           <div className="flex gap-2 pt-1">
@@ -475,7 +497,7 @@ function ReclassifyModal({ patient, onClose, onSuccess, userId }: ReclassifyModa
               type="submit"
               size="sm"
               className="flex-1"
-              disabled={reclassify.isPending || (needsBedPick && !selectedBedId)}
+              disabled={reclassify.isPending}
             >
               {reclassify.isPending ? "Salvando..." : "Reclassificar"}
             </Button>
