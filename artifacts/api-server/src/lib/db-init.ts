@@ -505,6 +505,9 @@ export async function initializeDatabase(): Promise<void> {
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS address_city text NOT NULL DEFAULT '';
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS address_cep text NOT NULL DEFAULT '';
 
+        -- patients: tipo de saída (Alta com melhora clínica, Transferência, Óbito, etc.)
+        ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS tipo_alta text NOT NULL DEFAULT '';
+
         -- patients: rastreamento de tempo por etapa do fluxo
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_recepcao timestamp without time zone;
         ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hora_triagem timestamp without time zone;

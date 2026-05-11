@@ -73,6 +73,7 @@ const serialize = (p: typeof patientsTable.$inferSelect) => ({
   // snake_case aliases to match OpenAPI spec and generated TypeScript types
   full_name:    p.fullName,
   triage_level: p.triageLevel,
+  tipo_alta:    p.tipoAlta,
   careStatus:   p.careStatus,
   careStatusChangedAt:  p.careStatusChangedAt.toISOString(),
   createdAt:    p.createdAt.toISOString(),
@@ -440,8 +441,15 @@ router.get("/lookup", async (req, res) => {
   res.json(results.slice(0, 20).map(serialize));
 });
 
-// GET /patients/previous-visits?cpf=xxx&excludeId=yyy
-// Returns Alta'd patients with that CPF (previous visits of the same person)
+// GET /api/patients/historico — pacientes com alta (para tela de histórico)
+router.get("/historico", requireAuth, async (_req, res) => {
+  const patients = await db.select()
+    .from(patientsTable)
+    .where(eq(patientsTable.careStatus, "Alta"))
+    .orderBy(desc(patientsTable.careStatusChangedAt));
+  res.json(patients.map(serialize));
+});
+
 router.get("/previous-visits", async (req, res) => {
   const { cpf, excludeId } = req.query;
   if (!cpf || typeof cpf !== "string" || !cpf.trim()) {
@@ -581,6 +589,7 @@ router.put("/:id", requirePermissao("editar_paciente"), async (req, res) => {
 router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
   const { id }              = UpdatePatientStatusParams.parse({ id: Number(req.params.id) });
   const { triage_level, care_status, user_id, bed_id, alertaEnfermeiro } = UpdatePatientStatusBody.parse(req.body);
+  const tipo_alta = (req.body as Record<string, unknown>).tipo_alta as string | undefined;
 
   const [current] = await db.select().from(patientsTable).where(eq(patientsTable.id, id));
   if (!current) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
@@ -601,8 +610,10 @@ router.put("/:id/status", requirePermissao("mudar_setor"), async (req, res) => {
       patch.horaAtendimentoMedico = new Date();
     if (newCareStatus === "Em Medicação" && !current.horaMedicacao)
       patch.horaMedicacao = new Date();
-    if (newCareStatus === "Alta" && !current.horaAlta)
+    if (newCareStatus === "Alta" && !current.horaAlta) {
       patch.horaAlta = new Date();
+      if (tipo_alta) patch.tipoAlta = tipo_alta;
+    }
     if (newCareStatus === "Internado" && !current.horaInternacao)
       patch.horaInternacao = new Date();
     if (newCareStatus === "Em Transferência" && !current.horaTransferencia)
@@ -1562,6 +1573,12 @@ router.get("/:id/pdf/ficha-triagem", requirePermissao("gerar_pdf"), async (req, 
   if (!patient) { res.status(404).json({ error: "Paciente não encontrado" }); return; }
 
   try {
+    // Remove newlines/tabs that would crash pdf-lib drawText
+    function safeText(t: string | null | undefined, maxLen = 120): string {
+      if (!t) return "";
+      return String(t).replace(/[\r\n\t]/g, " ").trim().substring(0, maxLen);
+    }
+
     const doc  = await PDFDocument.create();
     const font = await doc.embedFont(StandardFonts.Helvetica);
     const bold = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -1726,13 +1743,13 @@ router.get("/:id/pdf/ficha-triagem", requirePermissao("gerar_pdf"), async (req, 
     altBg(ML, ry, CW, ROW_H);
     lbl("NOME COMPLETO:", ML + 2, ry - 9);
     hline(ML + 68, ry - 10, CW - 70);
-    val(patient.fullName, ML + 70, ry - 9, 8);
+    val(safeText(patient.fullName, 60), ML + 70, ry - 9, 8);
     hrow(ry - ROW_H); ry -= ROW_H;
 
     // --- Row 4: NOME DA MÃE ---
     lbl("NOME DA MÃE:", ML + 2, ry - 9);
     hline(ML + 58, ry - 10, CW - 60);
-    val(patient.motherName, ML + 60, ry - 9);
+    val(safeText(patient.motherName, 60), ML + 60, ry - 9);
     hrow(ry - ROW_H); ry -= ROW_H;
 
     // --- Row 5: SEXO | DATA NASC | IDADE ---
@@ -1754,7 +1771,7 @@ router.get("/:id/pdf/ficha-triagem", requirePermissao("gerar_pdf"), async (req, 
     // --- Row 6: CPF | RG | CNS/SUS ---
     lbl("CPF:", ML + 2, ry - 9);
     hline(ML + 22, ry - 10, 124);
-    val(patient.cpf, ML + 24, ry - 9);
+    val(safeText(patient.cpf, 40), ML + 24, ry - 9);
     vline(ML + 148, ry, ry - ROW_H);
     lbl("RG:", ML + 151, ry - 9);
     hline(ML + 165, ry - 10, 157);
@@ -1773,7 +1790,7 @@ router.get("/:id/pdf/ficha-triagem", requirePermissao("gerar_pdf"), async (req, 
     vline(ML + 166, ry, ry - ROW_H);
     lbl("ENDEREÇO:", ML + 169, ry - 9);
     hline(ML + 206, ry - 10, CW - 208);
-    val(patient.address, ML + 208, ry - 9);
+    val(safeText(patient.address, 55), ML + 208, ry - 9);
     hrow(ry - ROW_H); ry -= ROW_H;
 
     // --- Row 8: BAIRRO | CIDADE | CEP ---
@@ -2061,7 +2078,7 @@ router.get("/:id/pdf/ficha-triagem", requirePermissao("gerar_pdf"), async (req, 
 
     const pdfBytes = await doc.save();
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="ficha-triagem-${patient.fullName.replace(/\s+/g, "-")}.pdf"`);
+    res.setHeader("Content-Disposition", `inline; filename="ficha-triagem-${safeText(patient.fullName, 50).replace(/\s+/g, "-") || "paciente"}.pdf"`);
     res.send(Buffer.from(pdfBytes));
   } catch (err) {
     req.log.error(err, "Erro ao gerar ficha de triagem");

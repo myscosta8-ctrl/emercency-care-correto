@@ -121,6 +121,14 @@ router.get("/totais", guard, async (_req, res) => {
       COUNT(*) FILTER (WHERE DATE_TRUNC('year',  created_at) = DATE_TRUNC('year',  CURRENT_DATE))         AS ano
     FROM patients
   `);
+  const { rows: altas } = await pool.query(`
+    SELECT
+      COUNT(*) FILTER (WHERE DATE(care_status_changed_at) = CURRENT_DATE                                             AND care_status = 'Alta') AS hoje,
+      COUNT(*) FILTER (WHERE care_status_changed_at >= CURRENT_DATE - INTERVAL '7 days'                              AND care_status = 'Alta') AS semana,
+      COUNT(*) FILTER (WHERE DATE_TRUNC('month', care_status_changed_at) = DATE_TRUNC('month', CURRENT_DATE)         AND care_status = 'Alta') AS mes,
+      COUNT(*) FILTER (WHERE DATE_TRUNC('year',  care_status_changed_at) = DATE_TRUNC('year',  CURRENT_DATE)         AND care_status = 'Alta') AS ano
+    FROM patients
+  `);
   const { rows: tr } = await pool.query(`
     SELECT
       COUNT(*) FILTER (WHERE DATE(t.created_at) = CURRENT_DATE)                                           AS hoje,
@@ -129,7 +137,7 @@ router.get("/totais", guard, async (_req, res) => {
       COUNT(*) FILTER (WHERE DATE_TRUNC('year',  t.created_at) = DATE_TRUNC('year',  CURRENT_DATE))       AS ano
     FROM transfers t
   `);
-  res.json({ atendimentos: rows[0], transferencias: tr[0] });
+  res.json({ atendimentos: rows[0], altas: altas[0], transferencias: tr[0] });
 });
 
 // GET /api/reports/triagem?periodo=hoje|semana|mes|ano — classificações de triagem por período

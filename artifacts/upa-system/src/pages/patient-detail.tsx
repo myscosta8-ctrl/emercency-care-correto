@@ -250,6 +250,7 @@ export default function PatientDetail() {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [tipoAlta, setTipoAlta] = useState("Alta com melhora clínica");
   const [isVitalsOpen, setIsVitalsOpen] = useState(false);
   const [showPrintBanner, setShowPrintBanner] = useState(false);
   const [isVitalsRecordOpen, setIsVitalsRecordOpen] = useState(false);
@@ -428,22 +429,27 @@ export default function PatientDetail() {
     }
   };
 
-  const handleDelete = () => {
-    updateStatus.mutate(
-      { id, data: { care_status: "Alta", triage_level: (patient?.triage_level ?? "green") as "red" | "orange" | "yellow" | "green" | "blue", user_id: activeUser?.id ?? 0 } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
-          toast({ title: "Alta registrada com sucesso", description: "Dados preservados no histórico." });
-          setLocation("/");
-        },
-        onError: () => {
-          toast({ title: "Não foi possível registrar a alta", variant: "destructive" });
-          setIsDeleteOpen(false);
-        },
-      }
-    );
+  const handleDelete = async () => {
+    try {
+      const resp = await fetch(`${import.meta.env.BASE_URL}api/patients/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-staff-id": String(activeUser?.id ?? 0) },
+        body: JSON.stringify({
+          care_status: "Alta",
+          triage_level: patient?.triage_level ?? "green",
+          user_id: activeUser?.id ?? 0,
+          tipo_alta: tipoAlta,
+        }),
+      });
+      if (!resp.ok) throw new Error("Erro ao registrar alta");
+      queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetPatientsSummaryQueryKey() });
+      toast({ title: "Alta registrada com sucesso", description: `Motivo: ${tipoAlta}. Dados preservados no histórico.` });
+      setLocation("/");
+    } catch {
+      toast({ title: "Não foi possível registrar a alta", variant: "destructive" });
+      setIsDeleteOpen(false);
+    }
   };
 
   const handleStatusChange = (newStatus: string) => {
@@ -3029,9 +3035,30 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           <AlertDialogHeader>
             <AlertDialogTitle>Registrar Alta do Paciente</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirma a alta de <strong>{patient.full_name}</strong>? O paciente será removido da lista ativa e seus dados preservados no histórico.
+              Registrando a saída de <strong>{patient.full_name}</strong> da unidade. Selecione o motivo da alta:
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2 py-1">
+            {[
+              "Alta com melhora clínica",
+              "Transferência hospitalar",
+              "Alta a pedido",
+              "Óbito",
+              "Evasão",
+            ].map(opt => (
+              <label key={opt} className="flex items-center gap-2.5 cursor-pointer rounded-md border border-border/40 px-3 py-2 hover:bg-muted/20 transition-colors has-[:checked]:border-primary/60 has-[:checked]:bg-primary/5">
+                <input
+                  type="radio"
+                  name="tipo_alta"
+                  value={opt}
+                  checked={tipoAlta === opt}
+                  onChange={() => setTipoAlta(opt)}
+                  className="accent-primary"
+                />
+                <span className="text-sm">{opt}</span>
+              </label>
+            ))}
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={updateStatus.isPending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={e => { e.preventDefault(); handleDelete(); }}

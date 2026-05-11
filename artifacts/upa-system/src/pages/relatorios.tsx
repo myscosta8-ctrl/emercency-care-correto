@@ -78,6 +78,7 @@ export default function RelatoriosPage() {
   const [atendimentos, setAtendimentos] = useState<AtendRow[]>([]);
 
   const [totaisAtend, setTotaisAtend] = useState<TotaisRow | null>(null);
+  const [totaisAltas, setTotaisAltas] = useState<TotaisRow | null>(null);
   const [totaisTransf, setTotaisTransf] = useState<TotaisRow | null>(null);
   const [triagemByLevel, setTriagemByLevel] = useState<TriagemLevelRow[]>([]);
   const [triagemByDay, setTriagemByDay] = useState<TriagemDayRow[]>([]);
@@ -96,8 +97,9 @@ export default function RelatoriosPage() {
       if (tab === "totais") {
         const r = await fetch("/api/reports/totais", { headers: h });
         if (r.ok) {
-          const d = await r.json() as { atendimentos: TotaisRow; transferencias: TotaisRow };
+          const d = await r.json() as { atendimentos: TotaisRow; altas: TotaisRow; transferencias: TotaisRow };
           setTotaisAtend(d.atendimentos);
+          setTotaisAltas(d.altas ?? null);
           setTotaisTransf(d.transferencias);
         }
       } else if (tab === "triagem") {
@@ -219,6 +221,29 @@ export default function RelatoriosPage() {
                     ].map(({ label, val }) => (
                       <div key={label} className="rounded-lg border border-border/40 bg-muted/10 p-4 text-center">
                         <p className="text-2xl font-bold text-indigo-400">{val ?? "—"}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Altas Concedidas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? <p className="text-muted-foreground text-sm text-center py-4">Carregando...</p> : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { label: "Hoje",       val: totaisAltas?.hoje },
+                      { label: "7 dias",     val: totaisAltas?.semana },
+                      { label: "Este mês",   val: totaisAltas?.mes },
+                      { label: "Este ano",   val: totaisAltas?.ano },
+                    ].map(({ label, val }) => (
+                      <div key={label} className="rounded-lg border border-border/40 bg-muted/10 p-4 text-center">
+                        <p className="text-2xl font-bold text-green-400">{val ?? "—"}</p>
                         <p className="text-xs text-muted-foreground mt-1">{label}</p>
                       </div>
                     ))}

@@ -94,6 +94,9 @@ export const patientsTable = pgTable("patients", {
   classificacaoFinal:   text("classificacao_final").notNull().default(""),
   criterioConfirmacao:  text("criterio_confirmacao").notNull().default(""),
 
+  // ── tipo de saída ──────────────────────────────────────────────────────────
+  tipoAlta: text("tipo_alta").notNull().default(""),
+
   // ── arquivo (alta / transferência) ────────────────────────────────────────
   archivedAt:     timestamp("archived_at"),
   archiveReason:  text("archive_reason").notNull().default(""),
