@@ -10,12 +10,9 @@
   # Variáveis de ambiente não-secretas (defina os segredos no painel de Secrets do IDX)
   env = {
     NODE_ENV    = "development";
-    # Porta do frontend
-    PORT        = "23662";
-    BASE_PATH   = "/";
     # Porta da API (usada pelo proxy do Vite)
     API_PORT    = "8080";
-    # Para que o Vite ative o proxy interno (ausência de REPL_ID = fora do Replit)
+    # PORT e BASE_PATH são gerenciados pelo IDX no contexto do preview
     # Não defina REPL_ID aqui.
   };
 
