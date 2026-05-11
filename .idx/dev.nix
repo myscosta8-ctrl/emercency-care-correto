@@ -38,8 +38,11 @@
 
       # Executado a cada abertura/retomada do workspace
       onStart = {
-        # Inicia a API em background; o Vite faz proxy de /api → localhost:8080
+        # Carrega .env e inicia a API; o Vite faz proxy de /api → localhost:8080
         api-server = ''
+          set -a
+          [ -f .env ] && source .env
+          set +a
           PORT=8080 NODE_ENV=development \
           pnpm --filter @workspace/api-server run dev
         '';
