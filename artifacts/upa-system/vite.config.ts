@@ -112,6 +112,18 @@ export default defineConfig({
     strictPort: true,
     host: "0.0.0.0",
     allowedHosts: true,
+    // Fora do Replit (IDX, local): proxy /api → API server em localhost
+    ...(process.env.REPL_ID === undefined
+      ? {
+          proxy: {
+            "/api": {
+              target: `http://localhost:${process.env.API_PORT ?? "8080"}`,
+              changeOrigin: true,
+              secure: false,
+            },
+          },
+        }
+      : {}),
     fs: {
       strict: true,
     },
