@@ -60,7 +60,7 @@
           ];
           manager = "web";
           env = {
-            PORT        = "23662";
+            # PORT é atribuído automaticamente pelo IDX — não sobrescrever
             BASE_PATH   = "/";
             API_PORT    = "8080";
             NODE_ENV    = "development";
