@@ -1567,8 +1567,19 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               onAfterSave={() => setShowPrintBanner(true)}
               canEdit={canEditEnfermeiro}
             />
+            {isEnfermeiro && (
+              <div className="flex justify-end mt-2">
+                <Link href={`/patients/${id}/ficha-enfermagem`}>
+                  <Button size="sm" className="h-8 text-xs gap-1.5 bg-[#1a5c2a] hover:bg-[#154a21]">
+                    <ClipboardList className="h-3.5 w-3.5" />
+                    Ficha de Atendimento de Enfermagem
+                  </Button>
+                </Link>
+              </div>
+            )}
+
             {isEnfermeiro && pode("gerar_pdf") && (
-              <div className="flex justify-end mt-4 pt-3 border-t border-border/30">
+              <div className="flex justify-end mt-2 pt-3 border-t border-border/30">
                 <Button
                   size="sm" variant="outline" className="h-8 text-xs gap-1.5"
                   disabled={downloadingFichaTriagem}

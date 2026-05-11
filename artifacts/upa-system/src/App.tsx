@@ -38,7 +38,8 @@ const FarmaciaEstoquePage = lazy(() => import("@/pages/farmacia-estoque"));
 const FilaMedicoPage  = lazy(() => import("@/pages/fila-medico"));
 const LaboratorioPage = lazy(() => import("@/pages/laboratorio"));
 const ExamesPage      = lazy(() => import("@/pages/exames"));
-const HistoricoPage   = lazy(() => import("@/pages/historico"));
+const HistoricoPage       = lazy(() => import("@/pages/historico"));
+const PatientNursingForm  = lazy(() => import("@/pages/patient-nursing-form"));
 const PainelTvPage    = lazy(() => import("@/pages/painel-tv"));
 const RelatoriosPage  = lazy(() => import("@/pages/relatorios"));
 const TemposMetasPage = lazy(() => import("@/pages/tempos-metas"));
@@ -214,6 +215,8 @@ function Router() {
               </Route>
 
               <Route path="/patients/:id/notifications/:notificationId/print" component={NotificationPrint} />
+              <Route path="/patients/:id/ficha-enfermagem/:formId" component={PatientNursingForm} />
+              <Route path="/patients/:id/ficha-enfermagem" component={PatientNursingForm} />
               <Route path="/patients/:id" component={PatientDetail} />
 
               <Route path="/leitos" component={LeitosPage} />

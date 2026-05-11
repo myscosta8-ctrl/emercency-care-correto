@@ -790,6 +790,59 @@ export async function initializeDatabase(): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_exam_requests_patient   ON public.patient_exam_requests(patient_id);
         CREATE INDEX IF NOT EXISTS idx_vitals_patient          ON public.vitals(patient_id);
         CREATE INDEX IF NOT EXISTS idx_nir_patient             ON public.patient_nir_entries(patient_id);
+
+        -- Ficha de Atendimento de Enfermagem
+        CREATE TABLE IF NOT EXISTS public.patient_nursing_forms (
+          id serial PRIMARY KEY,
+          patient_id integer NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+          data_atendimento text NOT NULL DEFAULT '',
+          hora_atendimento text NOT NULL DEFAULT '',
+          classificacao_risco text NOT NULL DEFAULT '',
+          origem_paciente jsonb NOT NULL DEFAULT '[]',
+          origem_outro text NOT NULL DEFAULT '',
+          setor text NOT NULL DEFAULT '',
+          enfermeiro_responsavel text NOT NULL DEFAULT '',
+          coren text NOT NULL DEFAULT '',
+          queixa_principal jsonb NOT NULL DEFAULT '[]',
+          queixa_outros text NOT NULL DEFAULT '',
+          historia_clinica jsonb NOT NULL DEFAULT '[]',
+          historia_observacoes text NOT NULL DEFAULT '',
+          sv_pa text NOT NULL DEFAULT '',
+          sv_fc text NOT NULL DEFAULT '',
+          sv_fr text NOT NULL DEFAULT '',
+          sv_spo2 text NOT NULL DEFAULT '',
+          sv_temp text NOT NULL DEFAULT '',
+          sv_glicemia text NOT NULL DEFAULT '',
+          sv_eva text NOT NULL DEFAULT '',
+          avaliacao_estado_geral text NOT NULL DEFAULT '',
+          avaliacao_consciencia jsonb NOT NULL DEFAULT '[]',
+          avaliacao_pele jsonb NOT NULL DEFAULT '[]',
+          avaliacao_respiracao jsonb NOT NULL DEFAULT '[]',
+          avaliacao_perfusao jsonb NOT NULL DEFAULT '[]',
+          avaliacao_mobilidade jsonb NOT NULL DEFAULT '[]',
+          tec_capilar text NOT NULL DEFAULT '',
+          antecedentes jsonb NOT NULL DEFAULT '[]',
+          antecedentes_outros text NOT NULL DEFAULT '',
+          alergia text NOT NULL DEFAULT 'nao',
+          alergia_qual text NOT NULL DEFAULT '',
+          medicacao_continua text NOT NULL DEFAULT 'nao',
+          medicacao_continua_quais text NOT NULL DEFAULT '',
+          procedimentos jsonb NOT NULL DEFAULT '[]',
+          procedimentos_outros text NOT NULL DEFAULT '',
+          medicacoes_administradas jsonb NOT NULL DEFAULT '[]',
+          evolucao_enfermagem jsonb NOT NULL DEFAULT '[]',
+          intercorrencia_qual text NOT NULL DEFAULT '',
+          evolucao_observacoes text NOT NULL DEFAULT '',
+          conduta jsonb NOT NULL DEFAULT '[]',
+          conduta_observacoes text NOT NULL DEFAULT '',
+          assinatura_enfermeiro text NOT NULL DEFAULT '',
+          assinatura_coren text NOT NULL DEFAULT '',
+          assinatura_data text NOT NULL DEFAULT '',
+          created_by integer NOT NULL DEFAULT 0,
+          created_at timestamp without time zone NOT NULL DEFAULT now(),
+          updated_at timestamp without time zone NOT NULL DEFAULT now()
+        );
+        CREATE INDEX IF NOT EXISTS idx_nursing_forms_patient ON public.patient_nursing_forms(patient_id);
       `);
 
       logger.info("Database initialization complete");

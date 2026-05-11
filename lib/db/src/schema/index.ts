@@ -25,3 +25,4 @@ export * from "./care-plans";
 export * from "./controlled-substances";
 export * from "./dispensations";
 export * from "./internal-notifications";
+export * from "./nursing-forms";
