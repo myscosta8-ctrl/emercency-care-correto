@@ -32,8 +32,9 @@ router.post("/login", async (req, res) => {
     );
     user = rows[0];
   } catch (err) {
-    req.log.error({ err }, "Database error during login query");
-    res.status(503).json({ error: "Serviço temporariamente indisponível. Tente novamente." });
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log.error({ err, msg }, "Database error during login query");
+    res.status(503).json({ error: "Serviço temporariamente indisponível. Tente novamente.", detail: msg });
     return;
   }
 
