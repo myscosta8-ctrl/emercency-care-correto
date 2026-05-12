@@ -15,11 +15,11 @@ if (!connectionString) {
   );
 }
 
-const useSupabase = isProduction && !!process.env.SUPABASE_DATABASE_URL;
+const isSupabase = connectionString.includes("supabase.com") || connectionString.includes("supabase.co");
 
 export const pool = new Pool({
   connectionString,
-  ssl: useSupabase ? { rejectUnauthorized: false } : undefined,
+  ssl: isSupabase ? { rejectUnauthorized: false } : undefined,
 });
 export const db = drizzle(pool, { schema });
 
