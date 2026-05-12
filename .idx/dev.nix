@@ -53,15 +53,10 @@
         # Frontend — o Vite já redireciona /api para a API via proxy
         web = {
           command = [
-            "pnpm" "--filter" "@workspace/upa-system" "run" "dev"
+            "sh" "-c"
+            "PORT=$PORT BASE_PATH=/ API_PORT=8080 NODE_ENV=development pnpm --filter @workspace/upa-system run dev"
           ];
           manager = "web";
-          env = {
-            # PORT é atribuído automaticamente pelo IDX — não sobrescrever
-            BASE_PATH   = "/";
-            API_PORT    = "8080";
-            NODE_ENV    = "development";
-          };
         };
       };
     };
