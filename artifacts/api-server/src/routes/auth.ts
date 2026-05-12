@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, staffTable, passwordResetsTable } from "@workspace/db";
+import { db, pool, staffTable, passwordResetsTable } from "@workspace/db";
 import { eq, and, gt, isNull, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomBytes, randomUUID } from "crypto";
@@ -14,12 +14,22 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  let user: typeof staffTable.$inferSelect | undefined;
+  type StaffRow = {
+    id: number; name: string; role: string; sector: string; login: string;
+    password_hash: string; active: boolean; must_change_password: boolean;
+    coren_crm: string; setores_atuacao: string; turno: string;
+    consultorio: string; custom_permissions: string;
+  };
+
+  let user: StaffRow | undefined;
   try {
-    const rows = await db
-      .select()
-      .from(staffTable)
-      .where(eq(staffTable.login, login));
+    const { rows } = await pool.query<StaffRow>(
+      `SELECT id, name, role, sector, login, password_hash, active,
+              must_change_password, coren_crm, setores_atuacao, turno,
+              consultorio, custom_permissions
+       FROM public.staff WHERE login = $1 LIMIT 1`,
+      [login]
+    );
     user = rows[0];
   } catch (err) {
     req.log.error({ err }, "Database error during login query");
@@ -37,17 +47,16 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  const isBcrypt = user.passwordHash.startsWith("$2b$") || user.passwordHash.startsWith("$2a$");
+  const isBcrypt = user.password_hash.startsWith("$2b$") || user.password_hash.startsWith("$2a$");
   let valid = false;
   if (isBcrypt) {
-    valid = await bcrypt.compare(password, user.passwordHash);
+    valid = await bcrypt.compare(password, user.password_hash);
   } else {
-    // Legacy path: SHA-256 hashes from old versions — never plaintext.
     const { createHash } = await import("crypto");
     const sha256plain  = createHash("sha256").update(password).digest("hex");
     const sha256salted = createHash("sha256").update(password + "upa_salt_2026").digest("hex");
-    valid = sha256plain  === user.passwordHash
-         || sha256salted === user.passwordHash;
+    valid = sha256plain  === user.password_hash
+         || sha256salted === user.password_hash;
   }
 
   if (!valid) {
@@ -55,14 +64,12 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  // Auto-upgrade legacy SHA-256 hash to bcrypt on successful login
   if (!isBcrypt) {
     const newHash = await bcrypt.hash(password, 12);
-    await db
-      .update(staffTable)
-      .set({ passwordHash: newHash, updatedAt: new Date() })
-      .where(eq(staffTable.id, user.id))
-      .catch((err: unknown) => req.log.warn({ err }, "Failed to upgrade password hash"));
+    pool.query(
+      `UPDATE public.staff SET password_hash = $1, updated_at = now() WHERE id = $2`,
+      [newHash, user.id]
+    ).catch((err: unknown) => req.log.warn({ err }, "Failed to upgrade password hash"));
   }
 
   res.json({
@@ -71,12 +78,12 @@ router.post("/login", async (req, res) => {
     name:               user.name,
     role:               user.role,
     sector:             user.sector,
-    corenCrm:           user.corenCrm,
-    mustChangePassword: user.mustChangePassword,
-    setoresAtuacao:     user.setoresAtuacao,
+    corenCrm:           user.coren_crm,
+    mustChangePassword: user.must_change_password,
+    setoresAtuacao:     user.setores_atuacao,
     turno:              user.turno,
     consultorio:        user.consultorio,
-    customPermissions:  user.customPermissions ?? "",
+    customPermissions:  user.custom_permissions ?? "",
   });
 });
 
