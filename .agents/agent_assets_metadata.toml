@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "11zXD1RBCj_zca_N3YTyX"
+uri = "file://RELATORIO-TECNICO.md"
+type = "text"
+title = "Relatório Técnico — Sistema UPA Breves (Emergência 3.0)"
