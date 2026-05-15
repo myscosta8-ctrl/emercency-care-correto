@@ -1,5 +1,4 @@
 { pkgs, ... }: {
-  # Canal unstable para ter Node.js 24 (mesma versão usada no Replit)
   channel = "unstable";
 
   packages = [
@@ -7,17 +6,12 @@
     pkgs.nodePackages.pnpm
   ];
 
-  # Variáveis de ambiente não-secretas (defina os segredos no painel de Secrets do IDX)
   env = {
-    NODE_ENV    = "development";
-    # Porta da API (usada pelo proxy do Vite)
-    API_PORT    = "8080";
-    # PORT e BASE_PATH são gerenciados pelo IDX no contexto do preview
-    # Não defina REPL_ID aqui.
+    NODE_ENV = "development";
+    API_PORT = "8080";
   };
 
   idx = {
-    # Extensões recomendadas para VS Code/IDX
     extensions = [
       "esbenp.prettier-vscode"
       "dbaeumer.vscode-eslint"
@@ -28,15 +22,17 @@
     ];
 
     workspace = {
-      # Executado apenas na criação do workspace (primeira vez)
+      # Executado apenas na primeira criação do workspace
       onCreate = {
         pnpm-install = "pnpm install";
       };
 
-      # Executado a cada abertura/retomada do workspace
+      # Executado a cada abertura do workspace
       onStart = {
-        # Carrega .env e inicia a API; o Vite faz proxy de /api → localhost:8080
+        # Mata qualquer API antiga, carrega .env e inicia a API
         api-server = ''
+          pkill -f "node.*dist/index.mjs" 2>/dev/null || true
+          sleep 1
           set -a
           [ -f .env ] && source .env
           set +a
@@ -46,15 +42,19 @@
       };
     };
 
-    # Painel de preview (equivalente aos workflows do Replit)
     previews = {
       enable = true;
       previews = {
-        # Frontend — o Vite já redireciona /api para a API via proxy
+        # Frontend — mata processo antigo na porta antes de iniciar
         web = {
           command = [
             "sh" "-c"
-            "PORT=$PORT BASE_PATH=/ API_PORT=8080 NODE_ENV=development pnpm --filter @workspace/upa-system run dev"
+            ''
+              lsof -ti:"$PORT" | xargs kill -9 2>/dev/null || true
+              sleep 1
+              PORT=$PORT BASE_PATH=/ API_PORT=8080 NODE_ENV=development \
+              pnpm --filter @workspace/upa-system run dev
+            ''
           ];
           manager = "web";
         };
