@@ -1,0 +1,173 @@
+emercencycare30-17313874:~/EMERCENCY-CARE-CORRETO{main}$ git pull
+remote: Enumerating objects: 303, done.
+remote: Counting objects: 100% (35/35), done.
+remote: Total 303 (delta 35), reused 35 (delta 35), pack-reused 268 (from 1)
+Receiving objects: 100% (303/303), 247.20 MiB | 23.17 MiB/s, done.
+Resolving deltas: 100% (209/209), completed with 13 local objects.
+From https://github.com/myscosta8-ctrl/EMERCENCY-CARE-CORRETO
+   8ecb168..3d95f79  main       -> origin/main
+Updating 8ecb168..3d95f79
+Updating files: 100% (83/83), done.
+Fast-forward
+ .env.example                                                                        |  16 +++++
+ .idx/dev.nix                                                                        |  19 ++----
+ IDX-MIGRATION.md                                                                    | 153 +++++++++++++++++++++++++++-----------------
+ artifacts/api-server/src/routes/auth.ts                                             |  54 +++++++++-------
+ artifacts/upa-system/vite.config.ts                                                 |  17 +----
+ attached_assets/IMG_20260511_174526_1778532367666.jpg                               | Bin 0 -> 11562758 bytes
+ attached_assets/IMG_20260512_002119_1778556287903.jpg                               | Bin 0 -> 18939492 bytes
+ attached_assets/Screenshot_2026-05-11-13-49-15-255_com.replit.app_1778518197533.jpg | Bin 0 -> 1212315 bytes
+ attached_assets/Screenshot_2026-05-11-14-39-12-313_com.replit.app_1778521162115.jpg | Bin 0 -> 506194 bytes
+ attached_assets/image-1103235305021339924_1778523204132.jpg                         | Bin 0 -> 1766008 bytes
+ attached_assets/image-1199791612602914799_1778522209186.jpg                         | Bin 0 -> 2524961 bytes
+ attached_assets/image-1258419569748941531_1778533030809.jpg                         | Bin 0 -> 2168910 bytes
+ attached_assets/image-1348303184948644379_1778548170430.jpg                         | Bin 0 -> 3471124 bytes
+ attached_assets/image-160291009585918547_1778535130174.jpg                          | Bin 0 -> 2476148 bytes
+ attached_assets/image-1615145655068233130_1778556900079.jpg                         | Bin 0 -> 4038537 bytes
+ attached_assets/image-1734065979400425908_1778547432697.jpg                         | Bin 0 -> 3276785 bytes
+ attached_assets/image-2068649972397466905_1778558486638.jpg                         | Bin 0 -> 4063881 bytes
+ attached_assets/image-2131582801259171047_1778854917041.jpg                         | Bin 0 -> 2244314 bytes
+ attached_assets/image-2242471037834993652_1778526209268.jpg                         | Bin 0 -> 2145545 bytes
+ attached_assets/image-2323758091394172660_1778522647115.jpg                         | Bin 0 -> 2362367 bytes
+ attached_assets/image-2510808679770195408_1778544604038.jpg                         | Bin 0 -> 3277661 bytes
+ attached_assets/image-2550019404089024001_1778547290509.jpg                         | Bin 0 -> 3935008 bytes
+ attached_assets/image-2591451321391080256_1778554187383.jpg                         | Bin 0 -> 4341180 bytes
+ attached_assets/image-3084656044981202739_1778555772317.jpg                         | Bin 0 -> 4084347 bytes
+ attached_assets/image-3092449293454094503_1778557375484.jpg                         | Bin 0 -> 3232076 bytes
+ attached_assets/image-3244318918762427023_1778555908594.jpg                         | Bin 0 -> 4198874 bytes
+ attached_assets/image-3275741495468506038_1778555440764.jpg                         | Bin 0 -> 3870970 bytes
+ attached_assets/image-3324126240995362189_1778521843133.jpg                         | Bin 0 -> 2311049 bytes
+ attached_assets/image-3400790634357238729_1778547839603.jpg                         | Bin 0 -> 1642993 bytes
+ attached_assets/image-3405611866510887999_1778533304301.jpg                         | Bin 0 -> 2522197 bytes
+ attached_assets/image-3521075997994228405_1778546839161.jpg                         | Bin 0 -> 3142871 bytes
+ attached_assets/image-3633833615971089885_1778557773271.jpg                         | Bin 0 -> 3239396 bytes
+ attached_assets/image-3807340130197754139_1778534019580.jpg                         | Bin 0 -> 2392774 bytes
+ attached_assets/image-3987579748431426090_1778532872439.jpg                         | Bin 0 -> 2528168 bytes
+ attached_assets/image-4011453320637583862_1778533432015.jpg                         | Bin 0 -> 2623330 bytes
+ attached_assets/image-4027366951570808998_1778531716373.jpg                         | Bin 0 -> 2292886 bytes
+ attached_assets/image-4128521880471911657_1778554301285.jpg                         | Bin 0 -> 3961975 bytes
+ attached_assets/image-4138741276252029879_1778546935032.jpg                         | Bin 0 -> 4828128 bytes
+ attached_assets/image-4174686926056428350_1778544779453.jpg                         | Bin 0 -> 3581555 bytes
+ attached_assets/image-4210687599987990945_1778548681011.jpg                         | Bin 0 -> 3552084 bytes
+ attached_assets/image-429491295933986195_1778521886876.jpg                          | Bin 0 -> 2463166 bytes
+ attached_assets/image-4419995405756005459_1778526046814.jpg                         | Bin 0 -> 2219952 bytes
+ attached_assets/image-4921921214397749863_1778526504098.jpg                         | Bin 0 -> 2359456 bytes
+ attached_assets/image-5007951079136546043_1778524369863.jpg                         | Bin 0 -> 2239393 bytes
+ attached_assets/image-5372498330324392249_1778555085231.jpg                         | Bin 0 -> 3582933 bytes
+ attached_assets/image-54140288528018072_1778532070605.jpg                           | Bin 0 -> 2293280 bytes
+ attached_assets/image-5505662921400174286_1778554897553.jpg                         | Bin 0 -> 4358293 bytes
+ attached_assets/image-5536137949886399435_1778558894399.jpg                         | Bin 0 -> 3706745 bytes
+ attached_assets/image-5825156030262064538_1778523531313.jpg                         | Bin 0 -> 2368990 bytes
+ attached_assets/image-5894506379761703243_1778558067164.jpg                         | Bin 0 -> 3863846 bytes
+ attached_assets/image-5898507034541703681_1778532756709.jpg                         | Bin 0 -> 2333773 bytes
+ attached_assets/image-5961237579167750558_1778554615431.jpg                         | Bin 0 -> 3698959 bytes
+ attached_assets/image-6054833566481024131_1778546276461.jpg                         | Bin 0 -> 3578202 bytes
+ attached_assets/image-6162134453064211696_1778553986013.jpg                         | Bin 0 -> 3097908 bytes
+ attached_assets/image-6225167387181809959_1778556879280.jpg                         | Bin 0 -> 3307759 bytes
+ attached_assets/image-6308895121156700317_1778544657833.jpg                         | Bin 0 -> 3419834 bytes
+ attached_assets/image-6387341027937702836_1778525240015.jpg                         | Bin 0 -> 2424622 bytes
+ attached_assets/image-6399381353175508305_1778557749651.jpg                         | Bin 0 -> 3916656 bytes
+ attached_assets/image-6400677902967735626_1778531859531.jpg                         | Bin 0 -> 2152033 bytes
+ attached_assets/image-6686587864656299316_1778521014624.jpg                         | Bin 0 -> 2282121 bytes
+ attached_assets/image-6993414828818986794_1778525387634.jpg                         | Bin 0 -> 2528051 bytes
+ attached_assets/image-7033325698712710577_1778521663851.jpg                         | Bin 0 -> 2461065 bytes
+ attached_assets/image-7164799226436968918_1778525674326.jpg                         | Bin 0 -> 2559199 bytes
+ attached_assets/image-7380752084787375208_1778522429761.jpg                         | Bin 0 -> 2291952 bytes
+ attached_assets/image-7457690269407472187_1778559014270.jpg                         | Bin 0 -> 2346286 bytes
+ attached_assets/image-7471741644380458856_1778523301791.jpg                         | Bin 0 -> 2239309 bytes
+ attached_assets/image-7532118699000772515_1778532170805.jpg                         | Bin 0 -> 2260319 bytes
+ attached_assets/image-7569199012245663848_1778526134207.jpg                         | Bin 0 -> 2182014 bytes
+ attached_assets/image-7618803547749046274_1778520646356.jpg                         | Bin 0 -> 2668486 bytes
+ attached_assets/image-7882369218043538934_1778546207532.jpg                         | Bin 0 -> 4262946 bytes
+ attached_assets/image-8306892743088643906_1778548362727.jpg                         | Bin 0 -> 3984436 bytes
+ attached_assets/image-854705556229640267_1778525941837.jpg                          | Bin 0 -> 2194847 bytes
+ attached_assets/image-8684732074123967978_1778526344132.jpg                         | Bin 0 -> 2095626 bytes
+ attached_assets/image-875953021826406380_1778556952583.jpg                          | Bin 0 -> 3697478 bytes
+ attached_assets/image-8868193570729055341_1778523741430.jpg                         | Bin 0 -> 2317517 bytes
+ attached_assets/image-8989314738497816654_1778535068648.jpg                         | Bin 0 -> 2374890 bytes
+ attached_assets/image-9026570554540032221_1778522068993.jpg                         | Bin 0 -> 2396721 bytes
+ attached_assets/image-9059112359952771997_1778532234362.jpg                         | Bin 0 -> 2370756 bytes
+ attached_assets/image-9141620538945377165_1778533178259.jpg                         | Bin 0 -> 2258790 bytes
+ attached_assets/image-92115380454598754_1778526254374.jpg                           | Bin 0 -> 2280255 bytes
+ attached_assets/video-6402013956299279899_1778524968404.mp4                         | Bin 0 -> 23767116 bytes
+ lib/db/src/index.ts                                                                 |   4 +-
+ setup-idx.sh                                                                        |  59 +++++++++++++++++
+ 83 files changed, 210 insertions(+), 112 deletions(-)
+ create mode 100644 .env.example
+ create mode 100644 attached_assets/IMG_20260511_174526_1778532367666.jpg
+ create mode 100644 attached_assets/IMG_20260512_002119_1778556287903.jpg
+ create mode 100644 attached_assets/Screenshot_2026-05-11-13-49-15-255_com.replit.app_1778518197533.jpg
+ create mode 100644 attached_assets/Screenshot_2026-05-11-14-39-12-313_com.replit.app_1778521162115.jpg
+ create mode 100644 attached_assets/image-1103235305021339924_1778523204132.jpg
+ create mode 100644 attached_assets/image-1199791612602914799_1778522209186.jpg
+ create mode 100644 attached_assets/image-1258419569748941531_1778533030809.jpg
+ create mode 100644 attached_assets/image-1348303184948644379_1778548170430.jpg
+ create mode 100644 attached_assets/image-160291009585918547_1778535130174.jpg
+ create mode 100644 attached_assets/image-1615145655068233130_1778556900079.jpg
+ create mode 100644 attached_assets/image-1734065979400425908_1778547432697.jpg
+ create mode 100644 attached_assets/image-2068649972397466905_1778558486638.jpg
+ create mode 100644 attached_assets/image-2131582801259171047_1778854917041.jpg
+ create mode 100644 attached_assets/image-2242471037834993652_1778526209268.jpg
+ create mode 100644 attached_assets/image-2323758091394172660_1778522647115.jpg
+ create mode 100644 attached_assets/image-2510808679770195408_1778544604038.jpg
+ create mode 100644 attached_assets/image-2550019404089024001_1778547290509.jpg
+ create mode 100644 attached_assets/image-2591451321391080256_1778554187383.jpg
+ create mode 100644 attached_assets/image-3084656044981202739_1778555772317.jpg
+ create mode 100644 attached_assets/image-3092449293454094503_1778557375484.jpg
+ create mode 100644 attached_assets/image-3244318918762427023_1778555908594.jpg
+ create mode 100644 attached_assets/image-3275741495468506038_1778555440764.jpg
+ create mode 100644 attached_assets/image-3324126240995362189_1778521843133.jpg
+ create mode 100644 attached_assets/image-3400790634357238729_1778547839603.jpg
+ create mode 100644 attached_assets/image-3405611866510887999_1778533304301.jpg
+ create mode 100644 attached_assets/image-3521075997994228405_1778546839161.jpg
+ create mode 100644 attached_assets/image-3633833615971089885_1778557773271.jpg
+ create mode 100644 attached_assets/image-3807340130197754139_1778534019580.jpg
+ create mode 100644 attached_assets/image-3987579748431426090_1778532872439.jpg
+ create mode 100644 attached_assets/image-4011453320637583862_1778533432015.jpg
+ create mode 100644 attached_assets/image-4027366951570808998_1778531716373.jpg
+ create mode 100644 attached_assets/image-4128521880471911657_1778554301285.jpg
+ create mode 100644 attached_assets/image-4138741276252029879_1778546935032.jpg
+ create mode 100644 attached_assets/image-4174686926056428350_1778544779453.jpg
+ create mode 100644 attached_assets/image-4210687599987990945_1778548681011.jpg
+ create mode 100644 attached_assets/image-429491295933986195_1778521886876.jpg
+ create mode 100644 attached_assets/image-4419995405756005459_1778526046814.jpg
+ create mode 100644 attached_assets/image-4921921214397749863_1778526504098.jpg
+ create mode 100644 attached_assets/image-5007951079136546043_1778524369863.jpg
+ create mode 100644 attached_assets/image-5372498330324392249_1778555085231.jpg
+ create mode 100644 attached_assets/image-54140288528018072_1778532070605.jpg
+ create mode 100644 attached_assets/image-5505662921400174286_1778554897553.jpg
+ create mode 100644 attached_assets/image-5536137949886399435_1778558894399.jpg
+ create mode 100644 attached_assets/image-5825156030262064538_1778523531313.jpg
+ create mode 100644 attached_assets/image-5894506379761703243_1778558067164.jpg
+ create mode 100644 attached_assets/image-5898507034541703681_1778532756709.jpg
+ create mode 100644 attached_assets/image-5961237579167750558_1778554615431.jpg
+ create mode 100644 attached_assets/image-6054833566481024131_1778546276461.jpg
+ create mode 100644 attached_assets/image-6162134453064211696_1778553986013.jpg
+ create mode 100644 attached_assets/image-6225167387181809959_1778556879280.jpg
+ create mode 100644 attached_assets/image-6308895121156700317_1778544657833.jpg
+ create mode 100644 attached_assets/image-6387341027937702836_1778525240015.jpg
+ create mode 100644 attached_assets/image-6399381353175508305_1778557749651.jpg
+ create mode 100644 attached_assets/image-6400677902967735626_1778531859531.jpg
+ create mode 100644 attached_assets/image-6686587864656299316_1778521014624.jpg
+ create mode 100644 attached_assets/image-6993414828818986794_1778525387634.jpg
+ create mode 100644 attached_assets/image-7033325698712710577_1778521663851.jpg
+ create mode 100644 attached_assets/image-7164799226436968918_1778525674326.jpg
+ create mode 100644 attached_assets/image-7380752084787375208_1778522429761.jpg
+ create mode 100644 attached_assets/image-7457690269407472187_1778559014270.jpg
+ create mode 100644 attached_assets/image-7471741644380458856_1778523301791.jpg
+ create mode 100644 attached_assets/image-7532118699000772515_1778532170805.jpg
+ create mode 100644 attached_assets/image-7569199012245663848_1778526134207.jpg
+ create mode 100644 attached_assets/image-7618803547749046274_1778520646356.jpg
+ create mode 100644 attached_assets/image-7882369218043538934_1778546207532.jpg
+ create mode 100644 attached_assets/image-8306892743088643906_1778548362727.jpg
+ create mode 100644 attached_assets/image-854705556229640267_1778525941837.jpg
+ create mode 100644 attached_assets/image-8684732074123967978_1778526344132.jpg
+ create mode 100644 attached_assets/image-875953021826406380_1778556952583.jpg
+ create mode 100644 attached_assets/image-8868193570729055341_1778523741430.jpg
+ create mode 100644 attached_assets/image-8989314738497816654_1778535068648.jpg
+ create mode 100644 attached_assets/image-9026570554540032221_1778522068993.jpg
+ create mode 100644 attached_assets/image-9059112359952771997_1778532234362.jpg
+ create mode 100644 attached_assets/image-9141620538945377165_1778533178259.jpg
+ create mode 100644 attached_assets/image-92115380454598754_1778526254374.jpg
+ create mode 100644 attached_assets/video-6402013956299279899_1778524968404.mp4
+ create mode 100755 setup-idx.sh
