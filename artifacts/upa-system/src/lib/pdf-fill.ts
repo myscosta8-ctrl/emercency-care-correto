@@ -93,324 +93,367 @@ function templatePath(type: string): string {
 //       (fine-tune COVID19_Y_OFFSET if needed after visual check)
 
 // ─── DENGUE ──────────────────────────────────────────────────────────────────
-// [D] nome label y=578→fill 564; data_nasc y=579→565; sexo/idade y=549→535
-//     cns/mae y=488→474; municipio y=457→443; bairro/logradouro y=432/431→418/417
-//     numero y=408→394; cep y=380→366; telefone y=357→343
-//     uf: estimated right of cidade (x≈430, same y)
+// [D] PyMuPDF direct measurements (page_height=842, fill_y = 842−label_y−14):
+//   agravo label py=176.2,x=69.8 → fill(652,70); data_notif boxes py=191.8 → fill(650,455)
+//   municipio_notif label py=205.3,x=98.4 → fill(623,100); ibge py=204.6,x=489.6 → fill(623,491)
+//   unidade_saude label py=234.8,x=69.1 → fill(593,70); data_inicio boxes py=248.2 → fill(594,455)
+//   nome label py=263.6,x=62.4 → fill(564,62); data_nasc boxes py=279.4 → fill(563,460)
+//   idade/sexo label py=292.9 → fill(535,65/163); raca_cor label py=291.7,x=459.1 → fill(536,460)
+//   cns/mae label py=353.6/354.3 → fill(474,68/244)
+//   municipio_res label py=385.0,x=93.1 → fill(443,95); bairro py=410.0 → fill(418,67)
+//   logradouro py=410.7,x=204.5 → fill(417,206); numero/complemento py=434.2 → fill(394,67/122)
+//   cep label py=462.3,x=468.5 → fill(366,470); telefone py=485.1 → fill(343,68)
+//   Conclusão PAGE 2: classificacao py=177.0 → fill_p2(651,70); criterio py=183.2 → fill_p2(645,315)
 const COORDS_DENGUE: FormCoords = {
   nome_paciente:        { x: 62,  y: 564, maxWidth: 386 },
-  data_nascimento:      { x: 459, y: 565, maxWidth: 110 },
+  data_nascimento:      { x: 460, y: 563, maxWidth: 110 },  // date boxes py=279.4 → 842-279.4=562.6
   idade:                { x: 65,  y: 535, maxWidth: 88  },
-  sexo:                 { x: 162, y: 535, maxWidth: 88  },
-  raca_cor:             { x: 260, y: 535, maxWidth: 88  },  // [O] right of sexo
-  cpf:                  { x: 68,  y: 504, maxWidth: 160 },  // [O] row between sexo and cns
-  rg:                   { x: 248, y: 504, maxWidth: 150 },  // [O] right of cpf
+  sexo:                 { x: 163, y: 535, maxWidth: 88  },
+  raca_cor:             { x: 460, y: 536, maxWidth: 120 },  // label py=291.7,x=459.1 → fill(536,460)
+  cpf:                  { x: 68,  y: 504, maxWidth: 160 },
+  rg:                   { x: 248, y: 504, maxWidth: 150 },
   cns:                  { x: 68,  y: 474, maxWidth: 170 },
-  nome_mae:             { x: 247, y: 474, maxWidth: 290 },
-  cidade:               { x: 97,  y: 443, maxWidth: 310 },
+  nome_mae:             { x: 244, y: 474, maxWidth: 290 },  // label x=242.6
+  cidade:               { x: 95,  y: 443, maxWidth: 220 },  // label x=93.1
   uf:                   { x: 430, y: 443, maxWidth: 30  },
-  bairro:               { x: 68,  y: 418, maxWidth: 130 },
-  endereco_rua:         { x: 208, y: 417, maxWidth: 200 },
-  endereco_numero:      { x: 68,  y: 394, maxWidth: 90  },
-  endereco_complemento: { x: 170, y: 394, maxWidth: 110 },
-  cep:                  { x: 470, y: 366, maxWidth: 100 },
-  telefone:             { x: 68,  y: 343, maxWidth: 140 },
+  bairro:               { x: 67,  y: 418, maxWidth: 130 },  // label x=65.3
+  endereco_rua:         { x: 206, y: 417, maxWidth: 200 },  // label x=204.5
+  endereco_numero:      { x: 67,  y: 394, maxWidth: 50  },  // label x=65.8
+  endereco_complemento: { x: 122, y: 394, maxWidth: 110 },  // label x=119.8
+  cep:                  { x: 470, y: 366, maxWidth: 100 },  // label x=468.5
+  telefone:             { x: 68,  y: 343, maxWidth: 140 },  // label x=66.5
   email:                { x: 222, y: 343, maxWidth: 200 },
-  data_inicio_sintomas: { x: 68,  y: 305, maxWidth: 130 },  // [O] clinical section row 1
-  classificacao_risco:  { x: 220, y: 305, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 68,  y: 591, maxWidth: 290 },  // [O] field 6 — pdfY≈230→fill 591
-  data_atendimento:        { x: 380, y: 581, maxWidth: 100 },  // [O] field 7 date — pdfY≈240→fill 581
-  hora_atendimento:        { x: 490, y: 581, maxWidth: 80  },  // [O] right of field 7 date
-  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 68,  y: 651, maxWidth: 290 },  // [O] field 2 — pdfY≈170→fill 651
-  data_notificacao:        { x: 380, y: 651, maxWidth: 100 },  // [O] field 3 — same row
-  municipio_notificacao:   { x: 68,  y: 611, maxWidth: 280 },  // [O] field 5 input — pdfY≈210→fill 611
-  codigo_ibge:             { x: 380, y: 621, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈200→fill 621
-  evolucao_caso:           { x: 68,  y: 270, maxWidth: 200 },  // [O] conclusion section
-  classificacao_final:     { x: 68,  y: 235, maxWidth: 250 },  // [O] below evolucao
-  criterio_confirmacao:    { x: 280, y: 235, maxWidth: 150 },  // [O] right of classificacao
+  data_inicio_sintomas: { x: 455, y: 594, maxWidth: 100 },  // date boxes py=248.2 → 842-248.2=593.8; x right-col
+  classificacao_risco:  { x: 68,  y: 290, maxWidth: 200 },
+  unidade_saude:           { x: 70,  y: 593, maxWidth: 290 },  // label py=234.8,x=69.1 → fill(593,70)
+  data_atendimento:        { x: 455, y: 580, maxWidth: 100 },
+  hora_atendimento:        { x: 520, y: 580, maxWidth: 60  },
+  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 70,  y: 652, maxWidth: 290 },  // label py=176.2,x=69.8
+  data_notificacao:        { x: 455, y: 650, maxWidth: 100 },  // boxes py=191.8 → 650; label "Data da Notificação" x=451.7
+  municipio_notificacao:   { x: 100, y: 623, maxWidth: 280 },  // label py=205.3,x=98.4
+  codigo_ibge:             { x: 491, y: 623, maxWidth: 90  },  // label py=204.6,x=489.6
+  evolucao_caso:           { x: 68,  y: 270, maxWidth: 200 },  // page-1 fallback (see COORDS2_DENGUE for p2)
+  classificacao_final:     { x: 68,  y: 235, maxWidth: 250 },
+  criterio_confirmacao:    { x: 280, y: 235, maxWidth: 150 },
 };
 
 // ─── TUBERCULOSE ─────────────────────────────────────────────────────────────
-// [D] nome label y=632→618; data_nasc y=633→619; sexo/idade y=603→589
-//     cns y=542→528; mae y=541→527; municipio y=511→497; bairro y=487→473
-//     logradouro y=486→472; numero y=462→448; cep y=434→420; telefone y=412→398
-//     uf: estimated right of cidade
+// [D] PyMuPDF direct measurements (page_height=842, fill_y = 842−label_y−14):
+//   agravo label py=123.9,x=64.6 → fill(704,65); data_notif boxes py=134.7 → pdflib(707,455)
+//   municipio_notif label py=152.0,x=95.3 → fill(676,96); ibge py=152.0,x=475.7 → fill(676,477)
+//   unidade_saude label py=181.5,x=66.2 → fill(647,67); data_inicio boxes py=195.0 → pdflib(647,455)
+//   nome label py=209.6,x=67.0 → fill(618,68); data_nasc boxes py=225.4 → pdflib(617,460)
+//   idade/sexo label py=238.9 → fill(589,67/163); raca_cor label py=237.9,x=455.0 → fill(590,456)
+//   cns/mae label py=299.8/300.6 → fill(528,70/240)
+//   municipio_res label py=330.6,x=93.8 → fill(497,95); bairro py=355.3 → fill(473,67)
+//   logradouro py=356.0,x=205.2 → fill(472,206); numero/complemento py=379.5/379.8 → fill(448,67/122)
+//   cep label py=407.6,x=463.7 → fill(420,465); telefone py=430.4,x=67.4 → fill(398,68)
+//   Single-page form — conclusion fields stay on page 1 (bottom area)
 const COORDS_TUBERCULOSE: FormCoords = {
-  nome_paciente:        { x: 67,  y: 618, maxWidth: 375 },
-  data_nascimento:      { x: 455, y: 619, maxWidth: 110 },
-  idade:                { x: 66,  y: 589, maxWidth: 88  },
-  sexo:                 { x: 165, y: 589, maxWidth: 88  },
-  raca_cor:             { x: 263, y: 589, maxWidth: 88  },  // [O] right of sexo
-  cpf:                  { x: 68,  y: 559, maxWidth: 160 },  // [O] row between sexo and cns
-  rg:                   { x: 248, y: 559, maxWidth: 150 },  // [O] right of cpf
-  cns:                  { x: 69,  y: 528, maxWidth: 162 },
-  nome_mae:             { x: 243, y: 527, maxWidth: 295 },
-  cidade:               { x: 98,  y: 497, maxWidth: 305 },
+  nome_paciente:        { x: 68,  y: 618, maxWidth: 375 },  // label py=209.6
+  data_nascimento:      { x: 460, y: 617, maxWidth: 110 },  // boxes py=225.4 → 842-225.4=616.6
+  idade:                { x: 67,  y: 589, maxWidth: 88  },  // label py=238.9
+  sexo:                 { x: 163, y: 589, maxWidth: 88  },  // label py=238.9,x=161.8
+  raca_cor:             { x: 456, y: 590, maxWidth: 120 },  // label py=237.9,x=455.0 → fill(590,456)
+  cpf:                  { x: 68,  y: 559, maxWidth: 160 },
+  rg:                   { x: 248, y: 559, maxWidth: 150 },
+  cns:                  { x: 70,  y: 528, maxWidth: 162 },  // label py=299.8,x=69.4
+  nome_mae:             { x: 240, y: 527, maxWidth: 295 },  // label py=300.6,x=238.6
+  cidade:               { x: 95,  y: 497, maxWidth: 220 },  // label py=330.6,x=93.8
   uf:                   { x: 426, y: 497, maxWidth: 30  },
-  bairro:               { x: 68,  y: 473, maxWidth: 130 },
-  endereco_rua:         { x: 209, y: 472, maxWidth: 200 },
-  endereco_numero:      { x: 68,  y: 448, maxWidth: 90  },
-  endereco_complemento: { x: 170, y: 448, maxWidth: 110 },
-  cep:                  { x: 467, y: 420, maxWidth: 100 },
-  telefone:             { x: 69,  y: 398, maxWidth: 140 },
+  bairro:               { x: 67,  y: 473, maxWidth: 130 },  // label py=355.3,x=66.0
+  endereco_rua:         { x: 206, y: 472, maxWidth: 200 },  // label py=356.0,x=205.2
+  endereco_numero:      { x: 67,  y: 448, maxWidth: 50  },  // label py=379.8,x=66.5
+  endereco_complemento: { x: 122, y: 448, maxWidth: 110 },  // label py=379.5,x=120.5
+  cep:                  { x: 465, y: 420, maxWidth: 100 },  // label py=407.6,x=463.7
+  telefone:             { x: 68,  y: 398, maxWidth: 140 },  // label py=430.4,x=67.4
   email:                { x: 223, y: 398, maxWidth: 200 },
-  data_inicio_sintomas: { x: 69,  y: 360, maxWidth: 130 },  // [O] clinical section row 1
-  classificacao_risco:  { x: 221, y: 360, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 67,  y: 646, maxWidth: 290 },  // [O] field 6 — pdfY≈175→fill 646
-  data_atendimento:        { x: 380, y: 636, maxWidth: 100 },  // [O] field 7 date — pdfY≈185→fill 636
-  hora_atendimento:        { x: 490, y: 636, maxWidth: 80  },  // [O] right of field 7 date
-  profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 67,  y: 701, maxWidth: 290 },  // [O] field 2 — pdfY≈120→fill 701
-  data_notificacao:        { x: 380, y: 701, maxWidth: 100 },  // [O] field 3 — same row
-  municipio_notificacao:   { x: 67,  y: 661, maxWidth: 280 },  // [O] field 5 input — pdfY≈160→fill 661
-  codigo_ibge:             { x: 380, y: 676, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈145→fill 676
-  evolucao_caso:           { x: 67,  y: 325, maxWidth: 200 },  // [O] conclusion section
-  classificacao_final:     { x: 67,  y: 290, maxWidth: 250 },  // [O] below evolucao
-  criterio_confirmacao:    { x: 280, y: 290, maxWidth: 150 },  // [O] right of classificacao
+  data_inicio_sintomas: { x: 455, y: 647, maxWidth: 100 },  // boxes py=195.0 → 842-195=647; same row as unidade_saude
+  classificacao_risco:  { x: 68,  y: 360, maxWidth: 200 },
+  unidade_saude:           { x: 67,  y: 647, maxWidth: 280 },  // label py=181.5,x=66.2 → fill(647,67)
+  data_atendimento:        { x: 455, y: 634, maxWidth: 100 },
+  hora_atendimento:        { x: 520, y: 634, maxWidth: 60  },
+  profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 65,  y: 704, maxWidth: 290 },  // label py=123.9,x=64.6
+  data_notificacao:        { x: 455, y: 707, maxWidth: 100 },  // boxes py=134.7 → pdflib 707; label x=444.2
+  municipio_notificacao:   { x: 96,  y: 676, maxWidth: 280 },  // label py=152.0,x=95.3
+  codigo_ibge:             { x: 477, y: 676, maxWidth: 90  },  // label py=152.0,x=475.7
+  evolucao_caso:           { x: 67,  y: 325, maxWidth: 200 },  // bottom of single-page form
+  classificacao_final:     { x: 67,  y: 290, maxWidth: 250 },
+  criterio_confirmacao:    { x: 280, y: 290, maxWidth: 150 },
 };
 
 // ─── FEBRE-AMARELA ───────────────────────────────────────────────────────────
-// [D] nome label y=618→604; data_nasc y=618→604; sexo/idade y=589→575
-//     cns y=528→514; mae y=527→513; municipio y=497→483; bairro y=473→459
-//     logradouro y=472→458; numero y=448→434; cep y=420→406; telefone y=397→383
-//     uf: estimated right of cidade
+// [D] PyMuPDF direct measurements (page_height=842, fill_y = 842−label_y−14):
+//   agravo label py=135.0,x=63.8 → fill(693,65); data_notif boxes py=150.6 → pdflib(691,455)
+//   municipio_notif label py=166.4,x=93.8 → fill(662,95); ibge py=165.4,x=484.3 → fill(663,485)
+//   unidade_saude label py=195.9,x=64.6 → fill(632,65); data_inicio boxes py=209.4 → pdflib(633,455)
+//   nome label py=223.8,x=65.3 → fill(604,66); data_nasc boxes py=239.8 → pdflib(602,460)
+//   idade/sexo label py=253.0 → fill(575,65/162); raca_cor label py=252.1,x=459.1 → fill(576,460)
+//   cns/mae label py=314.0/314.7 → fill(514,68/244)
+//   municipio_res label py=344.7,x=92.4 → fill(483,94); bairro py=369.4 → fill(459,65)
+//   logradouro py=370.2,x=203.8 → fill(458,205); numero/complemento py=393.9/393.7 → fill(434,66/120)
+//   cep label py=421.8,x=467.5 → fill(406,469); telefone py=444.6,x=65.8 → fill(383,67)
 const COORDS_FEBRE_AMARELA: FormCoords = {
-  nome_paciente:        { x: 65,  y: 604, maxWidth: 382 },
-  data_nascimento:      { x: 458, y: 604, maxWidth: 110 },
-  idade:                { x: 65,  y: 575, maxWidth: 88  },
-  sexo:                 { x: 163, y: 575, maxWidth: 88  },
-  raca_cor:             { x: 261, y: 575, maxWidth: 88  },  // [O] right of sexo
-  cpf:                  { x: 68,  y: 545, maxWidth: 160 },  // [O] row between sexo and cns
-  rg:                   { x: 248, y: 545, maxWidth: 150 },  // [O] right of cpf
-  cns:                  { x: 68,  y: 514, maxWidth: 168 },
-  nome_mae:             { x: 243, y: 513, maxWidth: 292 },
-  cidade:               { x: 95,  y: 483, maxWidth: 308 },
+  nome_paciente:        { x: 66,  y: 604, maxWidth: 382 },  // label py=223.8,x=65.3
+  data_nascimento:      { x: 460, y: 602, maxWidth: 110 },  // boxes py=239.8 → 842-239.8=602.2
+  idade:                { x: 65,  y: 575, maxWidth: 88  },  // label py=253.0
+  sexo:                 { x: 162, y: 575, maxWidth: 88  },  // label py=253.0,x=160.3
+  raca_cor:             { x: 460, y: 576, maxWidth: 120 },  // label py=252.1,x=459.1 → fill(576,460)
+  cpf:                  { x: 68,  y: 545, maxWidth: 160 },
+  rg:                   { x: 248, y: 545, maxWidth: 150 },
+  cns:                  { x: 68,  y: 514, maxWidth: 168 },  // label py=314.0,x=67.9
+  nome_mae:             { x: 244, y: 513, maxWidth: 292 },  // label py=314.7,x=242.6
+  cidade:               { x: 94,  y: 483, maxWidth: 220 },  // label py=344.7,x=92.4
   uf:                   { x: 426, y: 483, maxWidth: 30  },
-  bairro:               { x: 64,  y: 459, maxWidth: 132 },
-  endereco_rua:         { x: 207, y: 458, maxWidth: 200 },
-  endereco_numero:      { x: 66,  y: 434, maxWidth: 90  },
-  endereco_complemento: { x: 168, y: 434, maxWidth: 110 },
-  cep:                  { x: 468, y: 406, maxWidth: 100 },
-  telefone:             { x: 66,  y: 383, maxWidth: 140 },
+  bairro:               { x: 65,  y: 459, maxWidth: 132 },  // label py=369.4,x=64.3
+  endereco_rua:         { x: 205, y: 458, maxWidth: 200 },  // label py=370.2,x=203.8
+  endereco_numero:      { x: 66,  y: 434, maxWidth: 50  },  // label py=393.9,x=65.0
+  endereco_complemento: { x: 120, y: 434, maxWidth: 110 },  // label py=393.7,x=118.8
+  cep:                  { x: 469, y: 406, maxWidth: 100 },  // label py=421.8,x=467.5
+  telefone:             { x: 67,  y: 383, maxWidth: 140 },  // label py=444.6,x=65.8
   email:                { x: 220, y: 383, maxWidth: 200 },
-  data_inicio_sintomas: { x: 66,  y: 345, maxWidth: 130 },  // [O] clinical section row 1
-  classificacao_risco:  { x: 218, y: 345, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 65,  y: 631, maxWidth: 290 },  // [O] field 6 — pdfY≈190→fill 631
-  data_atendimento:        { x: 380, y: 616, maxWidth: 100 },  // [O] field 7 date — pdfY≈205→fill 616
-  hora_atendimento:        { x: 490, y: 616, maxWidth: 80  },  // [O] right of field 7 date
-  profissional_responsavel:{ x: 65,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 65,  y: 691, maxWidth: 290 },  // [O] field 2 — pdfY≈130→fill 691
-  data_notificacao:        { x: 380, y: 691, maxWidth: 100 },  // [O] field 3 — same row
-  municipio_notificacao:   { x: 65,  y: 646, maxWidth: 280 },  // [O] field 5 input — pdfY≈175→fill 646
-  codigo_ibge:             { x: 380, y: 661, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈160→fill 661
-  evolucao_caso:           { x: 65,  y: 310, maxWidth: 200 },  // [O] conclusion section
-  classificacao_final:     { x: 65,  y: 275, maxWidth: 250 },  // [O] below evolucao
-  criterio_confirmacao:    { x: 278, y: 275, maxWidth: 150 },  // [O] right of classificacao
+  data_inicio_sintomas: { x: 455, y: 633, maxWidth: 100 },  // boxes py=209.4 → 842-209.4=632.6; same row as unidade_saude
+  classificacao_risco:  { x: 66,  y: 345, maxWidth: 200 },
+  unidade_saude:           { x: 65,  y: 632, maxWidth: 290 },  // label py=195.9,x=64.6 → fill(632,65)
+  data_atendimento:        { x: 455, y: 619, maxWidth: 100 },
+  hora_atendimento:        { x: 520, y: 619, maxWidth: 60  },
+  profissional_responsavel:{ x: 65,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 65,  y: 693, maxWidth: 290 },  // label py=135.0,x=63.8
+  data_notificacao:        { x: 455, y: 691, maxWidth: 100 },  // boxes py=150.6 → pdflib 691; label x=445.4
+  municipio_notificacao:   { x: 95,  y: 662, maxWidth: 280 },  // label py=166.4,x=93.8
+  codigo_ibge:             { x: 485, y: 663, maxWidth: 90  },  // label py=165.4,x=484.3
+  evolucao_caso:           { x: 65,  y: 310, maxWidth: 200 },  // page-1 fallback
+  classificacao_final:     { x: 65,  y: 275, maxWidth: 250 },
+  criterio_confirmacao:    { x: 278, y: 275, maxWidth: 150 },
 };
 
 // ─── MENINGITE ───────────────────────────────────────────────────────────────
-// [F] nome label pdf_y=614,x=71→fill y=600; data_nasc pdf_y=614,x=461→fill y=600
-//     sexo/idade pdf_y=585→fill y=571
-// [O] cns/mae/municipio/bairro/logradouro/numero/cep/telefone: consistent offsets
-//     uf: estimated right of cidade
+// [D] PyMuPDF direct measurements (page_height=841, fill_y = 841−label_y−14):
+//   Offset from dengue: nome at py=227.2 vs dengue py=263.6 → meningite is ~36pt higher
+//   agravo label py≈139.8 → fill(687,70); data_notif boxes py≈155.4 → pdflib(686,455)
+//   municipio_notif label py≈168.9 → fill(658,100); ibge py≈168.2 → fill(659,491)
+//   unidade_saude label py≈198.4 → fill(629,71); data_inicio boxes py≈211.8 → pdflib(629,455)
+//   nome label py=227.2,x=62.0 → fill(600,62); data_nasc boxes py≈243.0 → pdflib(598,460)
+//   idade/sexo label py≈256.5 → fill(571,70/166); raca_cor label py≈255.4,x=460 → fill(572,460)
+//   cns label py=317.3,x=73.2 → fill(510,73); mae py=318.0,x=247.9 → fill(509,248)
+//   municipio_res label py=347.9,x=96.9 → fill(479,97); bairro py=372.8,x=69.0 → fill(454,70)
+//   logradouro py=373.6,x=208.2 → fill(453,209); numero/complemento py=397.2/397.1 → fill(430,70/124)
+//   cep label py=425.2,x=472.2 → fill(402,473); telefone py=448.0,x=70.4 → fill(379,71)
 const COORDS_MENINGITE: FormCoords = {
-  nome_paciente:        { x: 71,  y: 600, maxWidth: 380 },
-  data_nascimento:      { x: 461, y: 600, maxWidth: 110 },
-  idade:                { x: 70,  y: 571, maxWidth: 88  },
+  nome_paciente:        { x: 62,  y: 600, maxWidth: 380 },  // label py=227.2,x=62.0
+  data_nascimento:      { x: 460, y: 598, maxWidth: 110 },  // boxes py≈243.0 → 841-243=598
+  idade:                { x: 70,  y: 571, maxWidth: 88  },  // label py≈256.5
   sexo:                 { x: 166, y: 571, maxWidth: 88  },
-  raca_cor:             { x: 264, y: 571, maxWidth: 88  },  // [O] right of sexo
-  cpf:                  { x: 68,  y: 541, maxWidth: 160 },  // [O] row between sexo and cns
-  rg:                   { x: 248, y: 541, maxWidth: 150 },  // [O] right of cpf
-  cns:                  { x: 69,  y: 510, maxWidth: 168 },
-  nome_mae:             { x: 243, y: 509, maxWidth: 292 },
-  cidade:               { x: 97,  y: 479, maxWidth: 308 },
+  raca_cor:             { x: 460, y: 572, maxWidth: 120 },  // label py≈255.4,x=460 → fill(572,460)
+  cpf:                  { x: 68,  y: 541, maxWidth: 160 },
+  rg:                   { x: 248, y: 541, maxWidth: 150 },
+  cns:                  { x: 73,  y: 510, maxWidth: 168 },  // label py=317.3,x=73.2
+  nome_mae:             { x: 248, y: 509, maxWidth: 292 },  // label py=318.0,x=247.9
+  cidade:               { x: 97,  y: 479, maxWidth: 220 },  // label py=347.9,x=96.9
   uf:                   { x: 428, y: 479, maxWidth: 30  },
-  bairro:               { x: 68,  y: 455, maxWidth: 130 },
-  endereco_rua:         { x: 209, y: 454, maxWidth: 200 },
-  endereco_numero:      { x: 68,  y: 430, maxWidth: 90  },
-  endereco_complemento: { x: 170, y: 430, maxWidth: 110 },
-  cep:                  { x: 467, y: 402, maxWidth: 100 },
-  telefone:             { x: 69,  y: 379, maxWidth: 140 },
+  bairro:               { x: 70,  y: 454, maxWidth: 130 },  // label py=372.8,x=69.0
+  endereco_rua:         { x: 209, y: 453, maxWidth: 200 },  // label py=373.6,x=208.2
+  endereco_numero:      { x: 70,  y: 430, maxWidth: 50  },  // label py=397.2,x=69.6
+  endereco_complemento: { x: 124, y: 430, maxWidth: 110 },  // label py=397.1,x=123.5
+  cep:                  { x: 473, y: 402, maxWidth: 100 },  // label py=425.2,x=472.2
+  telefone:             { x: 71,  y: 379, maxWidth: 140 },  // label py=448.0,x=70.4
   email:                { x: 223, y: 379, maxWidth: 200 },
-  data_inicio_sintomas: { x: 69,  y: 341, maxWidth: 130 },  // [O] clinical section row 1
-  classificacao_risco:  { x: 221, y: 341, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 71,  y: 626, maxWidth: 290 },  // [O] field 6 — pdfY≈195→fill 626
-  data_atendimento:        { x: 380, y: 616, maxWidth: 100 },  // [O] field 7 date — pdfY≈205→fill 616
-  hora_atendimento:        { x: 490, y: 616, maxWidth: 80  },  // [O] right of field 7 date
-  profissional_responsavel:{ x: 71,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 71,  y: 686, maxWidth: 290 },  // [O] field 2 — pdfY≈135→fill 686
-  data_notificacao:        { x: 380, y: 686, maxWidth: 100 },  // [O] field 3 — same row
-  municipio_notificacao:   { x: 71,  y: 646, maxWidth: 280 },  // [O] field 5 input — pdfY≈175→fill 646
-  codigo_ibge:             { x: 380, y: 656, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈165→fill 656
-  evolucao_caso:           { x: 71,  y: 306, maxWidth: 200 },  // [O] conclusion section
-  classificacao_final:     { x: 71,  y: 271, maxWidth: 250 },  // [O] below evolucao
-  criterio_confirmacao:    { x: 284, y: 271, maxWidth: 150 },  // [O] right of classificacao
+  data_inicio_sintomas: { x: 455, y: 629, maxWidth: 100 },  // boxes py≈211.8 → 841-211.8=629.2; same row as unidade
+  classificacao_risco:  { x: 71,  y: 341, maxWidth: 200 },
+  unidade_saude:           { x: 71,  y: 629, maxWidth: 290 },  // label py≈198.4 → fill(629,71)
+  data_atendimento:        { x: 455, y: 615, maxWidth: 100 },
+  hora_atendimento:        { x: 520, y: 615, maxWidth: 60  },
+  profissional_responsavel:{ x: 71,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 70,  y: 687, maxWidth: 290 },  // label py≈139.8 → fill(687,70)
+  data_notificacao:        { x: 455, y: 686, maxWidth: 100 },  // boxes py≈155.4 → pdflib 686; x right-col
+  municipio_notificacao:   { x: 100, y: 658, maxWidth: 280 },  // label py≈168.9 → fill(658,100)
+  codigo_ibge:             { x: 491, y: 659, maxWidth: 90  },  // label py≈168.2 → fill(659,491)
+  evolucao_caso:           { x: 71,  y: 306, maxWidth: 200 },  // page-1 fallback
+  classificacao_final:     { x: 71,  y: 271, maxWidth: 250 },
+  criterio_confirmacao:    { x: 284, y: 271, maxWidth: 150 },
 };
 
 // ─── NOTIFICAÇÃO INDIVIDUAL (violência / outros) ──────────────────────────────
-// [F] nome pdf_y=655,x=68→fill y=641; data_nasc pdf_y=655,x=458→fill y=641
-//     sexo pdf_y=626,x=163→fill y=612; cns pdf_y=565,x=70→fill y=551
-//     mae pdf_y=564,x=245→fill y=550; municipio pdf_y=468,x=93→fill y=454
-//     bairro pdf_y=443,x=65→fill y=429; logradouro pdf_y=443,x=207→fill y=429 (same row)
-//     numero pdf_y=419,x=65→fill y=405; cep pdf_y=391,x=468→fill y=377
-//     telefone pdf_y=368,x=66→fill y=354
-//     uf: estimated right of cidade
+// [D] PyMuPDF direct measurements (page_height=841, fill_y = 841−label_y−14):
+//   agravo label py=99.1,x=70.4 → fill(728,71); data_notif boxes py=115.0 → pdflib(726,455)
+//   municipio_notif label py=129.1,x=97.6 → fill(698,99); ibge py=129.1,x=483.6 → fill(698,485)
+//   unidade_saude label py=157.6,x=69.7 → fill(669,70); data_inicio boxes py=171.4 → pdflib(670,455)
+//   nome label py=185.9,x=67.7 → fill(641,68); data_nasc boxes py=202.2 → pdflib(639,460)
+//   idade/sexo label py=215.2 → fill(612,68/163); raca_cor label py=214.2,x=461.4 → fill(613,462)
+//   cns label py=276.1,x=70.2 → fill(551,71); mae py=276.8,x=244.8 → fill(550,246)
+//   municipio_res label py=372.8,x=92.5 → fill(454,94); bairro py=397.7,x=64.5 → fill(429,65)
+//   logradouro py=398.4,x=203.8 → fill(429,205); numero/complemento py=422.0/421.9 → fill(405,66/121)
+//   cep label py=450.0,x=467.7 → fill(377,469); telefone py=472.8,x=65.9 → fill(354,67)
 const COORDS_NOTIF_INDIVIDUAL: FormCoords = {
-  nome_paciente:        { x: 68,  y: 641, maxWidth: 380 },
-  data_nascimento:      { x: 458, y: 641, maxWidth: 110 },
-  idade:                { x: 67,  y: 612, maxWidth: 88  },
-  sexo:                 { x: 163, y: 612, maxWidth: 88  },
-  raca_cor:             { x: 261, y: 612, maxWidth: 88  },  // [O] right of sexo
-  cpf:                  { x: 68,  y: 582, maxWidth: 160 },  // [O] row between sexo and cns
-  rg:                   { x: 248, y: 582, maxWidth: 150 },  // [O] right of cpf
-  cns:                  { x: 70,  y: 551, maxWidth: 168 },
-  nome_mae:             { x: 245, y: 550, maxWidth: 292 },
-  cidade:               { x: 93,  y: 454, maxWidth: 308 },
+  nome_paciente:        { x: 68,  y: 641, maxWidth: 380 },  // label py=185.9,x=67.7
+  data_nascimento:      { x: 460, y: 639, maxWidth: 110 },  // boxes py=202.2 → 841-202.2=638.8
+  idade:                { x: 68,  y: 612, maxWidth: 88  },  // label py=215.2,x=67.1
+  sexo:                 { x: 163, y: 612, maxWidth: 88  },  // label py=215.2,x=162.5
+  raca_cor:             { x: 462, y: 613, maxWidth: 120 },  // label py=214.2,x=461.4 → fill(613,462)
+  cpf:                  { x: 68,  y: 582, maxWidth: 160 },
+  rg:                   { x: 248, y: 582, maxWidth: 150 },
+  cns:                  { x: 71,  y: 551, maxWidth: 168 },  // label py=276.1,x=70.2
+  nome_mae:             { x: 246, y: 550, maxWidth: 292 },  // label py=276.8,x=244.8
+  cidade:               { x: 94,  y: 454, maxWidth: 220 },  // label py=372.8,x=92.5
   uf:                   { x: 424, y: 454, maxWidth: 30  },
-  bairro:               { x: 65,  y: 429, maxWidth: 130 },
-  endereco_rua:         { x: 207, y: 429, maxWidth: 200 },
-  endereco_numero:      { x: 65,  y: 405, maxWidth: 90  },
-  endereco_complemento: { x: 167, y: 405, maxWidth: 110 },
-  cep:                  { x: 468, y: 377, maxWidth: 100 },
-  telefone:             { x: 66,  y: 354, maxWidth: 140 },
+  bairro:               { x: 65,  y: 429, maxWidth: 130 },  // label py=397.7,x=64.5
+  endereco_rua:         { x: 205, y: 429, maxWidth: 200 },  // label py=398.4,x=203.8
+  endereco_numero:      { x: 66,  y: 405, maxWidth: 50  },  // label py=422.0,x=65.1
+  endereco_complemento: { x: 121, y: 405, maxWidth: 110 },  // label py=421.9,x=119.0
+  cep:                  { x: 469, y: 377, maxWidth: 100 },  // label py=450.0,x=467.7
+  telefone:             { x: 67,  y: 354, maxWidth: 140 },  // label py=472.8,x=65.9
   email:                { x: 220, y: 354, maxWidth: 200 },
-  data_inicio_sintomas: { x: 66,  y: 316, maxWidth: 130 },  // [O] clinical section row 1
-  classificacao_risco:  { x: 218, y: 316, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 68,  y: 669, maxWidth: 280 },  // [O] field 6 — pdfY=151.8→fill 669
-  data_atendimento:        { x: 460, y: 662, maxWidth: 90  },  // [O] field 7 date boxes — pdfY=159.2→fill 662
-  hora_atendimento:        { x: 532, y: 662, maxWidth: 55  },  // [O] right of field 7 date
-  profissional_responsavel:{ x: 68,  y: 290, maxWidth: 460 },  // [O] notificante nome — pdfY=531.2→fill 290
-  agravo_notificacao:      { x: 68,  y: 729, maxWidth: 290 },  // [O] field 2 — pdfY=92.0→fill 729
-  data_notificacao:        { x: 383, y: 729, maxWidth: 100 },  // [O] field 3 — same row
-  municipio_notificacao:   { x: 68,  y: 685, maxWidth: 280 },  // [O] field 5 input row — pdfY=136.3→fill 685
-  codigo_ibge:             { x: 384, y: 700, maxWidth: 90  },  // [O] field 5 IBGE — pdfY=120.8→fill 700
-  evolucao_caso:           { x: 68,  y: 281, maxWidth: 200 },  // [O] conclusion section
-  classificacao_final:     { x: 68,  y: 246, maxWidth: 250 },  // [O] below evolucao
-  criterio_confirmacao:    { x: 281, y: 246, maxWidth: 150 },  // [O] right of classificacao
+  data_inicio_sintomas: { x: 455, y: 670, maxWidth: 100 },  // boxes py=171.4 → 841-171.4=669.6; same row as unidade
+  classificacao_risco:  { x: 68,  y: 316, maxWidth: 200 },
+  unidade_saude:           { x: 70,  y: 669, maxWidth: 280 },  // label py=157.6,x=69.7 → fill(669,70)
+  data_atendimento:        { x: 455, y: 657, maxWidth: 90  },
+  hora_atendimento:        { x: 520, y: 657, maxWidth: 55  },
+  profissional_responsavel:{ x: 68,  y: 290, maxWidth: 460 },
+  agravo_notificacao:      { x: 71,  y: 728, maxWidth: 290 },  // label py=99.1,x=70.4
+  data_notificacao:        { x: 455, y: 726, maxWidth: 100 },  // boxes py=115.0 → pdflib 726; label x=452.1
+  municipio_notificacao:   { x: 99,  y: 698, maxWidth: 280 },  // label py=129.1,x=97.6
+  codigo_ibge:             { x: 485, y: 698, maxWidth: 90  },  // label py=129.1,x=483.6
+  evolucao_caso:           { x: 68,  y: 281, maxWidth: 200 },  // page-1 fallback
+  classificacao_final:     { x: 68,  y: 246, maxWidth: 250 },
+  criterio_confirmacao:    { x: 281, y: 246, maxWidth: 150 },
 };
 
 // ─── FEBRE TIFOIDE ───────────────────────────────────────────────────────────
-// [F] nome pdf_y=603,x=66→fill y=589; data_nasc pdf_y=604,x=456→fill y=590
-//     cep pdf_y=403→fill y=389 (explicit); telefone pdf_y=380→fill y=366 (explicit)
-// [O] sexo/idade/cns/mae/municipio/bairro/logradouro/numero: consistent offsets
-//     uf: estimated right of cidade
+// [D] PyMuPDF direct measurements (page_height=841, fill_y = 841−label_y−14):
+//   agravo label py=148.9,x=64.5 → fill(678,65); data_notif boxes py=164.9 → pdflib(676,455)
+//   municipio_notif label py=180.2,x=94.6 → fill(647,96); ibge py=179.3,x=485.9 → fill(648,487)
+//   unidade_saude label py=209.6,x=65.4 → fill(617,66); data_inicio boxes py=223.4 → pdflib(618,455)
+//   nome label py=237.7,x=66.2 → fill(589,67); data_nasc boxes py=254.0 → pdflib(587,460)
+//   idade/sexo label py=266.9 → fill(560,67/162); raca_cor label py=265.9,x=459.9 → fill(561,461)
+//   cns label py=327.8,x=68.7 → fill(499,69); mae py=328.6,x=243.3 → fill(498,244)
+//   municipio_res label py=360.7,x=93.9 → fill(466,95); bairro py=385.6,x=66.0 → fill(441,67)
+//   logradouro py=386.3,x=205.2 → fill(441,206); numero/complemento py=409.9/409.8 → fill(417,68/122)
+//   cep label py=437.9,x=469.2 → fill(389,471); telefone py=460.7,x=67.4 → fill(366,69)
 const COORDS_FEBRE_TIFOIDE: FormCoords = {
-  nome_paciente:        { x: 66,  y: 589, maxWidth: 382 },
-  data_nascimento:      { x: 456, y: 590, maxWidth: 110 },
-  idade:                { x: 66,  y: 560, maxWidth: 88  },
-  sexo:                 { x: 165, y: 560, maxWidth: 88  },
-  raca_cor:             { x: 263, y: 560, maxWidth: 88  },  // [O] right of sexo
-  cpf:                  { x: 68,  y: 530, maxWidth: 160 },  // [O] row between sexo and cns
-  rg:                   { x: 248, y: 530, maxWidth: 150 },  // [O] right of cpf
-  cns:                  { x: 69,  y: 499, maxWidth: 168 },
-  nome_mae:             { x: 243, y: 498, maxWidth: 292 },
-  cidade:               { x: 97,  y: 468, maxWidth: 308 },
-  uf:                   { x: 428, y: 468, maxWidth: 30  },
-  bairro:               { x: 68,  y: 444, maxWidth: 130 },
-  endereco_rua:         { x: 209, y: 443, maxWidth: 200 },
-  endereco_numero:      { x: 68,  y: 419, maxWidth: 90  },
-  endereco_complemento: { x: 170, y: 419, maxWidth: 110 },
-  cep:                  { x: 469, y: 389, maxWidth: 100 },
-  telefone:             { x: 69,  y: 366, maxWidth: 140 },
+  nome_paciente:        { x: 67,  y: 589, maxWidth: 382 },  // label py=237.7,x=66.2
+  data_nascimento:      { x: 460, y: 587, maxWidth: 110 },  // boxes py=254.0 → 841-254.0=587
+  idade:                { x: 67,  y: 560, maxWidth: 88  },  // label py=266.9,x=65.6
+  sexo:                 { x: 162, y: 560, maxWidth: 88  },  // label py=266.9,x=161.0
+  raca_cor:             { x: 461, y: 561, maxWidth: 120 },  // label py=265.9,x=459.9 → fill(561,461)
+  cpf:                  { x: 68,  y: 530, maxWidth: 160 },
+  rg:                   { x: 248, y: 530, maxWidth: 150 },
+  cns:                  { x: 69,  y: 499, maxWidth: 168 },  // label py=327.8,x=68.7
+  nome_mae:             { x: 244, y: 498, maxWidth: 292 },  // label py=328.6,x=243.3
+  cidade:               { x: 95,  y: 466, maxWidth: 220 },  // label py=360.7,x=93.9
+  uf:                   { x: 428, y: 466, maxWidth: 30  },
+  bairro:               { x: 67,  y: 441, maxWidth: 130 },  // label py=385.6,x=66.0
+  endereco_rua:         { x: 206, y: 441, maxWidth: 200 },  // label py=386.3,x=205.2
+  endereco_numero:      { x: 68,  y: 417, maxWidth: 50  },  // label py=409.9,x=66.6
+  endereco_complemento: { x: 122, y: 417, maxWidth: 110 },  // label py=409.8,x=120.4
+  cep:                  { x: 471, y: 389, maxWidth: 100 },  // label py=437.9,x=469.2
+  telefone:             { x: 69,  y: 366, maxWidth: 140 },  // label py=460.7,x=67.4
   email:                { x: 223, y: 366, maxWidth: 200 },
-  data_inicio_sintomas: { x: 69,  y: 328, maxWidth: 130 },  // [O] clinical section row 1
-  classificacao_risco:  { x: 221, y: 328, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 66,  y: 616, maxWidth: 290 },  // [O] field 6 — pdfY≈205→fill 616
-  data_atendimento:        { x: 380, y: 606, maxWidth: 100 },  // [O] field 7 date — pdfY≈215→fill 606
-  hora_atendimento:        { x: 490, y: 606, maxWidth: 80  },  // [O] right of field 7 date
-  profissional_responsavel:{ x: 66,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 66,  y: 676, maxWidth: 290 },  // [O] field 2 — pdfY≈145→fill 676
-  data_notificacao:        { x: 380, y: 676, maxWidth: 100 },  // [O] field 3 — same row
-  municipio_notificacao:   { x: 66,  y: 636, maxWidth: 280 },  // [O] field 5 input — pdfY≈185→fill 636
-  codigo_ibge:             { x: 380, y: 646, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈175→fill 646
-  evolucao_caso:           { x: 66,  y: 293, maxWidth: 200 },  // [O] conclusion section
-  classificacao_final:     { x: 66,  y: 258, maxWidth: 250 },  // [O] below evolucao
-  criterio_confirmacao:    { x: 279, y: 258, maxWidth: 150 },  // [O] right of classificacao
+  data_inicio_sintomas: { x: 455, y: 618, maxWidth: 100 },  // boxes py=223.4 → 841-223.4=617.6; same row as unidade
+  classificacao_risco:  { x: 67,  y: 328, maxWidth: 200 },
+  unidade_saude:           { x: 66,  y: 617, maxWidth: 290 },  // label py=209.6,x=65.4 → fill(617,66)
+  data_atendimento:        { x: 455, y: 604, maxWidth: 100 },
+  hora_atendimento:        { x: 520, y: 604, maxWidth: 60  },
+  profissional_responsavel:{ x: 66,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 65,  y: 678, maxWidth: 290 },  // label py=148.9,x=64.5
+  data_notificacao:        { x: 455, y: 676, maxWidth: 100 },  // boxes py=164.9 → pdflib 676; label x=446.1
+  municipio_notificacao:   { x: 96,  y: 647, maxWidth: 280 },  // label py=180.2,x=94.6
+  codigo_ibge:             { x: 487, y: 648, maxWidth: 90  },  // label py=179.3,x=485.9
+  evolucao_caso:           { x: 66,  y: 293, maxWidth: 200 },  // page-1 fallback
+  classificacao_final:     { x: 66,  y: 258, maxWidth: 250 },
+  criterio_confirmacao:    { x: 279, y: 258, maxWidth: 150 },
 };
 
 // ─── AIDS ADULTO ─────────────────────────────────────────────────────────────
-// [F] nome pdf_y=607,x=68→fill y=593; data_nasc pdf_y=607,x=457→fill y=593
-//     sexo pdf_y=578,x=163→fill y=564; cns pdf_y=517,x=71→fill y=503
-//     mae pdf_y=516,x=245→fill y=502; municipio pdf_y=484,x=95→fill y=470
-//     bairro pdf_y=459,x=67→fill y=445; logradouro pdf_y=458,x=207→fill y=444
-//     numero pdf_y=435,x=68→fill y=421; cep pdf_y=407,x=471→fill y=393
-//     telefone pdf_y=384,x=69→fill y=370
-//     uf: estimated right of cidade
+// [D] PyMuPDF direct measurements (page_height=841, fill_y = 841−label_y−14):
+//   agravo label py=147.5,x=68.2 → fill(680,69); data_notif boxes py=163.4 → pdflib(678,455)
+//   municipio_notif label py=176.5,x=96.6 → fill(651,98); ibge py=175.5,x=488.1 → fill(652,489)
+//   unidade_saude label py=205.9,x=67.5 → fill(621,68); data_inicio boxes py=219.7 → pdflib(621,455)
+//   nome label py=233.9,x=68.2 → fill(593,69); data_nasc boxes py=250.3 → pdflib(591,460)
+//   idade/sexo label py=263.2 → fill(564,68/164); raca_cor label py=262.2,x=461.9 → fill(565,463)
+//   cns label py=324.1,x=70.7 → fill(503,71); mae py=324.8,x=245.4 → fill(502,246)
+//   municipio_res label py=356.9,x=95.4 → fill(470,96); bairro py=381.8,x=67.5 → fill(445,68)
+//   logradouro py=382.6,x=206.7 → fill(444,208); numero/complemento py=406.2/406.1 → fill(421,69/123)
+//   cep label py=434.2,x=470.7 → fill(393,472); telefone py=457.0,x=68.9 → fill(370,70)
 const COORDS_AIDS_ADULTO: FormCoords = {
-  nome_paciente:        { x: 68,  y: 593, maxWidth: 380 },
-  data_nascimento:      { x: 457, y: 593, maxWidth: 110 },
-  idade:                { x: 65,  y: 564, maxWidth: 88  },
-  sexo:                 { x: 163, y: 564, maxWidth: 88  },
-  raca_cor:             { x: 261, y: 564, maxWidth: 88  },  // [O] right of sexo
-  cpf:                  { x: 68,  y: 534, maxWidth: 160 },  // [O] row between sexo and cns
-  rg:                   { x: 248, y: 534, maxWidth: 150 },  // [O] right of cpf
-  cns:                  { x: 71,  y: 503, maxWidth: 165 },
-  nome_mae:             { x: 245, y: 502, maxWidth: 290 },
-  cidade:               { x: 95,  y: 470, maxWidth: 240 },
-  uf:                   { x: 358, y: 470, maxWidth: 30  },
-  bairro:               { x: 67,  y: 445, maxWidth: 130 },
-  endereco_rua:         { x: 207, y: 444, maxWidth: 200 },
-  endereco_numero:      { x: 68,  y: 421, maxWidth: 90  },
-  endereco_complemento: { x: 170, y: 421, maxWidth: 110 },
-  cep:                  { x: 471, y: 393, maxWidth: 100 },
-  telefone:             { x: 69,  y: 370, maxWidth: 140 },
+  nome_paciente:        { x: 69,  y: 593, maxWidth: 380 },  // label py=233.9,x=68.2
+  data_nascimento:      { x: 460, y: 591, maxWidth: 110 },  // boxes py=250.3 → 841-250.3=590.7
+  idade:                { x: 68,  y: 564, maxWidth: 88  },  // label py=263.2,x=67.6
+  sexo:                 { x: 164, y: 564, maxWidth: 88  },  // label py=263.2,x=163.1
+  raca_cor:             { x: 463, y: 565, maxWidth: 120 },  // label py=262.2,x=461.9 → fill(565,463)
+  cpf:                  { x: 68,  y: 534, maxWidth: 160 },
+  rg:                   { x: 248, y: 534, maxWidth: 150 },
+  cns:                  { x: 71,  y: 503, maxWidth: 165 },  // label py=324.1,x=70.7
+  nome_mae:             { x: 246, y: 502, maxWidth: 290 },  // label py=324.8,x=245.4
+  cidade:               { x: 96,  y: 470, maxWidth: 220 },  // label py=356.9,x=95.4
+  uf:                   { x: 395, y: 470, maxWidth: 30  },  // between municipio and IBGE (label x=329.9)
+  bairro:               { x: 68,  y: 445, maxWidth: 130 },  // label py=381.8,x=67.5
+  endereco_rua:         { x: 208, y: 444, maxWidth: 200 },  // label py=382.6,x=206.7
+  endereco_numero:      { x: 69,  y: 421, maxWidth: 50  },  // label py=406.2,x=68.1
+  endereco_complemento: { x: 123, y: 421, maxWidth: 110 },  // label py=406.1,x=122.0
+  cep:                  { x: 472, y: 393, maxWidth: 100 },  // label py=434.2,x=470.7
+  telefone:             { x: 70,  y: 370, maxWidth: 140 },  // label py=457.0,x=68.9
   email:                { x: 223, y: 370, maxWidth: 200 },
-  data_inicio_sintomas: { x: 69,  y: 332, maxWidth: 130 },  // [O] clinical section row 1
-  classificacao_risco:  { x: 221, y: 332, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 68,  y: 621, maxWidth: 290 },  // [O] field 6 — pdfY≈200→fill 621
-  data_atendimento:        { x: 380, y: 606, maxWidth: 100 },  // [O] field 7 date — pdfY≈215→fill 606
-  hora_atendimento:        { x: 490, y: 606, maxWidth: 80  },  // [O] right of field 7 date
-  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 68,  y: 681, maxWidth: 290 },  // [O] field 2 — pdfY≈140→fill 681
-  data_notificacao:        { x: 380, y: 681, maxWidth: 100 },  // [O] field 3 — same row
-  municipio_notificacao:   { x: 68,  y: 636, maxWidth: 280 },  // [O] field 5 input — pdfY≈185→fill 636
-  codigo_ibge:             { x: 380, y: 651, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈170→fill 651
-  evolucao_caso:           { x: 68,  y: 297, maxWidth: 200 },  // [O] conclusion section
-  classificacao_final:     { x: 68,  y: 262, maxWidth: 250 },  // [O] below evolucao
-  criterio_confirmacao:    { x: 281, y: 262, maxWidth: 150 },  // [O] right of classificacao
+  data_inicio_sintomas: { x: 455, y: 621, maxWidth: 100 },  // boxes py=219.7 → 841-219.7=621.3; same row as unidade
+  classificacao_risco:  { x: 69,  y: 332, maxWidth: 200 },
+  unidade_saude:           { x: 68,  y: 621, maxWidth: 290 },  // label py=205.9,x=67.5 → fill(621,68)
+  data_atendimento:        { x: 455, y: 607, maxWidth: 100 },
+  hora_atendimento:        { x: 520, y: 607, maxWidth: 60  },
+  profissional_responsavel:{ x: 68,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 69,  y: 680, maxWidth: 290 },  // label py=147.5,x=68.2
+  data_notificacao:        { x: 455, y: 678, maxWidth: 100 },  // boxes py=163.4 → pdflib 678; label x=449.8
+  municipio_notificacao:   { x: 98,  y: 651, maxWidth: 280 },  // label py=176.5,x=96.6
+  codigo_ibge:             { x: 489, y: 652, maxWidth: 90  },  // label py=175.5,x=488.1
+  evolucao_caso:           { x: 68,  y: 297, maxWidth: 200 },  // page-1 fallback
+  classificacao_final:     { x: 68,  y: 262, maxWidth: 250 },
+  criterio_confirmacao:    { x: 281, y: 262, maxWidth: 150 },
 };
 
 // ─── EXANTEMATICA ────────────────────────────────────────────────────────────
-// [F] nome pdf_y=564,x=67→fill y=550; data_nasc pdf_y=564,x=457→fill y=550
-//     sexo pdf_y=535,x=162→fill y=521; cns pdf_y=474,x=69→fill y=460
-//     mae pdf_y=473,x=244→fill y=459; municipio pdf_y=442,x=94→fill y=428
-//     bairro pdf_y=417,x=66→fill y=403; logradouro pdf_y=416,x=205→fill y=402
-//     numero pdf_y=393,x=66→fill y=379; cep pdf_y=365,x=469→fill y=351
-//     telefone pdf_y=342,x=67→fill y=328
-//     uf: estimated right of cidade
+// [D] PyMuPDF direct measurements (page_height=842):
+//   Exantematica is ~13.3pt lower than dengue (label py offset +13.3 vs dengue).
+//   agravo label py≈189.5 → fill(639,67); data_notif boxes py≈205.1 → pdflib(637,455)
+//   municipio_notif label py≈218.6 → fill(609,100); ibge py≈217.9 → fill(610,491)
+//   unidade_saude label py≈248.1 → fill(580,67); data_inicio boxes py≈261.5 → pdflib(581,455)
+//   nome label py≈276.9,x=67 → fill(551,67); data_nasc boxes py≈292.7 → pdflib(549,460)
+//   idade/sexo label py=306.2 → fill(522,66/162); raca_cor label py=305.2,x=460.5 → fill(523,461)
+//   cns label py=367.1,x=69.3 → fill(461,70); mae py=367.8,x=243.9 → fill(460,244)
+//   municipio_res label py=399.1,x=93.6 → fill(429,95); bairro py=424.1,x=65.7 → fill(404,67)
+//   logradouro py=424.8,x=204.9 → fill(403,206); numero/complemento py=448.4/448.3 → fill(380,67/121)
+//   cep label py=476.3,x=468.9 → fill(352,470); telefone py=499.1,x=67.1 → fill(329,68)
 const COORDS_EXANTEMATICA: FormCoords = {
-  nome_paciente:        { x: 67,  y: 550, maxWidth: 380 },
-  data_nascimento:      { x: 457, y: 550, maxWidth: 110 },
-  idade:                { x: 65,  y: 521, maxWidth: 88  },
-  sexo:                 { x: 162, y: 521, maxWidth: 88  },
-  raca_cor:             { x: 260, y: 521, maxWidth: 88  },  // [O] right of sexo
-  cpf:                  { x: 68,  y: 491, maxWidth: 160 },  // [O] row between sexo and cns
-  rg:                   { x: 248, y: 491, maxWidth: 150 },  // [O] right of cpf
-  cns:                  { x: 69,  y: 460, maxWidth: 168 },
-  nome_mae:             { x: 244, y: 459, maxWidth: 292 },
-  cidade:               { x: 94,  y: 428, maxWidth: 308 },
-  uf:                   { x: 425, y: 428, maxWidth: 30  },
-  bairro:               { x: 66,  y: 403, maxWidth: 130 },
-  endereco_rua:         { x: 205, y: 402, maxWidth: 200 },
-  endereco_numero:      { x: 66,  y: 379, maxWidth: 90  },
-  endereco_complemento: { x: 168, y: 379, maxWidth: 110 },
-  cep:                  { x: 469, y: 351, maxWidth: 100 },
-  telefone:             { x: 67,  y: 328, maxWidth: 140 },
-  email:                { x: 221, y: 328, maxWidth: 200 },
-  data_inicio_sintomas: { x: 67,  y: 290, maxWidth: 130 },  // [O] clinical section row 1
-  classificacao_risco:  { x: 219, y: 290, maxWidth: 200 },  // [O] right of data_inicio
-  unidade_saude:           { x: 67,  y: 581, maxWidth: 290 },  // [O] field 6 — pdfY≈240→fill 581
-  data_atendimento:        { x: 380, y: 566, maxWidth: 100 },  // [O] field 7 date — pdfY≈255→fill 566
-  hora_atendimento:        { x: 490, y: 566, maxWidth: 80  },  // [O] right of field 7 date
-  profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },  // [O] footer notifier
-  agravo_notificacao:      { x: 67,  y: 641, maxWidth: 290 },  // [O] field 2 — pdfY≈180→fill 641
-  data_notificacao:        { x: 380, y: 641, maxWidth: 100 },  // [O] field 3 — same row
-  municipio_notificacao:   { x: 67,  y: 596, maxWidth: 280 },  // [O] field 5 input — pdfY≈225→fill 596
-  codigo_ibge:             { x: 380, y: 611, maxWidth: 90  },  // [O] field 5 IBGE — pdfY≈210→fill 611
-  evolucao_caso:           { x: 67,  y: 255, maxWidth: 200 },  // [O] conclusion section
-  classificacao_final:     { x: 67,  y: 220, maxWidth: 250 },  // [O] below evolucao
-  criterio_confirmacao:    { x: 280, y: 220, maxWidth: 150 },  // [O] right of classificacao
+  nome_paciente:        { x: 67,  y: 551, maxWidth: 380 },  // label py≈276.9
+  data_nascimento:      { x: 460, y: 549, maxWidth: 110 },  // boxes py≈292.7 → 842-292.7=549.3
+  idade:                { x: 66,  y: 522, maxWidth: 88  },  // label py=306.2
+  sexo:                 { x: 162, y: 522, maxWidth: 88  },  // label py=306.2,x=161.6
+  raca_cor:             { x: 461, y: 523, maxWidth: 120 },  // label py=305.2,x=460.5 → fill(523,461)
+  cpf:                  { x: 68,  y: 491, maxWidth: 160 },
+  rg:                   { x: 248, y: 491, maxWidth: 150 },
+  cns:                  { x: 70,  y: 461, maxWidth: 168 },  // label py=367.1,x=69.3
+  nome_mae:             { x: 244, y: 460, maxWidth: 292 },  // label py=367.8,x=243.9
+  cidade:               { x: 95,  y: 429, maxWidth: 220 },  // label py=399.1,x=93.6
+  uf:                   { x: 425, y: 429, maxWidth: 30  },
+  bairro:               { x: 67,  y: 404, maxWidth: 130 },  // label py=424.1,x=65.7
+  endereco_rua:         { x: 206, y: 403, maxWidth: 200 },  // label py=424.8,x=204.9
+  endereco_numero:      { x: 67,  y: 380, maxWidth: 50  },  // label py=448.4,x=66.3
+  endereco_complemento: { x: 121, y: 380, maxWidth: 110 },  // label py=448.3,x=120.2
+  cep:                  { x: 470, y: 352, maxWidth: 100 },  // label py=476.3,x=468.9
+  telefone:             { x: 68,  y: 329, maxWidth: 140 },  // label py=499.1,x=67.1
+  email:                { x: 221, y: 329, maxWidth: 200 },
+  data_inicio_sintomas: { x: 455, y: 581, maxWidth: 100 },  // boxes py≈261.5 → 842-261.5=580.5; same row as unidade
+  classificacao_risco:  { x: 67,  y: 290, maxWidth: 200 },
+  unidade_saude:           { x: 67,  y: 580, maxWidth: 290 },  // label py≈248.1 → fill(580,67)
+  data_atendimento:        { x: 455, y: 567, maxWidth: 100 },
+  hora_atendimento:        { x: 520, y: 567, maxWidth: 60  },
+  profissional_responsavel:{ x: 67,  y: 90,  maxWidth: 460 },
+  agravo_notificacao:      { x: 67,  y: 639, maxWidth: 290 },  // label py≈189.5 → fill(639,67)
+  data_notificacao:        { x: 455, y: 637, maxWidth: 100 },  // boxes py≈205.1 → pdflib 637; x right-col
+  municipio_notificacao:   { x: 100, y: 609, maxWidth: 280 },  // label py≈218.6 → fill(609,100)
+  codigo_ibge:             { x: 491, y: 610, maxWidth: 90  },  // label py≈217.9 → fill(610,491)
+  evolucao_caso:           { x: 67,  y: 255, maxWidth: 200 },  // page-1 fallback
+  classificacao_final:     { x: 67,  y: 220, maxWidth: 250 },
+  criterio_confirmacao:    { x: 280, y: 220, maxWidth: 150 },
 };
 
 // ─── COVID-19 / SRAG ─────────────────────────────────────────────────────────
@@ -439,6 +482,34 @@ const COORDS: Record<string, FormCoords> = {
   aids_adulto:   COORDS_AIDS_ADULTO,
   violencia:     COORDS_NOTIF_INDIVIDUAL,
   outros:        COORDS_NOTIF_INDIVIDUAL,
+};
+
+// ── PAGE 2 — Conclusão / Encerramento coords ──────────────────────────────────
+// For multi-page SINAN forms the "Conclusão" section is on page 2.
+// These coordinates are measured on the DENGUE page 2 (ph=842) and shared
+// across dengue / meningite / febre_amarela / exantematica / febre_tifoide /
+// aids_adulto / notificacao_individual (all share the same standard p2 layout).
+// tuberculose is single-page — no entry here; its p1 conclusion coords are used.
+// fill_y = 842 − pymupdf_label_y − 14
+//   "Classificação Final" label py=177.0,x=69.6 → fill(651,70)
+//   "Critério de Confirmação" label row py=183.2,x=314.2 → fill(645,315)
+//   "Evolução do Caso" label py=219.0,x=67.9; text area just below at py=229 → fill(599,175)
+const COORDS2_CONCLUSION: FormCoords = {
+  classificacao_final:  { x: 70,  y: 651, maxWidth: 230 },
+  criterio_confirmacao: { x: 315, y: 645, maxWidth: 200 },
+  evolucao_caso:        { x: 175, y: 599, maxWidth: 350 },
+};
+
+const COORDS2: Record<string, FormCoords> = {
+  dengue:        COORDS2_CONCLUSION,
+  meningite:     COORDS2_CONCLUSION,
+  febre_amarela: COORDS2_CONCLUSION,
+  febre_tifoide: COORDS2_CONCLUSION,
+  exantematica:  COORDS2_CONCLUSION,
+  aids_adulto:   COORDS2_CONCLUSION,
+  violencia:     COORDS2_CONCLUSION,
+  outros:        COORDS2_CONCLUSION,
+  // covid19 / srag / tuberculose intentionally omitted — single-page or diff layout
 };
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -856,8 +927,11 @@ async function fillTemplate(
   const bold   = await doc.embedFont(StandardFonts.HelveticaBold);
   const INK    = rgb(0, 0, 0);
   const SIZE   = 8;
-  const coords = COORDS[type] ?? COORDS_NOTIF_INDIVIDUAL;
-  const page   = doc.getPages()[0];
+  const coords  = COORDS[type] ?? COORDS_NOTIF_INDIVIDUAL;
+  const coords2 = COORDS2[type] ?? null;          // page-2 conclusion coords (null for single-page forms)
+  const pages  = doc.getPages();
+  const page   = pages[0];
+  const page2  = pages.length > 1 ? pages[1] : null;
 
   const values = buildFieldValues(patient, notif);
 
@@ -875,8 +949,8 @@ async function fillTemplate(
   }
 
   // ── 2. Draw text overlay (fallback + raster-image PDFs) ──────────────────
-  function draw(key: string, useBold = false) {
-    const pos   = coords[key];
+  function drawOnPage(pg: typeof page, coordMap: FormCoords, key: string, useBold = false) {
+    const pos   = coordMap[key];
     const value = values[key] ?? "";
     if (!pos || !value.trim()) return;
     const f = useBold ? bold : font;
@@ -886,7 +960,21 @@ async function fillTemplate(
         text = text.slice(0, -1);
       }
     }
-    page.drawText(text, { x: pos.x, y: pos.y, font: f, size: SIZE, color: INK });
+    pg.drawText(text, { x: pos.x, y: pos.y, font: f, size: SIZE, color: INK });
+  }
+
+  function draw(key: string, useBold = false) {
+    drawOnPage(page, coords, key, useBold);
+  }
+
+  // draw2: for conclusion fields — writes to page 2 (via COORDS2) when available,
+  // otherwise falls back to page 1 coords (for single-page forms like tuberculose).
+  function draw2(key: string) {
+    if (page2 && coords2 && coords2[key]) {
+      drawOnPage(page2, coords2, key);
+    } else {
+      draw(key);  // page 1 fallback (tuberculose, covid19, srag)
+    }
   }
 
   // ── 14 standard fields — draw() silently skips any key whose coord is absent
@@ -925,10 +1013,10 @@ async function fillTemplate(
   draw("data_notificacao");
   draw("municipio_notificacao");
   draw("codigo_ibge");
-  // ── SINAN investigation/conclusion
-  draw("evolucao_caso");
-  draw("classificacao_final");
-  draw("criterio_confirmacao");
+  // ── SINAN investigation/conclusion — written to page 2 when form has one
+  draw2("evolucao_caso");
+  draw2("classificacao_final");
+  draw2("criterio_confirmacao");
 
   // ── 3. Disease-specific clinical fields (checkboxes, radio marks, text) ──
   let formExtra: Record<string, string> = {};
