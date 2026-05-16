@@ -10,6 +10,7 @@
     NODE_ENV = "development";
     API_PORT = "8080";
     BASE_PATH = "/";
+    PORT = "9002";
   };
 
   idx = {
