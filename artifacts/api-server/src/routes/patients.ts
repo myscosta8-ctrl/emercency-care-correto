@@ -5,7 +5,7 @@ import { requireAuth, requirePermissao } from "../middleware/require-auth";
 import { uploadToStorage, deleteFromStorage } from "../lib/supabase-storage";
 import { db, pool, patientsTable, patientEvolutionsTable, patientPrescriptionsTable, patientTasksTable, vitalsTable, examResultsTable, patientExamRequestsTable, staffTable, bedsTable } from "@workspace/db";
 import { eq, sql, desc, and, inArray, or, ilike } from "drizzle-orm";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, PDFName } from "pdf-lib";
 
 function templatePath(filename: string): string {
   // After build: dist/templates/<filename>  (process.cwd() = artifacts/api-server)
@@ -2097,7 +2097,26 @@ router.get("/:id/pdf/apac", async (req, res) => {
     const doc  = await PDFDocument.load(tplBytes, { ignoreEncryption: true });
     const font = await doc.embedFont(StandardFonts.Helvetica);
     const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-    const page = doc.getPage(0);
+    const pages = doc.getPages();
+    const page = pages[0];
+
+    // Erase AcroForm blue highlights: draw white rect over every widget, then flatten
+    try {
+      const form = doc.getForm();
+      for (const field of form.getFields()) {
+        for (const widget of field.acroField.getWidgets()) {
+          const rect = widget.getRectangle();
+          if (!rect || rect.width <= 0 || rect.height <= 0) continue;
+          let targetPage = pages[0];
+          if (pages.length > 1) {
+            const pageRef = widget.dict.get(PDFName.of("P"));
+            if (pageRef) { for (const pg of pages) { if (pg.ref === pageRef) { targetPage = pg; break; } } }
+          }
+          targetPage.drawRectangle({ x: rect.x, y: rect.y, width: rect.width, height: rect.height, color: rgb(1, 1, 1), borderWidth: 0 });
+        }
+      }
+      form.flatten();
+    } catch { /* template may have no form */ }
 
     const BLACK = rgb(0, 0, 0);
     const fmtDate = (d: string | null | undefined) => {
@@ -2148,7 +2167,26 @@ router.get("/:id/pdf/ficha-referencia", async (req, res) => {
     const doc  = await PDFDocument.load(tplBytes, { ignoreEncryption: true });
     const font = await doc.embedFont(StandardFonts.Helvetica);
     const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-    const page = doc.getPage(0);
+    const fichaPages = doc.getPages();
+    const page = fichaPages[0];
+
+    // Erase AcroForm blue highlights: draw white rect over every widget, then flatten
+    try {
+      const form = doc.getForm();
+      for (const field of form.getFields()) {
+        for (const widget of field.acroField.getWidgets()) {
+          const rect = widget.getRectangle();
+          if (!rect || rect.width <= 0 || rect.height <= 0) continue;
+          let targetPage = fichaPages[0];
+          if (fichaPages.length > 1) {
+            const pageRef = widget.dict.get(PDFName.of("P"));
+            if (pageRef) { for (const pg of fichaPages) { if (pg.ref === pageRef) { targetPage = pg; break; } } }
+          }
+          targetPage.drawRectangle({ x: rect.x, y: rect.y, width: rect.width, height: rect.height, color: rgb(1, 1, 1), borderWidth: 0 });
+        }
+      }
+      form.flatten();
+    } catch { /* template may have no form */ }
 
     const BLACK = rgb(0, 0, 0);
     const fmtDate = (d: string | null | undefined) => {
