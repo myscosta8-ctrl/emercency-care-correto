@@ -52,6 +52,7 @@ import {
   Bell, Trash, Download, FileDown, Calendar, Building2,
   MessageSquare, UtensilsCrossed, Pill, Truck, Plus, Send, FlaskConical,
   Plug, Unplug, AlertCircle, ChevronDown, Ban, X as XIcon,
+  Package, ShieldAlert, AlertTriangle, BookOpen, FileText,
 } from "lucide-react";
 import { downloadSinanPdf, generateSinanPdfBlob, downloadIdentificacaoPdf } from "@/lib/pdf-fill";
 import { buildInstitutionalHeader, buildPrintDocStyles, type PrintPatientInfo } from "@/lib/print-header-html";
@@ -68,6 +69,13 @@ import { PatientInterconsultsTab } from "@/components/patient-interconsults-tab"
 import { PatientCarePlanTab } from "@/components/patient-care-plan-tab";
 import { PatientControlledMedsTab } from "@/components/patient-controlled-meds-tab";
 import { PatientDispensationsTab } from "@/components/patient-dispensations-tab";
+import { PatientInventarioTab } from "@/components/patient-inventario-tab";
+import { PatientEscalasRiscoTab } from "@/components/patient-escalas-risco-tab";
+import { PatientEventoAdversoTab } from "@/components/patient-evento-adverso-tab";
+import { PatientChecklistAltaTab } from "@/components/patient-checklist-alta-tab";
+import { PatientAtestadoTab } from "@/components/patient-atestado-tab";
+import { PatientOrientacoesAltaTab } from "@/components/patient-orientacoes-alta-tab";
+import { PatientSumarioAltaTab } from "@/components/patient-sumario-alta-tab";
 import { EvolutionEnfermagemDiaria } from "@/components/evolution-enfermagem-diaria";
 
 import { Button } from "@/components/ui/button";
@@ -240,10 +248,10 @@ export default function PatientDetail() {
 
   const latestVitals = vitals?.[0];
 
-  const [activeGroup, setActiveGroup] = useState<"clinico" | "evolucao" | "tratamento" | "internacao">("internacao");
+  const [activeGroup, setActiveGroup] = useState<"admissao" | "internacao" | "documentos" | "alta">("admissao");
   const [activeTab, setActiveTab] = useState("resumo");
 
-  function switchGroup(g: "clinico" | "evolucao" | "tratamento" | "internacao") {
+  function switchGroup(g: "admissao" | "internacao" | "documentos" | "alta") {
     setActiveGroup(g);
     setActiveTab(GROUP_DEFAULTS[g]);
   }
@@ -308,10 +316,10 @@ export default function PatientDetail() {
   const canEditNutricionista = ["nutricionista", "administrador", "diretoria_geral"].includes(role);
 
   const GROUP_DEFAULTS: Record<string, string> = {
-    clinico:    "resumo",
-    evolucao:   "evol-medico",
-    tratamento: "prescricao",
+    admissao:   "resumo",
     internacao: canEditMedico ? "evol-medico" : "vitais",
+    documentos: "sinan",
+    alta:       canEditMedico ? "sumario-alta" : "checklist-alta",
   };
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
@@ -884,9 +892,25 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* ── Group selector ─────────────────────────────────────────── */}
+          {/* ── Group selector — 4 fases do atendimento ────────────────── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-            {/* Internação */}
+            {/* ADMISSÃO */}
+            <button
+              onClick={() => switchGroup("admissao")}
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                activeGroup === "admissao"
+                  ? "bg-blue-50 text-blue-700 border-blue-300 shadow-sm"
+                  : "bg-muted/30 text-muted-foreground border-border hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50/40",
+              )}
+            >
+              <span className="text-base leading-none">📥</span>
+              <span className="mt-0.5">Admissão</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "admissao" ? "text-blue-400" : "text-muted-foreground/60")}>
+                Identificação · TCLE
+              </span>
+            </button>
+            {/* INTERNAÇÃO */}
             <button
               onClick={() => switchGroup("internacao")}
               className={cn(
@@ -898,90 +922,75 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             >
               <span className="text-base leading-none">🏥</span>
               <span className="mt-0.5">Internação</span>
-              <span className={cn("text-[9px] font-normal", activeGroup === "internacao" ? "text-amber-300" : "text-muted-foreground/60")}>
-                Admissão · Entrada
+              <span className={cn("text-[9px] font-normal", activeGroup === "internacao" ? "text-amber-400" : "text-muted-foreground/60")}>
+                Evolução · Tratamento
               </span>
             </button>
-            {/* Clínico */}
+            {/* DOCUMENTOS */}
             <button
-              onClick={() => switchGroup("clinico")}
+              onClick={() => switchGroup("documentos")}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
-                activeGroup === "clinico"
-                  ? "bg-blue-50 text-blue-700 border-blue-300 shadow-sm"
-                  : "bg-muted/30 text-muted-foreground border-border hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50/40",
-              )}
-            >
-              <span className="text-base leading-none">📋</span>
-              <span className="mt-0.5">Clínico</span>
-              <span className={cn("text-[9px] font-normal", activeGroup === "clinico" ? "text-blue-400" : "text-muted-foreground/60")}>
-                Resumo · Saída
-              </span>
-            </button>
-            {/* Evolução */}
-            <button
-              onClick={() => switchGroup("evolucao")}
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
-                activeGroup === "evolucao"
+                activeGroup === "documentos"
                   ? "bg-purple-50 text-purple-700 border-purple-300 shadow-sm"
                   : "bg-muted/30 text-muted-foreground border-border hover:border-purple-200 hover:text-purple-600 hover:bg-purple-50/40",
               )}
             >
-              <span className="text-base leading-none">🩺</span>
-              <span className="mt-0.5">Evolução</span>
-              <span className={cn("text-[9px] font-normal", activeGroup === "evolucao" ? "text-purple-400" : "text-muted-foreground/60")}>
-                Médica · Enfermagem
+              <span className="text-base leading-none">📋</span>
+              <span className="mt-0.5">Documentos</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "documentos" ? "text-purple-400" : "text-muted-foreground/60")}>
+                SINAN · NIR · Eventos
               </span>
             </button>
-            {/* Tratamento */}
+            {/* ALTA */}
             <button
-              onClick={() => switchGroup("tratamento")}
+              onClick={() => switchGroup("alta")}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
-                activeGroup === "tratamento"
+                activeGroup === "alta"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-300 shadow-sm"
                   : "bg-muted/30 text-muted-foreground border-border hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50/40",
               )}
             >
-              <span className="text-base leading-none">💊</span>
-              <span className="mt-0.5">Tratamento</span>
-              <span className={cn("text-[9px] font-normal", activeGroup === "tratamento" ? "text-emerald-500" : "text-muted-foreground/60")}>
-                Prescrição · Laboratório
+              <span className="text-base leading-none">🚪</span>
+              <span className="mt-0.5">Alta</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "alta" ? "text-emerald-500" : "text-muted-foreground/60")}>
+                Sumário · Checklist
               </span>
             </button>
           </div>
 
           {/* ── Sub-tabs for active group ──────────────────────────────── */}
           <TabsList className="flex flex-wrap h-auto gap-1 mb-4 bg-muted/20 p-1 rounded-lg border border-border/50">
-            {/* ── CLÍNICO: dados gerais + documentos de saída ── */}
-            {activeGroup === "clinico" && <>
+
+            {/* ── ADMISSÃO: entrada do paciente na unidade ── */}
+            {activeGroup === "admissao" && <>
               <TabsTrigger value="resumo" className="text-xs">📋 Resumo</TabsTrigger>
-              <TabsTrigger value="identificacao" className="text-xs">Admissão</TabsTrigger>
+              <TabsTrigger value="identificacao" className="text-xs">Ficha de Identificação</TabsTrigger>
+              <TabsTrigger value="inventario-pertences" className="text-xs">Inventário de Pertences</TabsTrigger>
+              {pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
+              {pode("registrar_alergia") && <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>}
               <TabsTrigger value="timeline" className="text-xs">Linha do Tempo</TabsTrigger>
-              {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
-              {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">SINAN</TabsTrigger>}
-              {isInpatient && <TabsTrigger value="regulacao" className="text-xs">Regulação/NIR</TabsTrigger>}
-              {isInpatient && pode("registrar_procedimento") && <TabsTrigger value="procedimentos" className="text-xs">Procedimentos</TabsTrigger>}
-              {isInpatient && pode("registrar_interconsulta") && <TabsTrigger value="interconsulta" className="text-xs">Interconsulta</TabsTrigger>}
             </>}
 
-            {/* ── EVOLUÇÃO: todos profissionais, todos visualizam ── */}
-            {activeGroup === "evolucao" && <>
+            {/* ── INTERNAÇÃO: ciclo clínico diário ── */}
+            {activeGroup === "internacao" && <>
+              {/* Evoluções por categoria profissional */}
               <TabsTrigger value="evol-medico" className="text-xs">Evolução Médica</TabsTrigger>
               <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
               <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>
-              <TabsTrigger value="tecnico" className="text-xs">Anotação de Enfermagem</TabsTrigger>
+              <TabsTrigger value="tecnico" className="text-xs">Téc. Enfermagem</TabsTrigger>
               {isInpatient && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
               {isInpatient && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
-            </>}
-
-            {/* ── TRATAMENTO: prescrições e exames ── */}
-            {activeGroup === "tratamento" && <>
+              {/* Sinais vitais + escalas */}
+              <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
+              <TabsTrigger value="escalas-risco" className="text-xs">Escalas de Risco</TabsTrigger>
+              {pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano de Cuidados</TabsTrigger>}
+              {/* Tratamento */}
               {pode("registrar_prescricao") && <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>}
               {pode("registrar_prescricao") && (
                 <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
-                  <FlaskConical className="h-3 w-3" /> Solicitação de Exames
+                  <FlaskConical className="h-3 w-3" /> Sol. Exames
                 </TabsTrigger>
               )}
               {(pode("registrar_prescricao") || pode("registrar_exames") || pode("visualizar_setores")) && (
@@ -1010,41 +1019,33 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   )}
                 </TabsTrigger>
               )}
-              {isInpatient && pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Medicamentos Controlados</TabsTrigger>}
-              {isInpatient && pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação Farmacêutica</TabsTrigger>}
+              {isInpatient && pode("registrar_medicamento_controlado") && <TabsTrigger value="med-controlados" className="text-xs">Med. Controlados</TabsTrigger>}
+              {isInpatient && pode("registrar_dispensacao") && <TabsTrigger value="dispensacao" className="text-xs">Dispensação</TabsTrigger>}
             </>}
 
-            {/* ── INTERNAÇÃO: documentos de entrada ── */}
-            {activeGroup === "internacao" && <>
-              {/* Médico: admissão clínica + plano terapêutico + AIH */}
-              {canEditMedico && <>
-                <TabsTrigger value="evol-medico" className="text-xs">Admissão Médica</TabsTrigger>
-                <TabsTrigger value="prescricao" className="text-xs">Plano Terapêutico</TabsTrigger>
-                {pode("registrar_prescricao") && (
-                  <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
-                    <FlaskConical className="h-3 w-3" /> Solicitação de Exames
-                  </TabsTrigger>
-                )}
-              </>}
-              {/* Não-médico lê a admissão médica somente */}
-              {!canEditMedico && <TabsTrigger value="evol-medico" className="text-xs">Admissão Médica</TabsTrigger>}
-              {/* Enfermeiro: admissão de enfermagem + sinais vitais + plano de cuidados */}
-              {canEditEnfermeiro && <>
-                <TabsTrigger value="sae" className="text-xs">Admissão de Enfermagem</TabsTrigger>
-                <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
-                {pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano de Cuidados</TabsTrigger>}
-              </>}
-              {/* Não-enfermeiro lê vitais somente */}
-              {!canEditEnfermeiro && <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>}
-              {/* Docs gerais de internação */}
-              {isInpatient && pode("registrar_alergia") && <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>}
-              {isInpatient && pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
-              {isInpatient && pode("registrar_obito") && <TabsTrigger value="obito" className="text-xs text-red-500">⚠ Óbito</TabsTrigger>}
+            {/* ── DOCUMENTOS: notificações, regulação, transferência ── */}
+            {activeGroup === "documentos" && <>
+              {podeGerarPDF && <TabsTrigger value="sinan" className="text-xs">🔴 SINAN</TabsTrigger>}
+              <TabsTrigger value="evento-adverso" className="text-xs">Evento Adverso</TabsTrigger>
+              {isInpatient && <TabsTrigger value="regulacao" className="text-xs">Regulação/NIR</TabsTrigger>}
+              {pode("mudar_setor") && <TabsTrigger value="transferencia" className="text-xs">Transferência</TabsTrigger>}
+              {isInpatient && pode("registrar_procedimento") && <TabsTrigger value="procedimentos" className="text-xs">Procedimentos</TabsTrigger>}
+              {isInpatient && pode("registrar_interconsulta") && <TabsTrigger value="interconsulta" className="text-xs">Interconsulta</TabsTrigger>}
             </>}
+
+            {/* ── ALTA: encerramento do atendimento ── */}
+            {activeGroup === "alta" && <>
+              {canEditMedico && <TabsTrigger value="sumario-alta" className="text-xs">Sumário de Alta</TabsTrigger>}
+              <TabsTrigger value="checklist-alta" className="text-xs">Checklist de Alta</TabsTrigger>
+              {canEditMedico && <TabsTrigger value="atestado-medico" className="text-xs">Atestado Médico</TabsTrigger>}
+              <TabsTrigger value="orientacoes-alta" className="text-xs">Orientações de Alta</TabsTrigger>
+              {pode("registrar_obito") && <TabsTrigger value="obito" className="text-xs text-red-500">⚠ Óbito</TabsTrigger>}
+            </>}
+
           </TabsList>
 
-          {/* ── AIH: ação rápida na aba Internação (médicos) ─────────────── */}
-          {activeGroup === "internacao" && isMedico && pode("gerar_pdf") && (
+          {/* ── AIH: ação rápida na aba Alta (médicos) ─────────────── */}
+          {activeGroup === "alta" && isMedico && pode("gerar_pdf") && (
             <div className="flex items-center gap-2 mb-3 -mt-1 px-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Documentos PDF:</span>
               <Button
@@ -2694,6 +2695,125 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           {/* ── TAB: ÓBITO ────────────────────────────────────────────── */}
           <TabsContent value="obito">
             <PatientObitoTab patientId={id} patientName={patient?.full_name ?? ""} canEdit={pode("registrar_obito")} />
+          </TabsContent>
+
+          {/* ── TAB: INVENTÁRIO DE PERTENCES ─────────────────────────── */}
+          <TabsContent value="inventario-pertences">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Package className="h-4 w-4 text-blue-400" />
+                  Inventário de Pertences do Paciente
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Registro dos pertences entregues pelo paciente ou acompanhante na admissão. Este documento protege a unidade e o paciente.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PatientInventarioTab patientId={id} patientName={patient?.full_name ?? ""} canEdit={pode("registrar_consentimento")} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── TAB: ESCALAS DE RISCO ────────────────────────────────── */}
+          <TabsContent value="escalas-risco">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-orange-400" />
+                  Escalas de Risco
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Avaliação de riscos clínicos — Escala de Braden (lesão por pressão) e Escala de Morse (quedas).
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PatientEscalasRiscoTab patientId={id} canEdit={canEditEnfermeiro} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── TAB: EVENTO ADVERSO ──────────────────────────────────── */}
+          <TabsContent value="evento-adverso">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-400" />
+                  Notificação de Evento Adverso / Incidente
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Registro de eventos adversos, incidentes sem dano ou near miss ocorridos durante o atendimento. Guarda mínima: 5 anos.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PatientEventoAdversoTab patientId={id} patientName={patient?.full_name ?? ""} canEdit={pode("registrar_evolucao")} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── TAB: SUMÁRIO DE ALTA ─────────────────────────────────── */}
+          <TabsContent value="sumario-alta">
+            <PatientSumarioAltaTab
+              patient={patient as unknown as Parameters<typeof PatientSumarioAltaTab>[0]["patient"]}
+              history={history as unknown as Parameters<typeof PatientSumarioAltaTab>[0]["history"]}
+              prescriptions={prescriptions as unknown as Parameters<typeof PatientSumarioAltaTab>[0]["prescriptions"]}
+              staffMap={staffMap as unknown as Parameters<typeof PatientSumarioAltaTab>[0]["staffMap"]}
+              canEdit={canEditMedico}
+            />
+          </TabsContent>
+
+          {/* ── TAB: CHECKLIST DE ALTA ───────────────────────────────── */}
+          <TabsContent value="checklist-alta">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 text-emerald-400" />
+                  Checklist de Alta
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Verificação dos itens obrigatórios antes da saída do paciente da unidade.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PatientChecklistAltaTab patientId={id} patientName={patient?.full_name ?? ""} canEdit={canEditEnfermeiro} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── TAB: ATESTADO MÉDICO ─────────────────────────────────── */}
+          <TabsContent value="atestado-medico">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-400" />
+                  Atestado Médico / Comparecimento
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Geração de atestado médico de afastamento ou declaração de comparecimento para o paciente.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PatientAtestadoTab patientId={id} patient={patient} canEdit={canEditMedico} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── TAB: ORIENTAÇÕES DE ALTA ─────────────────────────────── */}
+          <TabsContent value="orientacoes-alta">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-teal-400" />
+                  Orientações de Alta
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Instruções multiprofissionais para o paciente e família após a alta — medicações, cuidados, retorno.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PatientOrientacoesAltaTab patientId={id} patientName={patient?.full_name ?? ""} canEdit={canEditEnfermeiro || canEditMedico} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
         </Tabs>
