@@ -935,18 +935,12 @@ async function fillTemplate(
 
   const values = buildFieldValues(patient, notif);
 
-  // ── 1. Fill AcroForm fields ───────────────────────────────────────────────
+  // ── 1. Flatten AcroForm to remove blue highlight artifacts ───────────────
+  // AcroForm interactive fields on the SINAN template PDFs render with a blue
+  // border/highlight that overlays the form lines. Flattening converts them to
+  // static page content before we draw our text overlay.
   const form = doc.getForm();
-  for (const [fieldName, value] of Object.entries(values)) {
-    if (!value.trim()) continue;
-    try {
-      const field = form.getTextField(fieldName);
-      field.setText(value);
-      field.enableReadOnly(); // lock so staff can't accidentally clear it
-    } catch {
-      // field not present in this template — text overlay will handle it
-    }
-  }
+  try { form.flatten(); } catch { /* ignore — some templates have no form */ }
 
   // ── 2. Draw text overlay (fallback + raster-image PDFs) ──────────────────
   function drawOnPage(pg: typeof page, coordMap: FormCoords, key: string, useBold = false) {
@@ -993,9 +987,7 @@ async function fillTemplate(
   draw("uf");
   draw("cep");
   // ── SINAN-context fields — have coord boxes on SINAN forms; not on Ficha ID
-  draw("raca_cor");
   draw("idade");
-  draw("sexo");
   draw("telefone");
   draw("email");
   // ── clinical fields — have coord boxes on SINAN forms; also on Ficha ID
@@ -1024,6 +1016,42 @@ async function fillTemplate(
     try { formExtra = JSON.parse(notif.formData); } catch { /* ignore */ }
   }
   fillClinical(page, font, bold, type, formExtra, INK);
+
+  // ── 4. Standard SINAN checkbox fields (sexo, raça/cor) ────────────────────
+  // These are radio-button style fields: the form already has the option labels
+  // pre-printed; we only draw "X" at the position of the selected option's box.
+  // x/y base comes from the coords map (measured per-template); horizontal
+  // offsets below were measured from the standard Notificação Individual row.
+  const XSZ = 7.5;
+  function markX(x: number, y: number) {
+    page.drawText("X", { x, y, font: bold, size: XSZ, color: INK });
+  }
+
+  // Field 11 — Sexo
+  // Options in row: M - Masculino □  F - Feminino □  I - Ignorado □
+  // COORDS["sexo"] points to the M-option box position.
+  const sexPos = coords["sexo"];
+  if (sexPos) {
+    if      (patient.sex === "M") markX(sexPos.x,       sexPos.y);
+    else if (patient.sex === "F") markX(sexPos.x + 74,  sexPos.y);
+    else if (patient.sex === "I") markX(sexPos.x + 143, sexPos.y);
+  }
+
+  // Field 13 — Raça/Cor
+  // Options in row: 1-Branca □  2-Preta □  3-Amarela □  4-Parda □  5-Indígena □  9-Ignorado □
+  // COORDS["raca_cor"] points to the 1-Branca option box position.
+  const racaPos = coords["raca_cor"];
+  if (racaPos && patient.race) {
+    const race = patient.race.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let rx = racaPos.x;
+    if      (race.includes("branca"))               rx = racaPos.x;
+    else if (race.includes("preta"))                rx = racaPos.x + 22;
+    else if (race.includes("amarela"))              rx = racaPos.x + 46;
+    else if (race.includes("parda"))                rx = racaPos.x + 70;
+    else if (race.includes("indig") || race.includes("indí") || race.includes("indi")) rx = racaPos.x + 94;
+    else if (race.includes("ignor"))                rx = racaPos.x + 118;
+    markX(rx, racaPos.y);
+  }
 
   return doc.save();
 }
