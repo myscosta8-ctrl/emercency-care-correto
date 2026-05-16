@@ -248,10 +248,10 @@ export default function PatientDetail() {
 
   const latestVitals = vitals?.[0];
 
-  const [activeGroup, setActiveGroup] = useState<"admissao" | "internacao" | "documentos" | "alta">("admissao");
+  const [activeGroup, setActiveGroup] = useState<"recepcao" | "triagem" | "atendimento" | "internacao" | "documentos" | "alta">("recepcao");
   const [activeTab, setActiveTab] = useState("resumo");
 
-  function switchGroup(g: "admissao" | "internacao" | "documentos" | "alta") {
+  function switchGroup(g: "recepcao" | "triagem" | "atendimento" | "internacao" | "documentos" | "alta") {
     setActiveGroup(g);
     setActiveTab(GROUP_DEFAULTS[g]);
   }
@@ -316,10 +316,12 @@ export default function PatientDetail() {
   const canEditNutricionista = ["nutricionista", "administrador", "diretoria_geral"].includes(role);
 
   const GROUP_DEFAULTS: Record<string, string> = {
-    admissao:   "resumo",
-    internacao: canEditMedico ? "evol-medico" : "vitais",
-    documentos: "sinan",
-    alta:       canEditMedico ? "sumario-alta" : "checklist-alta",
+    recepcao:    "resumo",
+    triagem:     isEnfermeiro ? "ficha-triagem" : "vitais",
+    atendimento: canEditMedico ? "evol-medico" : "prescricao",
+    internacao:  "enfermagem",
+    documentos:  "sinan",
+    alta:        canEditMedico ? "sumario-alta" : "checklist-alta",
   };
   const deletePatient = useDeletePatient();
   const updateStatus = useUpdatePatientStatus();
@@ -892,29 +894,61 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* ── Group selector — 4 fases do atendimento ────────────────── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-            {/* ADMISSÃO */}
+          {/* ── Group selector — 6 fases do atendimento ────────────────── */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 mb-3">
+            {/* RECEPÇÃO */}
             <button
-              onClick={() => switchGroup("admissao")}
+              onClick={() => switchGroup("recepcao")}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
-                activeGroup === "admissao"
+                "flex flex-col items-center gap-0.5 px-1.5 py-2 rounded-lg border text-[11px] font-semibold transition-all",
+                activeGroup === "recepcao"
                   ? "bg-blue-50 text-blue-700 border-blue-300 shadow-sm"
                   : "bg-muted/30 text-muted-foreground border-border hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50/40",
               )}
             >
               <span className="text-base leading-none">📥</span>
-              <span className="mt-0.5">Admissão</span>
-              <span className={cn("text-[9px] font-normal", activeGroup === "admissao" ? "text-blue-400" : "text-muted-foreground/60")}>
-                Identificação · TCLE
+              <span className="mt-0.5">Recepção</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "recepcao" ? "text-blue-400" : "text-muted-foreground/60")}>
+                Identificação
+              </span>
+            </button>
+            {/* TRIAGEM */}
+            <button
+              onClick={() => switchGroup("triagem")}
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-1.5 py-2 rounded-lg border text-[11px] font-semibold transition-all",
+                activeGroup === "triagem"
+                  ? "bg-violet-50 text-violet-700 border-violet-300 shadow-sm"
+                  : "bg-muted/30 text-muted-foreground border-border hover:border-violet-200 hover:text-violet-600 hover:bg-violet-50/40",
+              )}
+            >
+              <span className="text-base leading-none">🔍</span>
+              <span className="mt-0.5">Triagem</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "triagem" ? "text-violet-400" : "text-muted-foreground/60")}>
+                Classificação
+              </span>
+            </button>
+            {/* ATENDIMENTO */}
+            <button
+              onClick={() => switchGroup("atendimento")}
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-1.5 py-2 rounded-lg border text-[11px] font-semibold transition-all",
+                activeGroup === "atendimento"
+                  ? "bg-sky-50 text-sky-700 border-sky-300 shadow-sm"
+                  : "bg-muted/30 text-muted-foreground border-border hover:border-sky-200 hover:text-sky-600 hover:bg-sky-50/40",
+              )}
+            >
+              <span className="text-base leading-none">🩺</span>
+              <span className="mt-0.5">Atendimento</span>
+              <span className={cn("text-[9px] font-normal", activeGroup === "atendimento" ? "text-sky-400" : "text-muted-foreground/60")}>
+                Consulta
               </span>
             </button>
             {/* INTERNAÇÃO */}
             <button
               onClick={() => switchGroup("internacao")}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                "flex flex-col items-center gap-0.5 px-1.5 py-2 rounded-lg border text-[11px] font-semibold transition-all",
                 activeGroup === "internacao"
                   ? "bg-amber-50 text-amber-700 border-amber-300 shadow-sm"
                   : "bg-muted/30 text-muted-foreground border-border hover:border-amber-200 hover:text-amber-600 hover:bg-amber-50/40",
@@ -923,14 +957,14 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <span className="text-base leading-none">🏥</span>
               <span className="mt-0.5">Internação</span>
               <span className={cn("text-[9px] font-normal", activeGroup === "internacao" ? "text-amber-400" : "text-muted-foreground/60")}>
-                Evolução · Tratamento
+                Enferm. · Farmácia
               </span>
             </button>
             {/* DOCUMENTOS */}
             <button
               onClick={() => switchGroup("documentos")}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                "flex flex-col items-center gap-0.5 px-1.5 py-2 rounded-lg border text-[11px] font-semibold transition-all",
                 activeGroup === "documentos"
                   ? "bg-purple-50 text-purple-700 border-purple-300 shadow-sm"
                   : "bg-muted/30 text-muted-foreground border-border hover:border-purple-200 hover:text-purple-600 hover:bg-purple-50/40",
@@ -939,14 +973,14 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <span className="text-base leading-none">📋</span>
               <span className="mt-0.5">Documentos</span>
               <span className={cn("text-[9px] font-normal", activeGroup === "documentos" ? "text-purple-400" : "text-muted-foreground/60")}>
-                SINAN · NIR · Eventos
+                SINAN · NIR
               </span>
             </button>
             {/* ALTA */}
             <button
               onClick={() => switchGroup("alta")}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                "flex flex-col items-center gap-0.5 px-1.5 py-2 rounded-lg border text-[11px] font-semibold transition-all",
                 activeGroup === "alta"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-300 shadow-sm"
                   : "bg-muted/30 text-muted-foreground border-border hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50/40",
@@ -955,7 +989,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <span className="text-base leading-none">🚪</span>
               <span className="mt-0.5">Alta</span>
               <span className={cn("text-[9px] font-normal", activeGroup === "alta" ? "text-emerald-500" : "text-muted-foreground/60")}>
-                Sumário · Checklist
+                Sumário
               </span>
             </button>
           </div>
@@ -963,31 +997,25 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
           {/* ── Sub-tabs for active group ──────────────────────────────── */}
           <TabsList className="flex flex-wrap h-auto gap-1 mb-4 bg-muted/20 p-1 rounded-lg border border-border/50">
 
-            {/* ── ADMISSÃO: entrada do paciente na unidade ── */}
-            {activeGroup === "admissao" && <>
+            {/* ── RECEPÇÃO: cadastro e documentos de entrada ── */}
+            {activeGroup === "recepcao" && <>
               <TabsTrigger value="resumo" className="text-xs">📋 Resumo</TabsTrigger>
               <TabsTrigger value="identificacao" className="text-xs">Ficha de Identificação</TabsTrigger>
               <TabsTrigger value="inventario-pertences" className="text-xs">Inventário de Pertences</TabsTrigger>
               {pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
               {pode("registrar_alergia") && <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>}
+            </>}
+
+            {/* ── TRIAGEM: classificação Manchester + sinais vitais iniciais ── */}
+            {activeGroup === "triagem" && <>
               {isEnfermeiro && <TabsTrigger value="ficha-triagem" className="text-xs">Ficha de Triagem</TabsTrigger>}
+              <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
               <TabsTrigger value="timeline" className="text-xs">Linha do Tempo</TabsTrigger>
             </>}
 
-            {/* ── INTERNAÇÃO: ciclo clínico diário ── */}
-            {activeGroup === "internacao" && <>
-              {/* Evoluções por categoria profissional */}
+            {/* ── ATENDIMENTO: consulta médica, prescrição e desfecho ── */}
+            {activeGroup === "atendimento" && <>
               <TabsTrigger value="evol-medico" className="text-xs">Evolução Médica</TabsTrigger>
-              <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
-              <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>
-              <TabsTrigger value="tecnico" className="text-xs">Téc. Enfermagem</TabsTrigger>
-              {isInpatient && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
-              {isInpatient && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
-              {/* Sinais vitais + escalas */}
-              <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
-              <TabsTrigger value="escalas-risco" className="text-xs">Escalas de Risco</TabsTrigger>
-              {pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano de Cuidados</TabsTrigger>}
-              {/* Tratamento */}
               {pode("registrar_prescricao") && <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>}
               {pode("registrar_prescricao") && (
                 <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
@@ -1009,6 +1037,18 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
                   <FlaskConical className="h-3 w-3" /> Laboratório
                 </TabsTrigger>
               )}
+            </>}
+
+            {/* ── INTERNAÇÃO: ciclo clínico diário e monitoramento contínuo ── */}
+            {activeGroup === "internacao" && <>
+              <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
+              <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>
+              <TabsTrigger value="tecnico" className="text-xs">Téc. Enfermagem</TabsTrigger>
+              {isInpatient && <TabsTrigger value="social" className="text-xs">Serviço Social</TabsTrigger>}
+              {isInpatient && <TabsTrigger value="nutricao" className="text-xs">Nutrição</TabsTrigger>}
+              <TabsTrigger value="vitais" className="text-xs">Sinais Vitais</TabsTrigger>
+              <TabsTrigger value="escalas-risco" className="text-xs">Escalas de Risco</TabsTrigger>
+              {pode("registrar_plano_cuidados") && <TabsTrigger value="plano-cuidados" className="text-xs">Plano de Cuidados</TabsTrigger>}
               {isInpatient && pode("registrar_farmacia") && <TabsTrigger value="farmacia" className="text-xs">Farmácia</TabsTrigger>}
               {isInpatient && (
                 <TabsTrigger value="dispositivos" className="text-xs flex items-center gap-1">
@@ -1046,8 +1086,8 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
 
           </TabsList>
 
-          {/* ── AIH: ação rápida na aba Internação (médicos) ─────────── */}
-          {activeGroup === "internacao" && isMedico && pode("gerar_pdf") && (
+          {/* ── AIH: ação rápida na aba Atendimento (médicos) ─────────── */}
+          {activeGroup === "atendimento" && isMedico && pode("gerar_pdf") && (
             <div className="flex items-center gap-2 mb-3 -mt-1 px-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Documentos PDF:</span>
               <Button
