@@ -1,4 +1,4 @@
-import { PDFDocument, PDFPage, PDFFont, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFPage, PDFFont, StandardFonts, rgb, PDFName } from "pdf-lib";
 import { SINAN_AGRAVOS, agravoToTemplate } from "./sinan-agravos";
 
 // ── types ─────────────────────────────────────────────────────────────────────
@@ -935,12 +935,41 @@ async function fillTemplate(
 
   const values = buildFieldValues(patient, notif);
 
-  // ── 1. Flatten AcroForm to remove blue highlight artifacts ───────────────
-  // AcroForm interactive fields on the SINAN template PDFs render with a blue
-  // border/highlight that overlays the form lines. Flattening converts them to
-  // static page content before we draw our text overlay.
+  // ── 1. Erase blue AcroForm highlights with white rectangles, then flatten ──
+  // AcroForm widget annotations carry colored backgrounds that persist even
+  // after flatten() in some viewers. Strategy:
+  //   a) Draw a white filled rectangle over every widget's bounding box — this
+  //      permanently covers any colored background on the rendered page stream.
+  //   b) Flatten afterwards so widget appearances are merged into page content.
+  //      The white rectangles are drawn BEFORE text, so text sits on top.
   const form = doc.getForm();
-  try { form.flatten(); } catch { /* ignore — some templates have no form */ }
+  try {
+    for (const field of form.getFields()) {
+      for (const widget of field.acroField.getWidgets()) {
+        const rect = widget.getRectangle();
+        if (!rect || rect.width <= 0 || rect.height <= 0) continue;
+        // Find which page this widget belongs to via its /P entry
+        let targetPage = pages[0];
+        if (pages.length > 1) {
+          const pageRef = widget.dict.get(PDFName.of("P"));
+          if (pageRef) {
+            for (const pg of pages) {
+              if (pg.ref === pageRef) { targetPage = pg; break; }
+            }
+          }
+        }
+        targetPage.drawRectangle({
+          x: rect.x,
+          y: rect.y,
+          width: rect.width,
+          height: rect.height,
+          color: rgb(1, 1, 1),
+          borderWidth: 0,
+        });
+      }
+    }
+    form.flatten();
+  } catch { /* ignore — some templates have no form */ }
 
   // ── 2. Draw text overlay (fallback + raster-image PDFs) ──────────────────
   function drawOnPage(pg: typeof page, coordMap: FormCoords, key: string, useBold = false) {
@@ -999,7 +1028,8 @@ async function fillTemplate(
   draw("unidade_saude");
   draw("data_atendimento");
   draw("hora_atendimento");
-  draw("profissional_responsavel");
+  // profissional_responsavel omitted from SINAN overlay — y=90 on dengue/meningite
+  // forms overlaps with the laboratory data section (item 43 area).
   // ── SINAN notification header
   draw("agravo_notificacao");
   draw("data_notificacao");
