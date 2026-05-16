@@ -970,6 +970,7 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <TabsTrigger value="inventario-pertences" className="text-xs">Inventário de Pertences</TabsTrigger>
               {pode("registrar_consentimento") && <TabsTrigger value="tcle" className="text-xs">TCLE</TabsTrigger>}
               {pode("registrar_alergia") && <TabsTrigger value="alergias" className="text-xs">Alergias</TabsTrigger>}
+              {isEnfermeiro && <TabsTrigger value="ficha-triagem" className="text-xs">Ficha de Triagem</TabsTrigger>}
               <TabsTrigger value="timeline" className="text-xs">Linha do Tempo</TabsTrigger>
             </>}
 
@@ -1039,13 +1040,14 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               <TabsTrigger value="checklist-alta" className="text-xs">Checklist de Alta</TabsTrigger>
               {canEditMedico && <TabsTrigger value="atestado-medico" className="text-xs">Atestado Médico</TabsTrigger>}
               <TabsTrigger value="orientacoes-alta" className="text-xs">Orientações de Alta</TabsTrigger>
+              {isMedico && pode("gerar_pdf") && <TabsTrigger value="ficha-referencia" className="text-xs">Ficha de Referência</TabsTrigger>}
               {pode("registrar_obito") && <TabsTrigger value="obito" className="text-xs text-red-500">⚠ Óbito</TabsTrigger>}
             </>}
 
           </TabsList>
 
-          {/* ── AIH: ação rápida na aba Alta (médicos) ─────────────── */}
-          {activeGroup === "alta" && isMedico && pode("gerar_pdf") && (
+          {/* ── AIH: ação rápida na aba Internação (médicos) ─────────── */}
+          {activeGroup === "internacao" && isMedico && pode("gerar_pdf") && (
             <div className="flex items-center gap-2 mb-3 -mt-1 px-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Documentos PDF:</span>
               <Button
@@ -1526,29 +1528,6 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               onAfterSave={() => setShowPrintBanner(true)}
               canEdit={canEditMedico}
             />
-            {isMedico && pode("gerar_pdf") && (
-              <div className="flex justify-end mt-4 pt-3 border-t border-border/30">
-                <Button
-                  size="sm" variant="outline" className="h-8 text-xs gap-1.5"
-                  disabled={downloadingFichaRef}
-                  onClick={async () => {
-                    setDownloadingFichaRef(true);
-                    try {
-                      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-                      const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-referencia`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
-                      if (!resp.ok) throw new Error();
-                      const blob = await resp.blob();
-                      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaReferencia_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
-                      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                    } catch { toast({ title: "Erro ao gerar Ficha", variant: "destructive" }); }
-                    finally { setDownloadingFichaRef(false); }
-                  }}
-                >
-                  <FileDown className="h-3.5 w-3.5" />
-                  {downloadingFichaRef ? "Gerando…" : "Ficha de Referência"}
-                </Button>
-              </div>
-            )}
           </TabsContent>
 
           {/* ── TAB: ENFERMAGEM ────────────────────────────────────────────── */}
@@ -1579,29 +1558,6 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               </div>
             )}
 
-            {isEnfermeiro && pode("gerar_pdf") && (
-              <div className="flex justify-end mt-2 pt-3 border-t border-border/30">
-                <Button
-                  size="sm" variant="outline" className="h-8 text-xs gap-1.5"
-                  disabled={downloadingFichaTriagem}
-                  onClick={async () => {
-                    setDownloadingFichaTriagem(true);
-                    try {
-                      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-                      const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-triagem`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
-                      if (!resp.ok) throw new Error();
-                      const blob = await resp.blob();
-                      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaTriagem_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
-                      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                    } catch { toast({ title: "Erro ao gerar Ficha de Triagem", variant: "destructive" }); }
-                    finally { setDownloadingFichaTriagem(false); }
-                  }}
-                >
-                  <FileDown className="h-3.5 w-3.5" />
-                  {downloadingFichaTriagem ? "Gerando…" : "Ficha de Triagem"}
-                </Button>
-              </div>
-            )}
           </TabsContent>
 
           {/* ── TAB: SAE ─────────────────────────────────────────────────── */}
@@ -2652,6 +2608,47 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
             <PatientTimelineTab patientId={id} />
           </TabsContent>
 
+          {/* ── TAB: FICHA DE TRIAGEM ─────────────────────────────────── */}
+          <TabsContent value="ficha-triagem">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-teal-400" />
+                  Ficha de Triagem
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Documento gerado pelo Enfermeiro no momento da triagem — classificação de risco Manchester, dados clínicos e registro de entrada.
+                </p>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center gap-4 py-6">
+                <p className="text-sm text-muted-foreground text-center max-w-sm">
+                  Gera a ficha oficial de triagem em PDF com todos os dados do paciente, classificação de risco e hora de atendimento.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-9 text-sm gap-2 border-teal-500/40 text-teal-400 hover:bg-teal-500/10"
+                  disabled={downloadingFichaTriagem}
+                  onClick={async () => {
+                    setDownloadingFichaTriagem(true);
+                    try {
+                      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                      const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-triagem`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                      if (!resp.ok) throw new Error();
+                      const blob = await resp.blob();
+                      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaTriagem_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    } catch { toast({ title: "Erro ao gerar Ficha de Triagem", variant: "destructive" }); }
+                    finally { setDownloadingFichaTriagem(false); }
+                  }}
+                >
+                  <FileDown className="h-4 w-4" />
+                  {downloadingFichaTriagem ? "Gerando…" : "Baixar Ficha de Triagem (PDF)"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* ── TAB: ALERGIAS ─────────────────────────────────────────── */}
           <TabsContent value="alergias">
             <PatientAllergiesTab patientId={id} canEdit={pode("registrar_alergia")} />
@@ -2812,6 +2809,47 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
               </CardHeader>
               <CardContent>
                 <PatientOrientacoesAltaTab patientId={id} patientName={patient?.full_name ?? ""} canEdit={canEditEnfermeiro || canEditMedico} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── TAB: FICHA DE REFERÊNCIA / CONTRA-REFERÊNCIA ─────────── */}
+          <TabsContent value="ficha-referencia">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <FileDown className="h-4 w-4 text-amber-400" />
+                  Ficha de Referência / Contra-Referência
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Documento oficial da Prefeitura de Breves para referência e contra-referência do paciente entre unidades de saúde. Gerado no momento da alta com os dados clínicos preenchidos.
+                </p>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center gap-4 py-6">
+                <p className="text-sm text-muted-foreground text-center max-w-sm">
+                  O PDF é preenchido automaticamente com os dados do paciente, diagnóstico, conduta e informações de contato da UPA Breves.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-9 text-sm gap-2 border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                  disabled={downloadingFichaRef}
+                  onClick={async () => {
+                    setDownloadingFichaRef(true);
+                    try {
+                      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+                      const resp = await fetch(`${base}/api/patients/${id}/pdf/ficha-referencia`, { headers: { "x-staff-id": String(activeUser?.id ?? 0) } });
+                      if (!resp.ok) throw new Error();
+                      const blob = await resp.blob();
+                      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `FichaReferencia_${patient?.full_name?.replace(/\s+/g,"_")}.pdf` });
+                      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    } catch { toast({ title: "Erro ao gerar Ficha de Referência", variant: "destructive" }); }
+                    finally { setDownloadingFichaRef(false); }
+                  }}
+                >
+                  <FileDown className="h-4 w-4" />
+                  {downloadingFichaRef ? "Gerando…" : "Baixar Ficha de Referência (PDF)"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
