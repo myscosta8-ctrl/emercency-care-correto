@@ -42,7 +42,7 @@
         web = {
           command = [
             "sh" "-c"
-            "export PORT=${PORT:-5173}; BASE_PATH=/ API_PORT=8080 NODE_ENV=development pnpm --filter @workspace/upa-system run dev"
+            "export PORT=\${PORT:-5173}; BASE_PATH=/ API_PORT=8080 NODE_ENV=development pnpm --filter @workspace/upa-system run dev"
           ];
           manager = "web";
         };
