@@ -1041,6 +1041,30 @@ ${buildInstitutionalHeader(patient as unknown as PrintPatientInfo, "ATUALIZAÇÃ
 
             {/* ── INTERNAÇÃO: ciclo clínico diário e monitoramento contínuo ── */}
             {activeGroup === "internacao" && <>
+              {/* Documentação médica — também necessária na internação para evoluções diárias */}
+              <TabsTrigger value="evol-medico" className="text-xs">Evolução Médica</TabsTrigger>
+              {pode("registrar_prescricao") && <TabsTrigger value="prescricao" className="text-xs">Prescrição</TabsTrigger>}
+              {pode("registrar_prescricao") && (
+                <TabsTrigger value="sol-exames" className="text-xs flex items-center gap-1">
+                  <FlaskConical className="h-3 w-3" /> Sol. Exames
+                </TabsTrigger>
+              )}
+              {(pode("registrar_prescricao") || pode("registrar_exames") || pode("visualizar_setores")) && (
+                <TabsTrigger value="exames" className="text-xs flex items-center gap-1">
+                  Exames
+                  {examRequests && examRequests.filter(e => e.status !== "laudado").length > 0 && (
+                    <span className="text-[10px] font-bold px-1 rounded-full bg-orange-500/20 text-orange-400 min-w-[16px] text-center">
+                      {examRequests.filter(e => e.status !== "laudado").length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              )}
+              {(["laboratorio", "administrador", "diretoria_geral"].includes(activeUser?.role ?? "")) && (
+                <TabsTrigger value="laboratorio" className="text-xs flex items-center gap-1">
+                  <FlaskConical className="h-3 w-3" /> Laboratório
+                </TabsTrigger>
+              )}
+              {/* Equipe multidisciplinar */}
               <TabsTrigger value="enfermagem" className="text-xs">Enfermagem</TabsTrigger>
               <TabsTrigger value="sae" className="text-xs">SAE</TabsTrigger>
               <TabsTrigger value="tecnico" className="text-xs">Téc. Enfermagem</TabsTrigger>
