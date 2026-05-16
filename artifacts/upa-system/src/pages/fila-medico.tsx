@@ -9,7 +9,7 @@ import type { Patient } from "@workspace/api-client-react";
 import {
   Stethoscope, Clock, User, ArrowLeft, CheckCircle2, Eye,
   BedDouble, LogOut, AlertTriangle, Thermometer, Wind,
-  Activity, ShieldAlert,
+  Activity, ShieldAlert, RefreshCw,
 } from "lucide-react";
 import { BedPickerInline } from "@/components/bed-picker-inline";
 import { RoleHeader } from "@/components/role-header";
@@ -83,8 +83,8 @@ function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalPro
     }
   }, [patient]);
 
-  const OPCOES: { value: CareStatus; label: string; desc: string; color: string }[] = [
-    { value: "Alta",                   label: "Alta",                    desc: "Paciente recebe alta médica",                    color: "text-green-400"  },
+  const OPCOES: { value: CareStatus; label: string; desc: string; color: string; highlight?: boolean }[] = [
+    { value: "Alta",                   label: "Alta",                    desc: "Paciente recebe alta médica",                    color: "text-green-400",  highlight: true },
     { value: "Em Medicação",           label: "Em Medicação",            desc: "Aguardando/recebendo medicação prescrita",        color: "text-pink-400"   },
     { value: "Aguardando Exames",      label: "Aguardando Exames",       desc: "Aguardando resultado de exames solicitados",      color: "text-cyan-400"   },
     { value: "Aguardando Reavaliação", label: "Aguardando Reavaliação",  desc: "Aguardando reavaliação médica após conduta",      color: "text-amber-400"  },
@@ -139,19 +139,25 @@ function DesfechoModal({ patient, onClose, onSuccess, userId }: DesfechoModalPro
               onClick={() => setStatus(op.value)}
               className={cn(
                 "w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors",
-                status === op.value
+                status === op.value && op.highlight
+                  ? "border-green-500 bg-green-500/10 ring-1 ring-green-500/30"
+                  : status === op.value
                   ? "border-primary bg-primary/10"
+                  : op.highlight
+                  ? "border-green-500/40 bg-green-950/10 hover:border-green-500/60 hover:bg-green-950/20"
                   : "border-border/50 hover:border-border hover:bg-muted/30"
               )}
             >
               <div className={cn(
                 "mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                status === op.value ? "border-primary" : "border-muted-foreground/40"
+                status === op.value
+                  ? op.highlight ? "border-green-400" : "border-primary"
+                  : "border-muted-foreground/40"
               )}>
-                {status === op.value && <div className="h-2 w-2 rounded-full bg-primary" />}
+                {status === op.value && <div className={cn("h-2 w-2 rounded-full", op.highlight ? "bg-green-400" : "bg-primary")} />}
               </div>
               <div>
-                <p className={cn("text-sm font-semibold", op.color)}>{op.label}</p>
+                <p className={cn("text-sm font-semibold", op.color)}>{op.label}{op.highlight && <span className="ml-2 text-[10px] font-normal text-green-500/70 uppercase tracking-wider">↩ desfecho do consultório</span>}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{op.desc}</p>
               </div>
             </button>
@@ -283,6 +289,121 @@ function ChamarModal({ patient, consultorio, onClose, onSuccess, userId }: Chama
   );
 }
 
+// ── re-triagem modal ──────────────────────────────────────────────────────────
+
+interface RetriageModalProps {
+  patient: Patient | null;
+  onClose: () => void;
+  onSuccess: () => void;
+  userId: number;
+}
+
+const TRIAGE_LEVELS = [
+  { value: "red",    label: "Vermelho",  desc: "Emergência — atendimento imediato",  dot: "bg-red-500",    text: "text-red-400"    },
+  { value: "orange", label: "Laranja",   desc: "Muito urgente — até 10 minutos",      dot: "bg-orange-500", text: "text-orange-400" },
+  { value: "yellow", label: "Amarelo",   desc: "Urgente — até 30 minutos",            dot: "bg-yellow-400", text: "text-yellow-400" },
+  { value: "green",  label: "Verde",     desc: "Pouco urgente — até 60 minutos",      dot: "bg-green-500",  text: "text-green-400"  },
+  { value: "blue",   label: "Azul",      desc: "Não urgente — até 240 minutos",       dot: "bg-blue-500",   text: "text-blue-400"   },
+] as const;
+
+function RetriageModal({ patient, onClose, onSuccess, userId }: RetriageModalProps) {
+  const { toast } = useToast();
+  const update = useUpdatePatientStatus();
+  const [newLevel, setNewLevel] = useState<string>("");
+  const [justificativa, setJustificativa] = useState("");
+
+  useEffect(() => {
+    if (patient) { setNewLevel(patient.triage_level ?? "yellow"); setJustificativa(""); }
+  }, [patient]);
+
+  const currentCfg = patient ? (TRIAGE_CONFIG[patient.triage_level as keyof typeof TRIAGE_CONFIG] ?? TRIAGE_CONFIG.blue) : null;
+
+  const handleConfirm = () => {
+    if (!patient || !newLevel) return;
+    update.mutate(
+      {
+        id: patient.id,
+        data: {
+          care_status: patient.careStatus as "Em Triagem" | "Aguardando Atendimento" | "Em Medicação" | "Aguardando Exames" | "Aguardando Reavaliação" | "Em Observação" | "Internado" | "Em Transferência" | "Alta",
+          triage_level: newLevel as "red" | "orange" | "yellow" | "green" | "blue",
+          user_id: userId,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Re-triagem registrada", description: `${patient.full_name} → ${TRIAGE_LEVELS.find(l => l.value === newLevel)?.label}${justificativa ? ` — ${justificativa}` : ""}` });
+          onSuccess();
+        },
+        onError: () => toast({ title: "Erro ao re-triar paciente", variant: "destructive" }),
+      }
+    );
+  };
+
+  return (
+    <Dialog open={!!patient} onOpenChange={open => !open && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 text-violet-400" />
+            Re-triagem
+          </DialogTitle>
+          <DialogDescription>
+            {patient?.full_name}
+            {currentCfg && (
+              <span className={cn("ml-2 inline-flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded", currentCfg.bg, currentCfg.text)}>
+                <span className={cn("h-1.5 w-1.5 rounded-full inline-block", currentCfg.dot)} />
+                Atual: {currentCfg.label}
+              </span>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 pt-1">
+          <p className="text-xs text-muted-foreground">Selecione a nova classificação Manchester:</p>
+          {TRIAGE_LEVELS.map(lvl => (
+            <button
+              key={lvl.value}
+              type="button"
+              onClick={() => setNewLevel(lvl.value)}
+              className={cn(
+                "w-full flex items-center gap-3 p-2.5 rounded-lg border text-left transition-colors",
+                newLevel === lvl.value ? "border-primary bg-primary/10" : "border-border/50 hover:border-border hover:bg-muted/30"
+              )}
+            >
+              <span className={cn("h-3.5 w-3.5 rounded-full shrink-0", lvl.dot)} />
+              <div className="flex-1 min-w-0">
+                <p className={cn("text-sm font-semibold", lvl.text)}>{lvl.label}</p>
+                <p className="text-[11px] text-muted-foreground">{lvl.desc}</p>
+              </div>
+              {newLevel === lvl.value && <div className="h-2 w-2 rounded-full bg-primary shrink-0" />}
+            </button>
+          ))}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Justificativa (opcional)</label>
+            <textarea
+              value={justificativa}
+              onChange={e => setJustificativa(e.target.value)}
+              placeholder="Ex: piora da dor, alteração de sinais vitais..."
+              className="w-full h-16 rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+            />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button type="button" variant="outline" size="sm" className="flex-1" onClick={onClose}>Cancelar</Button>
+            <Button
+              size="sm"
+              className="flex-1 gap-1.5"
+              onClick={handleConfirm}
+              disabled={update.isPending || !newLevel}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              {update.isPending ? "Salvando..." : "Confirmar Re-triagem"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── card de consultório ────────────────────────────────────────────────────────
 
 interface ConsultorioCardProps {
@@ -379,6 +500,7 @@ export default function FilaMedicoPage() {
   const [chamarPatient, setChamarPatient] = useState<Patient | null>(null);
   const [chamarConsultorio, setChamarConsultorio] = useState<1 | 2>(soCons2 ? 2 : 1);
   const [desfechoPatient, setDesfechoPatient] = useState<Patient | null>(null);
+  const [retriagePatient, setReTriagePatient] = useState<Patient | null>(null);
 
   const aguardando = useMemo(() =>
     (patients ?? [])
@@ -580,6 +702,16 @@ export default function FilaMedicoPage() {
                         <span className="text-[10px] font-mono text-muted-foreground/60 hidden md:block shrink-0">{p.prontuarioNumber}</span>
                       )}
                       <div className="flex gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-violet-500/40 text-violet-400 hover:bg-violet-500/10"
+                          onClick={() => setReTriagePatient(p)}
+                          title="Re-classificar Manchester"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          Re-triar
+                        </Button>
                         {mostrarCons1 && (
                           <Button
                             size="sm"
@@ -666,6 +798,12 @@ export default function FilaMedicoPage() {
       <DesfechoModal
         patient={desfechoPatient}
         onClose={() => setDesfechoPatient(null)}
+        onSuccess={handleSuccess}
+        userId={userId}
+      />
+      <RetriageModal
+        patient={retriagePatient}
+        onClose={() => setReTriagePatient(null)}
         onSuccess={handleSuccess}
         userId={userId}
       />
